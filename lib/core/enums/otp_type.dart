@@ -1,0 +1,4 @@
+enum OtpType {
+  inTransit,
+  endDelivery,
+}
