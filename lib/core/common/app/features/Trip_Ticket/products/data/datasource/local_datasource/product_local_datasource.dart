@@ -62,9 +62,9 @@ class ProductLocalDatasourceImpl implements ProductLocalDatasource {
       }
 
       debugPrint('✅ Found ${products.length} products for invoice');
-      products.forEach((product) {
+      for (var product in products) {
         debugPrint('   📦 Product: ${product.name} (${product.id})');
-      });
+      }
 
       return products.where(_isValidProduct).toList();
     } catch (e) {

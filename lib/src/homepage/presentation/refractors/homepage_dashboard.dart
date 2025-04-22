@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/presentation/bloc/delivery_team_event.dart';
@@ -123,8 +122,8 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
                     Text(
                       state.user.name ?? 'No User Name',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -175,7 +174,7 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
               ),
               _buildInfoItem(
                 context,
-                Icons.delivery_dining,
+                Icons.pending_actions,
                 '${team.activeDeliveries ?? 0}',
                 'Active Deliveries',
               ),
@@ -209,11 +208,23 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
           mainAxisSpacing: 22,
           children: [
             _buildInfoItem(
-                context, Icons.numbers, 'Not Assigned', 'Plate Number'),
+              context,
+              Icons.numbers,
+              'Not Assigned',
+              'Plate Number',
+            ),
             _buildInfoItem(
-                context, Icons.local_shipping, 'Not Assigned', 'Vehicle'),
+              context,
+              Icons.local_shipping,
+              'Not Assigned',
+              'Vehicle',
+            ),
             _buildInfoItem(
-                context, Icons.delivery_dining, '0', 'Active Deliveries'),
+              context,
+              Icons.pending_actions,
+              '0',
+              'Active Deliveries',
+            ),
             _buildInfoItem(context, Icons.done_all, '0', 'Total Delivered'),
             _buildInfoItem(context, Icons.route, '0 km', 'Distance Travelled'),
             _buildInfoItem(context, Icons.warning_amber, '0', 'Undelivered'),
@@ -232,9 +243,7 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.transparent,
-        ),
+        border: Border.all(color: Colors.transparent),
       ),
       child: Row(
         children: [
@@ -256,9 +265,9 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
@@ -268,11 +277,10 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
                   child: Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.7),
-                        ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                    ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),

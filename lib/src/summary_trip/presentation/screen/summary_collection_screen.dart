@@ -11,7 +11,6 @@ import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/collection_dashboard_screen.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/widget/summary_completed_customer_list.dart';
-
 import '../../../../core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_bloc.dart';
 class SummaryCollectionScreen extends StatefulWidget {
   const SummaryCollectionScreen({super.key});
@@ -60,34 +59,38 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
       }
     });
   }
+void _loadInitialData(String userId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final storedData = prefs.getString('user_data');
 
-  Future<void> _loadInitialData(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final storedData = prefs.getString('user_data');
+  if (storedData != null) {
+    final userData = jsonDecode(storedData);
+    final tripData = userData['trip'] as Map<String, dynamic>?;
 
-    if (storedData != null) {
-      final userData = jsonDecode(storedData);
-      final tripData = userData['trip'] as Map<String, dynamic>?;
-
-      if (tripData != null && tripData['id'] != null) {
-        debugPrint('🎫 Loading completed customers for trip: ${tripData['id']}');
-        _completedCustomerBloc.add(GetCompletedCustomerEvent(tripData['id']));
-      }
-    }
-
-    _authBloc
-      ..add(LoadLocalUserByIdEvent(userId))
-      ..add(LoadUserByIdEvent(userId))
-      ..add(LoadLocalUserTripEvent(userId))
-      ..add(GetUserTripEvent(userId));
-  }
-
-  Future<void> _refreshData() async {
-    final authState = context.read<AuthBloc>().state;
-    if (authState is UserTripLoaded && authState.trip.id != null) {
-      _completedCustomerBloc.add(GetCompletedCustomerEvent(authState.trip.id!));
+    if (tripData != null && tripData['id'] != null) {
+      debugPrint('🎫 Loading completed customers for trip: ${tripData['id']}');
+      
+      // First try to load from local for immediate display
+      _completedCustomerBloc.add(LoadLocalCompletedCustomerEvent(tripData['id']));
+      
+      // Auth data is loaded separately
+      _authBloc
+        ..add(LoadLocalUserByIdEvent(userId))
+        ..add(LoadUserByIdEvent(userId))
+        ..add(LoadLocalUserTripEvent(userId))
+        ..add(GetUserTripEvent(userId));
     }
   }
+}
+
+Future<void> _refreshData() async {
+  final authState = context.read<AuthBloc>().state;
+  if (authState is UserTripLoaded && authState.trip.id != null) {
+    // Force a fresh load from remote
+    _completedCustomerBloc.add(GetCompletedCustomerEvent(authState.trip.id!));
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -154,9 +154,10 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                 if (tripId != null) {
                   context.push('/delivery-and-timeline');
                 }
-              } else if (state is OtpError) {
-                CoreUtils.showSnackBar(context, state.message);
-              }
+              } 
+              // else if (state is OtpError) {
+              //   CoreUtils.showSnackBar(context, state.message);
+              // }
             },
           ),
           BlocListener<TripBloc, TripState>(
@@ -202,8 +203,9 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                         const SizedBox(height: 20),
                         OdometerInput(
                           onOdometerChanged: (odometer) {
-                            if (mounted)
+                            if (mounted) {
                               setState(() => enteredOdometer = odometer);
+                            }
                           },
                         ),
                       ],

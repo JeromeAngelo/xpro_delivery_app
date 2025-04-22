@@ -134,9 +134,9 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
     required String generatedOtp,
   }) async {
     try {
-      print('🔍 Verifying End-Delivery OTP...');
-      print('Entered OTP: $enteredOtp');
-      print('Generated OTP: $generatedOtp');
+      debugPrint('🔍 Verifying End-Delivery OTP...');
+      debugPrint('Entered OTP: $enteredOtp');
+      debugPrint('Generated OTP: $generatedOtp');
 
       final otpRecords =
           await _pocketBaseClient.collection('otp').getFullList();
@@ -152,14 +152,14 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
               'otpCode': enteredOtp,
             },
           );
-          print('✅ End-Delivery OTP verification successful!');
+          debugPrint('✅ End-Delivery OTP verification successful!');
           return true;
         }
       }
-      print('❌ End-Delivery OTP verification failed: OTP mismatch');
+      debugPrint('❌ End-Delivery OTP verification failed: OTP mismatch');
       return false;
     } catch (e) {
-      print('❌ End-Delivery OTP verification error: ${e.toString()}');
+      debugPrint('❌ End-Delivery OTP verification error: ${e.toString()}');
       throw ServerException(
         message: 'Failed to verify end-delivery OTP: ${e.toString()}',
         statusCode: '500',

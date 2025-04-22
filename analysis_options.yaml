@@ -12,6 +12,7 @@ analyzer:
     must_be_immutable: ignore
     invalid_use_of_visible_for_testing_member: ignore
     unused_field: ignore
+    deprecated_member_use: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:

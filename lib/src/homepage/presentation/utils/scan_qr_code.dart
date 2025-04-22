@@ -290,10 +290,10 @@ class _QRScannerViewState extends State<QRScannerView>
     ).then((_) => textController.dispose());
   }
 
-  @override
-  void dispose() {
-    controller?.dispose();
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   controller?.dispose();
+  //   WidgetsBinding.instance.removeObserver(this);
+  //   super.dispose();
+  // }
 }

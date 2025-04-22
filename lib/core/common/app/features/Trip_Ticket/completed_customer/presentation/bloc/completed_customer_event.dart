@@ -38,3 +38,8 @@ class LoadLocalCompletedCustomerByIdEvent extends CompletedCustomerEvent {
   List<Object> get props => [customerId];
 }
 
+// Add this event
+class ClearCompletedCustomerCacheEvent extends CompletedCustomerEvent {
+  const ClearCompletedCustomerCacheEvent();
+}
+

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/data/models/completed_customer_model.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
@@ -66,37 +68,36 @@ class CompletedCustomerLocalDatasourceImpl
 @override
 Future<List<CompletedCustomerModel>> getCompletedCustomers(String tripId) async {
   try {
-    debugPrint('🔍 Querying local completed customers for trip: $tripId');
-
-    // // First check if box is open and accessible
-    // if (!_completedCustomerBox.isOpen) {
-    //   debugPrint('⚠️ Box not open, attempting to reopen');
-    //   // Handle box reopening if needed
-    // }
-
-    // Build and execute query
-    final query = _completedCustomerBox
-        .query(CompletedCustomerModel_.tripId.equals(tripId))
-        .build();
-        
+    debugPrint('📱 LOCAL: Fetching completed customers for trip: $tripId');
+    
+    // Normalize the trip ID in case it's a JSON string
+    String normalizedTripId = tripId;
+    if (tripId.startsWith('{')) {
+      final tripData = jsonDecode(tripId);
+      normalizedTripId = tripData['id'];
+    }
+    
+    // Query the ObjectBox store
+    final query = _completedCustomerBox.query(
+      CompletedCustomerModel_.tripId.equals(normalizedTripId)
+    ).build();
+    
     final customers = query.find();
     query.close();
-
-    debugPrint('📊 Local Storage Stats:');
-    debugPrint('Total stored completed customers: ${_completedCustomerBox.count()}');
-    debugPrint('Found completed customers for trip: ${customers.length}');
-
-    // Verify data integrity
-    for (final customer in customers) {
-      debugPrint('   🏪 Store: ${customer.storeName}');
-      debugPrint('   📦 Delivery Status: ${customer.deliveryStatus.length}');
-      debugPrint('   🧾 Invoices: ${customer.invoicesList.length}');
+    
+    if (customers.isEmpty) {
+      debugPrint('📱 LOCAL: No completed customers found for trip: $normalizedTripId');
+    } else {
+      debugPrint('📱 LOCAL: Found ${customers.length} completed customers');
     }
-
+    
     return customers;
   } catch (e) {
-    debugPrint('❌ Local query error: ${e.toString()}');
-    throw CacheException(message: e.toString());
+    debugPrint('❌ LOCAL: Error fetching completed customers: ${e.toString()}');
+    throw CacheException(
+      message: 'Failed to load completed customers from local storage: ${e.toString()}',
+      statusCode: 500,
+    );
   }
 }
 

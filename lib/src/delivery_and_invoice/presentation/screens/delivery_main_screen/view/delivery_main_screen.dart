@@ -14,10 +14,7 @@ import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens
 class DeliveryMainScreen extends StatefulWidget {
   final CustomerEntity? selectedCustomer;
 
-  const DeliveryMainScreen({
-    super.key,
-    this.selectedCustomer,
-  });
+  const DeliveryMainScreen({super.key, this.selectedCustomer});
 
   @override
   State<DeliveryMainScreen> createState() => _DeliveryMainScreenState();
@@ -41,20 +38,23 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
   void _initializeLocalData() {
     if (!_isDataInitialized && widget.selectedCustomer != null) {
       debugPrint(
-          '📱 Loading local data for customer: ${widget.selectedCustomer!.id}');
+        '📱 Loading local data for customer: ${widget.selectedCustomer!.id}',
+      );
       context.read<CustomerBloc>().add(
-          LoadLocalCustomerLocationEvent(widget.selectedCustomer!.id ?? ''));
+        LoadLocalCustomerLocationEvent(widget.selectedCustomer!.id ?? ''),
+      );
       _isDataInitialized = true;
     }
   }
 
   Future<void> _refreshData() async {
     if (widget.selectedCustomer?.id != null) {
-      context
-          .read<CustomerBloc>()
-          .add(LoadLocalCustomerLocationEvent(widget.selectedCustomer!.id!));
+      context.read<CustomerBloc>().add(
+        LoadLocalCustomerLocationEvent(widget.selectedCustomer!.id!),
+      );
       context.read<DeliveryUpdateBloc>().add(
-          LoadLocalDeliveryStatusChoicesEvent(widget.selectedCustomer!.id!));
+        LoadLocalDeliveryStatusChoicesEvent(widget.selectedCustomer!.id!),
+      );
     }
   }
 
@@ -72,8 +72,9 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
     super.build(context);
 
     return BlocBuilder<CustomerBloc, CustomerState>(
-      buildWhen: (previous, current) =>
-          current is CustomerLocationLoaded || _cachedState == null,
+      buildWhen:
+          (previous, current) =>
+              current is CustomerLocationLoaded || _cachedState == null,
       builder: (context, state) {
         final customerState = _cachedState ?? state;
         if (customerState is CustomerLocationLoaded) {
@@ -114,10 +115,9 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
                             color: Theme.of(context).colorScheme.surfaceVariant,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .outline
-                                  .withOpacity(0.5),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outline.withOpacity(0.5),
                             ),
                           ),
                           child: Column(
@@ -136,9 +136,7 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium!
-                                        .copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        .copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -156,7 +154,10 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
                         alignment: Alignment.centerLeft,
                         child: Padding(
                           padding: EdgeInsets.only(
-                              left: 16.0, top: 16.0, bottom: 8.0),
+                            left: 16.0,
+                            top: 16.0,
+                            bottom: 8.0,
+                          ),
                           child: Text(
                             'Delivery Timeline',
                             style: TextStyle(
@@ -166,9 +167,7 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
                           ),
                         ),
                       ),
-                      DeliveryTimeline(
-                        customerId: customer.id ?? '',
-                      ),
+                      DeliveryTimeline(customerId: customer.id ?? ''),
                       const SizedBox(height: 80),
                     ],
                   ),
@@ -200,7 +199,7 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
       'arrived',
       'unloading',
       'mark as received',
-      'end delivery'
+      'end delivery',
     ];
     final shouldHideMap = hideMapStatuses.contains(latestStatus);
 
