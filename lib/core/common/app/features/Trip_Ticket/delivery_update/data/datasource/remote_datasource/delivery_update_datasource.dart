@@ -21,7 +21,7 @@ abstract class DeliveryUpdateDatasource {
     required List<ReturnModel> returns,
     required List<DeliveryUpdateModel> deliveryStatus,
   });
- Future<DataMap> checkEndDeliverStatus(String tripId);
+  Future<DataMap> checkEndDeliverStatus(String tripId);
   Future<void> initializePendingStatus(List<String> customerIds);
   Future<void> createDeliveryStatus(
     String customerId, {
@@ -31,33 +31,29 @@ abstract class DeliveryUpdateDatasource {
     required bool isAssigned,
     required String image,
   });
-  Future<void> updateQueueRemarks(
-    String customerId,
-    String queueCount,
-  );
+  Future<void> updateQueueRemarks(String customerId, String queueCount);
 }
 
 class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
   const DeliveryUpdateDatasourceImpl({required PocketBase pocketBaseClient})
-      : _pocketBaseClient = pocketBaseClient;
+    : _pocketBaseClient = pocketBaseClient;
 
   final PocketBase _pocketBaseClient;
   @override
-  Future<void> updateQueueRemarks(
-    String customerId,
-    String queueCount,
-  ) async {
+  Future<void> updateQueueRemarks(String customerId, String queueCount) async {
     try {
       debugPrint('🔄 Updating queue remarks for customer: $customerId');
 
       // Update customer record
-      await _pocketBaseClient.collection('customers').update(
-        customerId,
-        body: {
-          'remarks': queueCount,
-          'updated': DateTime.now().toIso8601String(),
-        },
-      );
+      await _pocketBaseClient
+          .collection('customers')
+          .update(
+            customerId,
+            body: {
+              'remarks': queueCount,
+              'updated': DateTime.now().toIso8601String(),
+            },
+          );
 
       ;
 
@@ -70,37 +66,40 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
   @override
   Future<List<DeliveryUpdateModel>> getDeliveryStatusChoices(
-      String customerId) async {
+    String customerId,
+  ) async {
     try {
       debugPrint(
-          '🚚 Fetching delivery status choices for customer: $customerId');
+        '🚚 Fetching delivery status choices for customer: $customerId',
+      );
 
-      final customerRecord =
-          await _pocketBaseClient.collection('customers').getOne(
-                customerId,
-                expand: 'deliveryStatus',
-              );
+      final customerRecord = await _pocketBaseClient
+          .collection('customers')
+          .getOne(customerId, expand: 'deliveryStatus');
 
       final deliveryUpdates = customerRecord.expand['deliveryStatus'] as List?;
-      final latestStatus = deliveryUpdates?.isNotEmpty == true
-          ? deliveryUpdates!.last.data['title'].toString().toLowerCase()
-          : '';
+      final latestStatus =
+          deliveryUpdates?.isNotEmpty == true
+              ? deliveryUpdates!.last.data['title'].toString().toLowerCase()
+              : '';
 
       debugPrint('📍 Latest status for customer $customerId: $latestStatus');
 
-      final allStatuses = await _pocketBaseClient
-          .collection('delivery_status_choices')
-          .getFullList();
+      final allStatuses =
+          await _pocketBaseClient
+              .collection('delivery_status_choices')
+              .getFullList();
 
       // Log available status choices
       for (var status in allStatuses) {
         debugPrint(
-            '🏷️ Available Status - ID: ${status.id}, Title: ${status.data['title']}');
+          '🏷️ Available Status - ID: ${status.id}, Title: ${status.data['title']}',
+        );
       }
 
       // Handle In Transit status
       if (latestStatus == 'in transit') {
-        final allowedTitles = ['mark as undelivered', 'arrived'];
+        final allowedTitles = ['arrived', 'mark as undelivered'];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
 
@@ -119,11 +118,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       // Handle Arrived status
       if (latestStatus == 'arrived') {
-        final allowedTitles = [
-          'mark as undelivered',
-          'unloading',
-          'waiting for customer'
-        ];
+        final allowedTitles = ['unloading', 'mark as undelivered'];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
 
@@ -135,7 +130,8 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         return [];
       }
 
-      final assignedTitles = deliveryUpdates
+      final assignedTitles =
+          deliveryUpdates
               ?.map((record) => record.data['title'].toString().toLowerCase())
               .toSet() ??
           {};
@@ -143,8 +139,12 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       debugPrint('📋 Already assigned titles: $assignedTitles');
 
       return allStatuses
-          .where((status) => !assignedTitles
-              .contains(status.data['title'].toString().toLowerCase()))
+          .where(
+            (status) =>
+                !assignedTitles.contains(
+                  status.data['title'].toString().toLowerCase(),
+                ),
+          )
           .map((record) => DeliveryUpdateModel.fromJson(record.toJson()))
           .toList();
     } catch (e) {
@@ -157,30 +157,38 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
   }
 
   List<DeliveryUpdateModel> _filterStatusChoices(
-      List<RecordModel> allStatuses, List<String> allowedTitles) {
+    List<RecordModel> allStatuses,
+    List<String> allowedTitles,
+  ) {
     return allStatuses
-        .where((status) => allowedTitles
-            .contains(status.data['title'].toString().toLowerCase()))
+        .where(
+          (status) => allowedTitles.contains(
+            status.data['title'].toString().toLowerCase(),
+          ),
+        )
         .map((record) {
-      final statusId = record.id;
-      debugPrint(
-          '🏷️ Processing status - ID: $statusId, Title: ${record.data['title']}');
+          final statusId = record.id;
+          debugPrint(
+            '🏷️ Processing status - ID: $statusId, Title: ${record.data['title']}',
+          );
 
-      return DeliveryUpdateModel.fromJson({
-        'id': statusId, // Explicit ID assignment
-        'collectionId': record.collectionId,
-        'collectionName': record.collectionName,
-        'title': record.data['title'],
-        'subtitle': record.data['subtitle'],
-      });
-    }).toList();
+          return DeliveryUpdateModel.fromJson({
+            'id': statusId, // Explicit ID assignment
+            'collectionId': record.collectionId,
+            'collectionName': record.collectionName,
+            'title': record.data['title'],
+            'subtitle': record.data['subtitle'],
+          });
+        })
+        .toList();
   }
 
   @override
   Future<void> updateDeliveryStatus(String customerId, String statusId) async {
     try {
       debugPrint(
-          '🔄 Processing status update - Customer: $customerId, Status: $statusId');
+        '🔄 Processing status update - Customer: $customerId, Status: $statusId',
+      );
 
       // Validate status ID
       if (statusId.isEmpty) {
@@ -200,34 +208,40 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       // Create delivery update with validated data
       final currentTime = DateTime.now().toIso8601String();
-      final deliveryUpdateRecord =
-          await _pocketBaseClient.collection('delivery_update').create(body: {
-        'customer': customerId,
-        'status': statusId,
-        'title': statusRecord.data['title'],
-        'subtitle': statusRecord.data['subtitle'],
-        'created': currentTime,
-        'time': currentTime,
-        'isAssigned': true,
-      });
+      final deliveryUpdateRecord = await _pocketBaseClient
+          .collection('delivery_update')
+          .create(
+            body: {
+              'customer': customerId,
+              'status': statusId,
+              'title': statusRecord.data['title'],
+              'subtitle': statusRecord.data['subtitle'],
+              'created': currentTime,
+              'time': currentTime,
+              'isAssigned': true,
+            },
+          );
 
       debugPrint('📝 Created delivery update: ${deliveryUpdateRecord.id}');
 
       // Update customer record
-      await _pocketBaseClient.collection('customers').update(
-        customerId,
-        body: {
-          'deliveryStatus+': [deliveryUpdateRecord.id],
-        },
-      );
+      await _pocketBaseClient
+          .collection('customers')
+          .update(
+            customerId,
+            body: {
+              'deliveryStatus+': [deliveryUpdateRecord.id],
+            },
+          );
 
       debugPrint('✅ Successfully updated customer status');
     } catch (e) {
       debugPrint('❌ Operation failed: ${e.toString()}');
       throw ServerException(
-        message: e is ServerException
-            ? e.message
-            : 'Operation failed: ${e.toString()}',
+        message:
+            e is ServerException
+                ? e.message
+                : 'Operation failed: ${e.toString()}',
         statusCode: e is ServerException ? e.statusCode : '500',
       );
     }
@@ -271,47 +285,56 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       final deliveryTeamRecord = deliveryTeamRecords.items.first;
       debugPrint('✅ Found delivery team: ${deliveryTeamRecord.id}');
 
-      final currentActiveDeliveries = int.tryParse(
-              deliveryTeamRecord.data['activeDeliveries']?.toString() ?? '0') ??
+      final currentActiveDeliveries =
+          int.tryParse(
+            deliveryTeamRecord.data['activeDeliveries']?.toString() ?? '0',
+          ) ??
           0;
-      final currentTotalDelivered = int.tryParse(
-              deliveryTeamRecord.data['totalDelivered']?.toString() ?? '0') ??
+      final currentTotalDelivered =
+          int.tryParse(
+            deliveryTeamRecord.data['totalDelivered']?.toString() ?? '0',
+          ) ??
           0;
 
       // Update delivery team stats
-      await _pocketBaseClient.collection('delivery_team').update(
-        deliveryTeamRecord.id,
-        body: {
-          'activeDeliveries': (currentActiveDeliveries - 1).toString(),
-          'totalDelivered': (currentTotalDelivered + 1).toString(),
-        },
-      );
+      await _pocketBaseClient
+          .collection('delivery_team')
+          .update(
+            deliveryTeamRecord.id,
+            body: {
+              'activeDeliveries': (currentActiveDeliveries - 1).toString(),
+              'totalDelivered': (currentTotalDelivered + 1).toString(),
+            },
+          );
 
       // Inside completeDelivery method
       debugPrint('📝 Recording transactions for customer: $customerId');
       debugPrint('💰 Total transactions to record: ${transactions.length}');
 
-// First fetch the latest transactions for this customer
+      // First fetch the latest transactions for this customer
       final customerTransactions = await _pocketBaseClient
           .collection('transactions')
           .getList(filter: 'customer = "$customerId"');
 
       debugPrint(
-          '📊 Found ${customerTransactions.items.length} transactions for customer');
+        '📊 Found ${customerTransactions.items.length} transactions for customer',
+      );
 
       final transactionIds =
           customerTransactions.items.map((t) => t.id).toList();
 
-      final returnIds = (customerRecord.expand['returnList'] as List?)
+      final returnIds =
+          (customerRecord.expand['returnList'] as List?)
               ?.map((r) => r.id)
               .whereType<String>()
               .toList() ??
           [];
 
       // Get payment method from transactions
-      final paymentMode = customerTransactions.items.isNotEmpty
-          ? customerTransactions.items.first.data['modeOfPayment']
-          : 'cashOnDelivery';
+      final paymentMode =
+          customerTransactions.items.isNotEmpty
+              ? customerTransactions.items.first.data['modeOfPayment']
+              : 'cashOnDelivery';
       final completedCustomerData = {
         'deliveryNumber': customerRecord.data['deliveryNumber'],
         'storeName': customerRecord.data['storeName'],
@@ -322,8 +345,9 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         'province': customerRecord.data['province'],
         'modeOfPayment': customerRecord.data['modeOfPayment'],
         'timeCompleted': DateTime.now().toUtc().toIso8601String(),
-        'totalAmount': customerRecord
-            .data['confirmedTotalPayment'], // Use confirmed total payment
+        'totalAmount':
+            customerRecord
+                .data['confirmedTotalPayment'], // Use confirmed total payment
         'invoices':
             invoices.map((invoice) => invoice.id).whereType<String>().toList(),
         'transactions': transactionIds,
@@ -340,27 +364,31 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
           .create(body: completedCustomerData);
 
       debugPrint(
-          '✅ Created completed customer record: ${completedCustomerRecord.id}');
+        '✅ Created completed customer record: ${completedCustomerRecord.id}',
+      );
 
       // Update each transaction with completed customer relation
       for (final transactionId in transactionIds) {
-        await _pocketBaseClient.collection('transactions').update(
-          transactionId,
-          body: {
-            'completedCustomer': completedCustomerRecord.id,
-          },
-        );
+        await _pocketBaseClient
+            .collection('transactions')
+            .update(
+              transactionId,
+              body: {'completedCustomer': completedCustomerRecord.id},
+            );
         debugPrint(
-            '✅ Updated transaction $transactionId with completed customer relation');
+          '✅ Updated transaction $transactionId with completed customer relation',
+        );
       }
       debugPrint('✅ Successfully linked all transactions');
       // Update tripticket with completed customer
-      await _pocketBaseClient.collection('tripticket').update(
-        tripId,
-        body: {
-          'completedCustomer+': [completedCustomerRecord.id],
-        },
-      );
+      await _pocketBaseClient
+          .collection('tripticket')
+          .update(
+            tripId,
+            body: {
+              'completedCustomer+': [completedCustomerRecord.id],
+            },
+          );
       debugPrint('✅ Updated trip ticket with completed customer');
 
       debugPrint('✅ Successfully completed delivery process');
@@ -372,66 +400,75 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       );
     }
   }
-@override
-Future<DataMap> checkEndDeliverStatus(String tripId) async {
-  try {
-    debugPrint('🔍 Checking end delivery status for trip: $tripId');
 
-    // Extract trip ID if received as JSON
-    String actualTripId;
-    if (tripId.startsWith('{')) {
-      final tripData = jsonDecode(tripId);
-      actualTripId = tripData['id'];
-    } else {
-      actualTripId = tripId;
+  @override
+  Future<DataMap> checkEndDeliverStatus(String tripId) async {
+    try {
+      debugPrint('🔍 Checking end delivery status for trip: $tripId');
+
+      // Extract trip ID if received as JSON
+      String actualTripId;
+      if (tripId.startsWith('{')) {
+        final tripData = jsonDecode(tripId);
+        actualTripId = tripData['id'];
+      } else {
+        actualTripId = tripId;
+      }
+
+      // Get customers using trip ID
+      final customerRecords = await _pocketBaseClient
+          .collection('customers')
+          .getFullList(
+            filter: 'trip = "$actualTripId"',
+            expand: 'deliveryStatus',
+          );
+
+      final totalCustomers = customerRecords.length;
+      debugPrint('📦 Total customers in trip: $totalCustomers');
+
+      final completedDeliveries =
+          customerRecords.where((customer) {
+            final deliveryStatuses =
+                customer.expand['deliveryStatus'] as List? ?? [];
+            final hasEndDelivery = deliveryStatuses.any((status) {
+              final title = status.data['title'].toString().toLowerCase();
+              if (title == 'end delivery') {
+                debugPrint(
+                  '   ✅ Customer ${customer.data['storeName']} has End Delivery status',
+                );
+                return true;
+              }
+              if (title == 'mark as undelivered') {
+                debugPrint(
+                  '   ⚠️ Customer ${customer.data['storeName']} is marked Undelivered',
+                );
+                return true;
+              }
+              return false;
+            });
+            return hasEndDelivery;
+          }).length;
+
+      debugPrint('📊 Delivery Status Summary:');
+      debugPrint('   - Total Customers: $totalCustomers');
+      debugPrint('   - Completed Deliveries: $completedDeliveries');
+      debugPrint(
+        '   - Pending Deliveries: ${totalCustomers - completedDeliveries}',
+      );
+
+      return {
+        'total': totalCustomers,
+        'completed': completedDeliveries,
+        'pending': totalCustomers - completedDeliveries,
+      };
+    } catch (e) {
+      debugPrint('❌ Error checking end delivery status: $e');
+      throw ServerException(
+        message: 'Failed to check end delivery status: $e',
+        statusCode: '500',
+      );
     }
-
-    // Get customers using trip ID
-    final customerRecords = await _pocketBaseClient.collection('customers').getFullList(
-      filter: 'trip = "$actualTripId"',
-      expand: 'deliveryStatus',
-    );
-
-    final totalCustomers = customerRecords.length;
-    debugPrint('📦 Total customers in trip: $totalCustomers');
-
-   final completedDeliveries = customerRecords.where((customer) {
-  final deliveryStatuses = customer.expand['deliveryStatus'] as List? ?? [];
-  final hasEndDelivery = deliveryStatuses.any((status) {
-    final title = status.data['title'].toString().toLowerCase();
-    if (title == 'end delivery') {
-      debugPrint('   ✅ Customer ${customer.data['storeName']} has End Delivery status');
-      return true;
-    }
-    if (title == 'mark as undelivered') {
-      debugPrint('   ⚠️ Customer ${customer.data['storeName']} is marked Undelivered');
-      return true;
-    }
-    return false;
-  });
-  return hasEndDelivery;
-}).length;
-
-
-    debugPrint('📊 Delivery Status Summary:');
-    debugPrint('   - Total Customers: $totalCustomers');
-    debugPrint('   - Completed Deliveries: $completedDeliveries');
-    debugPrint('   - Pending Deliveries: ${totalCustomers - completedDeliveries}');
-
-    return {
-      'total': totalCustomers,
-      'completed': completedDeliveries,
-      'pending': totalCustomers - completedDeliveries,
-    };
-  } catch (e) {
-    debugPrint('❌ Error checking end delivery status: $e');
-    throw ServerException(
-      message: 'Failed to check end delivery status: $e',
-      statusCode: '500',
-    );
   }
-}
-
 
   @override
   Future<void> initializePendingStatus(List<String> customerIds) async {
@@ -450,29 +487,34 @@ Future<DataMap> checkEndDeliverStatus(String tripId) async {
 
         final existingStatuses =
             customerRecord.expand['deliveryStatus'] as List? ?? [];
-        final hasPendingStatus =
-            existingStatuses.any((status) => status.data['title'] == 'Pending');
+        final hasPendingStatus = existingStatuses.any(
+          (status) => status.data['title'] == 'Pending',
+        );
 
         if (!hasPendingStatus) {
           final currentTime = DateTime.now().toIso8601String();
           final deliveryUpdateRecord = await _pocketBaseClient
               .collection('delivery_update')
-              .create(body: {
-            'customer': customerId,
-            'status': pendingStatus.id,
-            'title': pendingStatus.data['title'],
-            'subtitle': pendingStatus.data['subtitle'],
-            'created': currentTime,
-            'time': currentTime,
-            'isAssigned': true,
-          });
+              .create(
+                body: {
+                  'customer': customerId,
+                  'status': pendingStatus.id,
+                  'title': pendingStatus.data['title'],
+                  'subtitle': pendingStatus.data['subtitle'],
+                  'created': currentTime,
+                  'time': currentTime,
+                  'isAssigned': true,
+                },
+              );
 
-          await _pocketBaseClient.collection('customers').update(
-            customerId,
-            body: {
-              'deliveryStatus': [deliveryUpdateRecord.id],
-            },
-          );
+          await _pocketBaseClient
+              .collection('customers')
+              .update(
+                customerId,
+                body: {
+                  'deliveryStatus': [deliveryUpdateRecord.id],
+                },
+              );
         }
       }
 
@@ -509,26 +551,29 @@ Future<DataMap> checkEndDeliverStatus(String tripId) async {
         );
       }
 
-      final deliveryUpdateRecord =
-          await _pocketBaseClient.collection('delivery_update').create(
-        body: {
-          'customer': customerId,
-          'title': title,
-          'subtitle': subtitle,
-          'time': time.toIso8601String(),
-          'isAssigned': true,
-        },
-        files: files.values.toList(),
-      );
+      final deliveryUpdateRecord = await _pocketBaseClient
+          .collection('delivery_update')
+          .create(
+            body: {
+              'customer': customerId,
+              'title': title,
+              'subtitle': subtitle,
+              'time': time.toIso8601String(),
+              'isAssigned': true,
+            },
+            files: files.values.toList(),
+          );
 
       debugPrint('✅ Created delivery status: ${deliveryUpdateRecord.id}');
 
-      await _pocketBaseClient.collection('customers').update(
-        customerId,
-        body: {
-          'deliveryStatus+': [deliveryUpdateRecord.id],
-        },
-      );
+      await _pocketBaseClient
+          .collection('customers')
+          .update(
+            customerId,
+            body: {
+              'deliveryStatus+': [deliveryUpdateRecord.id],
+            },
+          );
 
       debugPrint('✅ Updated customer with new delivery status');
     } catch (e) {

@@ -4,16 +4,19 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/get_invoice_per_customer.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/get_invoice_per_trip_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/set_all_invoices_completed.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/set_invoice_unloaded.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_event.dart';
+
 class InvoiceBloc extends Bloc<InvoiceEvent, InvoiceState> {
   final ProductsBloc _productsBloc;
   final GetInvoice _getInvoices;
   final GetInvoicesByTrip _getInvoicesByTrip;
   final GetInvoicesByCustomer _getInvoicesByCustomer;
   final SetAllInvoicesCompleted _setAllInvoicesCompleted;
+  final SetInvoiceUnloaded _setInvoiceUnloaded; // Add the new use case
   InvoiceState? _cachedState;
 
   InvoiceBloc({
@@ -21,12 +24,14 @@ class InvoiceBloc extends Bloc<InvoiceEvent, InvoiceState> {
     required GetInvoice getInvoices,
     required GetInvoicesByTrip getInvoicesByTrip,
     required GetInvoicesByCustomer getInvoicesByCustomer,
-      required SetAllInvoicesCompleted setAllInvoicesCompleted,
+    required SetAllInvoicesCompleted setAllInvoicesCompleted,
+    required SetInvoiceUnloaded setInvoiceUnloaded, // Add parameter for the new use case
   }) : _productsBloc = productsBloc,
        _getInvoices = getInvoices,
        _getInvoicesByTrip = getInvoicesByTrip,
        _getInvoicesByCustomer = getInvoicesByCustomer,
-        _setAllInvoicesCompleted = setAllInvoicesCompleted,
+       _setAllInvoicesCompleted = setAllInvoicesCompleted,
+       _setInvoiceUnloaded = setInvoiceUnloaded, // Initialize the new use case
        super(InvoiceInitial()) {
     on<GetInvoiceEvent>(_onGetInvoiceHandler);
     on<LoadLocalInvoiceEvent>(_onLoadLocalInvoiceHandler);
@@ -35,7 +40,8 @@ class InvoiceBloc extends Bloc<InvoiceEvent, InvoiceState> {
     on<GetInvoicesByCustomerEvent>(_onGetInvoicesByCustomerHandler);
     on<LoadLocalInvoicesByCustomerEvent>(_onLoadLocalInvoicesByCustomerHandler);
     on<RefreshInvoiceEvent>(_onRefreshInvoiceHandler);
-     on<SetAllInvoicesCompletedEvent>(_onSetAllInvoicesCompletedHandler);
+    on<SetAllInvoicesCompletedEvent>(_onSetAllInvoicesCompletedHandler);
+    on<SetInvoiceUnloadedEvent>(_onSetInvoiceUnloadedHandler); // Register the new event handler
   }
 
 
@@ -225,6 +231,43 @@ Future<void> _onLoadLocalInvoicesByCustomerHandler(
         final newState = InvoiceLoaded(invoices);
         _cachedState = newState;
         emit(newState);
+      },
+    );
+  }
+
+   // New handler for setting an invoice to unloaded
+  Future<void> _onSetInvoiceUnloadedHandler(
+    SetInvoiceUnloadedEvent event,
+    Emitter<InvoiceState> emit,
+  ) async {
+    debugPrint('🔄 BLOC: Setting invoice ${event.invoiceId} to unloaded');
+    emit(InvoiceLoading());
+    
+    final result = await _setInvoiceUnloaded(event.invoiceId);
+    
+    result.fold(
+      (failure) {
+        debugPrint('❌ BLOC: Failed to set invoice to unloaded: ${failure.message}');
+        emit(InvoiceError(failure.message));
+      },
+      (updatedInvoice) {
+        debugPrint('✅ BLOC: Successfully set invoice ${updatedInvoice.invoiceNumber} to unloaded');
+        emit(InvoiceUnloadedState(updatedInvoice));
+        
+        // If we have a cached state with a trip ID, refresh the invoices for that trip
+        if (_cachedState is TripInvoicesLoaded) {
+          final tripId = (_cachedState as TripInvoicesLoaded).tripId;
+          add(GetInvoicesByTripEvent(tripId));
+        } 
+        // If we have a cached state with a customer ID, refresh the invoices for that customer
+        else if (_cachedState is CustomerInvoicesLoaded) {
+          final customerId = (_cachedState as CustomerInvoicesLoaded).customerId;
+          add(GetInvoicesByCustomerEvent(customerId));
+        }
+        // Otherwise, refresh all invoices
+        else {
+          add(const GetInvoiceEvent());
+        }
       },
     );
   }

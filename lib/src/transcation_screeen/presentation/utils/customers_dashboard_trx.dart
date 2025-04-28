@@ -9,10 +9,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer
 class CustomersDashboardTrx extends StatefulWidget {
   final CustomerEntity customer;
 
-  const CustomersDashboardTrx({
-    super.key,
-    required this.customer,
-  });
+  const CustomersDashboardTrx({super.key, required this.customer});
 
   @override
   State<CustomersDashboardTrx> createState() => _CustomersDashboardTrxState();
@@ -28,9 +25,9 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
   @override
   void initState() {
     super.initState();
-    context
-        .read<CustomerBloc>()
-        .add(LoadLocalCustomerLocationEvent(widget.customer.id ?? ''));
+    context.read<CustomerBloc>().add(
+      LoadLocalCustomerLocationEvent(widget.customer.id ?? ''),
+    );
   }
 
   @override
@@ -51,19 +48,20 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                     Text(
                       'Customer Details',
                       style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 15),
                     Expanded(
                       child: Row(
                         children: [
                           Expanded(
-                              child: _buildLeftColumn(context, state.customer)),
+                            child: _buildLeftColumn(context, state.customer),
+                          ),
                           const SizedBox(width: 50),
                           Expanded(
-                              child:
-                                  _buildRightColumn(context, state.customer)),
+                            child: _buildRightColumn(context, state.customer),
+                          ),
                         ],
                       ),
                     ),
@@ -73,7 +71,7 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
             ),
           );
         }
-        
+
         // Enhanced loading state with card shape
         return SizedBox(
           height: 180,
@@ -104,7 +102,8 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _buildSkeletonRow(),
                                   _buildSkeletonRow(),
@@ -116,7 +115,8 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _buildSkeletonRow(),
                                   _buildSkeletonRow(),
@@ -127,24 +127,6 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                         ),
                       ),
                     ],
-                  ),
-                  // Center loading spinner
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const CircularProgressIndicator(),
-                    ),
                   ),
                 ],
               ),
@@ -220,11 +202,7 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 8),
         Expanded(
           child: Column(

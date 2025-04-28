@@ -81,3 +81,14 @@ class AllInvoicesCompletedState extends InvoiceState {
   @override
   List<Object?> get props => [invoices, tripId];
 }
+
+
+// New state for when an invoice has been set to unloaded
+class InvoiceUnloadedState extends InvoiceState {
+  final InvoiceEntity invoice;
+  
+  const InvoiceUnloadedState(this.invoice);
+  
+  @override
+  List<Object?> get props => [invoice];
+}

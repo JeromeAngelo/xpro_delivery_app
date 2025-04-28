@@ -6,6 +6,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicl
 import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/presentation/bloc/vehicle_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
+import 'package:x_pro_delivery_app/src/delivery_team/presentation/widget/empty_screen_message.dart';
 
 class ViewVehicleScreen extends StatefulWidget {
   const ViewVehicleScreen({super.key});
@@ -29,7 +30,8 @@ class _ViewVehicleScreenState extends State<ViewVehicleScreen> {
       final tripState = context.read<TripBloc>().state;
       if (tripState is TripLoaded && tripState.trip.id != null) {
         debugPrint(
-            '📱 Loading local vehicle data for trip: ${tripState.trip.id}');
+          '📱 Loading local vehicle data for trip: ${tripState.trip.id}',
+        );
         context.read<VehicleBloc>()
           ..add(LoadLocalVehicleByTripIdEvent(tripState.trip.id!))
           ..add(LoadVehicleByTripIdEvent(tripState.trip.id!));
@@ -42,23 +44,21 @@ class _ViewVehicleScreenState extends State<ViewVehicleScreen> {
     final tripState = context.read<TripBloc>().state;
     if (tripState is TripLoaded && tripState.trip.id != null) {
       context.read<VehicleBloc>().add(
-            LoadVehicleByTripIdEvent(tripState.trip.id!),
-          );
+        LoadVehicleByTripIdEvent(tripState.trip.id!),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vehicle Details'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Vehicle Details'), centerTitle: true),
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: BlocBuilder<VehicleBloc, VehicleState>(
-          buildWhen: (previous, current) =>
-              current is VehicleByTripLoaded || _cachedState == null,
+          buildWhen:
+              (previous, current) =>
+                  current is VehicleByTripLoaded || _cachedState == null,
           builder: (context, state) {
             if (state is VehicleByTripLoaded) {
               _cachedState = state;
@@ -70,7 +70,11 @@ class _ViewVehicleScreenState extends State<ViewVehicleScreen> {
               return _buildVehicleDetails(cachedState.vehicle);
             }
 
-            return const Center(child: CircularProgressIndicator());
+            if (cachedState is VehicleLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return EmptyScreenMessage(message: "No Vehicles Available");
           },
         ),
       ),
@@ -115,9 +119,9 @@ class _VehicleHeaderCard extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               vehicle.vehicleName ?? 'Unnamed Vehicle',
-              style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.bold),
             ),
             Text(
               vehicle.vehiclePlateNumber ?? 'No Plate Number',
@@ -146,9 +150,9 @@ class _VehicleDetailsCard extends StatelessWidget {
           children: [
             Text(
               'Vehicle Information',
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildDetailRow(
@@ -180,25 +184,18 @@ class _VehicleDetailsCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 24,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text(label, style: Theme.of(context).textTheme.bodySmall),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -225,9 +222,9 @@ class _VehicleTimelineCard extends StatelessWidget {
           children: [
             Text(
               'Timeline',
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildTimelineItem(
@@ -259,19 +256,13 @@ class _VehicleTimelineCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          Icon(icon, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text(label, style: Theme.of(context).textTheme.titleMedium),
                 Text(
                   _formatDate(date),
                   style: Theme.of(context).textTheme.bodyMedium,

@@ -6,6 +6,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/person
 import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/presentation/bloc/personel_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/enums/user_role.dart';
+import 'package:x_pro_delivery_app/src/delivery_team/presentation/widget/empty_screen_message.dart';
 
 import '../../../../core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
 
@@ -31,7 +32,8 @@ class _ViewPersonelScreenState extends State<ViewPersonelScreen> {
       final tripState = context.read<TripBloc>().state;
       if (tripState is TripLoaded && tripState.trip.id != null) {
         debugPrint(
-            '📱 Loading local personnel data for trip: ${tripState.trip.id}');
+          '📱 Loading local personnel data for trip: ${tripState.trip.id}',
+        );
         context.read<PersonelBloc>()
           ..add(LoadLocalPersonelsByTripIdEvent(tripState.trip.id!))
           ..add(LoadPersonelsByTripIdEvent(tripState.trip.id!));
@@ -44,8 +46,8 @@ class _ViewPersonelScreenState extends State<ViewPersonelScreen> {
     final tripState = context.read<TripBloc>().state;
     if (tripState is TripLoaded && tripState.trip.id != null) {
       context.read<PersonelBloc>().add(
-            LoadPersonelsByTripIdEvent(tripState.trip.id!),
-          );
+        LoadPersonelsByTripIdEvent(tripState.trip.id!),
+      );
     }
   }
 
@@ -59,8 +61,9 @@ class _ViewPersonelScreenState extends State<ViewPersonelScreen> {
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: BlocBuilder<PersonelBloc, PersonelState>(
-          buildWhen: (previous, current) =>
-              current is PersonelsByTripLoaded || _cachedState == null,
+          buildWhen:
+              (previous, current) =>
+                  current is PersonelsByTripLoaded || _cachedState == null,
           builder: (context, state) {
             if (state is PersonelsByTripLoaded) {
               _cachedState = state;
@@ -72,7 +75,11 @@ class _ViewPersonelScreenState extends State<ViewPersonelScreen> {
               return _buildPersonelList(cachedState.personel);
             }
 
-            return const Center(child: CircularProgressIndicator());
+            if (cachedState is PersonelLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return EmptyScreenMessage(message: "No Personnels Available");
           },
         ),
       ),
@@ -145,11 +152,12 @@ class _PersonelCard extends StatelessWidget {
                         ),
                         child: Text(
                           personel.role?.name.toUpperCase() ?? 'UNKNOWN',
-                          style:
-                              Theme.of(context).textTheme.labelSmall!.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelSmall!.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -180,16 +188,9 @@ class _PersonelCard extends StatelessWidget {
   Widget _buildInfoRow(BuildContext context, IconData icon, String text) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 8),
-        Text(
-          text,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        Text(text, style: Theme.of(context).textTheme.bodyMedium),
       ],
     );
   }

@@ -21,7 +21,7 @@ class EndTripButton extends StatelessWidget {
         return BlocBuilder<EndTripChecklistBloc, EndTripChecklistState>(
           builder: (context, state) {
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
               child: RoundedButton(
                 label: 'End Trip',
                 onPressed: () {

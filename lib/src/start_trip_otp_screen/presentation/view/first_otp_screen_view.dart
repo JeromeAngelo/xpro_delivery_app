@@ -154,15 +154,7 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                 if (tripId != null) {
                   context.push('/delivery-and-timeline');
                 }
-              } 
-              // else if (state is OtpError) {
-              //   CoreUtils.showSnackBar(context, state.message);
-              // }
-            },
-          ),
-          BlocListener<TripBloc, TripState>(
-            listener: (context, state) {
-              if (state is TripError) {
+              } else if (state is OtpError) {
                 CoreUtils.showSnackBar(context, state.message);
               }
             },

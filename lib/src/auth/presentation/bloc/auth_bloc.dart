@@ -23,14 +23,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required GetUserTrip getUserTrip,
     required SyncUserData syncUserData,
     required SyncUserTripData syncUserTripData,
-  })  : _signIn = signIn,
-        _refreshUserData = refreshUserData,
-        _getUserById = getUserById,
-        _loadUser = loadUser,
-        _getUserTrip = getUserTrip,
-        _syncUserData = syncUserData,
-        _syncUserTripData = syncUserTripData,
-        super(const AuthInitial()) {
+  }) : _signIn = signIn,
+       _refreshUserData = refreshUserData,
+       _getUserById = getUserById,
+       _loadUser = loadUser,
+       _getUserTrip = getUserTrip,
+       _syncUserData = syncUserData,
+       _syncUserTripData = syncUserTripData,
+       super(const AuthInitial()) {
     on<SignInEvent>(_signInHandler);
     on<RefreshUserDataEvent>(_refreshUserDataHandler);
     on<LoadUserByIdEvent>(_onLoadUserById);
@@ -52,37 +52,68 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SyncUserData _syncUserData;
   final SyncUserTripData _syncUserTripData;
 
+  // Add this method to the AuthBloc class:
+  Future<void> _onRefreshUser(
+    RefreshUserEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
 
-// Add this method to the AuthBloc class:
-Future<void> _onRefreshUser(
-  RefreshUserEvent event,
-  Emitter<AuthState> emit,
-) async {
-  emit(AuthLoading());
-  
-  // Get current user ID
-  final prefs = await SharedPreferences.getInstance();
-  final storedData = prefs.getString('user_data');
-  
-  if (storedData != null) {
-    final userData = jsonDecode(storedData);
-    final userId = userData['id'];
-    
-    if (userId != null) {
-      // Reload user data from remote
-      final result = await _getUserById(userId);
-      
-      result.fold(
-        (failure) => emit(AuthError(failure.message)),
-        (user) => emit(UserByIdLoaded(user)),
-      );
+    // Get current user ID
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString('user_data');
+
+    if (storedData != null) {
+      try {
+        final userData = jsonDecode(storedData);
+        final userId = userData['id'];
+
+        if (userId != null) {
+          debugPrint('🔄 Refreshing user data for ID: $userId');
+
+          // First load from local to ensure we have some data to display
+          final localResult = await _getUserById.loadFromLocal(userId);
+
+          await localResult.fold(
+            (failure) async {
+              debugPrint(
+                '⚠️ Failed to load user from local: ${failure.message}',
+              );
+            },
+            (user) async {
+              // Emit the local user data first for immediate UI update
+              emit(UserByIdLoaded(user));
+
+              // Then try to get fresh data from remote
+              final remoteResult = await _getUserById(userId);
+
+              remoteResult.fold(
+                (failure) {
+                  debugPrint(
+                    '⚠️ Failed to refresh user from remote: ${failure.message}',
+                  );
+                  // We already emitted the local data, so no need to emit an error
+                },
+                (freshUser) {
+                  debugPrint('✅ Successfully refreshed user data from remote');
+                  emit(UserByIdLoaded(freshUser));
+
+                  // Also refresh the user's trip data
+                  add(GetUserTripEvent(userId));
+                },
+              );
+            },
+          );
+        } else {
+          emit(const AuthError('User ID not found in stored data'));
+        }
+      } catch (e) {
+        emit(AuthError('Error parsing stored user data: $e'));
+      }
     } else {
-      emit(const AuthError('User ID not found'));
+      emit(const AuthError('No stored user data found'));
     }
-  } else {
-    emit(const AuthError('No stored user data'));
   }
-}
 
   Future<void> _onLoadUserById(
     LoadUserByIdEvent event,

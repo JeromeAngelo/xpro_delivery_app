@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -19,6 +17,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/presentation/bloc/return_bloc.dart';
@@ -85,9 +84,15 @@ Future<bool> checkUserHasTrip(BuildContext context) async {
         debugPrint('✅ User data synced to local storage');
         authBloc.add(const LoadLocalUserDataEvent());
       }
-      else if (state is UserTripLoaded && state.trip.id != null) {
-        debugPrint('✅ Active trip found: ${state.trip.id}');
-        completer.complete(true); // Return trip ID instead of just true
+      else if (state is UserTripLoaded) {
+        // Check if the trip is actually valid
+        if (state.trip.id != null && state.trip.isAccepted == true && state.trip.isEndTrip != true) {
+          debugPrint('✅ Active trip found: ${state.trip.id}');
+          completer.complete(true);
+        } else {
+          debugPrint('⚠️ Found trip is not active or valid');
+          completer.complete(false);
+        }
         subscription?.cancel();
       }
       else if (state is AuthError) {
@@ -101,13 +106,34 @@ Future<bool> checkUserHasTrip(BuildContext context) async {
     return completer.future;
   }
 
+  // Parse stored user data
   String? userId;
+  String? tripId;
+ bool hasValidTrip = false;
+  
   try {
     final Map<String, dynamic> userData = Map<String, dynamic>.from(jsonDecode(storedData));
     userId = userData['id']?.toString();
+    
+    // Check if there's a trip in the user data and if it's valid
+    if (userData.containsKey('trip') && userData['trip'] != null) {
+      final tripData = userData['trip'];
+      if (tripData is Map && tripData.containsKey('id')) {
+        tripId = tripData['id']?.toString();
+        // Don't assume the trip is valid just because it exists in preferences
+        hasValidTrip; // We'll verify this with the server
+      }
+    }
+    
     debugPrint('👤 Found user ID: $userId');
+    debugPrint('🎫 Found trip ID in preferences: $tripId');
   } catch (e) {
-    debugPrint('⚠️ Failed to parse user data');
+    debugPrint('⚠️ Failed to parse user data: $e');
+    return false;
+  }
+
+  if (userId == null) {
+    debugPrint('⚠️ No valid user ID found in stored data');
     return false;
   }
 
@@ -118,20 +144,37 @@ Future<bool> checkUserHasTrip(BuildContext context) async {
     debugPrint('🔄 Auth State: $state');
     
     if (state is LocalUserDataLoaded) {
-      debugPrint('✅ User data loaded in local storage');
+      debugPrint('✅ User data loaded from local storage');
+      // Always verify with remote data
       authBloc.add(const LoadRemoteUserDataEvent());
     } 
     else if (state is RemoteUserDataLoaded) {
       debugPrint('✅ Remote user data synced');
-      authBloc.add(LoadLocalUserTripEvent(userId!));
+      // Get the latest trip status from the server
+      authBloc.add(GetUserTripEvent(userId!));
     }
-    else if (state is UserTripLoaded && state.trip.id != null) {
-      debugPrint('✅ Active trip found: ${state.trip.id}');
-      completer.complete(true); // Return trip ID instead of just true
+    else if (state is UserTripLoaded) {
+      // Verify the trip is actually valid and active
+      if (state.trip.id != null && state.trip.isAccepted == true && state.trip.isEndTrip != true) {
+        debugPrint('✅ Active trip confirmed from server: ${state.trip.id}');
+        completer.complete(true);
+      } else {
+        debugPrint('⚠️ Server indicates no active trip for this user');
+        // If the server says there's no active trip but we had one in preferences,
+        // we should clear that invalid trip data
+        if (tripId != null) {
+          _clearInvalidTripData();
+        }
+        completer.complete(false);
+      }
       subscription?.cancel();
     } 
     else if (state is AuthError) {
       debugPrint('❌ No active trip found: ${state.message}');
+      // If we get an error but had a trip in preferences, clear it as it's likely invalid
+      if (tripId != null) {
+        _clearInvalidTripData();
+      }
       completer.complete(false);
       subscription?.cancel();
     }
@@ -143,6 +186,35 @@ Future<bool> checkUserHasTrip(BuildContext context) async {
 
   return completer.future;
 }
+
+// Helper method to clear invalid trip data
+Future<void> _clearInvalidTripData() async {
+  debugPrint('🧹 Clearing invalid trip data from preferences');
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString('user_data');
+    
+    if (storedData != null) {
+      final userData = jsonDecode(storedData);
+      userData['tripNumberId'] = null;
+      userData['trip'] = null;
+      
+      await prefs.setString('user_data', jsonEncode(userData));
+      
+      // Also remove any other trip-related keys
+      await prefs.remove('user_trip_data');
+      await prefs.remove('trip_cache');
+      await prefs.remove('active_trip');
+      await prefs.remove('last_trip_id');
+      await prefs.remove('last_trip_number');
+      
+      debugPrint('✅ Successfully cleared invalid trip data from preferences');
+    }
+  } catch (e) {
+    debugPrint('❌ Error clearing invalid trip data: $e');
+  }
+}
+
 
 // Update the syncAllData method to return a Future<bool> indicating completion
 Future<bool> syncAllData(BuildContext context) async {
@@ -236,19 +308,69 @@ Future<bool> syncAllData(BuildContext context) async {
         customerBloc.add(GetCustomerEvent(tripId));
         _updateProgress(0.30);
 
-        // Invoice and Products (40%)
-        final invoiceBloc = context.read<InvoiceBloc>();
-        final productsBloc = context.read<ProductsBloc>();
-        
-        invoiceBloc
-          ..add(const GetInvoiceEvent())
-          ..add(GetInvoicesByTripEvent(tripId))
-          ..add(LoadLocalInvoicesByTripEvent(tripId));
-        _updateProgress(0.40);
+      // Invoice and Products (40-60%)
+final invoiceBloc = context.read<InvoiceBloc>();
+final productsBloc = context.read<ProductsBloc>();
 
-        // Products (50%)
-        productsBloc.add(const GetProductsEvent());
-        _updateProgress(0.50);
+// First, load all invoices for the trip
+invoiceBloc
+  ..add(GetInvoicesByTripEvent(tripId))
+  ..add(LoadLocalInvoicesByTripEvent(tripId));
+_updateProgress(0.40);
+
+// Wait for invoices to load
+bool invoicesLoaded = false;
+List<String> invoiceIds = [];
+StreamSubscription? invoiceSubscription;
+
+invoiceSubscription = invoiceBloc.stream.listen((state) {
+  if (state is TripInvoicesLoaded) {
+    debugPrint('✅ Loaded ${state.invoices.length} invoices for trip: $tripId');
+    
+    // Extract invoice IDs
+    invoiceIds = state.invoices
+        .where((invoice) => invoice.id != null && invoice.id!.isNotEmpty)
+        .map((invoice) => invoice.id!)
+        .toList();
+    
+    invoicesLoaded = true;
+    invoiceSubscription?.cancel();
+    
+    // Now load products for each invoice
+    debugPrint('🔄 Loading products for ${invoiceIds.length} invoices');
+    
+    // Track progress for products loading
+    double baseProgress = 0.45;
+    double progressStep = invoiceIds.isEmpty ? 0.15 : 0.15 / invoiceIds.length;
+    
+    for (int i = 0; i < invoiceIds.length; i++) {
+      final invoiceId = invoiceIds[i];
+      debugPrint('🔄 Loading products for invoice: $invoiceId (${i+1}/${invoiceIds.length})');
+      
+      // Load products for this invoice
+      productsBloc.add(GetProductsByInvoiceIdEvent(invoiceId));
+      productsBloc.add(LoadLocalProductsByInvoiceIdEvent(invoiceId));
+      
+      // Update progress for each invoice processed
+      _updateProgress(baseProgress + (i + 1) * progressStep);
+    }
+    
+    // If no invoices, still update progress
+    if (invoiceIds.isEmpty) {
+      _updateProgress(0.60);
+    }
+  }
+});
+
+// Add a timeout to ensure we don't get stuck waiting for invoices
+Future.delayed(const Duration(seconds: 5), () {
+  if (!invoicesLoaded) {
+    debugPrint('⚠️ Timeout waiting for invoices to load');
+    invoiceSubscription?.cancel();
+    _updateProgress(0.60); // Move to next step anyway
+  }
+});
+
 
         // Delivery Updates (60%)
         final deliveryUpdateBloc = context.read<DeliveryUpdateBloc>();

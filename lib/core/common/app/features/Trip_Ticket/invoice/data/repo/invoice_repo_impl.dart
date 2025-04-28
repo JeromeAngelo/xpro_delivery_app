@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/datasource/remote_data_source/invoice_remote_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/datasource/local_datasource/invoice_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/entity/invoice_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/repo/invoice_repo.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
@@ -174,5 +175,38 @@ ResultFuture<List<InvoiceEntity>> setAllInvoicesCompleted(String tripId) async {
     return Left(ServerFailure(message: e.toString(), statusCode: '500'));
   }
 }
+
+@override
+ResultFuture<InvoiceEntity> setInvoiceUnloaded(String invoiceId) async {
+  try {
+    debugPrint('🔄 REPO: Setting invoice $invoiceId to unloaded status');
+    
+    // First try to update invoice in remote database
+    InvoiceModel updatedInvoice;
+    try {
+      updatedInvoice = await _remoteDataSource.setInvoiceUnloaded(invoiceId);
+      debugPrint('✅ REPO: Successfully updated invoice in remote database');
+      
+      // If remote update is successful, also update local database to keep in sync
+      await _localDataSource.updateInvoice(updatedInvoice);
+      debugPrint('✅ REPO: Synced remote changes to local database');
+    } on ServerException catch (e) {
+      debugPrint('⚠️ REPO: Remote update failed: ${e.message}. Falling back to local update.');
+      
+      // If remote update fails, try to update local database only
+      updatedInvoice = await _localDataSource.setInvoiceUnloaded(invoiceId);
+      debugPrint('✅ REPO: Updated invoice in local database only');
+    }
+    
+    return Right(updatedInvoice);
+  } on CacheException catch (e) {
+    debugPrint('❌ REPO: Cache error setting invoice to unloaded: ${e.message}');
+    return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
+  } catch (e) {
+    debugPrint('❌ REPO: Unexpected error setting invoice to unloaded: $e');
+    return Left(ServerFailure(message: e.toString(), statusCode: '500'));
+  }
+}
+
 
 }

@@ -104,72 +104,73 @@ class _TripUpdateBottomSheetState extends State<TripUpdateBottomSheet> {
         border: Border.all(color: Theme.of(context).colorScheme.outline),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: _images.isEmpty
-          ? InkWell(
-              onTap: _pickImages,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate_outlined,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add Photo',
-                    style: TextStyle(
+      child:
+          _images.isEmpty
+              ? InkWell(
+                onTap: _pickImages,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_photo_alternate_outlined,
+                      size: 48,
                       color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Add Photo',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : Stack(
+                children: [
+                  ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _images.length,
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(_images[index].path),
+                                width: 180,
+                                height: 180,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: IconButton(
+                              icon: const Icon(Icons.remove_circle),
+                              color: Colors.red,
+                              onPressed:
+                                  () => setState(() => _images.removeAt(index)),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: FloatingActionButton(
+                      mini: true,
+                      onPressed: _pickImages,
+                      child: const Icon(Icons.add_a_photo),
                     ),
                   ),
                 ],
               ),
-            )
-          : Stack(
-              children: [
-                ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _images.length,
-                  itemBuilder: (context, index) {
-                    return Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              File(_images[index].path),
-                              width: 180,
-                              height: 180,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: IconButton(
-                            icon: const Icon(Icons.remove_circle),
-                            color: Colors.red,
-                            onPressed: () =>
-                                setState(() => _images.removeAt(index)),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: FloatingActionButton(
-                    mini: true,
-                    onPressed: _pickImages,
-                    child: const Icon(Icons.add_a_photo),
-                  ),
-                ),
-              ],
-            ),
     );
   }
 
@@ -263,12 +264,13 @@ class _TripUpdateBottomSheetState extends State<TripUpdateBottomSheet> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      items: TripUpdateStatus.values.map((status) {
-                        return DropdownMenuItem(
-                          value: status,
-                          child: Text(_formatStatus(status.name)),
-                        );
-                      }).toList(),
+                      items:
+                          TripUpdateStatus.values.map((status) {
+                            return DropdownMenuItem(
+                              value: status,
+                              child: Text(_formatStatus(status.name)),
+                            );
+                          }).toList(),
                       onChanged: (value) {
                         setState(() => _selectedStatus = value!);
                       },
@@ -290,27 +292,27 @@ class _TripUpdateBottomSheetState extends State<TripUpdateBottomSheet> {
                     Text(
                       'Current Location',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     _buildLocationMap(),
                     const SizedBox(height: 24),
                     BlocConsumer<TripUpdatesBloc, TripUpdatesState>(
                       listener: (context, state) {
-                          if (state is TripUpdateCreated) {
-      // First notify the parent about successful save
-      widget.onSaved();
-      
-      // Then use Future.microtask to handle navigation after the current frame
-      Future.microtask(() {
-        if (mounted) {
-          // Close the bottom sheet properly
-          Navigator.of(context, rootNavigator: true).pop();
-        }
-      });
-    }
-  },
+                        if (state is TripUpdateCreated) {
+                          // First notify the parent about successful save
+                          widget.onSaved();
+
+                          // Then use Future.microtask to handle navigation after the current frame
+                          Future.microtask(() {
+                            if (mounted) {
+                              // Close the bottom sheet properly
+                              Navigator.of(context, rootNavigator: true).pop();
+                            }
+                          });
+                        }
+                      },
                       builder: (context, state) {
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -321,29 +323,31 @@ class _TripUpdateBottomSheetState extends State<TripUpdateBottomSheet> {
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
-                              onPressed: state is TripUpdatesLoading
-                                  ? null
-                                  : () async {
-                                      if (_isFormValid()) {
-                                        context.read<TripUpdatesBloc>().add(
-                                              CreateTripUpdateEvent(
-                                                tripId: widget.tripId,
-                                                description:
-                                                    _descriptionController.text,
-                                                image: _images.first.path,
-                                                latitude: _latitude!,
-                                                longitude: _longitude!,
-                                                status: _selectedStatus,
-                                              ),
-                                            );
-                                      }
-                                    },
+                              onPressed:
+                                  state is TripUpdatesLoading
+                                      ? null
+                                      : () async {
+                                        if (_isFormValid()) {
+                                          context.read<TripUpdatesBloc>().add(
+                                            CreateTripUpdateEvent(
+                                              tripId: widget.tripId,
+                                              description:
+                                                  _descriptionController.text,
+                                              image: _images.first.path,
+                                              latitude: _latitude!,
+                                              longitude: _longitude!,
+                                              status: _selectedStatus,
+                                            ),
+                                          );
+                                        }
+                                      },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _isFormValid()
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .surfaceContainerHighest,
+                                backgroundColor:
+                                    _isFormValid()
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -358,7 +362,8 @@ class _TripUpdateBottomSheetState extends State<TripUpdateBottomSheet> {
                                           strokeWidth: 2,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                                  Colors.white),
+                                                Colors.white,
+                                              ),
                                         ),
                                       ),
                                     ),
@@ -366,7 +371,11 @@ class _TripUpdateBottomSheetState extends State<TripUpdateBottomSheet> {
                                     state is TripUpdatesLoading
                                         ? 'Processing...'
                                         : 'Save',
-                                    style: const TextStyle(fontSize: 16),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color:
+                                          Theme.of(context).colorScheme.surface,
+                                    ),
                                   ),
                                 ],
                               ),

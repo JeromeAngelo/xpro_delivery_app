@@ -26,7 +26,7 @@ class DeliveryListScreen extends StatefulWidget {
   State<DeliveryListScreen> createState() => _DeliveryListScreenState();
 }
 
-class _DeliveryListScreenState extends State<DeliveryListScreen> 
+class _DeliveryListScreenState extends State<DeliveryListScreen>
     with AutomaticKeepAliveClientMixin {
   CustomerState? _cachedState;
   DeliveryUpdateState? _cachedDeliveryState;
@@ -150,34 +150,37 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
         ),
       ],
       child: Scaffold(
-        body: _cachedState is CustomerLoaded
-            ? _buildCustomerList((_cachedState as CustomerLoaded).customer)
-            : _buildLoadingState(),
+        body:
+            _cachedState is CustomerLoaded
+                ? _buildCustomerList((_cachedState as CustomerLoaded).customer)
+                : _buildLoadingState(),
       ),
     );
   }
 
   Widget _buildCustomerList(List<CustomerEntity> customers) {
     debugPrint('📋 Building customer list with ${customers.length} customers');
-    
+
     // Determine if the End Trip button should be visible
     bool showEndTripButton = false;
-    
+
     if (_cachedDeliveryState is EndDeliveryStatusChecked) {
       final stats = (_cachedDeliveryState as EndDeliveryStatusChecked).stats;
       final total = stats['total'] as int? ?? 0;
       final completed = stats['completed'] as int? ?? 0;
       final pending = stats['pending'] as int? ?? 0;
-      
-      debugPrint('📊 Delivery Status: Total=$total, Completed=$completed, Pending=$pending');
-      
+
+      debugPrint(
+        '📊 Delivery Status: Total=$total, Completed=$completed, Pending=$pending',
+      );
+
       // Show End Trip button only if all customers have been processed
       // (either completed or marked as undeliverable)
       showEndTripButton = total > 0 && pending == 0;
-      
+
       debugPrint('🔘 End Trip Button visible: $showEndTripButton');
     }
-    
+
     return Column(
       children: [
         Expanded(
@@ -194,25 +197,29 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final customer = customers[index];
-                        debugPrint('🏪 Rendering customer: ${customer.storeName}');
-                        
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 5),
-                          child: DeliveryListTile(
-                            customer: customer,
-                            isFromLocal: true,
-                            onTap: () {
-                              _customerBloc.add(GetCustomerLocationEvent(customer.id!));
-                              context.go('/delivery-and-invoice/${customer.id}', extra: customer);
-                            },
-                          ),
-                        );
-                      },
-                      childCount: customers.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final customer = customers[index];
+                      debugPrint(
+                        '🏪 Rendering customer: ${customer.storeName}',
+                      );
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 5, top: 5),
+                        child: DeliveryListTile(
+                          customer: customer,
+                          isFromLocal: true,
+                          onTap: () {
+                            _customerBloc.add(
+                              GetCustomerLocationEvent(customer.id!),
+                            );
+                            context.go(
+                              '/delivery-and-invoice/${customer.id}',
+                              extra: customer,
+                            );
+                          },
+                        ),
+                      );
+                    }, childCount: customers.length),
                   ),
                 ),
               ],
@@ -243,7 +250,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
     _authSubscription?.cancel();
     _customerSubscription?.cancel();
     _deliverySubscription?.cancel();
-   
+
     super.dispose();
   }
 

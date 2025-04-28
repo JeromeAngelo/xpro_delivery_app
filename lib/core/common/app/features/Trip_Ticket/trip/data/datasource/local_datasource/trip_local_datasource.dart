@@ -14,6 +14,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/model/end_trip_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/data/models/otp_models.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
@@ -91,6 +93,7 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
     debugPrint('✅ Found trip: ${trips.first.tripNumberId}');
     return trips.first;
   }
+
 @override
 Future<(TripModel, String)> acceptTrip(String inputTripId) async {
   debugPrint('🔄 Processing trip acceptance locally');
@@ -231,41 +234,140 @@ Future<(TripModel, String)> acceptTrip(String inputTripId) async {
     }
   }
 
-  @override
-  Future<void> autoSaveTrip(TripModel trip) async {
-    try {
-      debugPrint('🔄 Auto-saving trip data: ${trip.tripNumberId}');
+@override
+Future<void> autoSaveTrip(TripModel trip) async {
+  try {
+    debugPrint('🔄 Auto-saving trip data: ${trip.tripNumberId}');
 
-      _tripBox.removeAll();
+    // Clear existing trips
+    _tripBox.removeAll();
 
-      final tripToSave = TripModel(
-          id: trip.id,
-          collectionId: trip.collectionId,
-          collectionName: trip.collectionName,
-          tripNumberId: trip.tripNumberId,
-          customersList: trip.customers.map((c) => c).toList(),
-          personelsList: trip.personels.map((p) => p).toList(),
-          checklistItems: trip.checklist.map((c) => c).toList(),
-          vehicleList: trip.vehicle.map((v) => v).toList(),
-          created: trip.created,
-          updated: trip.updated,
-          isAccepted: trip.isAccepted,
-          objectBoxId: 1);
-
-      _tripBox.put(tripToSave);
-      debugPrint('✅ Trip auto-saved with relationships');
-
-      // Verify relationships
-      debugPrint('📊 Relationship counts:');
-      debugPrint('Customers: ${tripToSave.customers.length}');
-      debugPrint('Personnel: ${tripToSave.personels.length}');
-      debugPrint('Vehicles: ${tripToSave.vehicle.length}');
-      debugPrint('Checklist items: ${tripToSave.checklist.length}');
-    } catch (e) {
-      debugPrint('❌ Auto-save failed: $e');
-      throw CacheException(message: e.toString());
+    // First, save related entities if they exist
+    if (trip.deliveryTeam.target != null) {
+      final deliveryTeamBox = _store.box<DeliveryTeamModel>();
+      final deliveryTeam = trip.deliveryTeam.target!;
+      deliveryTeam.tripId = trip.id;
+      deliveryTeamBox.put(deliveryTeam);
+      debugPrint('✅ Saved delivery team: ${deliveryTeam.id}');
     }
+
+    if (trip.otp.target != null) {
+      final otpBox = _store.box<OtpModel>();
+      final otp = trip.otp.target!;
+      otp.tripId = trip.id;
+      otpBox.put(otp);
+      debugPrint('✅ Saved OTP: ${otp.id}');
+    }
+
+    if (trip.endTripOtp.target != null) {
+      final endTripOtpBox = _store.box<EndTripOtpModel>();
+      final endTripOtp = trip.endTripOtp.target!;
+      endTripOtp.tripId = trip.id;
+      endTripOtpBox.put(endTripOtp);
+      debugPrint('✅ Saved End Trip OTP: ${endTripOtp.id}');
+    }
+
+    // Save personnel
+    if (trip.personels.isNotEmpty) {
+      final personnelBox = _store.box<PersonelModel>();
+      for (final personnel in trip.personels) {
+        personnel.tripId = trip.id;
+        personnelBox.put(personnel);
+      }
+      debugPrint('✅ Saved ${trip.personels.length} personnel');
+    }
+
+    // Save vehicles
+    if (trip.vehicle.isNotEmpty) {
+      final vehicleBox = _store.box<VehicleModel>();
+      for (final vehicle in trip.vehicle) {
+        vehicle.tripId = trip.id;
+        vehicleBox.put(vehicle);
+      }
+      debugPrint('✅ Saved ${trip.vehicle.length} vehicles');
+    }
+
+    // Save checklist items
+    if (trip.checklist.isNotEmpty) {
+      final checklistBox = _store.box<ChecklistModel>();
+      for (final item in trip.checklist) {
+        item.tripId = trip.id;
+        checklistBox.put(item);
+      }
+      debugPrint('✅ Saved ${trip.checklist.length} checklist items');
+    }
+
+    // Save customers
+    if (trip.customers.isNotEmpty) {
+      final customerBox = _store.box<CustomerModel>();
+      for (final customer in trip.customers) {
+        customer.tripId = trip.id;
+        customerBox.put(customer);
+      }
+      debugPrint('✅ Saved ${trip.customers.length} customers');
+    }
+
+    // Create a complete trip model with all fields
+    final tripToSave = TripModel(
+      id: trip.id,
+   //pocketbaseId: trip.id, // Important for queries by ID
+      collectionId: trip.collectionId,
+      collectionName: trip.collectionName,
+      tripNumberId: trip.tripNumberId,
+      totalTripDistance: trip.totalTripDistance,
+      qrCode: trip.qrCode,
+      created: trip.created,
+      updated: trip.updated,
+      isAccepted: true,
+      timeAccepted: trip.timeAccepted ?? DateTime.now(),
+      isEndTrip: trip.isEndTrip,
+      timeEndTrip: trip.timeEndTrip,
+      objectBoxId: 1
+    );
+
+    // Save the trip
+    final tripId = _tripBox.put(tripToSave);
+    debugPrint('✅ Trip saved with ID: $tripId');
+
+    // Update the cached trip
+    _cachedTrip = tripToSave;
+
+    // Verify the saved trip
+    final savedTrip = _tripBox.get(tripId);
+    if (savedTrip != null) {
+      debugPrint('✅ Trip verification successful');
+      debugPrint('   🎫 Trip Number: ${savedTrip.tripNumberId}');
+      debugPrint('   🔢 Trip ID: ${savedTrip.id}');
+      debugPrint('   ✓ Is Accepted: ${savedTrip.isAccepted}');
+    } else {
+      debugPrint('❌ Trip verification failed - trip not found after save');
+    }
+
+    // Update user data in SharedPreferences to include trip
+    final prefs = await SharedPreferences.getInstance();
+    final storedUserData = prefs.getString('user_data');
+    
+    if (storedUserData != null) {
+      try {
+        final userData = jsonDecode(storedUserData);
+        userData['tripNumberId'] = trip.tripNumberId;
+        userData['trip'] = {
+          'id': trip.id,
+          'tripNumberId': trip.tripNumberId
+        };
+        
+        await prefs.setString('user_data', jsonEncode(userData));
+        debugPrint('✅ Updated user data in SharedPreferences with trip info');
+      } catch (e) {
+        debugPrint('❌ Failed to update user data in SharedPreferences: $e');
+      }
+    }
+  } catch (e) {
+    debugPrint('❌ Auto-save failed: $e');
+    throw CacheException(message: e.toString());
   }
+}
+
 
   @override
   Future<String?> getTrackingId() async {
@@ -364,7 +466,6 @@ Future<(TripModel, String)> acceptTrip(String inputTripId) async {
       throw CacheException(message: e.toString());
     }
   }
-
 @override
 Future<void> endTrip() async {
   try {
@@ -375,34 +476,48 @@ Future<void> endTrip() async {
     final storedUserData = prefs.getString('user_data');
     
     if (storedUserData != null) {
-      // Update user's trip assignment in ObjectBox
-      final userData = jsonDecode(storedUserData);
-      final userBox = _store.box<LocalUsersModel>();
-      
-      // Find the current user
-      final users = userBox.getAll();
-      for (final user in users) {
-        // Clear trip assignment
-        user.trip.target = null;
-        user.tripId = null;
-        userBox.put(user);
-        debugPrint('✅ Cleared trip assignment for user: ${user.id}');
+      try {
+        // Parse the stored user data
+        final userData = jsonDecode(storedUserData);
+        
+        // Update user's trip assignment in ObjectBox
+        final userBox = _store.box<LocalUsersModel>();
+        
+        // Find the current user
+        final users = userBox.getAll();
+        for (final user in users) {
+          // Clear trip assignment
+          user.trip.target = null;
+          user.tripId = null;
+          userBox.put(user);
+          debugPrint('✅ Cleared trip assignment for user: ${user.id}');
+        }
+        
+        // Create updated user data without trip information
+        final updatedUserData = {
+          'id': userData['id'],
+          'collectionId': userData['collectionId'],
+          'collectionName': userData['collectionName'],
+          'email': userData['email'],
+          'name': userData['name'],
+          'tripNumberId': null,  // Explicitly set to null
+          'trip': null,          // Explicitly set to null
+          'tokenKey': userData['tokenKey']
+        };
+        
+        // Save the updated user data to SharedPreferences
+        await prefs.setString('user_data', jsonEncode(updatedUserData));
+        debugPrint('✅ Updated user data in SharedPreferences - removed trip assignment');
+        
+        // Also remove any trip-related keys completely
+        await prefs.remove('trip');
+        await prefs.remove('tripNumberId');
+        await prefs.remove('tripId');
+        debugPrint('✅ Removed all trip-related keys from SharedPreferences');
+      } catch (e) {
+        debugPrint('⚠️ Error updating user data: $e');
+        // Continue with cleanup even if user data update fails
       }
-      
-      // Update user data in SharedPreferences without trip
-      final updatedUserData = {
-        'id': userData['id'],
-        'collectionId': userData['collectionId'],
-        'collectionName': userData['collectionName'],
-        'email': userData['email'],
-        'name': userData['name'],
-        'tripNumberId': null,
-        'trip': null,
-        'tokenKey': userData['tokenKey']
-      };
-      
-      await prefs.setString('user_data', jsonEncode(updatedUserData));
-      debugPrint('✅ Updated user data in SharedPreferences - removed trip assignment');
     }
 
     // Clear all ObjectBox data
@@ -421,6 +536,9 @@ Future<void> endTrip() async {
     _store.box<EndTripChecklistModel>().removeAll();
     _store.box<UndeliverableCustomerModel>().removeAll();
     _store.box<TripUpdateModel>().removeAll();
+    _store.box<OtpModel>().removeAll();      // Also clear OTP data
+    _store.box<EndTripOtpModel>().removeAll(); // Also clear EndTripOtp data
+    debugPrint('✅ Cleared all ObjectBox data');
 
     // Clear cached states
     _cachedTrip = null;
@@ -431,6 +549,22 @@ Future<void> endTrip() async {
     await prefs.remove('trip_cache');
     await prefs.remove('delivery_status_cache');
     await prefs.remove('customer_cache');
+    await prefs.remove('active_trip');
+    await prefs.remove('last_trip_id');
+    await prefs.remove('last_trip_number');
+    
+    // Verify the cleanup was successful
+    final tripCount = _store.box<TripModel>().count();
+    final userDataAfterCleanup = prefs.getString('user_data');
+    if (userDataAfterCleanup != null) {
+      final parsedData = jsonDecode(userDataAfterCleanup);
+      debugPrint('✅ Verification - User data after cleanup:');
+      debugPrint('   👤 Name: ${parsedData['name']}');
+      debugPrint('   📧 Email: ${parsedData['email']}');
+      debugPrint('   🎫 Trip Number: ${parsedData['tripNumberId']}');
+      debugPrint('   🎫 Trip: ${parsedData['trip']}');
+    }
+    debugPrint('✅ Verification - Trip count after cleanup: $tripCount');
 
     debugPrint('✅ All data and caches cleared successfully');
   } catch (e) {
@@ -438,6 +572,7 @@ Future<void> endTrip() async {
     throw CacheException(message: e.toString());
   }
 }
+
 
 
 }

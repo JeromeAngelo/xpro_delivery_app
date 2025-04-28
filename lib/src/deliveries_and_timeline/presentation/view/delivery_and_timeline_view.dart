@@ -84,9 +84,8 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
     debugPrint('📱 Loading data for trip: $tripId');
 
     // Load customer data
-    _customerBloc
-      ..add(LoadLocalCustomersEvent(tripId))
-      ..add(GetCustomerEvent(tripId));
+    _customerBloc.add(LoadLocalCustomersEvent(tripId));
+    // ..add(GetCustomerEvent(tripId));
 
     // Load timeline updates
     _tripUpdatesBloc

@@ -39,120 +39,144 @@ class DeliveryOrdersPDF {
           pw.MultiPage(
             pageFormat: PdfPageFormat.a4,
             margin: const pw.EdgeInsets.all(32),
-            header: (context) => pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text('Delivery Order Summary', style: headerStyle),
-            ),
-            build: (context) => [
-              // Customer Information
-              pw.Container(
-                padding: const pw.EdgeInsets.all(16),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: themeColor),
-                  borderRadius:
-                      const pw.BorderRadius.all(pw.Radius.circular(8)),
+            header:
+                (context) => pw.Container(
+                  alignment: pw.Alignment.center,
+                  child: pw.Text('Delivery Order Summary', style: headerStyle),
                 ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('Customer Details', style: subHeaderStyle),
-                    pw.SizedBox(height: 8),
-                    pw.Text('Store Name: ${customer.storeName}',
-                        style: contentStyle),
-                    pw.Text('Owner: ${customer.ownerName}',
-                        style: contentStyle),
-                    pw.Text('Address: ${customer.address}',
-                        style: contentStyle),
-                    pw.Text('Contact: ${customer.contactNumber}',
-                        style: contentStyle),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Invoice Details
-              pw.Container(
-                padding: const pw.EdgeInsets.all(16),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: themeColor),
-                  borderRadius:
-                      const pw.BorderRadius.all(pw.Radius.circular(8)),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('Invoice Information', style: subHeaderStyle),
-                    pw.SizedBox(height: 8),
-                    pw.Text('Invoice Number: ${invoice.invoiceNumber}',
-                        style: contentStyle),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Products Table
-              pw.TableHelper.fromTextArray(
-                border: pw.TableBorder.all(color: themeColor),
-                headerStyle: pw.TextStyle(font: boldFont, color: themeColor),
-                headerDecoration:
-                    const pw.BoxDecoration(color: PdfColors.grey300),
-                cellStyle: contentStyle,
-                headers: ['Product', 'Quantity', 'Unit Price', 'Total'],
-                data: invoice.productList
-                    .map((product) => [
-                          product.name,
-                          '${product.case_} cases, ${product.totalAmount} pcs',
-                          'P${product.pricePerCase}/case, P${product.pricePerPc}/pc',
-                          'P${product.totalAmount}',
-                        ])
-                    .toList(),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Total Amount
-              pw.Container(
-                alignment: pw.Alignment.centerRight,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
-                  children: [
-                    pw.Container(
-                      alignment: pw.Alignment.centerRight,
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.end,
-                        children: [
-                          pw.Text(
-                              'Total Amount: P${customer.confirmedTotalPayment?.toStringAsFixed(2) ?? '0.00'}',
-                              style: totalStyle),
-                        ],
+            build:
+                (context) => [
+                  // Customer Information
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(16),
+                    decoration: pw.BoxDecoration(
+                      //   border: pw.Border.all(color: themeColor),
+                      borderRadius: const pw.BorderRadius.all(
+                        pw.Radius.circular(8),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 40),
-
-              // Signatures
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Container(width: 150, child: pw.Divider()),
-                      pw.Text('Customer Signature', style: contentStyle),
-                    ],
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Customer Details', style: subHeaderStyle),
+                        pw.SizedBox(height: 8),
+                        pw.Text(
+                          'Store Name: ${customer.storeName}',
+                          style: contentStyle,
+                        ),
+                        pw.Text(
+                          'Owner: ${customer.ownerName}',
+                          style: contentStyle,
+                        ),
+                        pw.Text(
+                          'Address: ${customer.address}',
+                          style: contentStyle,
+                        ),
+                        pw.Text(
+                          'Contact: ${customer.contactNumber}',
+                          style: contentStyle,
+                        ),
+                      ],
+                    ),
                   ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  pw.SizedBox(height: 20),
+
+                  // Invoice Details
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(16),
+                    decoration: pw.BoxDecoration(
+                      //   border: pw.Border.all(color: themeColor),
+                      borderRadius: const pw.BorderRadius.all(
+                        pw.Radius.circular(8),
+                      ),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Invoice Information', style: subHeaderStyle),
+                        pw.SizedBox(height: 8),
+                        pw.Text(
+                          'Invoice Number: ${invoice.invoiceNumber}',
+                          style: contentStyle,
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 20),
+
+                  // Products Table
+                  pw.TableHelper.fromTextArray(
+                    border: pw.TableBorder.all(color: themeColor),
+                    headerStyle: pw.TextStyle(
+                      font: boldFont,
+                      color: themeColor,
+                    ),
+                    headerDecoration: const pw.BoxDecoration(
+                      color: PdfColors.grey300,
+                    ),
+                    cellStyle: contentStyle,
+                    headers: ['Product', 'Quantity', 'Unit Price', 'Total'],
+                    data:
+                        invoice.productList
+                            .map(
+                              (product) => [
+                                product.name,
+                                '${product.case_} cases, ${product.totalAmount} pcs',
+                                'P${product.pricePerCase}/case, P${product.pricePerPc}/pc',
+                                'P${product.totalAmount}',
+                              ],
+                            )
+                            .toList(),
+                  ),
+                  pw.SizedBox(height: 20),
+
+                  // Total Amount
+                  pw.Container(
+                    alignment: pw.Alignment.centerRight,
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Container(
+                          alignment: pw.Alignment.centerRight,
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.end,
+                            children: [
+                              pw.Text(
+                                'Total Amount: P${customer.totalAmount}',
+                                style: totalStyle,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 40),
+
+                  // Signatures
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Container(width: 150, child: pw.Divider()),
-                      pw.Text('Delivery Personnel Signature',
-                          style: contentStyle),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Container(width: 150, child: pw.Divider()),
+                          pw.Text('Customer Signature', style: contentStyle),
+                        ],
+                      ),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Container(width: 150, child: pw.Divider()),
+                          pw.Text(
+                            'Delivery Personnel Signature',
+                            style: contentStyle,
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ],
-              ),
-            ],
           ),
         );
         debugPrint('✅ Page added for invoice: ${invoice.invoiceNumber}');

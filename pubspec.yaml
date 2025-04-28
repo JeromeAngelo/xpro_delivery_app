@@ -116,7 +116,7 @@ flutter:
     - assets/images/onboarding_image.gif
     - assets/images/loader_image.gif
     - assets/images/cover_photo.png
-    
+    - assets/images/no-results.png
     - assets/images/g-cash-payment.jpg
     - assets/images/paymaya-qr.png
     - assets/images/trip_accepting.gif

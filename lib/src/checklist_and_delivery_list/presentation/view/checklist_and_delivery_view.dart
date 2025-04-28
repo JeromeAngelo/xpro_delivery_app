@@ -105,11 +105,14 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
             listener: (context, state) {
               if (state is ChecklistLoaded) {
                 setState(() => _cachedChecklistState = state);
-                bool allChecked =
-                    state.checklist.every((item) => item.isChecked ?? false);
+                bool allChecked = state.checklist.every(
+                  (item) => item.isChecked ?? false,
+                );
                 if (allChecked) {
                   CoreUtils.showSnackBar(
-                      context, "All checklist items are checked");
+                    context,
+                    "All checklist items are checked",
+                  );
                 }
               }
             },
@@ -139,46 +142,50 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
                       }
                     });
                   },
-                  child: _cachedState == null && _cachedChecklistState == null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.local_shipping_outlined,
-                                size: 64,
-                                color: Theme.of(context).colorScheme.secondary,
+                  child:
+                      _cachedState == null && _cachedChecklistState == null
+                          ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.local_shipping_outlined,
+                                  size: 64,
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No trip assigned yet',
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Accept a trip to view deliveries and checklist',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          )
+                          : CustomScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            slivers: [
+                              SliverAppBar(
+                                title: const Text(
+                                  'Checklist and Delivery List',
+                                ),
+                                centerTitle: true,
+                                floating: true,
+                                snap: true,
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No trip assigned yet',
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Accept a trip to view deliveries and checklist',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
+                              _buildSectionHeader("Checklist Items"),
+                              _buildChecklistSection(),
+                              _buildSectionHeader("Delivery List"),
+                              _buildDeliveryListSection(),
                             ],
                           ),
-                        )
-                      : CustomScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          slivers: [
-                            SliverAppBar(
-                              title: const Text('Checklist and Delivery List'),
-                              centerTitle: true,
-                              floating: true,
-                              snap: true,
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                            ),
-                            _buildSectionHeader("Checklist Items"),
-                            _buildChecklistSection(),
-                            _buildSectionHeader("Delivery List"),
-                            _buildDeliveryListSection(),
-                          ],
-                        ),
                 ),
               ),
               const Padding(
@@ -199,9 +206,9 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
         child: Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
-              ),
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -209,10 +216,14 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
 
   Widget _buildChecklistSection() {
     return BlocBuilder<ChecklistBloc, ChecklistState>(
-      buildWhen: (previous, current) =>
-          current is ChecklistLoaded &&
-          (previous is! ChecklistLoaded ||
-              previous.checklist != current.checklist),
+      buildWhen: (previous, current) {
+        // Only rebuild the entire list when the list structure changes
+        // Not when individual items are checked/unchecked
+        if (current is ChecklistLoaded && previous is ChecklistLoaded) {
+          return current.checklist.length != previous.checklist.length;
+        }
+        return current is ChecklistLoaded;
+      },
       builder: (context, state) {
         final effectiveState = _cachedChecklistState ?? state;
 
@@ -222,19 +233,48 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
               (context, index) {
                 final item = effectiveState.checklist[index];
                 debugPrint('🔍 Rendering checklist item: ${item.objectName}');
-                return KeepAlive(
-                  keepAlive: true,
-                  child: ChecklistTile(
-                    key: ValueKey(item.id),
-                    checklist: item,
-                    isChecked: item.isChecked ?? false,
-                    onChanged: (value) {
-                      _checklistBloc.add(CheckItemEvent(item.id));
-                    },
-                  ),
+
+                // Use a separate BlocBuilder for each item to avoid rebuilding the entire list
+                return BlocBuilder<ChecklistBloc, ChecklistState>(
+                  buildWhen: (previous, current) {
+                    // Only rebuild this specific item when its checked state changes
+                    if (current is ChecklistLoaded &&
+                        previous is ChecklistLoaded) {
+                      final prevItem = previous.checklist.firstWhere(
+                        (i) => i.id == item.id,
+                        orElse: () => item,
+                      );
+                      final currentItem = current.checklist.firstWhere(
+                        (i) => i.id == item.id,
+                        orElse: () => item,
+                      );
+                      return prevItem.isChecked != currentItem.isChecked;
+                    }
+                    return false;
+                  },
+                  builder: (context, itemState) {
+                    // If we have a newer state, use it to get the latest checked status
+                    final currentItem =
+                        (itemState is ChecklistLoaded)
+                            ? itemState.checklist.firstWhere(
+                              (i) => i.id == item.id,
+                              orElse: () => item,
+                            )
+                            : item;
+
+                    return ChecklistTile(
+                      key: ValueKey(item.id),
+                      checklist: currentItem,
+                      isChecked: currentItem.isChecked ?? false,
+                      onChanged: (value) {
+                        _checklistBloc.add(CheckItemEvent(item.id));
+                      },
+                    );
+                  },
                 );
               },
               childCount: effectiveState.checklist.length,
+              addAutomaticKeepAlives: true,
             ),
           );
         }
@@ -272,26 +312,25 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
           }
 
           return SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final customer = effectiveState.customer[index];
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: DeliveryListTile(
-                    customer: customer,
-                    isFromLocal: true,
-                    onTap: () {
-                      // _customerBloc
-                      //     .add(LoadLocalCustomerLocationEvent(customer.id!));
-                      // context.go('/delivery-and-invoice/${customer.id}',
-                      //     extra: customer);
-                    },
-                  ),
-                );
-              },
-              childCount: effectiveState.customer.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final customer = effectiveState.customer[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: DeliveryListTile(
+                  customer: customer,
+                  isFromLocal: true,
+                  onTap: () {
+                    // _customerBloc
+                    //     .add(LoadLocalCustomerLocationEvent(customer.id!));
+                    // context.go('/delivery-and-invoice/${customer.id}',
+                    //     extra: customer);
+                  },
+                ),
+              );
+            }, childCount: effectiveState.customer.length),
           );
         }
 

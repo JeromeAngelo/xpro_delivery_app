@@ -60,3 +60,14 @@ class SetAllInvoicesCompletedEvent extends InvoiceEvent {
   @override
   List<Object?> get props => [tripId];
 }
+
+
+// New event for setting an individual invoice to unloaded
+class SetInvoiceUnloadedEvent extends InvoiceEvent {
+  final String invoiceId;
+  
+  const SetInvoiceUnloadedEvent(this.invoiceId);
+  
+  @override
+  List<Object?> get props => [invoiceId];
+}

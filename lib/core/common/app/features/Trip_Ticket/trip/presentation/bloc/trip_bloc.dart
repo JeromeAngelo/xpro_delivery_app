@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/accept_trip.dart';
@@ -390,18 +392,58 @@ Future<void> _onEndTrip(
       // Clear any cached states
       _cachedState = null;
       
+      // Stop location tracking if it's active
+      add(const StopLocationTrackingEvent());
+      
       // Explicitly clear local data and reset state
       emit(TripEnded(trip));
       
       // After a short delay, reset to initial state
       Future.delayed(const Duration(seconds: 2), () {
         if (!isClosed) {
+          // Clear any cached trip data from shared preferences
+          _clearTripDataFromPreferences();
           add(const GetTripEvent());
         }
       });
     },
   );
 }
+
+// Helper method to clear trip data from shared preferences
+Future<void> _clearTripDataFromPreferences() async {
+  try {
+    debugPrint('🧹 BLOC: Clearing trip data from preferences');
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Get current user data
+    final userData = prefs.getString('user_data');
+    if (userData != null) {
+      final userJson = jsonDecode(userData);
+      
+      // Remove trip-related fields
+      userJson['tripNumberId'] = null;
+      userJson['trip'] = null;
+      
+      // Save updated user data
+      await prefs.setString('user_data', jsonEncode(userJson));
+    }
+    
+    // Remove other trip-related preferences
+    await prefs.remove('user_trip_data');
+    await prefs.remove('trip_cache');
+    await prefs.remove('delivery_status_cache');
+    await prefs.remove('customer_cache');
+    await prefs.remove('active_trip');
+    await prefs.remove('last_trip_id');
+    await prefs.remove('last_trip_number');
+    
+    debugPrint('✅ BLOC: Successfully cleared trip data from preferences');
+  } catch (e) {
+    debugPrint('❌ BLOC: Error clearing trip data from preferences: $e');
+  }
+}
+
 
 
 

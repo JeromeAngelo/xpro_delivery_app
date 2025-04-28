@@ -69,6 +69,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/get_invoice_per_customer.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/get_invoice_per_trip_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/set_all_invoices_completed.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/set_invoice_unloaded.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/datasource/local_datasource/product_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/datasource/remote_datasource/product_remote_datasource.dart';
@@ -611,12 +612,17 @@ Future<void> initInvoice() async {
         productsBloc: sl(),
         getInvoices: sl(),
         getInvoicesByTrip: sl(),
-        getInvoicesByCustomer: sl(), setAllInvoicesCompleted: sl()),
+        getInvoicesByCustomer: sl(), setAllInvoicesCompleted: sl(), setInvoiceUnloaded: sl()),
   );
 
   sl.registerLazySingleton(
     () => GetInvoice(sl()),
   );
+
+  sl.registerLazySingleton(
+    () => SetInvoiceUnloaded(sl()),
+  );
+
 
   sl.registerLazySingleton(
     () => SetAllInvoicesCompleted(sl()),

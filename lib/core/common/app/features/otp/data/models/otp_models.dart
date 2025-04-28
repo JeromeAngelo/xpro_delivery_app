@@ -13,6 +13,9 @@ class OtpModel extends OtpEntity {
   @Property()
   String id;
 
+  @Property()
+  String? tripId;
+
   @override
   @Property()
   String otpCode;

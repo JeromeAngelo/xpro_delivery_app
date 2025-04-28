@@ -59,7 +59,8 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         final effectiveState = _cachedState ?? state;
 
         // Show skeleton loading UI when in loading state and no cached data
-        if ((state is CustomerLoading || state is CustomerInitial) && _cachedState == null) {
+        if ((state is CustomerLoading || state is CustomerInitial) &&
+            _cachedState == null) {
           return _buildLoadingDashboard(context);
         }
 
@@ -127,11 +128,11 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 2.8,
-              crossAxisSpacing: 5,
-              mainAxisSpacing: 22,
+              childAspectRatio: 2.9,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 25,
               children: List.generate(
-                6, 
+                6,
                 (index) => _buildSkeletonInfoItem(context),
               ),
             ),

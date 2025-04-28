@@ -11,6 +11,7 @@ abstract class InvoiceLocalDatasource {
   Future<void> updateInvoice(InvoiceModel invoice);
   Future<void> cleanupInvalidEntries();
   Future<List<InvoiceModel>> setAllInvoicesCompleted(String tripId);
+  Future<InvoiceModel> setInvoiceUnloaded(String invoiceId);
 }
 
 class InvoiceLocalDatasourceImpl implements InvoiceLocalDatasource {
@@ -190,6 +191,46 @@ class InvoiceLocalDatasourceImpl implements InvoiceLocalDatasource {
         '❌ Error setting local invoices to completed: ${e.toString()}',
       );
       throw CacheException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<InvoiceModel> setInvoiceUnloaded(String invoiceId) async {
+    try {
+      debugPrint('🔄 LOCAL: Setting invoice $invoiceId to unloaded status');
+
+      // Find the invoice by pocketbaseId
+      final invoice =
+          _invoiceBox
+              .query(InvoiceModel_.pocketbaseId.equals(invoiceId))
+              .build()
+              .findFirst();
+
+      if (invoice == null) {
+        debugPrint('⚠️ Invoice not found in local storage: $invoiceId');
+        throw CacheException(
+          message: 'Invoice not found in local storage: $invoiceId',
+        );
+      }
+
+      debugPrint('✅ Found invoice ${invoice.invoiceNumber} in local storage');
+
+      // Update the invoice status
+      invoice.status = InvoiceStatus.unloaded;
+
+      // Save the updated invoice
+      _invoiceBox.put(invoice);
+
+      debugPrint(
+        '✅ Updated local invoice ${invoice.invoiceNumber} to unloaded status',
+      );
+
+      return invoice;
+    } catch (e) {
+      debugPrint('❌ Error setting local invoice to unloaded: ${e.toString()}');
+      throw CacheException(
+        message: 'Failed to set invoice to unloaded: ${e.toString()}',
+      );
     }
   }
 }

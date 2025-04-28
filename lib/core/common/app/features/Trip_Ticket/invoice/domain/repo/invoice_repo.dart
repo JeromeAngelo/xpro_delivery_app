@@ -11,4 +11,5 @@ abstract class InvoiceRepo {
   ResultFuture<List<InvoiceEntity>> loadLocalInvoicesByTripId(String tripId);
   ResultFuture<List<InvoiceEntity>> loadLocalInvoicesByCustomerId(String customerId);
   ResultFuture<List<InvoiceEntity>> setAllInvoicesCompleted(String tripId);
+  ResultFuture<InvoiceEntity> setInvoiceUnloaded(String invoiceId);
 }

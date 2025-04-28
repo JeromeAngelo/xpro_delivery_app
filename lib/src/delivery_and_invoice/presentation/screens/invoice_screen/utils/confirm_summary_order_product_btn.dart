@@ -44,6 +44,12 @@ class ConfirmSummaryOrderProductBtn extends StatelessWidget {
           ),
         );
 
+        // Navigate back to delivery screen
+        context.go('/delivery-and-invoice/${customer.id}', extra: customer);
+
+        //force to set the invoice into unloaded
+        context.read<InvoiceBloc>().add(SetInvoiceUnloadedEvent(invoice.id!));
+
         // Process returns if any
         for (var product in products) {
           if (product.isCase == true) {
@@ -55,12 +61,6 @@ class ConfirmSummaryOrderProductBtn extends StatelessWidget {
             }
           }
         }
-
-        // Navigate back to delivery screen
-        context.pushReplacement(
-          '/delivery-and-invoice/${customer.id}',
-          extra: customer,
-        );
 
         // Refresh customer data
         context.read<CustomerBloc>().add(

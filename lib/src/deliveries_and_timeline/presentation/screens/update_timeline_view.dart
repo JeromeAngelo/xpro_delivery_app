@@ -13,6 +13,7 @@ import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/trip_update_dialog.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/update_timeline.dart';
+
 class UpdateTimelineView extends StatefulWidget {
   const UpdateTimelineView({super.key});
 
@@ -20,7 +21,7 @@ class UpdateTimelineView extends StatefulWidget {
   State<UpdateTimelineView> createState() => _UpdateTimelineViewState();
 }
 
-class _UpdateTimelineViewState extends State<UpdateTimelineView> 
+class _UpdateTimelineViewState extends State<UpdateTimelineView>
     with AutomaticKeepAliveClientMixin {
   late final AuthBloc _authBloc;
   late final CustomerBloc _customerBloc;
@@ -136,7 +137,7 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
 
   Widget _buildContent() {
     final effectiveAuthState = _cachedAuthState;
-    
+
     if (effectiveAuthState is UserTripLoaded) {
       return BlocBuilder<CustomerBloc, CustomerState>(
         builder: (context, customerState) {
@@ -145,11 +146,13 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
           if (effectiveCustomerState is CustomerLoaded) {
             final customers = effectiveCustomerState.customer;
             debugPrint('📊 Processing ${customers.length} customers');
-            
-            final arrivedCustomers = customers.where((customer) {
-              return customer.deliveryStatus.any((status) =>
-                status.title?.toLowerCase().trim() == 'arrived');
-            }).toList();
+
+            final arrivedCustomers =
+                customers.where((customer) {
+                  return customer.deliveryStatus.any(
+                    (status) => status.title?.toLowerCase().trim() == 'arrived',
+                  );
+                }).toList();
             debugPrint('✅ Found ${arrivedCustomers.length} arrived customers');
 
             if (arrivedCustomers.isEmpty) {
@@ -162,11 +165,11 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
                 children: [
                   Expanded(
                     child: UpdateTimeline(
-                      tripUpdates: _cachedTripState is TripUpdatesLoaded
-                          ? (_cachedTripState as TripUpdatesLoaded)
-                              .updates
-                              .cast<TripUpdateEntity>()
-                          : [],
+                      tripUpdates:
+                          _cachedTripState is TripUpdatesLoaded
+                              ? (_cachedTripState as TripUpdatesLoaded).updates
+                                  .cast<TripUpdateEntity>()
+                              : [],
                       customers: arrivedCustomers,
                     ),
                   ),
@@ -184,7 +187,7 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
         },
       );
     }
-    
+
     return const Center(child: Text('Loading trip data...'));
   }
 
@@ -201,10 +204,7 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
           const SizedBox(height: 16),
           const Text(
             'No Arrived Deliveries',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -225,14 +225,16 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
+            isDismissible: true,
             backgroundColor: Colors.transparent,
-            builder: (context) => TripUpdateBottomSheet(
-              tripId: tripId,
-              onSaved: () {
-                debugPrint('📝 Trip update saved, refreshing updates');
-                _tripUpdatesBloc.add(GetTripUpdatesEvent(tripId));
-              },
-            ),
+            builder:
+                (context) => TripUpdateBottomSheet(
+                  tripId: tripId,
+                  onSaved: () {
+                    debugPrint('📝 Trip update saved, refreshing updates');
+                    _tripUpdatesBloc.add(GetTripUpdatesEvent(tripId));
+                  },
+                ),
           );
         },
         icon: const Icon(Icons.add),

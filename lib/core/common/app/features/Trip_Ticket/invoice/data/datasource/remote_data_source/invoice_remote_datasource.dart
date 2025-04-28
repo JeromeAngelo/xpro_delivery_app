@@ -15,6 +15,7 @@ abstract class InvoiceRemoteDatasource {
   Future<List<InvoiceModel>> getInvoicesByTripId(String tripId);
   Future<List<InvoiceModel>> getInvoicesByCustomerId(String customerId);
   Future<List<InvoiceModel>> setAllInvoicesCompleted(String tripId);
+  Future<InvoiceModel> setInvoiceUnloaded(String invoiceId);
 }
 
 class InvoiceRemoteDatasourceImpl implements InvoiceRemoteDatasource {
@@ -376,6 +377,124 @@ class InvoiceRemoteDatasourceImpl implements InvoiceRemoteDatasource {
       debugPrint('❌ Error setting invoices to completed: ${e.toString()}');
       throw ServerException(
         message: 'Failed to set invoices to completed: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
+
+  @override
+  Future<InvoiceModel> setInvoiceUnloaded(String invoiceId) async {
+    try {
+      debugPrint('🔄 REMOTE: Setting invoice $invoiceId to unloaded status');
+
+      // First, get the current invoice data
+      final invoiceRecord = await _pocketBaseClient
+          .collection('invoices')
+          .getOne(
+            invoiceId,
+            expand: 'customer,customer.deliveryStatus,productsList,trip',
+          );
+
+      debugPrint('✅ Retrieved invoice ${invoiceRecord.id} from API');
+
+      // Update the invoice status to unloaded
+      final updatedRecord = await _pocketBaseClient
+          .collection('invoices')
+          .update(
+            invoiceId,
+            body: {
+              'status': 'unloaded',
+             
+              // You might want to add additional fields here like:
+              // 'unloadedDate': DateTime.now().toIso8601String(),
+            },
+          );
+
+      debugPrint('✅ Updated invoice ${updatedRecord.id} to unloaded status');
+
+      // Get the updated record with expanded relations
+      final refreshedRecord = await _pocketBaseClient
+          .collection('invoices')
+          .getOne(
+            invoiceId,
+            expand: 'customer,customer.deliveryStatus,productsList,trip',
+          );
+
+      // Process the updated record to create an InvoiceModel
+      final mappedData = {
+        'id': refreshedRecord.id,
+        'collectionId': refreshedRecord.collectionId,
+        'collectionName': refreshedRecord.collectionName,
+        'invoiceNumber': refreshedRecord.data['invoiceNumber'],
+        'customerId': refreshedRecord.data['customer'],
+        'tripId': refreshedRecord.data['trip'],
+        'status': refreshedRecord.data['status'],
+        'totalAmount': refreshedRecord.data['totalAmount'],
+        'confirmTotalAmount': refreshedRecord.data['confirmTotalAmount'],
+        'isLoaded': refreshedRecord.data['isLoaded'] ?? false,
+        'loadedDate': refreshedRecord.data['loadedDate'],
+        'expand': {},
+      };
+
+      // Process expanded customer data
+      if (refreshedRecord.expand.containsKey('customer') &&
+          refreshedRecord.expand['customer'] != null) {
+        if (refreshedRecord.expand['customer'] is List &&
+            (refreshedRecord.expand['customer'] as List).isNotEmpty) {
+          final customerRecord =
+              (refreshedRecord.expand['customer'] as List).first;
+          mappedData['expand']['customer'] = {
+            'id': customerRecord.id,
+            'collectionId': customerRecord.collectionId,
+            'collectionName': customerRecord.collectionName,
+            ...customerRecord.data,
+          };
+        }
+      }
+
+      // Process expanded products data
+      if (refreshedRecord.expand.containsKey('productsList') &&
+          refreshedRecord.expand['productsList'] != null) {
+        final productsList = refreshedRecord.expand['productsList'];
+        if (productsList is List) {
+          mappedData['expand']['productsList'] =
+              productsList!
+                  .map(
+                    (product) => {
+                      'id': product.id,
+                      'collectionId': product.collectionId,
+                      'collectionName': product.collectionName,
+                      ...product.data,
+                    },
+                  )
+                  .toList();
+        }
+      }
+
+      // Process expanded trip data
+      if (refreshedRecord.expand.containsKey('trip') &&
+          refreshedRecord.expand['trip'] != null) {
+        if (refreshedRecord.expand['trip'] is List &&
+            (refreshedRecord.expand['trip'] as List).isNotEmpty) {
+          final tripRecord = (refreshedRecord.expand['trip'] as List).first;
+          mappedData['expand']['trip'] = {
+            'id': tripRecord.id,
+            'collectionId': tripRecord.collectionId,
+            'collectionName': tripRecord.collectionName,
+            ...tripRecord.data,
+          };
+        }
+      }
+
+      // Create and return the InvoiceModel
+      final invoiceModel = InvoiceModel.fromJson(mappedData);
+      debugPrint('✅ Successfully created InvoiceModel for unloaded invoice');
+
+      return invoiceModel;
+    } catch (e) {
+      debugPrint('❌ Error setting invoice to unloaded: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to set invoice to unloaded: ${e.toString()}',
         statusCode: '500',
       );
     }

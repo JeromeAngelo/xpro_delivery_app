@@ -81,76 +81,77 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
         border: Border.all(color: Theme.of(context).colorScheme.outline),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: _images.isEmpty
-          ? InkWell(
-              onTap: _pickImages,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate_outlined,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add Photos',
-                    style: TextStyle(
+      child:
+          _images.isEmpty
+              ? InkWell(
+                onTap: _pickImages,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_photo_alternate_outlined,
+                      size: 48,
                       color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Add Photos',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : Stack(
+                children: [
+                  ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _images.length,
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(_images[index].path),
+                                width: 180,
+                                height: 180,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: IconButton(
+                              icon: const Icon(Icons.remove_circle),
+                              color: Colors.red,
+                              onPressed:
+                                  () => setState(() => _images.removeAt(index)),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: FloatingActionButton(
+                      backgroundColor: Colors.white,
+                      mini: true,
+                      onPressed: _pickImages,
+                      child: Icon(
+                        Icons.add_a_photo,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
               ),
-            )
-          : Stack(
-              children: [
-                ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _images.length,
-                  itemBuilder: (context, index) {
-                    return Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              File(_images[index].path),
-                              width: 180,
-                              height: 180,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: IconButton(
-                            icon: const Icon(Icons.remove_circle),
-                            color: Colors.red,
-                            onPressed: () =>
-                                setState(() => _images.removeAt(index)),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: FloatingActionButton(
-                    backgroundColor: Colors.white,
-                    mini: true,
-                    onPressed: _pickImages,
-                    child: Icon(
-                      Icons.add_a_photo,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
     );
   }
 
@@ -159,16 +160,15 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
       value: _selectedReason,
       decoration: InputDecoration(
         labelText: 'Reason',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      items: UndeliverableReason.values.map((reason) {
-        return DropdownMenuItem(
-          value: reason,
-          child: Text(_formatReason(reason.name)),
-        );
-      }).toList(),
+      items:
+          UndeliverableReason.values.map((reason) {
+            return DropdownMenuItem(
+              value: reason,
+              child: Text(_formatReason(reason.name)),
+            );
+          }).toList(),
       onChanged: (value) {
         setState(() => _selectedReason = value!);
       },
@@ -192,20 +192,27 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
           if (widget.customer.id != null) {
             debugPrint('🔄 Processing undeliverable status update');
             context.read<DeliveryUpdateBloc>().add(
-                  UpdateDeliveryStatusEvent(
-                    customerId: widget.customer.id ?? '',
-                    statusId: widget.statusId,
-                  ),
-                );
+              UpdateDeliveryStatusEvent(
+                customerId: widget.customer.id ?? '',
+                statusId: widget.statusId,
+              ),
+            );
 
             final customerBloc = context.read<CustomerBloc>();
             Future.wait<void>([
-              customerBloc.stream
-                  .firstWhere((state) => state is CustomerLocationLoaded),
-              Future(() => customerBloc.add(
-                  LoadLocalCustomerLocationEvent(widget.customer.id ?? ''))),
-              Future(() => customerBloc
-                  .add(GetCustomerLocationEvent(widget.customer.id ?? ''))),
+              customerBloc.stream.firstWhere(
+                (state) => state is CustomerLocationLoaded,
+              ),
+              Future(
+                () => customerBloc.add(
+                  LoadLocalCustomerLocationEvent(widget.customer.id ?? ''),
+                ),
+              ),
+              Future(
+                () => customerBloc.add(
+                  GetCustomerLocationEvent(widget.customer.id ?? ''),
+                ),
+              ),
             ]).then((_) {
               if (mounted) {
                 context.go(
@@ -229,9 +236,9 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
             children: [
               Text(
                 widget.customer.storeName ?? 'Customer',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               _buildImageContainer(),
@@ -242,60 +249,70 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => context
-                        .go('/delivery-and-invoice/${widget.customer.id}'),
+                    onPressed:
+                        () => context.go(
+                          '/delivery-and-invoice/${widget.customer.id}',
+                        ),
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: _isFormValid()
-                        ? () {
-                            debugPrint('📝 Creating undeliverable record');
+                    onPressed:
+                        _isFormValid()
+                            ? () {
+                              debugPrint('📝 Creating undeliverable record');
 
-                            // Ensure customer is properly cast
-                            if (widget.customer is CustomerModel) {
-                              context.read<UndeliverableCustomerBloc>().add(
-                                    CreateUndeliverableCustomerEvent(
-                                      UndeliverableCustomerModel(
-                                        customer:
-                                            widget.customer as CustomerModel,
-                                        reason: _selectedReason,
-                                        time: DateTime.now().toUtc(),
-                                        customerImage: _images
-                                            .map((image) => image.path)
-                                            .join(','),
-                                      ),
-                                      widget.customer.id ?? '',
+                              // Ensure customer is properly cast
+                              if (widget.customer is CustomerModel) {
+                                context.read<UndeliverableCustomerBloc>().add(
+                                  CreateUndeliverableCustomerEvent(
+                                    UndeliverableCustomerModel(
+                                      customer:
+                                          widget.customer as CustomerModel,
+                                      reason: _selectedReason,
+                                      time: DateTime.now().toUtc(),
+                                      customerImage: _images
+                                          .map((image) => image.path)
+                                          .join(','),
                                     ),
-                                  );
+                                    widget.customer.id ?? '',
+                                  ),
+                                );
 
-                              // Update delivery status
-                              context.read<DeliveryUpdateBloc>().add(
-                                    UpdateDeliveryStatusEvent(
-                                      customerId: widget.customer.id ?? '',
-                                      statusId: widget.statusId,
-                                    ),
-                                  );
+                                // Update delivery status
+                                context.read<DeliveryUpdateBloc>().add(
+                                  UpdateDeliveryStatusEvent(
+                                    customerId: widget.customer.id ?? '',
+                                    statusId: widget.statusId,
+                                  ),
+                                );
 
-                              // Navigate after data is refreshed
-                              context.pushReplacement(
-                                '/delivery-and-invoice/${widget.customer.id}',
-                                extra: widget.customer,
-                              );
-                            } else {
-                              debugPrint(
-                                  '⚠️ Invalid customer type: ${widget.customer.runtimeType}');
+                                // Navigate after data is refreshed
+                                context.pushReplacement(
+                                  '/delivery-and-invoice/${widget.customer.id}',
+                                  extra: widget.customer,
+                                );
+                              } else {
+                                debugPrint(
+                                  '⚠️ Invalid customer type: ${widget.customer.runtimeType}',
+                                );
+                              }
                             }
-                          }
-                        : null,
+                            : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isFormValid()
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
+                      backgroundColor:
+                          _isFormValid()
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                     ),
-                    child: const Text('Save'),
+                    child: Text(
+                      'Save',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.surface,
+                      ),
+                    ),
                   ),
                 ],
               ),

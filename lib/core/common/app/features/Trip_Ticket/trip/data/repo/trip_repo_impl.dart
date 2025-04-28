@@ -205,19 +205,9 @@ ResultFuture<TripEntity> scanTripByQR(String qrData) async {
     debugPrint('🔍 REPO: Processing QR scan data');
     final result = await _remoteDatasource.scanTripByQR(qrData);
     
-    // Save the trip to local storage
-    await _localDatasource.saveTrip(result);
-    debugPrint('✅ REPO: QR scan successful, trip saved locally');
+    
     
     return Right(result);
-  } on ServerException catch (e) {
-    // If server fails, we should return the error directly
-    // since QR codes are typically not stored locally
-    debugPrint('❌ REPO: QR scan failed: ${e.message}');
-    return Left(ServerFailure(
-      message: e.message,
-      statusCode: e.statusCode,
-    ));
   } catch (e) {
     // Handle any other unexpected errors
     debugPrint('❌ REPO: Unexpected error in QR scan: $e');

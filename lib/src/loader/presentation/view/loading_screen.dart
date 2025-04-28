@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
 import 'package:x_pro_delivery_app/core/services/sync_service.dart';
 import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
+
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
 
@@ -26,7 +27,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   void _startSync() async {
     final hasTrip = await _syncService.checkUserHasTrip(context);
-    
+
     if (!hasTrip) {
       setState(() => _statusText = "No active trip found");
       debugPrint('📱 No active trip - navigating to home');
@@ -34,24 +35,24 @@ class _LoadingScreenState extends State<LoadingScreen> {
       return;
     }
 
-      // Check if there was an active route before app was closed
-  final lastActiveRoute = await RouteUtils.getLastActiveRoute();
-  
-  setState(() => _statusText = "Syncing data...");
-  debugPrint('🔄 Active trip found - starting sync');
-  
-  // Start sync and set up a completion callback
-  _syncService.syncAllData(context).then((_) {
-    if (mounted) {
-      if (lastActiveRoute != null) {
-        debugPrint('🧭 Navigating to last active route: $lastActiveRoute');
-        context.go(lastActiveRoute);
-      } else {
-        debugPrint('🏠 No saved route - navigating to homepage');
-        context.go('/homepage');
+    // Check if there was an active route before app was closed
+    final lastActiveRoute = await RouteUtils.getLastActiveRoute();
+
+    setState(() => _statusText = "Syncing data...");
+    debugPrint('🔄 Active trip found - starting sync');
+
+    // Start sync and set up a completion callback
+    _syncService.syncAllData(context).then((_) {
+      if (mounted) {
+        if (lastActiveRoute != null) {
+          debugPrint('🧭 Navigating to last active route: $lastActiveRoute');
+          context.go(lastActiveRoute);
+        } else {
+          debugPrint('🏠 No saved route - navigating to homepage');
+          context.go('/homepage');
+        }
       }
-    }
-  });
+    });
 
     setState(() => _statusText = "Syncing data...");
     debugPrint('🔄 Active trip found - starting sync');
@@ -95,9 +96,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
             Text(
               'X Pro Delivery',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 48),
             Padding(
@@ -109,7 +110,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
                     child: LinearProgressIndicator(
                       value: _progress,
                       minHeight: 8,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         Theme.of(context).colorScheme.primary,
                       ),
@@ -126,8 +128,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
                       Text(
                         '${(_progress * 100).toInt()}%',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
