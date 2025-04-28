@@ -12,11 +12,13 @@ import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/collection_dashboard_screen.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/widget/summary_completed_customer_list.dart';
 import '../../../../core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_bloc.dart';
+
 class SummaryCollectionScreen extends StatefulWidget {
   const SummaryCollectionScreen({super.key});
 
   @override
-  State<SummaryCollectionScreen> createState() => _SummaryCollectionScreenState();
+  State<SummaryCollectionScreen> createState() =>
+      _SummaryCollectionScreenState();
 }
 
 class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
@@ -59,38 +61,42 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
       }
     });
   }
-void _loadInitialData(String userId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final storedData = prefs.getString('user_data');
 
-  if (storedData != null) {
-    final userData = jsonDecode(storedData);
-    final tripData = userData['trip'] as Map<String, dynamic>?;
+  void _loadInitialData(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString('user_data');
 
-    if (tripData != null && tripData['id'] != null) {
-      debugPrint('🎫 Loading completed customers for trip: ${tripData['id']}');
-      
-      // First try to load from local for immediate display
-      _completedCustomerBloc.add(LoadLocalCompletedCustomerEvent(tripData['id']));
-      
-      // Auth data is loaded separately
-      _authBloc
-        ..add(LoadLocalUserByIdEvent(userId))
-        ..add(LoadUserByIdEvent(userId))
-        ..add(LoadLocalUserTripEvent(userId))
-        ..add(GetUserTripEvent(userId));
+    if (storedData != null) {
+      final userData = jsonDecode(storedData);
+      final tripData = userData['trip'] as Map<String, dynamic>?;
+
+      if (tripData != null && tripData['id'] != null) {
+        debugPrint(
+          '🎫 Loading completed customers for trip: ${tripData['id']}',
+        );
+
+        // First try to load from local for immediate display
+        _completedCustomerBloc
+          ..add(GetCompletedCustomerEvent(tripData['id']))
+          ..add(LoadLocalCompletedCustomerEvent(tripData['id']));
+
+        // Auth data is loaded separately
+        _authBloc
+          ..add(LoadLocalUserByIdEvent(userId))
+          ..add(LoadUserByIdEvent(userId))
+          ..add(LoadLocalUserTripEvent(userId))
+          ..add(GetUserTripEvent(userId));
+      }
     }
   }
-}
 
-Future<void> _refreshData() async {
-  final authState = context.read<AuthBloc>().state;
-  if (authState is UserTripLoaded && authState.trip.id != null) {
-    // Force a fresh load from remote
-    _completedCustomerBloc.add(GetCompletedCustomerEvent(authState.trip.id!));
+  Future<void> _refreshData() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is UserTripLoaded && authState.trip.id != null) {
+      // Force a fresh load from remote
+      _completedCustomerBloc.add(GetCompletedCustomerEvent(authState.trip.id!));
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +113,9 @@ Future<void> _refreshData() async {
             listener: (context, state) {
               if (state is UserTripLoaded && state.trip.id != null) {
                 debugPrint('🎫 User trip loaded: ${state.trip.id}');
-                _completedCustomerBloc.add(GetCompletedCustomerEvent(state.trip.id!));
+                _completedCustomerBloc.add(
+                  GetCompletedCustomerEvent(state.trip.id!),
+                );
               }
             },
           ),
@@ -122,10 +130,11 @@ Future<void> _refreshData() async {
         child: RefreshIndicator(
           onRefresh: _refreshData,
           child: BlocBuilder<CompletedCustomerBloc, CompletedCustomerState>(
-            buildWhen: (previous, current) =>
-                current is CompletedCustomerLoaded ||
-                current is CompletedCustomerError ||
-                _cachedState == null,
+            buildWhen:
+                (previous, current) =>
+                    current is CompletedCustomerLoaded ||
+                    current is CompletedCustomerError ||
+                    _cachedState == null,
             builder: (context, state) {
               final effectiveState = _cachedState ?? state;
 
@@ -138,7 +147,10 @@ Future<void> _refreshData() async {
                 return SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 10,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -182,17 +194,15 @@ Future<void> _refreshData() async {
           const SizedBox(height: 16),
           Text(
             'No completed customers yet',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             'Customers will appear here once deliveries are completed',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            style: TextStyle(color: Theme.of(context).colorScheme.outline),
           ),
         ],
       ),

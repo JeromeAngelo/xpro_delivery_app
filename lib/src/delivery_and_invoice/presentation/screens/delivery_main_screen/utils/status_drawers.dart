@@ -11,7 +11,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/customer_summary_dialog.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_queue_remark_dialog.dart';
+//import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_queue_remark_dialog.dart';
 
 class UpdateStatusDrawer extends StatefulWidget {
   final String customerId;
@@ -233,24 +233,24 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
       return;
     }
 
-    if (statusTitle.toLowerCase() == 'arrived') {
-      Navigator.pop(context); // Close the modal bottom sheet first
+    // if (statusTitle.toLowerCase() == 'arrived') {
+    //   Navigator.pop(context); // Close the modal bottom sheet first
 
-      final customerState = context.read<CustomerBloc>().state;
-      if (customerState is CustomerLocationLoaded) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder:
-              (context) => UpdateQueueRemarkDialog(
-                customer: customerState.customer,
-                statusId: statusId,
-              ),
-        );
-      }
+    //   final customerState = context.read<CustomerBloc>().state;
+    //   if (customerState is CustomerLocationLoaded) {
+    //     showDialog(
+    //       context: context,
+    //       barrierDismissible: false,
+    //       builder:
+    //           (context) => UpdateQueueRemarkDialog(
+    //             customer: customerState.customer,
+    //             statusId: statusId,
+    //           ),
+    //     );
+    //   }
 
-      return;
-    }
+    //   return;
+    // }
 
     if (statusTitle.toLowerCase() == 'end delivery') {
       final customerBloc = context.read<CustomerBloc>();
