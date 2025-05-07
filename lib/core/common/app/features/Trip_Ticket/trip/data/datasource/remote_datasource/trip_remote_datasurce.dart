@@ -1000,71 +1000,103 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
   }
 
   @override
-  Future<TripModel> updateTripLocation(
-    String tripId,
-    double latitude,
-    double longitude,
-  ) async {
-    try {
-      debugPrint('🔄 REMOTE: Updating trip location for ID: $tripId');
-      debugPrint('📍 Coordinates: Lat: $latitude, Long: $longitude');
+Future<TripModel> updateTripLocation(
+  String tripId,
+  double latitude,
+  double longitude,
+) async {
+  try {
+    debugPrint('🔄 REMOTE: Updating trip location for ID: $tripId');
+    debugPrint('📍 Coordinates: Lat: $latitude, Long: $longitude');
 
-      // Extract trip ID if we received a JSON object
-      String actualTripId;
-      if (tripId.startsWith('{')) {
-        final tripData = jsonDecode(tripId);
-        actualTripId = tripData['id'];
-      } else {
-        actualTripId = tripId;
-      }
+    // Extract trip ID if we received a JSON object
+    String actualTripId;
+    if (tripId.startsWith('{')) {
+      final tripData = jsonDecode(tripId);
+      actualTripId = tripData['id'];
+    } else {
+      actualTripId = tripId;
+    }
+    
+    debugPrint('🎯 Using trip ID: $actualTripId');
 
-      debugPrint('🎯 Using trip ID: $actualTripId');
+    // Get the current trip record
+    final tripRecord = await _pocketBaseClient
+        .collection('tripticket')
+        .getOne(
+          actualTripId,
+          expand: 'customers,timeline,personels,vehicle,checklist',
+        );
 
-      // Get the current trip record
-      final tripRecord = await _pocketBaseClient
-          .collection('tripticket')
-          .getOne(
-            actualTripId,
-            expand: 'customers,timeline,personels,vehicle,checklist',
-          );
+    // Update the trip with new coordinates
+    final updatedRecord = await _pocketBaseClient
+        .collection('tripticket')
+        .update(
+          actualTripId,
+          body: {
+            'latitude': latitude.toString(),
+            'longitude': longitude.toString(),
+            'updated': DateTime.now().toIso8601String(),
+          },
+        );
+    
+    // Create a new record in trip_coordinates_updates collection
+    await _createTripCoordinateUpdate(actualTripId, latitude, longitude);
 
-      // Update the trip with new coordinates
-      final updatedRecord = await _pocketBaseClient
-          .collection('tripticket')
-          .update(
-            actualTripId,
-            body: {
-              'latitude': latitude.toString(),
-              'longitude': longitude.toString(),
-              'updated': DateTime.now().toIso8601String(),
-            },
-          );
+    debugPrint('✅ Trip location updated successfully');
 
-      debugPrint('✅ Trip location updated successfully');
+    // Create a TripModel from the updated record
+    final mappedData = {
+      'id': updatedRecord.id,
+      'collectionId': updatedRecord.collectionId,
+      'collectionName': updatedRecord.collectionName,
+      ...updatedRecord.data,
+      'timeline': _mapTimeline(tripRecord),
+      'personels': _mapPersonels(tripRecord),
+      'checklist': _mapChecklist(tripRecord),
+      'vehicle': _mapVehicle(tripRecord),
+      'latitude': latitude,
+      'longitude': longitude,
+    };
 
-      // Create a TripModel from the updated record
-      final mappedData = {
-        'id': updatedRecord.id,
-        'collectionId': updatedRecord.collectionId,
-        'collectionName': updatedRecord.collectionName,
-        ...updatedRecord.data,
-        'timeline': _mapTimeline(tripRecord),
-        'personels': _mapPersonels(tripRecord),
-        'checklist': _mapChecklist(tripRecord),
-        'vehicle': _mapVehicle(tripRecord),
+    final updatedTripModel = TripModel.fromJson(mappedData);
+    return updatedTripModel;
+  } catch (e) {
+    debugPrint('❌ Error updating trip location: $e');
+    throw ServerException(
+      message: 'Failed to update trip location: ${e.toString()}',
+      statusCode: '500',
+    );
+  }
+}
+
+// New function to create a record in trip_coordinates_updates collection
+Future<void> _createTripCoordinateUpdate(
+  String tripId,
+  double latitude,
+  double longitude,
+) async {
+  try {
+    debugPrint('🔄 Creating trip coordinate update record');
+    
+    // Create the record in trip_coordinates_updates collection
+    await _pocketBaseClient.collection('trip_coordinates_updates').create(
+      body: {
+        'trip': tripId,
         'latitude': latitude,
         'longitude': longitude,
-      };
-
-      final updatedTripModel = TripModel.fromJson(mappedData);
-
-      return updatedTripModel;
-    } catch (e) {
-      debugPrint('❌ Error updating trip location: $e');
-      throw ServerException(
-        message: 'Failed to update trip location: ${e.toString()}',
-        statusCode: '500',
-      );
-    }
+        // Add timestamp for when this coordinate was recorded
+        'created': DateTime.now().toIso8601String(),
+      },
+    );
+    
+    debugPrint('✅ Trip coordinate update record created successfully');
+  } catch (e) {
+    // Log the error but don't throw - we don't want to fail the main update
+    // if this secondary record creation fails
+    debugPrint('⚠️ Error creating trip coordinate update record: $e');
+    // You could implement a retry mechanism or queue here if needed
   }
+}
+
 }
