@@ -27,6 +27,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
   }) : _pocketBaseClient = pocketBaseClient;
 
   final PocketBase _pocketBaseClient;
+
   @override
 Future<LocalUsersModel> signIn({
   required String email,
@@ -76,6 +77,17 @@ Future<LocalUsersModel> signIn({
         } else {
       debugPrint('⚠️ No role data found for user');
     }
+
+     // Check user status
+      final userStatus =
+          userRecord.data['status']?.toString().toLowerCase() ?? '';
+      if (userStatus == 'suspended') {
+        throw const ServerException(
+          message:
+              'Your account has been suspended. Please contact the administrator.',
+          statusCode: 'Account Suspended',
+        );
+      }
 
     if (!isTeamLeader) {
       throw const ServerException(
@@ -229,6 +241,7 @@ Future<LocalUsersModel> refreshUserData() async {
       throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
+  
 @override
 Future<LocalUsersModel> getUserById(String userId) async {
   try {

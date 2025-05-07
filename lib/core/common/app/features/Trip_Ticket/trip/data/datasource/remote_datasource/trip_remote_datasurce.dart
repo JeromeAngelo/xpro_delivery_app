@@ -495,6 +495,42 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             },
           );
 
+      // Record trip history in users_trip_history collection
+      debugPrint(
+        '📝 Recording trip history for user: $userId and trip: ${tripRecord.id}',
+      );
+      final userTripHistoryRecord = await _pocketBaseClient
+          .collection('users_trip_history')
+          .create(
+            body: {
+              'users': userId, // Single relation to users collection
+              'trips': [
+                tripRecord.id,
+              ], // List relation to tripticket collection
+              'assignedAt': DateTime.now().toIso8601String(),
+              'isActive': true,
+            },
+          );
+      debugPrint('✅ Created trip history record: ${userTripHistoryRecord.id}');
+
+      // Update user's trip_collection field to include the new history record
+      // Using PocketBase's "+=" operator to append to the relation field
+      // This ensures we're adding to the existing list, not replacing it
+      debugPrint('🔄 Updating user trip_collection field');
+      await _pocketBaseClient
+          .collection('users')
+          .update(
+            userId,
+            body: {
+              'trip_collection+': [
+                userTripHistoryRecord.id,
+              ], // Use += operator to append
+            },
+          );
+      debugPrint(
+        '✅ Added new trip history record to user trip_collection field',
+      );
+
       await _pocketBaseClient
           .collection('tripticket')
           .update(tripRecord.id, body: {'user': userId});
