@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/data/models/delivery_team_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users_roles/model/user_role_model.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
@@ -139,7 +139,7 @@ class LocalUsersModel extends LocalUser {
       'name': name,
       'tripNumberId': tripNumberId,
       'role': userRole != null ? (userRole as UserRoleModel).pocketbaseId : null,
-      'deliveryTeam': deliveryTeam.target?.toJson(),
+     // 'deliveryTeam': deliveryTeam.target!.id,
       'trip': trip.target?.toJson(),
       'tripId': tripId,
       'deliveryTeamId': deliveryTeamId,

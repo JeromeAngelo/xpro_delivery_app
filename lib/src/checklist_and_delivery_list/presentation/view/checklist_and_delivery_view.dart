@@ -4,20 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
-
 import 'package:x_pro_delivery_app/core/common/app/features/checklist/presentation/bloc/checklist_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklist/presentation/bloc/checklist_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklist/presentation/bloc/checklist_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/refractors/checklist_tile.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/refractors/confirm_button.dart';
-import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/delivery_list_tile.dart';
+import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/refractors/delivery_list.dart';
+
+import '../../../../core/common/app/features/checklist/data/model/checklist_model.dart';
+import '../../../../core/utils/route_utils.dart';
 
 class ChecklistAndDeliveryView extends StatefulWidget {
   const ChecklistAndDeliveryView({super.key});
@@ -28,11 +30,11 @@ class ChecklistAndDeliveryView extends StatefulWidget {
 }
 
 class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
-  CustomerState? _cachedState;
+  DeliveryDataState? _cachedDeliveryDataState;
   ChecklistState? _cachedChecklistState;
   late final AuthBloc _authBloc;
   late final ChecklistBloc _checklistBloc;
-  late final CustomerBloc _customerBloc;
+  late final DeliveryDataBloc _customerBloc;
   bool _isInitialized = false;
 
   @override
@@ -40,12 +42,13 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
     super.initState();
     _initializeBlocs();
     _setupDataListeners();
+    RouteUtils.saveCurrentRoute('/checklist');
   }
 
   void _initializeBlocs() {
     _authBloc = context.read<AuthBloc>();
     _checklistBloc = context.read<ChecklistBloc>();
-    _customerBloc = context.read<CustomerBloc>();
+    _customerBloc = context.read<DeliveryDataBloc>();
   }
 
   void _setupDataListeners() {
@@ -68,8 +71,8 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
 
               // Load checklist and customers for this trip
               _customerBloc
-                ..add(LoadLocalCustomersEvent(tripData['id']))
-                ..add(GetCustomerEvent(tripData['id']));
+                ..add(GetLocalDeliveryDataByTripIdEvent(tripData['id']))
+                ..add(GetDeliveryDataByTripIdEvent(tripData['id']));
               _checklistBloc
                 ..add(LoadLocalChecklistByTripIdEvent(tripData['id']))
                 ..add(LoadChecklistByTripIdEvent(tripData['id']));
@@ -83,8 +86,8 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
         if (state is UserTripLoaded) {
           debugPrint('✅ Trip loaded: ${state.trip.id}');
           _customerBloc
-            ..add(LoadLocalCustomersEvent(state.trip.id!))
-            ..add(GetCustomerEvent(state.trip.id!));
+            ..add(GetLocalDeliveryDataByTripIdEvent(state.trip.id!))
+            ..add(GetDeliveryDataByTripIdEvent(state.trip.id!));
           _checklistBloc
             ..add(LoadLocalChecklistByTripIdEvent(state.trip.id!))
             ..add(LoadChecklistByTripIdEvent(state.trip.id!));
@@ -117,15 +120,19 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
               }
             },
           ),
-          BlocListener<CustomerBloc, CustomerState>(
+          BlocListener<DeliveryDataBloc, DeliveryDataState>(
             listener: (context, state) {
-              if (state is CustomerLoaded) {
-                setState(() => _cachedState = state);
+              if (state is DeliveryDataByTripLoaded) {
+                setState(() => _cachedDeliveryDataState = state);
               }
             },
           ),
         ],
         child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Checklist and Delivery List'),
+            centerTitle: true,
+          ),
           body: Column(
             children: [
               Expanded(
@@ -136,14 +143,30 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
                       if (storedData != null) {
                         final userData = jsonDecode(storedData);
                         final userId = userData['id'];
+                        final tripData =
+                            userData['trip'] as Map<String, dynamic>?;
+
                         if (userId != null) {
                           _authBloc.add(LoadLocalUserByIdEvent(userId));
+                        }
+
+                        if (tripData != null && tripData['id'] != null) {
+                          // Refresh checklist data
+                          _checklistBloc.add(
+                            LoadChecklistByTripIdEvent(tripData['id']),
+                          );
+
+                          // Refresh delivery data
+                          _customerBloc.add(
+                            GetDeliveryDataByTripIdEvent(tripData['id']),
+                          );
                         }
                       }
                     });
                   },
                   child:
-                      _cachedState == null && _cachedChecklistState == null
+                      _cachedDeliveryDataState == null &&
+                              _cachedChecklistState == null
                           ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -167,23 +190,28 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
                               ],
                             ),
                           )
-                          : CustomScrollView(
+                          : ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
-                            slivers: [
-                              SliverAppBar(
-                                title: const Text(
-                                  'Checklist and Delivery List',
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
                                 ),
-                                centerTitle: true,
-                                floating: true,
-                                snap: true,
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.primary,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 16),
+                                    _buildSectionHeader("Checklist Items"),
+                                    _buildChecklistSection(),
+                                    const SizedBox(height: 24),
+                                    _buildSectionHeader("Delivery List"),
+                                    _buildDeliverySection(context),
+                                    const SizedBox(
+                                      height: 80,
+                                    ), // Extra space at bottom
+                                  ],
+                                ),
                               ),
-                              _buildSectionHeader("Checklist Items"),
-                              _buildChecklistSection(),
-                              _buildSectionHeader("Delivery List"),
-                              _buildDeliveryListSection(),
                             ],
                           ),
                 ),
@@ -200,156 +228,196 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return SliverPadding(
-      padding: const EdgeInsets.all(16),
-      sliver: SliverToBoxAdapter(
-        child: Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
+Widget _buildChecklistSection() {
+  return BlocBuilder<ChecklistBloc, ChecklistState>(
+    buildWhen: (previous, current) {
+      if (current is ChecklistLoaded && previous is ChecklistLoaded) {
+        return current.checklist.length != previous.checklist.length;
+      }
+      return current is ChecklistLoaded;
+    },
+    builder: (context, state) {
+      final effectiveState = _cachedChecklistState ?? state;
 
-  Widget _buildChecklistSection() {
-    return BlocBuilder<ChecklistBloc, ChecklistState>(
-      buildWhen: (previous, current) {
-        // Only rebuild the entire list when the list structure changes
-        // Not when individual items are checked/unchecked
-        if (current is ChecklistLoaded && previous is ChecklistLoaded) {
-          return current.checklist.length != previous.checklist.length;
-        }
-        return current is ChecklistLoaded;
-      },
-      builder: (context, state) {
-        final effectiveState = _cachedChecklistState ?? state;
+      if (effectiveState is ChecklistLoaded) {
+        return Column(
+          children: effectiveState.checklist.map((item) {
+            debugPrint('🔍 Rendering checklist item: ${item.objectName}');
 
-        if (effectiveState is ChecklistLoaded) {
-          return SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final item = effectiveState.checklist[index];
-                debugPrint('🔍 Rendering checklist item: ${item.objectName}');
+            return BlocBuilder<ChecklistBloc, ChecklistState>(
+              buildWhen: (previous, current) {
+                if (current is ChecklistLoaded && previous is ChecklistLoaded) {
+                  // Find items without using firstWhere to avoid type issues
+                  ChecklistModel? prevItem;
+                  ChecklistModel? currentItem;
 
-                // Use a separate BlocBuilder for each item to avoid rebuilding the entire list
-                return BlocBuilder<ChecklistBloc, ChecklistState>(
-                  buildWhen: (previous, current) {
-                    // Only rebuild this specific item when its checked state changes
-                    if (current is ChecklistLoaded &&
-                        previous is ChecklistLoaded) {
-                      final prevItem = previous.checklist.firstWhere(
-                        (i) => i.id == item.id,
-                        orElse: () => item,
-                      );
-                      final currentItem = current.checklist.firstWhere(
-                        (i) => i.id == item.id,
-                        orElse: () => item,
-                      );
-                      return prevItem.isChecked != currentItem.isChecked;
-                    }
+                  try {
+                    prevItem = previous.checklist
+                        .cast<ChecklistModel>()
+                        .where((i) => i.id == item.id)
+                        .firstOrNull ?? item as ChecklistModel;
+                    currentItem = current.checklist
+                        .cast<ChecklistModel>()
+                        .where((i) => i.id == item.id)
+                        .firstOrNull ?? item as ChecklistModel;
+                  } catch (e) {
+                    debugPrint('⚠️ Type casting error: $e');
                     return false;
-                  },
-                  builder: (context, itemState) {
-                    // If we have a newer state, use it to get the latest checked status
-                    final currentItem =
-                        (itemState is ChecklistLoaded)
-                            ? itemState.checklist.firstWhere(
-                              (i) => i.id == item.id,
-                              orElse: () => item,
-                            )
-                            : item;
+                  }
 
-                    return ChecklistTile(
-                      key: ValueKey(item.id),
-                      checklist: currentItem,
-                      isChecked: currentItem.isChecked ?? false,
-                      onChanged: (value) {
-                        _checklistBloc.add(CheckItemEvent(item.id));
-                      },
-                    );
+                  return prevItem.isChecked != currentItem.isChecked;
+                }
+                return false;
+              },
+              builder: (context, itemState) {
+                ChecklistModel currentItem;
+
+                try {
+                  if (itemState is ChecklistLoaded) {
+                    currentItem = itemState.checklist
+                        .cast<ChecklistModel>()
+                        .where((i) => i.id == item.id)
+                        .firstOrNull ?? item as ChecklistModel;
+                  } else {
+                    currentItem = item as ChecklistModel;
+                  }
+                } catch (e) {
+                  debugPrint('⚠️ Error getting current item: $e');
+                  currentItem = item as ChecklistModel;
+                }
+
+                // Get the actual checked state from the current item
+                final actualCheckedState = currentItem.isChecked ?? false;
+                
+                debugPrint('🔍 Item ${currentItem.objectName}: actualCheckedState=$actualCheckedState');
+
+                return ChecklistTile(
+                  key: ValueKey('checklist_${item.id}'),
+                  checklist: currentItem,
+                  isChecked: actualCheckedState, // Pass the actual checked state
+                  onChanged: (value) {
+                    debugPrint('🔄 Checkbox changed for ${currentItem.objectName}: $value');
+                    _checklistBloc.add(CheckItemEvent(item.id));
                   },
                 );
               },
-              childCount: effectiveState.checklist.length,
-              addAutomaticKeepAlives: true,
-            ),
-          );
-        }
-        return const SliverToBoxAdapter(child: SizedBox.shrink());
-      },
-    );
-  }
-
-  Widget _buildDeliveryListSection() {
-    return BlocBuilder<CustomerBloc, CustomerState>(
-      builder: (context, state) {
-        final effectiveState = _cachedState ?? state;
-
-        if (effectiveState is CustomerLoaded) {
-          if (effectiveState.customer.isEmpty) {
-            return SliverToBoxAdapter(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.local_shipping_outlined,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No deliveries available',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ],
-                ),
-              ),
             );
-          }
+          }).toList(),
+        );
+      }
+      return const SizedBox.shrink();
+    },
+  );
+}
 
-          return SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final customer = effectiveState.customer[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: DeliveryListTile(
-                  customer: customer,
-                  isFromLocal: true,
-                  onTap: () {
-                    // _customerBloc
-                    //     .add(LoadLocalCustomerLocationEvent(customer.id!));
-                    // context.go('/delivery-and-invoice/${customer.id}',
-                    //     extra: customer);
-                  },
+
+  Widget _buildDeliverySection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+          builder: (context, state) {
+            debugPrint('🔍 Current DeliveryDataState: ${state.runtimeType}');
+
+            if (state is DeliveryDataLoading) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(),
                 ),
               );
-            }, childCount: effectiveState.customer.length),
-          );
-        }
+            }
 
-        if (state is CustomerLoading) {
-          return const SliverToBoxAdapter(
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
+            // Use cached state if available
+            final deliveryState =
+                state is DeliveryDataByTripLoaded
+                    ? state
+                    : _cachedDeliveryDataState;
 
-        return const SliverToBoxAdapter(
-          child: Center(child: Text('No customers available')),
-        );
-      },
+            if (deliveryState is DeliveryDataByTripLoaded) {
+              debugPrint(
+                '📋 Delivery data loaded: ${deliveryState.deliveryData.length} items',
+              );
+
+              if (deliveryState.deliveryData.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.local_shipping_outlined,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No deliveries found for this trip',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Convert loaded delivery data to a map for quick lookup
+              final Map<String, dynamic> loadedData = {};
+              for (final delivery in deliveryState.deliveryData) {
+                if (delivery.id != null) {
+                  loadedData[delivery.id!] = delivery;
+                }
+              }
+
+              return DeliveryList(
+                deliveries: deliveryState.deliveryData,
+                loadedDeliveryData: loadedData,
+                isLoading: false,
+              );
+            }
+
+            // Show empty state if no data is available
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.local_shipping_outlined,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No deliveries available',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
   @override
   void dispose() {
-    _cachedState = null;
+    _cachedDeliveryDataState = null;
     _cachedChecklistState = null;
     super.dispose();
   }

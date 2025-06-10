@@ -3,14 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
+
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 
 class EnterCode extends StatefulWidget {
   const EnterCode({super.key});
@@ -74,12 +75,12 @@ class _EnterCodeState extends State<EnterCode> {
                       if (state is TripLoaded) {
                         debugPrint('✅ Trip loaded: ${state.trip.id}');
                         debugPrint(
-                          '📦 Customers count: ${state.trip.customers.length}',
+                          '📦 Customers count: ${state.trip.deliveryData.length}',
                         );
 
                         if (state.trip.id != null) {
                           final customerIds =
-                              state.trip.customers
+                              state.trip.deliveryData
                                   .map((customer) => customer.id ?? '')
                                   .where((id) => id.isNotEmpty)
                                   .toList();
@@ -95,8 +96,8 @@ class _EnterCodeState extends State<EnterCode> {
                           debugPrint(
                             '🔄 Loading customers for trip: ${state.trip.id}',
                           );
-                          context.read<CustomerBloc>().add(
-                            GetCustomerEvent(state.trip.id!),
+                          context.read<DeliveryDataBloc>().add(
+                            GetDeliveryDataByTripIdEvent(state.trip.id!),
                           );
 
                           debugPrint('🚀 Navigating to trip ticket screen');

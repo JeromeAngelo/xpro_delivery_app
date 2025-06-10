@@ -1,8 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/data/model/return_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/data/model/transaction_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 abstract class DeliveryUpdateEvent extends Equatable {
   const DeliveryUpdateEvent();
 }
@@ -32,22 +29,18 @@ class UpdateDeliveryStatusEvent extends DeliveryUpdateEvent {
   List<Object> get props => [customerId, statusId];
 }
 
+// Replace the existing CompleteDeliveryEvent with this:
 class CompleteDeliveryEvent extends DeliveryUpdateEvent {
-  final String customerId;
-  final List<InvoiceModel> invoices;
-  final List<TransactionModel> transactions;
-  final List<ReturnModel> returns;
-  final List<DeliveryUpdateModel> deliveryStatus;
+  final DeliveryDataEntity deliveryData;
+  
   const CompleteDeliveryEvent({
-    required this.customerId,
-    required this.invoices,
-    required this.transactions,
-    required this.returns,
-    required this.deliveryStatus,
+    required this.deliveryData,
   });
+  
   @override
-  List<Object> get props => [customerId, invoices, transactions, returns, deliveryStatus];
+  List<Object> get props => [deliveryData];
 }
+
 
 class CheckEndDeliveryStatusEvent extends DeliveryUpdateEvent {
   final String tripId;

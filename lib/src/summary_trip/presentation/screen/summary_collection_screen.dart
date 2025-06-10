@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/domain/entity/collection_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_state.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/collection_dashboard_screen.dart';
-import 'package:x_pro_delivery_app/src/summary_trip/presentation/widget/summary_completed_customer_list.dart';
-import '../../../../core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_bloc.dart';
+
+import '../widget/summary_completed_customer_list.dart';
 
 class SummaryCollectionScreen extends StatefulWidget {
   const SummaryCollectionScreen({super.key});
@@ -24,45 +24,60 @@ class SummaryCollectionScreen extends StatefulWidget {
 class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
     with AutomaticKeepAliveClientMixin {
   late final AuthBloc _authBloc;
-  late final CompletedCustomerBloc _completedCustomerBloc;
+  late final CollectionsBloc _collectionsBloc;
   bool _isDataInitialized = false;
-  CompletedCustomerState? _cachedState;
-  StreamSubscription? _authSubscription;
+  bool _isLoading = true;
+  bool _hasTriedLocalLoad = false;
+  String? _currentTripId;
+  List<CollectionEntity> _currentCollections = [];
+  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
     _initializeBlocs();
-    _setupDataListeners();
-    _setupDataRefresh();
+    
+    // Force immediate data load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDataImmediately();
+    });
   }
 
   void _initializeBlocs() {
     _authBloc = context.read<AuthBloc>();
-    _completedCustomerBloc = context.read<CompletedCustomerBloc>();
+    _collectionsBloc = context.read<CollectionsBloc>();
   }
 
-  void _setupDataListeners() {
-    _authSubscription = _authBloc.stream.listen((state) {
-      if (state is UserByIdLoaded && !_isDataInitialized) {
-        _loadInitialData(state.user.id!);
+  // Immediately load data from any available source
+  Future<void> _loadDataImmediately() async {
+    debugPrint('🚀 SUMMARY: Attempting immediate data load');
+    
+    // First check if we already have data in the bloc
+    final currentState = _collectionsBloc.state;
+    if (currentState is CollectionsLoaded && currentState.collections.isNotEmpty) {
+      debugPrint('✅ SUMMARY: Using existing data from bloc state');
+      setState(() {
+        _currentCollections = currentState.collections;
+        _isOffline = false;
+        _isLoading = false;
         _isDataInitialized = true;
-      }
-    });
-  }
-
-  void _setupDataRefresh() {
-    final completedCustomerBloc = context.read<CompletedCustomerBloc>();
-    final authBloc = context.read<AuthBloc>();
-
-    authBloc.stream.listen((state) {
-      if (state is UserTripLoaded && state.trip.id != null) {
-        completedCustomerBloc.add(GetCompletedCustomerEvent(state.trip.id!));
-      }
-    });
-  }
-
-  void _loadInitialData(String userId) async {
+      });
+      return;
+    }
+    
+    // Check for offline data
+    if (currentState is CollectionsOffline && currentState.collections.isNotEmpty) {
+      debugPrint('📱 SUMMARY: Using offline data from bloc state');
+      setState(() {
+        _currentCollections = currentState.collections;
+        _isOffline = true;
+        _isLoading = false;
+        _isDataInitialized = true;
+      });
+      return;
+    }
+    
+    // Then try to get trip ID from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final storedData = prefs.getString('user_data');
 
@@ -71,30 +86,58 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
       final tripData = userData['trip'] as Map<String, dynamic>?;
 
       if (tripData != null && tripData['id'] != null) {
-        debugPrint(
-          '🎫 Loading completed customers for trip: ${tripData['id']}',
-        );
-
-        // First try to load from local for immediate display
-        _completedCustomerBloc
-          ..add(GetCompletedCustomerEvent(tripData['id']))
-          ..add(LoadLocalCompletedCustomerEvent(tripData['id']));
-
-        // Auth data is loaded separately
-        _authBloc
-          ..add(LoadLocalUserByIdEvent(userId))
-          ..add(LoadUserByIdEvent(userId))
-          ..add(LoadLocalUserTripEvent(userId))
-          ..add(GetUserTripEvent(userId));
+        _currentTripId = tripData['id'];
+        debugPrint('🔍 SUMMARY: Found trip ID in SharedPreferences: $_currentTripId');
+        
+        // Try to load from local storage first for immediate display
+        if (!_hasTriedLocalLoad) {
+          _hasTriedLocalLoad = true;
+         _collectionsBloc.add(GetCollectionsByTripIdEvent(_currentTripId!));
+        // Load local data first for immediate display
+        _collectionsBloc.add(GetLocalCollectionsByTripIdEvent(_currentTripId!));
+        }
+      } else {
+        debugPrint('⚠️ SUMMARY: No trip ID found in SharedPreferences');
+        setState(() => _isLoading = false);
+      }
+    } else {
+      debugPrint('⚠️ SUMMARY: No user data found in SharedPreferences');
+      setState(() => _isLoading = false);
+    }
+    
+    // Also check if we have trip data in the auth bloc
+    final authState = _authBloc.state;
+    if (authState is UserTripLoaded && authState.trip.id != null) {
+      _currentTripId = authState.trip.id;
+      debugPrint('🔍 SUMMARY: Found trip ID in auth bloc: $_currentTripId');
+      
+      if (!_hasTriedLocalLoad) {
+        _hasTriedLocalLoad = true;
+        _collectionsBloc.add(GetCollectionsByTripIdEvent(_currentTripId!));
+        // Load local data first for immediate display
+        _collectionsBloc.add(GetLocalCollectionsByTripIdEvent(_currentTripId!));
       }
     }
   }
 
   Future<void> _refreshData() async {
-    final authState = context.read<AuthBloc>().state;
-    if (authState is UserTripLoaded && authState.trip.id != null) {
-      // Force a fresh load from remote
-      _completedCustomerBloc.add(GetCompletedCustomerEvent(authState.trip.id!));
+    debugPrint('🔄 SUMMARY: Manual refresh triggered');
+    setState(() => _isLoading = true);
+    
+    if (_currentTripId != null) {
+      debugPrint('🔄 SUMMARY: Refreshing data for trip: $_currentTripId');
+      _collectionsBloc.add(RefreshCollectionsEvent(_currentTripId!));
+    } else {
+      // Try to get trip ID from auth bloc
+      final authState = _authBloc.state;
+      if (authState is UserTripLoaded && authState.trip.id != null) {
+        _currentTripId = authState.trip.id;
+        debugPrint('🔍 SUMMARY: Found trip ID in auth bloc during refresh: $_currentTripId');
+        _collectionsBloc.add(RefreshCollectionsEvent(_currentTripId!));
+      } else {
+        // Try to get from SharedPreferences
+        await _loadDataImmediately();
+      }
     }
   }
 
@@ -102,81 +145,109 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _completedCustomerBloc),
-        BlocProvider.value(value: _authBloc),
-      ],
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<AuthBloc, AuthState>(
-            listener: (context, state) {
-              if (state is UserTripLoaded && state.trip.id != null) {
-                debugPrint('🎫 User trip loaded: ${state.trip.id}');
-                _completedCustomerBloc.add(
-                  GetCompletedCustomerEvent(state.trip.id!),
-                );
-              }
-            },
-          ),
-          BlocListener<CompletedCustomerBloc, CompletedCustomerState>(
-            listener: (context, state) {
-              if (state is CompletedCustomerLoaded) {
-                setState(() => _cachedState = state);
-              }
-            },
-          ),
-        ],
-        child: RefreshIndicator(
-          onRefresh: _refreshData,
-          child: BlocBuilder<CompletedCustomerBloc, CompletedCustomerState>(
-            buildWhen:
-                (previous, current) =>
-                    current is CompletedCustomerLoaded ||
-                    current is CompletedCustomerError ||
-                    _cachedState == null,
-            builder: (context, state) {
-              final effectiveState = _cachedState ?? state;
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      child: BlocConsumer<CollectionsBloc, CollectionsState>(
+        listener: (context, state) {
+          if (state is CollectionsLoaded) {
+            debugPrint('✅ SUMMARY: Collections loaded: ${state.collections.length} items');
+            setState(() {
+              _currentCollections = state.collections;
+              _isOffline = false;
+              _isLoading = false;
+            });
+          } else if (state is CollectionsOffline) {
+            debugPrint('📱 SUMMARY: Collections loaded offline: ${state.collections.length} items');
+            setState(() {
+              _currentCollections = state.collections;
+              _isOffline = true;
+              _isLoading = false;
+            });
+          } else if (state is CollectionsError) {
+            debugPrint('❌ SUMMARY: Error loading collections: ${state.message}');
+            setState(() => _isLoading = false);
+          } else if (state is CollectionsEmpty) {
+            debugPrint('📭 SUMMARY: No collections found');
+            setState(() {
+              _currentCollections = [];
+              _isOffline = false;
+              _isLoading = false;
+            });
+          }
+        },
+        builder: (context, state) {
+          // Show loading indicator while initial data is being fetched
+          if (_isLoading && state is CollectionsLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-              if (effectiveState is CompletedCustomerLoaded &&
-                  effectiveState.customers.isEmpty) {
-                return _buildEmptyState();
-              }
-
-              if (effectiveState is CompletedCustomerLoaded) {
-                return SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 10,
+          // If we have collections data (either loaded or offline)
+          if (_currentCollections.isNotEmpty) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Collection Dashboard with passed data
+                    CollectionDashboardScreen(
+                      collections: _currentCollections,
+                      isOffline: _isOffline,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const CollectionDashboardScreen(),
-                        Padding(
-                          padding: const EdgeInsets.all(5),
-                          child: Text(
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.all(5),
+                      child: Row(
+                        children: [
+                          Text(
                             'Completed Customers',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
-                        ),
-                        const SummaryCompletedCustomerList(),
-                      ],
+                          if (_isOffline) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.offline_bolt, color: Colors.orange, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Offline',
+                                    style: TextStyle(color: Colors.orange, fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }
+                    // Completed Customer List with passed data
+                    SummaryCompletedCustomerList(
+                      collections: _currentCollections,
+                      isOffline: _isOffline,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
 
-              if (effectiveState is CompletedCustomerError) {
-                return _buildErrorState(effectiveState.message);
-              }
+          // If we have an error
+          if (state is CollectionsError) {
+            return _buildErrorState(state.message);
+          }
 
-              return const Center(child: CircularProgressIndicator());
-            },
-          ),
-        ),
+          // Default state - show empty state with refresh button
+          return _buildEmptyState();
+        },
       ),
     );
   }
@@ -194,15 +265,23 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
           const SizedBox(height: 16),
           Text(
             'No completed customers yet',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             'Customers will appear here once deliveries are completed',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _refreshData,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Refresh'),
           ),
         ],
       ),
@@ -233,12 +312,6 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _authSubscription?.cancel();
-    super.dispose();
   }
 
   @override

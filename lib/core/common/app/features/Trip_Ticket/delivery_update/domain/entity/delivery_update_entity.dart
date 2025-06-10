@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:objectbox/objectbox.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/model/customer_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
 
 @Entity()
 class DeliveryUpdateEntity extends Equatable {
@@ -20,7 +20,8 @@ class DeliveryUpdateEntity extends Equatable {
   bool? isAssigned;
   String? assignedTo;
   String? remarks;
-  final ToMany<CustomerModel> customers = ToMany<CustomerModel>();
+  // Added deliveryData relation
+  final ToOne<DeliveryDataModel> deliveryData = ToOne<DeliveryDataModel>();
 
   DeliveryUpdateEntity({
     this.id,
@@ -36,10 +37,12 @@ class DeliveryUpdateEntity extends Equatable {
     this.image,
     this.isAssigned,
     this.assignedTo,
-    List<CustomerModel>? customersList,
+    DeliveryDataModel? deliveryData,
   }) {
-    if (customersList != null) {
-      customers.addAll(customersList);
+   
+    // Initialize deliveryData relation
+    if (deliveryData != null) {
+      this.deliveryData.target = deliveryData;
     }
   }
 
@@ -57,7 +60,7 @@ class DeliveryUpdateEntity extends Equatable {
         customer,
         isAssigned,
         assignedTo,
-        customers,
         image,
+        deliveryData.target?.id,
       ];
 }

@@ -1,107 +1,78 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/domain/entity/vehicle_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/presentation/bloc/vehicle_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/presentation/bloc/vehicle_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/presentation/bloc/vehicle_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/entity/delivery_team_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/enitity/delivery_vehicle_entity.dart';
 import 'package:x_pro_delivery_app/src/delivery_team/presentation/widget/empty_screen_message.dart';
 
 class ViewVehicleScreen extends StatefulWidget {
-  const ViewVehicleScreen({super.key});
+  final DeliveryTeamEntity? deliveryTeam;
+
+  const ViewVehicleScreen({super.key, this.deliveryTeam});
 
   @override
   State<ViewVehicleScreen> createState() => _ViewVehicleScreenState();
 }
 
 class _ViewVehicleScreenState extends State<ViewVehicleScreen> {
-  VehicleState? _cachedState;
-  bool _isDataInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadVehicleData();
-  }
-
-  void _loadVehicleData() {
-    if (!_isDataInitialized) {
-      final tripState = context.read<TripBloc>().state;
-      if (tripState is TripLoaded && tripState.trip.id != null) {
-        debugPrint(
-          '📱 Loading local vehicle data for trip: ${tripState.trip.id}',
-        );
-        context.read<VehicleBloc>()
-          ..add(LoadLocalVehicleByTripIdEvent(tripState.trip.id!))
-          ..add(LoadVehicleByTripIdEvent(tripState.trip.id!));
-        _isDataInitialized = true;
-      }
-    }
-  }
-
-  Future<void> _refreshData() async {
-    final tripState = context.read<TripBloc>().state;
-    if (tripState is TripLoaded && tripState.trip.id != null) {
-      context.read<VehicleBloc>().add(
-        LoadVehicleByTripIdEvent(tripState.trip.id!),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Vehicle Details'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Delivery Vehicle Details'),
+        centerTitle: true,
+      ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        child: BlocBuilder<VehicleBloc, VehicleState>(
-          buildWhen:
-              (previous, current) =>
-                  current is VehicleByTripLoaded || _cachedState == null,
-          builder: (context, state) {
-            if (state is VehicleByTripLoaded) {
-              _cachedState = state;
-              return _buildVehicleDetails(state.vehicle);
-            }
-
-            final cachedState = _cachedState;
-            if (cachedState is VehicleByTripLoaded) {
-              return _buildVehicleDetails(cachedState.vehicle);
-            }
-
-            if (cachedState is VehicleLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            return EmptyScreenMessage(message: "No Vehicles Available");
-          },
-        ),
+        child: _buildVehicleContent(),
       ),
     );
   }
 
-  Widget _buildVehicleDetails(VehicleEntity vehicle) {
+  Future<void> _refreshData() async {
+    // Refresh logic can be added here if needed
+    setState(() {});
+  }
+
+  Widget _buildVehicleContent() {
+    // Check if delivery team data is available
+    if (widget.deliveryTeam == null) {
+      return const EmptyScreenMessage(
+        message: "No Delivery Team Data Available",
+      );
+    }
+
+    // Get delivery vehicle from delivery team
+    final deliveryVehicle = widget.deliveryTeam!.deliveryVehicle.target;
+
+    if (deliveryVehicle == null) {
+      return const EmptyScreenMessage(message: "No Delivery Vehicle Assigned");
+    }
+
+    return _buildDeliveryVehicleDetails(deliveryVehicle);
+  }
+
+  Widget _buildDeliveryVehicleDetails(DeliveryVehicleEntity vehicle) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _VehicleHeaderCard(vehicle: vehicle),
+          _DeliveryVehicleHeaderCard(vehicle: vehicle),
           const SizedBox(height: 20),
-          _VehicleDetailsCard(vehicle: vehicle),
+          _DeliveryVehicleDetailsCard(vehicle: vehicle),
           const SizedBox(height: 20),
-          _VehicleTimelineCard(vehicle: vehicle),
+          _DeliveryVehicleSpecsCard(vehicle: vehicle),
+          const SizedBox(height: 20),
+          _DeliveryVehicleTimelineCard(vehicle: vehicle),
         ],
       ),
     );
   }
 }
 
-class _VehicleHeaderCard extends StatelessWidget {
-  final VehicleEntity vehicle;
+class _DeliveryVehicleHeaderCard extends StatelessWidget {
+  final DeliveryVehicleEntity vehicle;
 
-  const _VehicleHeaderCard({required this.vehicle});
+  const _DeliveryVehicleHeaderCard({required this.vehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -118,14 +89,18 @@ class _VehicleHeaderCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              vehicle.vehicleName ?? 'Unnamed Vehicle',
+              vehicle.name ?? 'Unnamed Vehicle',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 8),
             Text(
-              vehicle.vehiclePlateNumber ?? 'No Plate Number',
-              style: Theme.of(context).textTheme.titleMedium,
+              vehicle.plateNo ?? 'No Plate Number',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -134,10 +109,10 @@ class _VehicleHeaderCard extends StatelessWidget {
   }
 }
 
-class _VehicleDetailsCard extends StatelessWidget {
-  final VehicleEntity vehicle;
+class _DeliveryVehicleDetailsCard extends StatelessWidget {
+  final DeliveryVehicleEntity vehicle;
 
-  const _VehicleDetailsCard({required this.vehicle});
+  const _DeliveryVehicleDetailsCard({required this.vehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -157,16 +132,23 @@ class _VehicleDetailsCard extends StatelessWidget {
             const SizedBox(height: 16),
             _buildDetailRow(
               context,
+              'Make',
+              vehicle.make ?? 'Not Specified',
+              Icons.business,
+            ),
+            const Divider(),
+            _buildDetailRow(
+              context,
               'Type',
-              vehicle.vehicleType ?? 'Not Specified',
+              vehicle.type ?? 'Not Specified',
               Icons.category,
             ),
             const Divider(),
             _buildDetailRow(
               context,
-              'Trip Number',
-              vehicle.trip.target?.tripNumberId ?? 'Not Assigned',
-              Icons.confirmation_number,
+              'Wheels',
+              vehicle.wheels ?? 'Not Specified',
+              Icons.tire_repair,
             ),
           ],
         ),
@@ -206,10 +188,86 @@ class _VehicleDetailsCard extends StatelessWidget {
   }
 }
 
-class _VehicleTimelineCard extends StatelessWidget {
-  final VehicleEntity vehicle;
+class _DeliveryVehicleSpecsCard extends StatelessWidget {
+  final DeliveryVehicleEntity vehicle;
 
-  const _VehicleTimelineCard({required this.vehicle});
+  const _DeliveryVehicleSpecsCard({required this.vehicle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Vehicle Specifications',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildSpecRow(
+              context,
+              'Volume Capacity',
+              vehicle.volumeCapacity != null
+                  ? '${vehicle.volumeCapacity} m³'
+                  : 'Not Specified',
+              Icons.inventory,
+            ),
+            const Divider(),
+            _buildSpecRow(
+              context,
+              'Weight Capacity',
+              vehicle.weightCapacity != null
+                  ? '${vehicle.weightCapacity} kg'
+                  : 'Not Specified',
+              Icons.scale,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpecRow(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  value,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeliveryVehicleTimelineCard extends StatelessWidget {
+  final DeliveryVehicleEntity vehicle;
+
+  const _DeliveryVehicleTimelineCard({required this.vehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -277,6 +335,132 @@ class _VehicleTimelineCard extends StatelessWidget {
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'N/A';
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
+    return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
+
+// // ADDED: Loading state widget for when delivery team data is being fetched
+// class _LoadingVehicleWidget extends StatelessWidget {
+//   const _LoadingVehicleWidget();
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return const Center(
+//       child: Column(
+//         mainAxisAlignment: MainAxisAlignment.center,
+//         children: [
+//           CircularProgressIndicator(),
+//           SizedBox(height: 16),
+//           Text('Loading vehicle information...'),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// // ADDED: Error state widget for when there's an error loading data
+// class _ErrorVehicleWidget extends StatelessWidget {
+//   final String message;
+//   final VoidCallback? onRetry;
+
+//   const _ErrorVehicleWidget({
+//     required this.message,
+//     this.onRetry,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Center(
+//       child: Column(
+//         mainAxisAlignment: MainAxisAlignment.center,
+//         children: [
+//           Icon(
+//             Icons.error_outline,
+//             size: 64,
+//             color: Theme.of(context).colorScheme.error,
+//           ),
+//           const SizedBox(height: 16),
+//           Text(
+//             'Error Loading Vehicle Data',
+//             style: Theme.of(context).textTheme.titleLarge,
+//           ),
+//           const SizedBox(height: 8),
+//           Text(
+//             message,
+//             style: Theme.of(context).textTheme.bodyMedium,
+//             textAlign: TextAlign.center,
+//           ),
+//           if (onRetry != null) ...[
+//             const SizedBox(height: 16),
+//             ElevatedButton(
+//               onPressed: onRetry,
+//               child: const Text('Retry'),
+//             ),
+//           ],
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// // ADDED: Status badge widget for vehicle status
+// class _VehicleStatusBadge extends StatelessWidget {
+//   final String? status;
+
+//   const _VehicleStatusBadge({this.status});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final statusText = status ?? 'Unknown';
+//     Color badgeColor;
+//     IconData statusIcon;
+
+//     switch (statusText.toLowerCase()) {
+//       case 'active':
+//       case 'available':
+//         badgeColor = Colors.green;
+//         statusIcon = Icons.check_circle;
+//         break;
+//       case 'in_use':
+//       case 'busy':
+//         badgeColor = Colors.orange;
+//         statusIcon = Icons.local_shipping;
+//         break;
+//       case 'maintenance':
+//         badgeColor = Colors.red;
+//         statusIcon = Icons.build;
+//         break;
+//       case 'inactive':
+//         badgeColor = Colors.grey;
+//         statusIcon = Icons.pause_circle;
+//         break;
+//       default:
+//         badgeColor = Colors.blue;
+//         statusIcon = Icons.help;
+//     }
+
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+//       decoration: BoxDecoration(
+//         color: badgeColor.withOpacity(0.1),
+//         borderRadius: BorderRadius.circular(20),
+//         border: Border.all(color: badgeColor),
+//       ),
+//       child: Row(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           Icon(statusIcon, size: 16, color: badgeColor),
+//           const SizedBox(width: 4),
+//           Text(
+//             statusText.toUpperCase(),
+//             style: TextStyle(
+//               color: badgeColor,
+//               fontWeight: FontWeight.bold,
+//               fontSize: 12,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }

@@ -2,16 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_state.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/trip_update_dialog.dart';
+import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/trip_update_bottom_sheet.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/update_timeline.dart';
 
 class UpdateTimelineView extends StatefulWidget {
@@ -24,14 +24,14 @@ class UpdateTimelineView extends StatefulWidget {
 class _UpdateTimelineViewState extends State<UpdateTimelineView>
     with AutomaticKeepAliveClientMixin {
   late final AuthBloc _authBloc;
-  late final CustomerBloc _customerBloc;
+  late final DeliveryDataBloc _deliveryDataBloc;
   late final TripUpdatesBloc _tripUpdatesBloc;
   bool _isDataInitialized = false;
-  CustomerState? _cachedState;
+  DeliveryDataState? _cachedDeliveryState;
   TripUpdatesState? _cachedTripState;
   AuthState? _cachedAuthState;
   StreamSubscription? _authSubscription;
-  StreamSubscription? _customerSubscription;
+  StreamSubscription? _deliveryDataSubscription;
   StreamSubscription? _tripUpdateSubscription;
 
   @override
@@ -44,7 +44,7 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
 
   void _initializeBlocs() {
     _authBloc = context.read<AuthBloc>();
-    _customerBloc = context.read<CustomerBloc>();
+    _deliveryDataBloc = context.read<DeliveryDataBloc>();
     _tripUpdatesBloc = context.read<TripUpdatesBloc>();
     _cachedAuthState = _authBloc.state;
   }
@@ -53,9 +53,23 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
     if (_authBloc.state is UserTripLoaded) {
       final tripId = (_authBloc.state as UserTripLoaded).trip.id!;
       debugPrint('🔄 Loading initial data for trip: $tripId');
-      _customerBloc.add(GetCustomerEvent(tripId));
-      _tripUpdatesBloc.add(GetTripUpdatesEvent(tripId));
+
+      // Load remote data first, then local as fallback
+      _loadRemoteDataWithLocalFallback(tripId);
+      _isDataInitialized = true;
     }
+  }
+
+  void _loadRemoteDataWithLocalFallback(String tripId) {
+    debugPrint('🌐 Attempting to load remote data for trip: $tripId');
+
+    _deliveryDataBloc.add(GetLocalDeliveryDataByTripIdEvent(tripId));
+    // Load delivery data - remote first, then local
+    _deliveryDataBloc.add(GetDeliveryDataByTripIdEvent(tripId));
+
+    _tripUpdatesBloc.add(LoadLocalTripUpdatesEvent(tripId));
+    // Load trip updates - remote first, then local
+    _tripUpdatesBloc.add(GetTripUpdatesEvent(tripId));
   }
 
   void _setupDataListeners() {
@@ -63,24 +77,51 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
       debugPrint('🔐 Auth state update: ${state.runtimeType}');
       if (mounted) {
         setState(() => _cachedAuthState = state);
-        if (state is UserTripLoaded && !_isDataInitialized) {
-          _loadInitialData();
-          _isDataInitialized = true;
+
+        if (state is UserTripLoaded) {
+          final tripId = state.trip.id!;
+          if (!_isDataInitialized) {
+            debugPrint('🎯 Auth loaded, initializing data for trip: $tripId');
+            _loadRemoteDataWithLocalFallback(tripId);
+            _isDataInitialized = true;
+          }
         }
       }
     });
 
-    _customerSubscription = _customerBloc.stream.listen((state) {
-      debugPrint('👥 Customer state update: ${state.runtimeType}');
-      if (mounted && state is CustomerLoaded) {
-        setState(() => _cachedState = state);
+    _deliveryDataSubscription = _deliveryDataBloc.stream.listen((state) {
+      debugPrint('📦 Delivery data state update: ${state.runtimeType}');
+      if (mounted) {
+        if (state is DeliveryDataByTripLoaded) {
+          setState(() => _cachedDeliveryState = state);
+          debugPrint(
+            '✅ Delivery data cached: ${state.deliveryData.length} items',
+          );
+        } else if (state is DeliveryDataError) {
+          debugPrint('❌ Remote delivery data failed, trying local...');
+          // Try local data as fallback
+          if (_authBloc.state is UserTripLoaded) {
+            final tripId = (_authBloc.state as UserTripLoaded).trip.id!;
+            _deliveryDataBloc.add(GetLocalDeliveryDataByTripIdEvent(tripId));
+          }
+        }
       }
     });
 
     _tripUpdateSubscription = _tripUpdatesBloc.stream.listen((state) {
       debugPrint('📝 Trip updates state: ${state.runtimeType}');
-      if (mounted && state is TripUpdatesLoaded) {
-        setState(() => _cachedTripState = state);
+      if (mounted) {
+        if (state is TripUpdatesLoaded) {
+          setState(() => _cachedTripState = state);
+          debugPrint('✅ Trip updates cached: ${state.updates.length} items');
+        } else if (state is TripUpdatesError) {
+          debugPrint('❌ Remote trip updates failed, trying local...');
+          // Try local data as fallback
+          if (_authBloc.state is UserTripLoaded) {
+            final tripId = (_authBloc.state as UserTripLoaded).trip.id!;
+            _tripUpdatesBloc.add(LoadLocalTripUpdatesEvent(tripId));
+          }
+        }
       }
     });
   }
@@ -89,8 +130,9 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
     if (_authBloc.state is UserTripLoaded) {
       final tripId = (_authBloc.state as UserTripLoaded).trip.id!;
       debugPrint('🔄 Refreshing data for trip: $tripId');
-      _customerBloc.add(GetCustomerEvent(tripId));
-      _tripUpdatesBloc.add(GetTripUpdatesEvent(tripId));
+
+      // Always try remote first on manual refresh
+      _loadRemoteDataWithLocalFallback(tripId);
     }
   }
 
@@ -100,7 +142,7 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(value: _customerBloc),
+        BlocProvider.value(value: _deliveryDataBloc),
         BlocProvider.value(value: _tripUpdatesBloc),
         BlocProvider.value(value: _authBloc),
       ],
@@ -110,15 +152,27 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
             listener: (context, state) {
               if (state is UserTripLoaded && state.trip.id != null) {
                 debugPrint('🎫 User trip loaded: ${state.trip.id}');
-                _customerBloc.add(GetCustomerEvent(state.trip.id!));
-                _tripUpdatesBloc.add(GetTripUpdatesEvent(state.trip.id!));
+                if (!_isDataInitialized) {
+                  _loadRemoteDataWithLocalFallback(state.trip.id!);
+                  _isDataInitialized = true;
+                }
               }
             },
           ),
-          BlocListener<CustomerBloc, CustomerState>(
+          BlocListener<DeliveryDataBloc, DeliveryDataState>(
             listener: (context, state) {
-              if (state is CustomerLoaded) {
-                setState(() => _cachedState = state);
+              if (state is DeliveryDataByTripLoaded) {
+                setState(() => _cachedDeliveryState = state);
+              } else if (state is DeliveryDataError) {
+                debugPrint('⚠️ Delivery data error: ${state.message}');
+                // Auto-fallback to local data
+                if (_authBloc.state is UserTripLoaded) {
+                  final tripId = (_authBloc.state as UserTripLoaded).trip.id!;
+                  debugPrint('🔄 Falling back to local delivery data');
+                  _deliveryDataBloc.add(
+                    GetLocalDeliveryDataByTripIdEvent(tripId),
+                  );
+                }
               }
             },
           ),
@@ -126,6 +180,14 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
             listener: (context, state) {
               if (state is TripUpdatesLoaded) {
                 setState(() => _cachedTripState = state);
+              } else if (state is TripUpdatesError) {
+                debugPrint('⚠️ Trip updates error: ${state.message}');
+                // Auto-fallback to local data
+                if (_authBloc.state is UserTripLoaded) {
+                  final tripId = (_authBloc.state as UserTripLoaded).trip.id!;
+                  debugPrint('🔄 Falling back to local trip updates');
+                  _tripUpdatesBloc.add(LoadLocalTripUpdatesEvent(tripId));
+                }
               }
             },
           ),
@@ -138,81 +200,178 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
   Widget _buildContent() {
     final effectiveAuthState = _cachedAuthState;
 
-    if (effectiveAuthState is UserTripLoaded) {
-      return BlocBuilder<CustomerBloc, CustomerState>(
-        builder: (context, customerState) {
-          final effectiveCustomerState = _cachedState ?? customerState;
-
-          if (effectiveCustomerState is CustomerLoaded) {
-            final customers = effectiveCustomerState.customer;
-            debugPrint('📊 Processing ${customers.length} customers');
-
-            final arrivedCustomers =
-                customers.where((customer) {
-                  return customer.deliveryStatus.any(
-                    (status) => status.title?.toLowerCase().trim() == 'arrived',
-                  );
-                }).toList();
-            debugPrint('✅ Found ${arrivedCustomers.length} arrived customers');
-
-            if (arrivedCustomers.isEmpty) {
-              return _buildEmptyState();
-            }
-
-            return RefreshIndicator(
-              onRefresh: _refreshData,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: UpdateTimeline(
-                      tripUpdates:
-                          _cachedTripState is TripUpdatesLoaded
-                              ? (_cachedTripState as TripUpdatesLoaded).updates
-                                  .cast<TripUpdateEntity>()
-                              : [],
-                      customers: arrivedCustomers,
-                    ),
-                  ),
-                  _buildAddUpdateButton(effectiveAuthState.trip.id!),
-                ],
-              ),
-            );
-          }
-
-          if (effectiveCustomerState is CustomerError) {
-            return Center(child: Text(effectiveCustomerState.message));
-          }
-
-          return const Center(child: CircularProgressIndicator());
-        },
+    if (effectiveAuthState is! UserTripLoaded) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading trip data...'),
+          ],
+        ),
       );
     }
 
-    return const Center(child: Text('Loading trip data...'));
+    final tripId = effectiveAuthState.trip.id!;
+
+    return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+      buildWhen:
+          (previous, current) =>
+              current is DeliveryDataByTripLoaded ||
+              current is DeliveryDataError ||
+              _cachedDeliveryState == null,
+      builder: (context, deliveryDataState) {
+        final effectiveDeliveryState =
+            _cachedDeliveryState ?? deliveryDataState;
+
+        if (effectiveDeliveryState is DeliveryDataLoading) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading delivery data...'),
+              ],
+            ),
+          );
+        }
+
+        if (effectiveDeliveryState is DeliveryDataError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading delivery data',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  effectiveDeliveryState.message,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _refreshData,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (effectiveDeliveryState is DeliveryDataByTripLoaded) {
+          final deliveries = effectiveDeliveryState.deliveryData;
+          debugPrint('📊 Processing ${deliveries.length} deliveries');
+
+          final arrivedDeliveries =
+              deliveries.where((delivery) {
+                final deliveryUpdates = delivery.deliveryUpdates.toList();
+                return deliveryUpdates.any(
+                  (status) => status.title?.toLowerCase().trim() == 'arrived',
+                );
+              }).toList();
+          debugPrint('✅ Found ${arrivedDeliveries.length} arrived deliveries');
+
+          if (arrivedDeliveries.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return RefreshIndicator(
+            onRefresh: _refreshData,
+            child: Column(
+              children: [
+                Expanded(
+                  child: BlocBuilder<TripUpdatesBloc, TripUpdatesState>(
+                    buildWhen:
+                        (previous, current) =>
+                            current is TripUpdatesLoaded ||
+                            current is TripUpdatesError ||
+                            _cachedTripState == null,
+                    builder: (context, tripUpdatesState) {
+                      final effectiveTripState =
+                          _cachedTripState ?? tripUpdatesState;
+
+                      List<TripUpdateEntity> tripUpdates = [];
+                      if (effectiveTripState is TripUpdatesLoaded) {
+                        tripUpdates =
+                            effectiveTripState.updates.cast<TripUpdateEntity>();
+                      }
+
+                      return UpdateTimeline(
+                        tripUpdates: tripUpdates,
+                        deliveries: arrivedDeliveries,
+                      );
+                    },
+                  ),
+                ),
+                _buildAddUpdateButton(tripId),
+              ],
+            ),
+          );
+        }
+
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading...'),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.local_shipping_outlined,
-            size: 64,
-            color: Theme.of(context).colorScheme.primary,
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.local_shipping_outlined,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'No Arrived Deliveries',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Waiting for deliveries to arrive at their destination',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _refreshData,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Refresh'),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'No Arrived Deliveries',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Waiting for deliveries to arrive at their destination',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -253,13 +412,10 @@ class _UpdateTimelineViewState extends State<UpdateTimelineView>
 
   @override
   void dispose() {
-    debugPrint('🧹 Cleaning up subscriptions');
+    debugPrint('🧹 Disposing UpdateTimelineView');
     _authSubscription?.cancel();
-    _customerSubscription?.cancel();
+    _deliveryDataSubscription?.cancel();
     _tripUpdateSubscription?.cancel();
-    _cachedState = null;
-    _cachedTripState = null;
-    _cachedAuthState = null;
     super.dispose();
   }
 

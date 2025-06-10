@@ -2,12 +2,9 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/datasource/remote_datasource/delivery_update_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/datasource/local_datasource/delivery_update_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/entity/delivery_update_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/repo/delivery_update_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/data/model/return_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/data/model/transaction_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/core/errors/failures.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
@@ -56,40 +53,42 @@ ResultFuture<List<DeliveryUpdateEntity>> getDeliveryStatusChoices(String custome
     }
   }
 
-  @override
-  ResultFuture<void> completeDelivery(
-    String customerId, {
-    required List<InvoiceModel> invoices,
-    required List<TransactionModel> transactions,
-    required List<ReturnModel> returns,
-    required List<DeliveryUpdateModel> deliveryStatus,
-  }) async {
+   @override
+  ResultFuture<void> completeDelivery(DeliveryDataEntity deliveryData) async {
     try {
+      debugPrint('🔄 Starting delivery completion process');
+      debugPrint('📦 Delivery Data ID: ${deliveryData.id}');
+      debugPrint('🚛 Trip ID: ${deliveryData.trip.target?.id}');
+      
       // Complete locally first
-      await _localDataSource.completeDelivery(
-        customerId,
-        invoices: invoices,
-        transactions: transactions,
-        returns: returns,
-        deliveryStatus: deliveryStatus,
-      );
+      debugPrint('💾 Processing delivery completion locally');
+      await _localDataSource.completeDelivery(deliveryData);
+      debugPrint('✅ Local delivery completion successful');
 
       // Then sync with remote
-      await _remoteDataSource.completeDelivery(
-        customerId,
-        invoices: invoices,
-        transactions: transactions,
-        returns: returns,
-        deliveryStatus: deliveryStatus,
-      );
+      debugPrint('🌐 Syncing delivery completion to remote');
+      await _remoteDataSource.completeDelivery(deliveryData);
+      debugPrint('✅ Remote delivery completion successful');
 
+      debugPrint('🎉 Delivery completion process finished successfully');
       return const Right(null);
+      
     } on CacheException catch (e) {
+      debugPrint('❌ Local delivery completion failed: ${e.message}');
       return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
     } on ServerException catch (e) {
+      debugPrint('⚠️ Remote delivery completion failed, but local completion succeeded');
+      debugPrint('❌ Remote error: ${e.message}');
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      debugPrint('❌ Unexpected error during delivery completion: ${e.toString()}');
+      return Left(ServerFailure(
+        message: 'Unexpected error during delivery completion: ${e.toString()}',
+        statusCode: '500',
+      ));
     }
   }
+
 
 @override
 ResultFuture<DataMap> checkEndDeliverStatus(String tripId) async {

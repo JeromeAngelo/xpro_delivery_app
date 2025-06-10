@@ -3,14 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/customer_summary_dialog.dart';
+
 //import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_queue_remark_dialog.dart';
 
 class UpdateStatusDrawer extends StatefulWidget {
@@ -61,9 +62,9 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
         BlocListener<DeliveryUpdateBloc, DeliveryUpdateState>(
           listener: (context, state) {
             if (state is DeliveryStatusUpdateSuccess) {
-              context.read<CustomerBloc>().add(
-                LoadLocalCustomerLocationEvent(widget.customerId),
-              );
+              context.read<DeliveryDataBloc>()
+                ..add(GetLocalDeliveryDataByIdEvent(widget.customerId))
+                ..add(GetDeliveryDataByIdEvent(widget.customerId));
               Navigator.pop(context);
             }
           },
@@ -126,12 +127,14 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                                         ); // Close the modal bottom sheet first
 
                                         final customerState =
-                                            context.read<CustomerBloc>().state;
+                                            context
+                                                .read<DeliveryDataBloc>()
+                                                .state;
                                         if (customerState
-                                            is CustomerLocationLoaded) {
+                                            is DeliveryDataLoaded) {
                                           final result = await context.push(
                                             '/add-delivery-status',
-                                            extra: customerState.customer,
+                                            extra: customerState.deliveryData,
                                           );
                                           if (result == true) {
                                             context.read<DeliveryUpdateBloc>().add(
@@ -223,54 +226,30 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
     if (statusTitle.toLowerCase() == 'mark as undelivered') {
       Navigator.pop(context); // Close the modal bottom sheet first
 
-      final customerState = context.read<CustomerBloc>().state;
-      if (customerState is CustomerLocationLoaded) {
+      final customerState = context.read<DeliveryDataBloc>().state;
+      if (customerState is DeliveryDataLoaded) {
         context.push(
           '/undeliverable/${widget.customerId}',
-          extra: {'customer': customerState.customer, 'statusId': statusId},
+          extra: {'customer': customerState.deliveryData, 'statusId': statusId},
         );
       }
       return;
     }
 
-    // if (statusTitle.toLowerCase() == 'arrived') {
-    //   Navigator.pop(context); // Close the modal bottom sheet first
-
-    //   final customerState = context.read<CustomerBloc>().state;
-    //   if (customerState is CustomerLocationLoaded) {
-    //     showDialog(
-    //       context: context,
-    //       barrierDismissible: false,
-    //       builder:
-    //           (context) => UpdateQueueRemarkDialog(
-    //             customer: customerState.customer,
-    //             statusId: statusId,
-    //           ),
-    //     );
-    //   }
-
-    //   return;
-    // }
-
+    // Add this new condition for "end delivery"
     if (statusTitle.toLowerCase() == 'end delivery') {
-      final customerBloc = context.read<CustomerBloc>();
-      final customerState = customerBloc.state;
+      final deliveryDataBloc = context.read<DeliveryDataBloc>();
+      final customerState = deliveryDataBloc.state;
 
-      if (customerState is CustomerLocationLoaded) {
-        final customer = customerState.customer;
+      if (customerState is DeliveryDataLoaded) {
+        final deliveryData = customerState.deliveryData;
 
         // Calculate total time
-        customerBloc.add(CalculateCustomerTotalTimeEvent(widget.customerId));
+        deliveryDataBloc.add(CalculateDeliveryTimeEvent(widget.customerId));
 
         // Complete delivery
         context.read<DeliveryUpdateBloc>().add(
-          CompleteDeliveryEvent(
-            customerId: widget.customerId,
-            invoices: customer.invoicesList,
-            transactions: customer.transactionList,
-            returns: customer.returnList,
-            deliveryStatus: customer.deliveryStatus.toList(),
-          ),
+          CompleteDeliveryEvent(deliveryData: deliveryData),
         );
 
         Navigator.pop(context); // Close the modal bottom sheet first
@@ -278,7 +257,22 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
         // Show summary dialog
         showDialog(
           context: context,
-          builder: (context) => CustomerSummaryDialog(customer: customer),
+          barrierDismissible: false,
+          builder:
+              (context) => CustomerSummaryDialog(deliveryData: deliveryData),
+        );
+      }
+      return;
+    }
+
+    if (statusTitle.toLowerCase() == 'unloading') {
+      final deliveryDataBloc = context.read<DeliveryDataBloc>();
+      final customerState = deliveryDataBloc.state;
+
+      if (customerState is DeliveryDataLoaded) {
+        final deliveryData = customerState.deliveryData;
+        context.read<DeliveryDataBloc>().add(
+          SetInvoiceIntoUnloadingEvent(deliveryData.id ?? ''),
         );
       }
     }

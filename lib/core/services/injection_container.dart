@@ -2,51 +2,35 @@ import 'package:get_it/get_it.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/data/datasource/local_datasource/delivery_team_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/data/datasource/remote_datasource/delivery_team_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/data/models/delivery_team_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/data/repo/delivery_team_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/domain/repo/delivery_team_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/domain/usecase/assign_delivery_team_to_trip.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/domain/usecase/load_delivery_team.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/domain/usecase/load_delivery_team_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/data/datasource/local_datasource/personel_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/data/datasource/remote_datasource/personel_remote_data_source.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/data/models/personel_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/data/repo/personels_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/domain/repo/personal_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/domain/usecase/get_personels.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/domain/usecase/load_personels_by_delivery_team.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/domain/usecase/load_personels_by_trip_Id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/domain/usecase/set_role.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/presentation/bloc/personel_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/data/datasource/local_datasource/vehicle_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/data/datasource/remote_datasource/vehicle_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/data/model/vehicle_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/data/repo/vehicle_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/domain/repo/vehicle_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/get_vehicle.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/load_vehicle_by_delivery_team_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/load_vehicle_by_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/presentation/bloc/vehicle_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/data/datasource/local_datasource/completed_local_data_source.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/data/datasource/remote_datasource/completed_customer_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/data/models/completed_customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/data/repo/completed_customer_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/domain/repo/completed_customer_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/domain/usecase/get_completed_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/domain/usecase/get_completed_customer_by_id_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/datasource/local_datasource/customer_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/datasource/remote_datasource/customer_remote_data_source.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/model/customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/repo/customer_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/repo/customer_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/usecases/calculate_customer_total_time.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/usecases/get_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/usecases/get_customersLocation.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/local_datasource/delivery_team_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/remote_datasource/delivery_team_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/repo/delivery_team_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/repo/delivery_team_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/assign_delivery_team_to_trip.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/load_delivery_team.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/load_delivery_team_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/datasource/local_datasource/personel_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/datasource/remote_datasource/personel_remote_data_source.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/repo/personels_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/domain/repo/personal_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/domain/usecase/get_personels.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/domain/usecase/load_personels_by_delivery_team.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/domain/usecase/load_personels_by_trip_Id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/domain/usecase/set_role.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/presentation/bloc/personel_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/datasource/local_datasource/vehicle_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/datasource/remote_datasource/vehicle_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/repo/vehicle_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/domain/repo/vehicle_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/domain/usecase/get_vehicle.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/domain/usecase/load_vehicle_by_delivery_team_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/domain/usecase/load_vehicle_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/presentation/bloc/vehicle_bloc.dart';
+
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/datasource/remote_datasource/delivery_update_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/datasource/local_datasource/delivery_update_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
@@ -60,53 +44,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/update_delivery_status.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/update_queue_remarks.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/datasource/remote_data_source/invoice_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/datasource/local_datasource/invoice_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/repo/invoice_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/repo/invoice_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/get_invoice.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/get_invoice_per_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/get_invoice_per_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/set_all_invoices_completed.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/usecase/set_invoice_unloaded.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/datasource/local_datasource/product_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/datasource/remote_datasource/product_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/model/product_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/repo/product_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/domain/repo/product_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/domain/usecase/add_to_return_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/domain/usecase/confirm_delivery_products.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/domain/usecase/get_product.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/domain/usecase/get_products_by_invoice_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/domain/usecase/update_product_quantities.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/domain/usecase/update_return_reason_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/domain/usecase/update_status_product.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/data/datasource/local_datasource/return_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/data/datasource/remote_datasource/return_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/data/model/return_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/data/repo/return_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/domain/repo/return_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/domain/usecase/get_return_by_customerId.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/domain/usecase/get_return_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/presentation/bloc/return_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/data/datasource/local_datasource/transaction_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/data/datasource/remote_datasource/transaction_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/data/model/transaction_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/data/repo/transaction_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/repo/transaction_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/usecase/create_transaction_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/usecase/delete_transaction_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/usecase/generate_pdf.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/usecase/get_transaction_by_completed_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/usecase/get_transaction_by_date_range_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/usecase/get_transaction_by_id_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/usecase/get_transaction_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/domain/usecase/update_transaction_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/presentation/bloc/transaction_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/presentation/bloc/transaction_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/datasource/local_datasource/trip_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/datasource/remote_datasource/trip_remote_datasurce.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
@@ -132,19 +69,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_upd
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/usecases/create_trip_updates.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/usecases/get_trip_updates.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/data/datasources/local_datasource/undeliverable_customer_local_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/data/datasources/remote_datasource/undeliverable_customer_remote_datasrc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/data/model/undeliverable_customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/data/repo/undeliverable_customer_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/domain/repo/undeliverable_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/domain/usecases/create_undeliverable_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/domain/usecases/delete_undeliverable_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/domain/usecases/get_undeliverable_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/domain/usecases/get_undeliverable_customer_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/domain/usecases/save_undeliverable_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/domain/usecases/set_undeliverable_reason.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/domain/usecases/update_undeliverable_customer.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/presentation/bloc/undeliverable_customer_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/data_source/local_datasource/update_timeline_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/data_source/remote_datasource/update_timeline_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/models/update_timeline_models.dart';
@@ -182,7 +106,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/domain/
 import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/domain/usecases/load_end_trip_otp_by_trip_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/presentation/bloc/end_trip_otp_bloc.dart';
 
-
 import 'package:x_pro_delivery_app/core/common/app/features/otp/data/datasource/local_datasource/otp_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/data/datasource/remote_data_source/otp_remote_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/data/models/otp_models.dart';
@@ -194,6 +117,71 @@ import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/usecases/
 import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/usecases/verify_in_transit.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/usecases/veryfy_in_end_delivery.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/presentation/bloc/otp_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/data/model/cancelled_invoice_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart'
+    show CancelledInvoiceBloc;
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/data/datasources/remote_datasource/customer_data_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/data/repo/customer_data_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/repo/customer_data_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/add_customer_to_delivery.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/create_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/delete_all_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/delete_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/get_all_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/get_customer_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/get_customer_data_by_delivery_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/update_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/presentation/bloc/customer_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/datasource/local_datasource/delivery_data_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/datasource/remote_datasource/delivery_data_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/repo/delivery_data_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/repo/delivery_data_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/calculate_delivery_time_by_delivery_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/delete_delivery_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_all_delivery_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_delivery_data_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_delivery_data_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/datasource/local_datasource/delivery_receipt_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/datasource/remote_datasource/delivery_receipt_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/model/delivery_receipt_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/repo/delivery_receipt_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/repo/delivery_receipt_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/create_delivery_receipt.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/delete_delivery_receipt.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/generate_pdf.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/get_delivery_receipt_by_delivery_data_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/get_delivery_receipt_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/datasource/remote_datasource/delivery_vehicle_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/repo/delivery_vehicle_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/repo/delivery_vehicle_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/usecases/load_all_delivery_vehicle.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/usecases/load_delivery_vehicle_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/usecases/load_delivery_vehicle_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/data/datasources/remote_datasource/invoice_data_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/data/repo/invoice_data_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/repo/invoice_data_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/add_invoice_data_to_delivery.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/add_invoice_data_to_invoice_status.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_all_invoice_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_customer_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_delivery_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/data/datasource/local_datasource/invoice_items_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/data/datasource/remote_datasource/invoice_items_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/data/model/invoice_items_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/data/repo/invoice_items_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/repo/invoice_items_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/usecases/get_all_invoice_items.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/usecases/get_invoice_item_by_invoice_data_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/usecases/update_invoice_item_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/delivery_timeline_status_provider.dart';
@@ -219,9 +207,38 @@ import 'package:x_pro_delivery_app/src/on_boarding/domain/usecases/check_if_user
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_bloc.dart';
 
 import '../../src/on_boarding/data/local_datasource/onboarding_local_datasource.dart';
+import '../common/app/features/Trip_Ticket/cancelled_invoices/data/datasources/local_datasource/cancelled_invoice_local_datasource.dart'
+    show CancelledInvoiceLocalDataSource, CancelledInvoiceLocalDataSourceImpl;
+import '../common/app/features/Trip_Ticket/cancelled_invoices/data/datasources/remote_datasource/cancelled_invoice_remote_datasource.dart'
+    show CancelledInvoiceRemoteDataSource, CancelledInvoiceRemoteDataSourceImpl;
+import '../common/app/features/Trip_Ticket/cancelled_invoices/data/repo/cancelled_invoice_repo_impl.dart'
+    show CancelledInvoiceRepoImpl;
+import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/repo/cancelled_invoice_repo.dart'
+    show CancelledInvoiceRepo;
+import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/create_cancelled_invoice_by_delivery_data_id.dart'
+    show CreateCancelledInvoiceByDeliveryDataId;
+import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/delete_cancelled_invoice.dart'
+    show DeleteCancelledInvoice;
+import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_trip_id.dart'
+    show LoadCancelledInvoicesByTripId;
+
+import '../common/app/features/Trip_Ticket/collection/data/datasource/local_datasource/collection_local_datasource.dart';
+import '../common/app/features/Trip_Ticket/collection/data/datasource/remote_datasource/collection_remote_datasource.dart'
+    show CollectionRemoteDataSource, CollectionRemoteDataSourceImpl;
+import '../common/app/features/Trip_Ticket/collection/data/repo/collection_repo_impl.dart'
+    show CollectionRepoImpl;
+import '../common/app/features/Trip_Ticket/collection/domain/repo/collection_repo.dart'
+    show CollectionRepo;
+import '../common/app/features/Trip_Ticket/collection/domain/usecases/delete_collection.dart'
+    show DeleteCollection;
+import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_id.dart';
+import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_trip_id.dart';
+import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloaded.dart';
+import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloading.dart';
+import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/sync_delivery_data_by_trip_id.dart';
 
 final sl = GetIt.instance;
-final pb = PocketBase('http://192.168.1.118:8090');
+final pb = PocketBase('http://172.16.0.175:8090');
 
 Future<void> init() async {
   final objectBoxStore = await ObjectBoxStore.create();
@@ -232,28 +249,32 @@ Future<void> init() async {
 
   await initAuth();
   await initOnboarding();
-  await initGetCustomer();
   await initChecklist();
   await initGetVehicle();
   await initPersonel(); // Add this
   await initDeliveryTeam(); // Add this
   await initTrip();
-  await initInvoice();
-  await initProduct();
+ 
   await initDeliveryUpdate();
   await initUpdateTimeline();
   await initOtp();
   await initEndTripOtp();
-  await initTransaction();
-  await initReturnProducts();
-  await initCompletedCustomers();
-  await initUndeliverableCustomer();
+
   await initEndTripChecklist();
   await initTripUpdate();
+
+  //new entities
+  await initInvoiceData();
+  await initCustomerData();
+  await initInvoiceItems();
+  await initDeliveryData();
+  await initDeliveryVehicleData();
+  await initDeliveryReceipt();
+  await initCancelledInvoice();
+  await initCollection();
+
   sl.registerLazySingleton(() => ConnectivityProvider());
 }
-
-
 
 Future<void> initOnboarding() async {
   final prefs = await SharedPreferences.getInstance();
@@ -261,25 +282,17 @@ Future<void> initOnboarding() async {
     () => OnboardingBloc(cacheFirstTimer: sl(), checkIfUserIsFirstimer: sl()),
   );
 
-  sl.registerLazySingleton(
-    () => CacheFirstTimer(sl()),
-  );
+  sl.registerLazySingleton(() => CacheFirstTimer(sl()));
 
-  sl.registerLazySingleton(
-    () => CheckIfUserIsFirstimer(sl()),
-  );
+  sl.registerLazySingleton(() => CheckIfUserIsFirstimer(sl()));
 
-  sl.registerLazySingleton<OnboardingRepo>(
-    () => OnboardingRepoImpl(sl()),
-  );
+  sl.registerLazySingleton<OnboardingRepo>(() => OnboardingRepoImpl(sl()));
 
   sl.registerLazySingleton<OnboardingLocalDatasource>(
     () => OnboardingLocalDatasourceImpl(sl()),
   );
 
-  sl.registerLazySingleton(
-    () => prefs,
-  );
+  sl.registerLazySingleton(() => prefs);
 }
 
 Future<void> initAuth() async {
@@ -288,13 +301,14 @@ Future<void> initAuth() async {
 
   sl.registerFactory(
     () => AuthBloc(
-        signIn: sl(),
-        refreshUserData: sl(),
-        getUserById: sl(),
-        loadUser: sl(),
-        getUserTrip: sl(),
-        syncUserData: sl(),
-        syncUserTripData: sl()),
+      signIn: sl(),
+      refreshUserData: sl(),
+      getUserById: sl(),
+      loadUser: sl(),
+      getUserTrip: sl(),
+      syncUserData: sl(),
+      syncUserTripData: sl(),
+    ),
   );
 
   // Usecases
@@ -325,68 +339,25 @@ Future<void> initAuth() async {
 }
 
 
-Future<void> initGetCustomer() async {
-  final objectBoxStore = await ObjectBoxStore.create();
-
-  sl.registerFactory(
-    () => CustomerBloc(
-        getCustomer: sl(),
-        deliveryUpdateBloc: sl(),
-        invoiceBloc: sl(),
-        getCustomersLocation: sl(),
-        calculateCustomerTotalTime: sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => GetCustomer(sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => CalculateCustomerTotalTime(sl()),
-  );
-  sl.registerLazySingleton(
-    () => GetCustomersLocation(sl()),
-  );
-
-  sl.registerLazySingleton<CustomerRepo>(
-    () => CustomerRepoImpl(sl(), sl()),
-  );
-
-  sl.registerLazySingleton<CustomerRemoteDataSource>(
-    () => CustomerRemoteDataSourceImpl(
-      pocketBaseClient: sl(),
-    ),
-  );
-
-  sl.registerLazySingleton<CustomerLocalDatasource>(
-    () =>
-        CustomerLocalDatasourceImpl(objectBoxStore.store.box<CustomerModel>()),
-  );
-}
 
 Future<void> initChecklist() async {
   final objectBoxStore = await ObjectBoxStore.create();
 
   sl.registerFactory(
     () => ChecklistBloc(
-        loadChecklist: sl(), checkItem: sl(), loadChecklistByTripId: sl()),
+      loadChecklist: sl(),
+      checkItem: sl(),
+      loadChecklistByTripId: sl(),
+    ),
   );
 
-  sl.registerLazySingleton(
-    () => LoadChecklist(sl()),
-  );
+  sl.registerLazySingleton(() => LoadChecklist(sl()));
 
-  sl.registerLazySingleton(
-    () => LoadChecklistByTripId(sl()),
-  );
+  sl.registerLazySingleton(() => LoadChecklistByTripId(sl()));
 
-  sl.registerLazySingleton(
-    () => CheckItem(sl()),
-  );
+  sl.registerLazySingleton(() => CheckItem(sl()));
 
-  sl.registerLazySingleton<ChecklistRepo>(
-    () => ChecklistRepoImpl(sl(), sl()),
-  );
+  sl.registerLazySingleton<ChecklistRepo>(() => ChecklistRepoImpl(sl(), sl()));
 
   sl.registerLazySingleton<ChecklistDatasource>(
     () => ChecklistDatasourceImpl(pocketBaseClient: sl()),
@@ -394,7 +365,8 @@ Future<void> initChecklist() async {
 
   sl.registerLazySingleton<ChecklistLocalDatasource>(
     () => ChecklistLocalDatasourceImpl(
-        objectBoxStore.store.box<ChecklistModel>()),
+      objectBoxStore.store.box<ChecklistModel>(),
+    ),
   );
 }
 
@@ -403,26 +375,19 @@ Future<void> initGetVehicle() async {
 
   sl.registerFactory(
     () => VehicleBloc(
-        getVehicle: sl(),
-        loadVehicleByTripId: sl(),
-        loadVehicleByDeliveryTeam: sl()),
+      getVehicle: sl(),
+      loadVehicleByTripId: sl(),
+      loadVehicleByDeliveryTeam: sl(),
+    ),
   );
 
-  sl.registerLazySingleton(
-    () => GetVehicle(sl()),
-  );
+  sl.registerLazySingleton(() => GetVehicle(sl()));
 
-  sl.registerLazySingleton(
-    () => LoadVehicleByDeliveryTeam(sl()),
-  );
+  sl.registerLazySingleton(() => LoadVehicleByDeliveryTeam(sl()));
 
-  sl.registerLazySingleton(
-    () => LoadVehicleByTripId(sl()),
-  );
+  sl.registerLazySingleton(() => LoadVehicleByTripId(sl()));
 
-  sl.registerLazySingleton<VehicleRepo>(
-    () => VehicleRepoImpl(sl(), sl()),
-  );
+  sl.registerLazySingleton<VehicleRepo>(() => VehicleRepoImpl(sl(), sl()));
 
   sl.registerLazySingleton<VehicleRemoteDatasource>(
     () => VehicleRemoteDatasourceImpl(pocketBaseClient: sl()),
@@ -445,25 +410,15 @@ Future<void> initPersonel() async {
     ),
   );
 
-  sl.registerLazySingleton(
-    () => GetPersonels(sl()),
-  );
+  sl.registerLazySingleton(() => GetPersonels(sl()));
 
-  sl.registerLazySingleton(
-    () => SetRole(sl()),
-  );
+  sl.registerLazySingleton(() => SetRole(sl()));
 
-  sl.registerLazySingleton(
-    () => LoadPersonelsByDeliveryTeam(sl()),
-  );
+  sl.registerLazySingleton(() => LoadPersonelsByDeliveryTeam(sl()));
 
-  sl.registerLazySingleton(
-    () => LoadPersonelsByTripId(sl()),
-  );
+  sl.registerLazySingleton(() => LoadPersonelsByTripId(sl()));
 
-  sl.registerLazySingleton<PersonelRepo>(
-    () => PersonelsRepoImpl(sl(), sl()),
-  );
+  sl.registerLazySingleton<PersonelRepo>(() => PersonelsRepoImpl(sl(), sl()));
 
   sl.registerLazySingleton<PersonelRemoteDataSource>(
     () => PersonelRemoteDataSourceImpl(pocketBaseClient: sl()),
@@ -480,26 +435,22 @@ Future<void> initDeliveryTeam() async {
 
   sl.registerFactory(
     () => DeliveryTeamBloc(
-        loadDeliveryTeam: sl(),
-        tripBloc: sl(),
-        personelBloc: sl(),
-        vehicleBloc: sl(),
-        loadDeliveryTeamById: sl(),
-        checklistBloc: sl(),
-        assignDeliveryTeamToTrip: sl()),
+      loadDeliveryTeam: sl(),
+      tripBloc: sl(),
+      personelBloc: sl(),
+      vehicleBloc: sl(),
+      loadDeliveryTeamById: sl(),
+      checklistBloc: sl(),
+      deliveryVehicleBloc: sl(),
+      assignDeliveryTeamToTrip: sl(),
+    ),
   );
 
-  sl.registerLazySingleton(
-    () => LoadDeliveryTeam(sl()),
-  );
+  sl.registerLazySingleton(() => LoadDeliveryTeam(sl()));
 
-  sl.registerLazySingleton(
-    () => LoadDeliveryTeamById(sl()),
-  );
+  sl.registerLazySingleton(() => LoadDeliveryTeamById(sl()));
 
-  sl.registerLazySingleton(
-    () => AssignDeliveryTeamToTrip(sl()),
-  );
+  sl.registerLazySingleton(() => AssignDeliveryTeamToTrip(sl()));
 
   sl.registerLazySingleton<DeliveryTeamRepo>(
     () => DeliveryTeamRepoImpl(sl(), sl()),
@@ -507,7 +458,9 @@ Future<void> initDeliveryTeam() async {
 
   sl.registerLazySingleton<DeliveryTeamDatasource>(
     () => DeliveryTeamDatasourceImpl(
-        pocketBaseClient: sl(), deliveryTeamBox: sl()),
+      pocketBaseClient: sl(),
+      deliveryTeamBox: sl(),
+    ),
   );
 
   // Register the Box<DeliveryTeamModel>
@@ -527,72 +480,51 @@ Future<void> initTrip() async {
 
   sl.registerFactory(
     () => TripBloc(
-        getTrip: sl(),
-        searchTrip: sl(),
-        customerBloc: sl(),
-        updateTimelineBloc: sl(),
-        acceptTrip: sl(),
-        checkEndTripStatus: sl(),
-        searchTrips: sl(),
-        getTripsByDateRange: sl(),
-        calculateTotalTripDistance: sl(),
-        scanQRUsecase: sl(),
-        getTripById: sl(),
-        endTrip: sl(),
-        updateTripLocation: sl()),
+      getTrip: sl(),
+      searchTrip: sl(),
+      updateTimelineBloc: sl(),
+      acceptTrip: sl(),
+      checkEndTripStatus: sl(),
+      searchTrips: sl(),
+      getTripsByDateRange: sl(),
+      calculateTotalTripDistance: sl(),
+      scanQRUsecase: sl(),
+      getTripById: sl(),
+      endTrip: sl(),
+      updateTripLocation: sl(),
+      deliveryDataBloc: sl(),
+    ),
   );
 
-  sl.registerLazySingleton(
-    () => GetTrip(sl()),
-  );
+  sl.registerLazySingleton(() => GetTrip(sl()));
 
-  sl.registerLazySingleton(
-    () => GetTripById(sl()),
-  );
+  sl.registerLazySingleton(() => GetTripById(sl()));
 
-  sl.registerLazySingleton(
-    () => SearchTrip(sl()),
-  );
+  sl.registerLazySingleton(() => SearchTrip(sl()));
 
-  sl.registerLazySingleton(
-    () => UpdateTripLocation(sl()),
-  );
+  sl.registerLazySingleton(() => UpdateTripLocation(sl()));
 
-  sl.registerLazySingleton(
-    () => AcceptTrip(sl()),
-  );
+  sl.registerLazySingleton(() => AcceptTrip(sl()));
 
-  sl.registerLazySingleton(
-    () => CheckEndTripStatus(sl()),
-  );
+  sl.registerLazySingleton(() => CheckEndTripStatus(sl()));
 
-  sl.registerLazySingleton(
-    () => SearchTrips(sl()),
-  );
+  sl.registerLazySingleton(() => SearchTrips(sl()));
 
-  sl.registerLazySingleton(
-    () => GetTripsByDateRange(sl()),
-  );
+  sl.registerLazySingleton(() => GetTripsByDateRange(sl()));
 
-  sl.registerLazySingleton(
-    () => CalculateTotalTripDistance(sl()),
-  );
+  sl.registerLazySingleton(() => CalculateTotalTripDistance(sl()));
 
-  sl.registerLazySingleton(
-    () => ScanQRUsecase(sl()),
-  );
+  sl.registerLazySingleton(() => ScanQRUsecase(sl()));
 
-  sl.registerLazySingleton(
-    () => EndTrip(sl()),
-  );
+  sl.registerLazySingleton(() => EndTrip(sl()));
 
-  sl.registerLazySingleton<TripRepo>(
-    () => TripRepoImpl(sl(), sl()),
-  );
+  sl.registerLazySingleton<TripRepo>(() => TripRepoImpl(sl(), sl()));
 
   sl.registerLazySingleton<TripRemoteDatasurce>(
     () => TripRemoteDatasurceImpl(
-        pocketBaseClient: sl(), tripLocalDatasource: sl()),
+      pocketBaseClient: sl(),
+      tripLocalDatasource: sl(),
+    ),
   );
 
   sl.registerLazySingleton<TripLocalDatasource>(
@@ -604,100 +536,23 @@ Future<void> initTrip() async {
   );
 }
 
-Future<void> initInvoice() async {
-  final objectBoxStore = await ObjectBoxStore.create();
-
-  sl.registerFactory(
-    () => InvoiceBloc(
-        productsBloc: sl(),
-        getInvoices: sl(),
-        getInvoicesByTrip: sl(),
-        getInvoicesByCustomer: sl(), setAllInvoicesCompleted: sl(), setInvoiceUnloaded: sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => GetInvoice(sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => SetInvoiceUnloaded(sl()),
-  );
 
 
-  sl.registerLazySingleton(
-    () => SetAllInvoicesCompleted(sl()),
-  );
 
-
-  sl.registerLazySingleton(
-    () => GetInvoicesByCustomer(sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => GetInvoicesByTrip(sl()),
-  );
-
-  sl.registerLazySingleton<InvoiceRepo>(
-    () => InvoiceRepoImpl(sl(), sl()),
-  );
-
-  sl.registerLazySingleton<InvoiceRemoteDatasource>(
-    () => InvoiceRemoteDatasourceImpl(pocketBaseClient: sl()),
-  );
-
-  sl.registerLazySingleton<InvoiceLocalDatasource>(
-    () => InvoiceLocalDatasourceImpl(objectBoxStore.store.box<InvoiceModel>()),
-  );
-}
-
-Future<void> initProduct() async {
-  final objectBoxStore = await ObjectBoxStore.create();
-
-  sl.registerFactory(
-    () => ProductsBloc(
-        getProduct: sl(),
-        updateStatusProduct: sl(),
-        confirmDeliveryProducts: sl(),
-        addToReturn: sl(),
-        updateReturnReason: sl(),
-        updateProductQuantities: sl(),
-        getProductsByInvoice: sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => GetProductsByInvoice(sl()),
-  );
-  sl.registerLazySingleton(() => GetProduct(sl()));
-  sl.registerLazySingleton(() => UpdateStatusProduct(sl()));
-  sl.registerLazySingleton(() => ConfirmDeliveryProducts(sl()));
-  sl.registerLazySingleton(() => AddToReturnUsecase(sl()));
-  sl.registerLazySingleton(() => UpdateReturnReasonUsecase(sl()));
-  sl.registerLazySingleton(() => UpdateProductQuantities(sl()));
-  sl.registerLazySingleton<ProductRepo>(
-    () => ProductRepoImpl(sl(), sl()),
-  );
-
-  sl.registerLazySingleton<ProductRemoteDatasource>(
-    () => ProductRemoteDatasourceImpl(pocketBaseClient: sl()),
-  );
-
-  sl.registerLazySingleton<ProductLocalDatasource>(
-    () => ProductLocalDatasourceImpl(objectBoxStore.store.box<ProductModel>()),
-  );
-}
 
 Future<void> initDeliveryUpdate() async {
   final objectBoxStore = await ObjectBoxStore.create();
 
   sl.registerFactory(
     () => DeliveryUpdateBloc(
-        getDeliveryStatusChoices: sl(),
-        updateDeliveryStatus: sl(),
-        completeDelivery: sl(),
-        checkEndDeliverStatus: sl(),
-        initializePendingStatus: sl(),
-        createDeliveryStatus: sl(),
-        updateQueueRemarks: sl()),
+      getDeliveryStatusChoices: sl(),
+      updateDeliveryStatus: sl(),
+      completeDelivery: sl(),
+      checkEndDeliverStatus: sl(),
+      initializePendingStatus: sl(),
+      createDeliveryStatus: sl(),
+      updateQueueRemarks: sl(),
+    ),
   );
   sl.registerLazySingleton(() => CompleteDelivery(sl()));
   sl.registerLazySingleton(() => GetDeliveryStatusChoices(sl()));
@@ -716,7 +571,7 @@ Future<void> initDeliveryUpdate() async {
   sl.registerLazySingleton<DeliveryUpdateLocalDatasource>(
     () => DeliveryUpdateLocalDatasourceImpl(
       objectBoxStore.store.box<DeliveryUpdateModel>(),
-      objectBoxStore.store.box<CustomerModel>(),
+      objectBoxStore.store.box<DeliveryDataModel>(),
     ),
   );
 
@@ -745,28 +600,29 @@ Future<void> initUpdateTimeline() async {
 
   sl.registerLazySingleton<UpdateTimelineLocalDatasource>(
     () => UpdateTimelineLocalDatasourceImpl(
-        objectBoxStore.store.box<UpdateTimelineModel>()),
+      objectBoxStore.store.box<UpdateTimelineModel>(),
+    ),
   );
 }
 
 Future<void> initOtp() async {
   final objectBoxStore = await ObjectBoxStore.create();
 
-  sl.registerFactory(() => OtpBloc(
-        getGeneratedOtp: sl(),
-        verifyEndDelivery: sl(),
-        verifyInTransit: sl(),
-        loadOtpByTripId: sl(),
-        loadOtpById: sl(),
-      ));
+  sl.registerFactory(
+    () => OtpBloc(
+      getGeneratedOtp: sl(),
+      verifyEndDelivery: sl(),
+      verifyInTransit: sl(),
+      loadOtpByTripId: sl(),
+      loadOtpById: sl(),
+    ),
+  );
   sl.registerLazySingleton(() => LoadOtpById(sl()));
   sl.registerLazySingleton(() => LoadOtpByTripId(sl()));
   sl.registerLazySingleton(() => GetGeneratedOtp(sl()));
   sl.registerLazySingleton(() => VerifyInTransit(sl()));
   sl.registerLazySingleton(() => VerifyInEndDelivery(sl()));
-  sl.registerLazySingleton<OtpRepo>(
-    () => OtpRepoImpl(sl(), sl()),
-  );
+  sl.registerLazySingleton<OtpRepo>(() => OtpRepoImpl(sl(), sl()));
 
   sl.registerLazySingleton<OtpRemoteDataSource>(
     () => OtpRemoteDataSourceImpl(pocketBaseClient: sl()),
@@ -781,12 +637,14 @@ Future<void> initEndTripOtp() async {
   final objectBoxStore = await ObjectBoxStore.create();
 
   // Bloc
-  sl.registerFactory(() => EndTripOtpBloc(
-        verifyEndTripOtp: sl(),
-        getGeneratedEndTripOtp: sl(),
-        loadEndTripOtpById: sl(),
-        loadEndTripOtpByTripId: sl(),
-      ));
+  sl.registerFactory(
+    () => EndTripOtpBloc(
+      verifyEndTripOtp: sl(),
+      getGeneratedEndTripOtp: sl(),
+      loadEndTripOtpById: sl(),
+      loadEndTripOtpByTripId: sl(),
+    ),
+  );
 
   // Usecases
   sl.registerLazySingleton(() => EndOTPVerify(sl()));
@@ -811,148 +669,6 @@ Future<void> initEndTripOtp() async {
   );
 }
 
-Future<void> initTransaction() async {
-  final objectBoxStore = await ObjectBoxStore.create();
-
-  sl.registerFactory(
-    () => TransactionBloc(
-        createTransaction: sl(),
-        deleteTransaction: sl(),
-        getTransactionById: sl(),
-        getTransactionsByDateRange: sl(),
-        getTransactions: sl(),
-        updateTransaction: sl(),
-        generateTransactionPdf: sl(),
-        getTransactionsByCompletedCustomer: sl()),
-  );
-
-  sl.registerLazySingleton(() => CreateTransactionUseCase(sl()));
-  sl.registerLazySingleton(() => DeleteTransactionUseCase(sl()));
-  sl.registerLazySingleton(() => GetTransactionByDateRangeUseCase(sl()));
-  sl.registerLazySingleton(() => GetTransactionByIdUseCase(sl()));
-  sl.registerLazySingleton(() => GetTransactionUseCase(sl()));
-  sl.registerLazySingleton(() => UpdateTransactionUseCase(sl()));
-  sl.registerLazySingleton(() => GetTransactionsByCompletedCustomer(sl()));
-  sl.registerLazySingleton(() => GetLocalTransactionByIdEvent(sl()));
-  sl.registerLazySingleton(() => GetLocalTransactionsEvent(sl()));
-  sl.registerLazySingleton(() => GenerateTransactionPdf(sl()));
-
-  sl.registerLazySingleton<TransactionRepo>(
-    () => TransactionRepoImpl(sl(), sl()),
-  );
-
-  sl.registerLazySingleton<TransactionRemoteDatasource>(
-    () => TransactionRemoteDatasourceImpl(pocketBaseClient: sl()),
-  );
-
-  sl.registerLazySingleton<TransactionLocalDatasource>(
-    () => TransactionLocalDatasourceImpl(
-        objectBoxStore.store.box<TransactionModel>(),
-        objectBoxStore.store.box<CustomerModel>(),
-        objectBoxStore.store),
-  );
-}
-
-Future<void> initReturnProducts() async {
-  final objectBoxStore = await ObjectBoxStore.create();
-
-  sl.registerFactory(
-    () => ReturnBloc(getReturns: sl(), getReturnByCustomerId: sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => GetReturnUsecase(sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => GetReturnByCustomerId(sl()),
-  );
-
-  sl.registerLazySingleton<ReturnRepo>(() => ReturnRepoImpl(sl(), sl()));
-
-  sl.registerLazySingleton<ReturnRemoteDatasource>(
-    () => ReturnRemoteDatasourceImpl(pocketBaseClient: sl()),
-  );
-
-  sl.registerLazySingleton<ReturnLocalDatasource>(
-    () => ReturnLocalDatasourceImpl(objectBoxStore.store.box<ReturnModel>()),
-  );
-}
-
-Future<void> initCompletedCustomers() async {
-  final objectBoxStore = await ObjectBoxStore.create();
-
-  sl.registerFactory(
-    () => CompletedCustomerBloc(
-        getCompletedCustomers: sl(),
-        getCompletedCustomerById: sl(),
-        invoiceBloc: sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => GetCompletedCustomer(sl()),
-  );
-
-  sl.registerLazySingleton(
-    () => GetCompletedCustomerById(sl()),
-  );
-
-  sl.registerCachedFactory<CompletedCustomerRepo>(
-    () => CompletedCustomerRepoImpl(sl(), sl()),
-  );
-
-  sl.registerLazySingleton<CompletedCustomerRemoteDatasource>(
-    () => CompletedCustomerRemoteDatasourceImpl(pocketBaseClient: sl()),
-  );
-
-  sl.registerLazySingleton<CompletedCustomerLocalDatasource>(
-    () => CompletedCustomerLocalDatasourceImpl(
-        objectBoxStore.store.box<CompletedCustomerModel>()),
-  );
-}
-
-
-
-Future<void> initUndeliverableCustomer() async {
-  final objectBoxStore = await ObjectBoxStore.create();
-  // Bloc
-  sl.registerFactory(() => UndeliverableCustomerBloc(
-        getUndeliverableCustomers: sl(),
-        createUndeliverableCustomer: sl(),
-        saveUndeliverableCustomer: sl(),
-        updateUndeliverableCustomer: sl(),
-        deleteUndeliverableCustomer: sl(),
-        setUndeliverableReason: sl(),
-        getUndeliverableCustomerById: sl(),
-      ));
-
-  // Usecases
-  sl.registerLazySingleton(() => GetUndeliverableCustomers(sl()));
-  sl.registerLazySingleton(() => CreateUndeliverableCustomer(sl()));
-  sl.registerLazySingleton(() => SaveUndeliverableCustomer(sl()));
-  sl.registerLazySingleton(() => UpdateUndeliverableCustomer(sl()));
-  sl.registerLazySingleton(() => DeleteUndeliverableCustomer(sl()));
-  sl.registerLazySingleton(() => SetUndeliverableReason(sl()));
-  sl.registerLazySingleton(() => GetUndeliverableCustomerById(sl()));
-
-  // Repository
-  sl.registerLazySingleton<UndeliverableRepo>(
-    () => UndeliverableCustomerRepoImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-    ),
-  );
-
-  // Data sources
-  sl.registerLazySingleton<UndeliverableCustomerRemoteDataSource>(
-    () => UndeliverableCustomerRemoteDataSourceImpl(pocketBaseClient: sl()),
-  );
-  sl.registerLazySingleton<UndeliverableCustomerLocalDataSource>(
-    () => UndeliverableCustomerLocalDataSourceImpl(
-      objectBoxStore.store.box<UndeliverableCustomerModel>(),
-    ),
-  );
-}
 
 Future<void> initEndTripChecklist() async {
   final objectBoxStore = await ObjectBoxStore.create();
@@ -1006,7 +722,262 @@ Future<void> initTripUpdate() async {
     () => TripUpdateRemoteDatasourceImpl(pocketBaseClient: sl()),
   );
 
-  sl.registerLazySingleton<TripUpdateLocalDatasource>(() =>
-      TripUpdateLocalDatasourceImpl(
-          objectBoxStore.store.box<TripUpdateModel>()));
+  sl.registerLazySingleton<TripUpdateLocalDatasource>(
+    () => TripUpdateLocalDatasourceImpl(
+      objectBoxStore.store.box<TripUpdateModel>(),
+    ),
+  );
+}
+
+// Add this function to initialize the DeliveryData feature
+Future<void> initDeliveryData() async {
+  final objectBoxStore = await ObjectBoxStore.create();
+
+  // BLoC
+  sl.registerLazySingleton(
+    () => DeliveryDataBloc(
+      getAllDeliveryData: sl(),
+      getDeliveryDataByTripId: sl(),
+      getDeliveryDataById: sl(),
+      deleteDeliveryData: sl(),
+      setInvoiceIntoUnloading: sl(),
+      calculateDeliveryTime: sl(),
+      syncDeliveryDataByTripId: sl(), setInvoiceIntoUnloaded: sl(),
+    ),
+  );
+
+  // Usecases
+  sl.registerLazySingleton(() => GetAllDeliveryData(sl()));
+  sl.registerLazySingleton(() => GetDeliveryDataByTripId(sl()));
+  sl.registerLazySingleton(() => GetDeliveryDataById(sl()));
+  sl.registerLazySingleton(() => DeleteDeliveryData(sl()));
+  sl.registerLazySingleton(() => CalculateDeliveryTimeByDeliveryId(sl()));
+  sl.registerLazySingleton(() => SyncDeliveryDataByTripId(sl()));
+  sl.registerLazySingleton(() => SetInvoiceIntoUnloading(sl()));
+  sl.registerLazySingleton(() => SetInvoiceIntoUnloaded(sl()));
+
+  // Repository
+  sl.registerLazySingleton<DeliveryDataRepo>(
+    () => DeliveryDataRepoImpl(sl(), sl()),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<DeliveryDataRemoteDataSource>(
+    () => DeliveryDataRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<DeliveryDataLocalDataSource>(
+    () => DeliveryDataLocalDataSourceImpl(
+      objectBoxStore.store.box<DeliveryDataModel>(), sl<Store>(),
+    ),
+  );
+}
+
+Future<void> initDeliveryVehicleData() async {
+  sl.registerLazySingleton(
+    () => DeliveryVehicleBloc(
+      loadDeliveryVehicleById: sl(),
+      loadDeliveryVehiclesByTripId: sl(),
+      loadAllDeliveryVehicles: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => LoadDeliveryVehicleById(sl()));
+  sl.registerLazySingleton(() => LoadDeliveryVehiclesByTripId(sl()));
+  sl.registerLazySingleton(() => LoadAllDeliveryVehicles(sl()));
+
+  sl.registerLazySingleton<DeliveryVehicleRepo>(
+    () => DeliveryVehicleRepoImpl(sl()),
+  );
+
+  sl.registerLazySingleton<DeliveryVehicleRemoteDataSource>(
+    () => DeliveryVehicleRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+}
+
+Future<void> initInvoiceData() async {
+  sl.registerLazySingleton(
+    () => InvoiceDataBloc(
+      getAllInvoiceData: sl(),
+      getInvoiceDataById: sl(),
+      getInvoiceDataByDeliveryId: sl(),
+      getInvoiceDataByCustomerId: sl(),
+      addInvoiceDataToDelivery: sl(),
+      addInvoiceDataToInvoiceStatus: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetAllInvoiceData(sl()));
+  sl.registerLazySingleton(() => GetInvoiceDataByCustomerId(sl()));
+  sl.registerLazySingleton(() => GetInvoiceDataById(sl()));
+  sl.registerLazySingleton(() => GetInvoiceDataByDeliveryId(sl()));
+  sl.registerLazySingleton(() => AddInvoiceDataToDelivery(sl()));
+  sl.registerLazySingleton(() => AddInvoiceDataToInvoiceStatus(sl()));
+
+  sl.registerLazySingleton<InvoiceDataRepo>(() => InvoiceDataRepoImpl(sl()));
+  sl.registerLazySingleton<InvoiceDataRemoteDataSource>(
+    () => InvoiceDataRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+}
+
+// Add this function to the init section
+Future<void> initInvoiceItems() async {
+  final objectBoxStore = await ObjectBoxStore.create();
+
+  // BLoC
+  sl.registerLazySingleton(
+    () => InvoiceItemsBloc(
+      getInvoiceItemsByInvoiceDataId: sl(),
+      getAllInvoiceItems: sl(),
+      updateInvoiceItemById: sl(),
+    ),
+  );
+
+  // Usecases
+  sl.registerLazySingleton(() => GetInvoiceItemsByInvoiceDataId(sl()));
+  sl.registerLazySingleton(() => GetAllInvoiceItems(sl()));
+  sl.registerLazySingleton(() => UpdateInvoiceItemById(sl()));
+
+  // Repository
+  sl.registerLazySingleton<InvoiceItemsRepo>(
+    () => InvoiceItemsRepoImpl(sl(), sl()),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<InvoiceItemsRemoteDataSource>(
+    () => InvoiceItemsRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<InvoiceItemsLocalDataSource>(
+    () => InvoiceItemsLocalDataSourceImpl(
+      objectBoxStore.store.box<InvoiceItemsModel>(),
+    ),
+  );
+}
+
+Future<void> initCustomerData() async {
+  sl.registerLazySingleton(
+    () => CustomerDataBloc(
+      getAllCustomerData: sl(),
+      getCustomerDataById: sl(),
+      createCustomerData: sl(),
+      updateCustomerData: sl(),
+      deleteCustomerData: sl(),
+      deleteAllCustomerData: sl(),
+      addCustomerToDelivery: sl(),
+      getCustomersByDeliveryId: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetAllCustomerData(sl()));
+  sl.registerLazySingleton(() => GetCustomerDataById(sl()));
+  sl.registerLazySingleton(() => CreateCustomerData(sl()));
+  sl.registerLazySingleton(() => UpdateCustomerData(sl()));
+  sl.registerLazySingleton(() => DeleteCustomerData(sl()));
+  sl.registerLazySingleton(() => DeleteAllCustomerData(sl()));
+  sl.registerLazySingleton(() => AddCustomerToDelivery(sl()));
+  sl.registerLazySingleton(() => GetCustomersByDeliveryId(sl()));
+
+  sl.registerLazySingleton<CustomerDataRepo>(() => CustomerDataRepoImpl(sl()));
+  sl.registerLazySingleton<CustomerDataRemoteDataSource>(
+    () => CustomerDataRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+}
+
+Future<void> initDeliveryReceipt() async {
+  final objectBoxStore = await ObjectBoxStore.create();
+
+  sl.registerLazySingleton(
+    () => DeliveryReceiptBloc(
+      createDeliveryReceipt: sl(),
+      deleteDeliveryReceipt: sl(),
+      getDeliveryReceiptByTripId: sl(),
+      getDeliveryReceiptByDeliveryDataId: sl(),
+      generateDeliveryReceiptPdf: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => CreateDeliveryReceipt(sl()));
+  sl.registerLazySingleton(() => DeleteDeliveryReceipt(sl()));
+  sl.registerLazySingleton(() => GetDeliveryReceiptByTripId(sl()));
+  sl.registerLazySingleton(() => GetDeliveryReceiptByDeliveryDataId(sl()));
+  sl.registerLazySingleton(() => GenerateDeliveryReceiptPdf(sl()));
+
+  sl.registerLazySingleton<DeliveryReceiptRepo>(
+    () =>
+        DeliveryReceiptRepoImpl(remoteDatasource: sl(), localDatasource: sl()),
+  );
+
+  sl.registerLazySingleton<DeliveryReceiptRemoteDatasource>(
+    () => DeliveryReceiptRemoteDatasourceImpl(pocketBaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<DeliveryReceiptLocalDatasource>(
+    () => DeliveryReceiptLocalDatasourceImpl(
+      objectBoxStore.store.box<DeliveryReceiptModel>(),
+    ),
+  );
+}
+
+Future<void> initCancelledInvoice() async {
+  final objectBoxStore = await ObjectBoxStore.create();
+
+  sl.registerLazySingleton(
+    () => CancelledInvoiceBloc(
+      deleteCancelledInvoice: sl(),
+      loadCancelledInvoicesByTripId: sl(),
+      loadCancelledInvoicesById: sl(),
+      createCancelledInvoiceByDeliveryDataId: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => LoadCancelledInvoiceById(sl()));
+  sl.registerLazySingleton(() => LoadCancelledInvoicesByTripId(sl()));
+
+  sl.registerLazySingleton(() => CreateCancelledInvoiceByDeliveryDataId(sl()));
+  sl.registerLazySingleton(() => DeleteCancelledInvoice(sl()));
+
+  sl.registerLazySingleton<CancelledInvoiceRepo>(
+    () =>
+        CancelledInvoiceRepoImpl(localDataSource: sl(), remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton<CancelledInvoiceLocalDataSource>(
+    () => CancelledInvoiceLocalDataSourceImpl(
+      cancelledInvoiceBox: objectBoxStore.store.box<CancelledInvoiceModel>(),
+      deliveryDataBox: objectBoxStore.store.box<DeliveryDataModel>(),
+      tripBox: objectBoxStore.store.box<TripModel>(),
+    ),
+  );
+
+  sl.registerLazySingleton<CancelledInvoiceRemoteDataSource>(
+    () => CancelledInvoiceRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+}
+
+Future<void> initCollection() async {
+  final objectBoxStore = await ObjectBoxStore.create();
+
+  sl.registerLazySingleton(
+    () => CollectionsBloc(
+      getCollectionsByTripId: sl(),
+      getCollectionById: sl(),
+      deleteCollection: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetCollectionsByTripId(sl()));
+  sl.registerLazySingleton(() => GetCollectionById(sl()));
+  sl.registerLazySingleton(() => DeleteCollection(sl()));
+
+  sl.registerLazySingleton<CollectionRepo>(
+    () => CollectionRepoImpl(remoteDataSource: sl(), localDataSource: sl()),
+  );
+
+  sl.registerLazySingleton<CollectionLocalDataSource>(
+    () => CollectionLocalDataSourceImpl(objectBoxStore.store.box()),
+  );
+  sl.registerLazySingleton<CollectionRemoteDataSource>(
+    () => CollectionRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
 }

@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:8278670380677883868",
-      "lastPropertyId": "27:3760358077954491990",
+      "lastPropertyId": "28:1119544490582682879",
       "name": "LocalUser",
       "properties": [
         {
@@ -150,190 +150,8 @@
       "relations": []
     },
     {
-      "id": "4:2810982542403258041",
-      "lastPropertyId": "26:4657750512920984701",
-      "name": "CustomerEntity",
-      "properties": [
-        {
-          "id": "1:6236750458352047417",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:3253882744375541347",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:8135099039353923812",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:3381536243504511229",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:45105488215685205",
-          "name": "deliveryNumber",
-          "type": 9
-        },
-        {
-          "id": "6:1018357521837095445",
-          "name": "storeName",
-          "type": 9
-        },
-        {
-          "id": "7:4087694502081403835",
-          "name": "ownerName",
-          "type": 9
-        },
-        {
-          "id": "8:6474825060915434468",
-          "name": "contactNumber",
-          "type": 30
-        },
-        {
-          "id": "9:7363645517555672052",
-          "name": "address",
-          "type": 9
-        },
-        {
-          "id": "10:5420239464119476058",
-          "name": "municipality",
-          "type": 9
-        },
-        {
-          "id": "11:7303160245840236974",
-          "name": "province",
-          "type": 9
-        },
-        {
-          "id": "12:8812957164445977657",
-          "name": "modeOfPayment",
-          "type": 9
-        },
-        {
-          "id": "13:1045020115845912295",
-          "name": "numberOfInvoices",
-          "type": 6
-        },
-        {
-          "id": "14:6043937121149023227",
-          "name": "totalAmount",
-          "type": 8
-        },
-        {
-          "id": "15:5866289250807945815",
-          "name": "latitude",
-          "type": 9
-        },
-        {
-          "id": "16:4473423505279939315",
-          "name": "longitude",
-          "type": 9
-        },
-        {
-          "id": "17:8091191658113377414",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "18:5143026906601448759",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "20:111157491964795591",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "14:5563374066333098899",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "21:886845633227859065",
-          "name": "totalTime",
-          "type": 9
-        },
-        {
-          "id": "22:7862959537730988789",
-          "name": "notes",
-          "type": 9
-        },
-        {
-          "id": "23:3792298513174971000",
-          "name": "remarks",
-          "type": 9
-        },
-        {
-          "id": "24:1369727991867701382",
-          "name": "modeOfPaymentString",
-          "type": 9
-        },
-        {
-          "id": "25:7602950538999883170",
-          "name": "hasNotes",
-          "type": 1
-        },
-        {
-          "id": "26:4657750512920984701",
-          "name": "confirmedTotalPayment",
-          "type": 8
-        }
-      ],
-      "relations": [
-        {
-          "id": "1:8779473196909793697",
-          "name": "deliveryStatus",
-          "targetId": "7:743757926875478403"
-        },
-        {
-          "id": "2:922216345611620116",
-          "name": "invoices",
-          "targetId": "9:813909493096520087"
-        },
-        {
-          "id": "30:8202552290369841474",
-          "name": "transactions",
-          "targetId": "27:2117216250781186987"
-        },
-        {
-          "id": "31:3702142740189023932",
-          "name": "returns",
-          "targetId": "31:2222338414731561434"
-        }
-      ]
-    },
-    {
-      "id": "5:6624942406754561090",
-      "lastPropertyId": "21:4804241814732810859",
-      "name": "CustomerModel",
-      "properties": [
-        {
-          "id": "19:4765256920943358881",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "20:5957476963308025203",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "21:4804241814732810859",
-          "name": "tripId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
       "id": "6:3030380395827557545",
-      "lastPropertyId": "14:9207743476254050728",
+      "lastPropertyId": "15:8187351072217879784",
       "name": "DeliveryUpdateEntity",
       "properties": [
         {
@@ -406,15 +224,17 @@
           "id": "14:9207743476254050728",
           "name": "remarks",
           "type": 9
+        },
+        {
+          "id": "15:8187351072217879784",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "53:8117827002727378821",
+          "relationTarget": "DeliveryDataModel"
         }
       ],
-      "relations": [
-        {
-          "id": "22:7951814181348982632",
-          "name": "customers",
-          "targetId": "5:6624942406754561090"
-        }
-      ]
+      "relations": []
     },
     {
       "id": "7:743757926875478403",
@@ -435,121 +255,6 @@
         {
           "id": "15:3835893324442889868",
           "name": "customer",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "8:5432582490327826448",
-      "lastPropertyId": "15:8426379740425083318",
-      "name": "InvoiceEntity",
-      "properties": [
-        {
-          "id": "1:6558666286453278682",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:7391864432468285792",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:4991381980770158838",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:4848981102286286916",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:2252812235607604872",
-          "name": "invoiceNumber",
-          "type": 9
-        },
-        {
-          "id": "8:925197155801949221",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "9:7358673056707796553",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "10:2829182731243011253",
-          "name": "customerDeliveryStatus",
-          "type": 9
-        },
-        {
-          "id": "11:6951871397512140651",
-          "name": "totalAmount",
-          "type": 8
-        },
-        {
-          "id": "12:6129570854454915775",
-          "name": "confirmTotalAmount",
-          "type": 8
-        },
-        {
-          "id": "13:7137774916926280362",
-          "name": "customerId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "37:8029204984159471890",
-          "relationTarget": "CustomerModel"
-        },
-        {
-          "id": "14:7923803019541041321",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "38:8621180843396620500",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "15:8426379740425083318",
-          "name": "isCompleted",
-          "type": 1
-        }
-      ],
-      "relations": [
-        {
-          "id": "5:532223988813386682",
-          "name": "productList",
-          "targetId": "13:6887281950365048680"
-        }
-      ]
-    },
-    {
-      "id": "9:813909493096520087",
-      "lastPropertyId": "22:2801144532307129762",
-      "name": "InvoiceModel",
-      "properties": [
-        {
-          "id": "11:296532642051237585",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "12:7335564331495633789",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "21:7126038900417777501",
-          "name": "customerId",
-          "type": 9
-        },
-        {
-          "id": "22:2801144532307129762",
-          "name": "tripId",
           "type": 9
         }
       ],
@@ -645,167 +350,8 @@
       "relations": []
     },
     {
-      "id": "12:2593343718872205124",
-      "lastPropertyId": "48:8186774332665517874",
-      "name": "ProductEntity",
-      "properties": [
-        {
-          "id": "1:6325828076300386899",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:270983248864754213",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "5:6409336372386458699",
-          "name": "name",
-          "type": 9
-        },
-        {
-          "id": "6:5169533415623584624",
-          "name": "description",
-          "type": 9
-        },
-        {
-          "id": "9:6497842107553043055",
-          "name": "image",
-          "type": 9
-        },
-        {
-          "id": "21:7636815526717123652",
-          "name": "pricePerPc",
-          "type": 8
-        },
-        {
-          "id": "26:6515989377128153678",
-          "name": "totalAmount",
-          "type": 8
-        },
-        {
-          "id": "27:634443315658693490",
-          "name": "pricePerCase",
-          "type": 8
-        },
-        {
-          "id": "29:4194123572114620536",
-          "name": "invoiceId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "35:5194934914905270370",
-          "relationTarget": "InvoiceModel"
-        },
-        {
-          "id": "30:851112904590827220",
-          "name": "customerId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "36:4755378348514881247",
-          "relationTarget": "CustomerModel"
-        },
-        {
-          "id": "31:8986910532050463210",
-          "name": "isCase",
-          "type": 1
-        },
-        {
-          "id": "32:9125521959038870111",
-          "name": "isPc",
-          "type": 1
-        },
-        {
-          "id": "33:2770902239759775903",
-          "name": "isPack",
-          "type": 1
-        },
-        {
-          "id": "34:4443279738750832096",
-          "name": "isBox",
-          "type": 1
-        },
-        {
-          "id": "35:5221032146910871289",
-          "name": "unloadedProductCase",
-          "type": 6
-        },
-        {
-          "id": "36:2663816627981708346",
-          "name": "unloadedProductPc",
-          "type": 6
-        },
-        {
-          "id": "37:3725358458194100352",
-          "name": "unloadedProductPack",
-          "type": 6
-        },
-        {
-          "id": "38:2277412749602805915",
-          "name": "unloadedProductBox",
-          "type": 6
-        },
-        {
-          "id": "44:6433142257288463011",
-          "name": "case_",
-          "type": 6
-        },
-        {
-          "id": "45:7600171264578283543",
-          "name": "pcs",
-          "type": 6
-        },
-        {
-          "id": "46:7302890908149584229",
-          "name": "pack",
-          "type": 6
-        },
-        {
-          "id": "47:4526406225289741230",
-          "name": "box",
-          "type": 6
-        },
-        {
-          "id": "48:8186774332665517874",
-          "name": "hasReturn",
-          "type": 1
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "13:6887281950365048680",
-      "lastPropertyId": "17:2509549930219347946",
-      "name": "ProductModel",
-      "properties": [
-        {
-          "id": "14:344950642817430532",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "15:1827036462628612368",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "16:596861409252080956",
-          "name": "invoiceId",
-          "type": 9
-        },
-        {
-          "id": "17:2509549930219347946",
-          "name": "customerId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
       "id": "14:4634356157032572206",
-      "lastPropertyId": "21:4551943407444772877",
+      "lastPropertyId": "22:245363032872952798",
       "name": "TripEntity",
       "properties": [
         {
@@ -923,14 +469,17 @@
           "id": "21:4551943407444772877",
           "name": "longitude",
           "type": 8
+        },
+        {
+          "id": "22:245363032872952798",
+          "name": "deliveryVehicleId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "61:8619182400183796725",
+          "relationTarget": "DeliveryVehicleModel"
         }
       ],
       "relations": [
-        {
-          "id": "7:4643822862643184357",
-          "name": "customers",
-          "targetId": "5:6624942406754561090"
-        },
         {
           "id": "8:3785961766489236590",
           "name": "personels",
@@ -947,26 +496,6 @@
           "targetId": "19:2221868557555259792"
         },
         {
-          "id": "37:8009148045859773887",
-          "name": "completedCustomers",
-          "targetId": "32:5190367765380256665"
-        },
-        {
-          "id": "38:7971742671112932770",
-          "name": "returns",
-          "targetId": "31:2222338414731561434"
-        },
-        {
-          "id": "39:2312004636728150997",
-          "name": "undeliverableCustomers",
-          "targetId": "41:1498007900983199816"
-        },
-        {
-          "id": "40:863808831836037207",
-          "name": "transactions",
-          "targetId": "27:2117216250781186987"
-        },
-        {
           "id": "41:1790612701283068757",
           "name": "endTripChecklist",
           "targetId": "43:2966284262887622250"
@@ -977,9 +506,9 @@
           "targetId": "48:8340272642715376828"
         },
         {
-          "id": "44:4081384640078222274",
-          "name": "invoices",
-          "targetId": "9:813909493096520087"
+          "id": "46:78219375503453127",
+          "name": "deliveryData",
+          "targetId": "55:8423633885083896888"
         }
       ]
     },
@@ -1181,7 +710,7 @@
     },
     {
       "id": "20:3827618117737923097",
-      "lastPropertyId": "13:8165478066265954911",
+      "lastPropertyId": "14:209634526167592840",
       "name": "DeliveryTeamEntity",
       "properties": [
         {
@@ -1242,6 +771,14 @@
           "flags": 520,
           "indexId": "21:830914855730843355",
           "relationTarget": "TripModel"
+        },
+        {
+          "id": "14:209634526167592840",
+          "name": "deliveryVehicleId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "58:6533658377279110948",
+          "relationTarget": "DeliveryVehicleModel"
         }
       ],
       "relations": [
@@ -1313,161 +850,8 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "26:7657596910129447497",
+          "indexId": "121:5476341418432294988",
           "relationTarget": "TripModel"
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "25:1636938665827161760",
-      "lastPropertyId": "19:8186513145024983979",
-      "name": "TransactionEntity",
-      "properties": [
-        {
-          "id": "1:7788696190495463391",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:1182637436290937352",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:3185695397029916180",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:7482434781887082599",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "6:7547398494399669109",
-          "name": "customerName",
-          "type": 9
-        },
-        {
-          "id": "7:9212230789388552615",
-          "name": "totalAmount",
-          "type": 9
-        },
-        {
-          "id": "8:4849920256823204710",
-          "name": "deliveryNumber",
-          "type": 9
-        },
-        {
-          "id": "9:6341109722109625035",
-          "name": "transactionDate",
-          "type": 10
-        },
-        {
-          "id": "10:5524543240484184771",
-          "name": "createdAt",
-          "type": 10
-        },
-        {
-          "id": "11:510632936006348073",
-          "name": "updatedAt",
-          "type": 10
-        },
-        {
-          "id": "12:2236155664072012998",
-          "name": "isCompleted",
-          "type": 1
-        },
-        {
-          "id": "13:2935231896130179601",
-          "name": "transactionStatusString",
-          "type": 9
-        },
-        {
-          "id": "14:3913111527420347263",
-          "name": "modeOfPaymentString",
-          "type": 9
-        },
-        {
-          "id": "15:3851258104500491561",
-          "name": "customerImage",
-          "type": 9
-        },
-        {
-          "id": "16:7955364885727961290",
-          "name": "refNumber",
-          "type": 9
-        },
-        {
-          "id": "17:2221253742651843905",
-          "name": "tripRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "17:472954893477498029",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "18:8974145915940495565",
-          "name": "completedCustomerRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "20:4280167080029899625",
-          "relationTarget": "CompletedCustomerModel"
-        },
-        {
-          "id": "19:8186513145024983979",
-          "name": "customerId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "39:811078952087890952",
-          "relationTarget": "CustomerModel"
-        }
-      ],
-      "relations": [
-        {
-          "id": "15:1605353635090230975",
-          "name": "invoices",
-          "targetId": "8:5432582490327826448"
-        }
-      ]
-    },
-    {
-      "id": "27:2117216250781186987",
-      "lastPropertyId": "26:8768302685213339695",
-      "name": "TransactionModel",
-      "properties": [
-        {
-          "id": "17:4369489657167608582",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "18:8222082613003819562",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "23:3440119017008134938",
-          "name": "customerId",
-          "type": 9
-        },
-        {
-          "id": "24:7240213920209634204",
-          "name": "tripId",
-          "type": 9
-        },
-        {
-          "id": "25:5225197093163286518",
-          "name": "completedCustomerId",
-          "type": 9
-        },
-        {
-          "id": "26:8768302685213339695",
-          "name": "transactionDate",
-          "type": 10
         }
       ],
       "relations": []
@@ -1525,325 +909,6 @@
         {
           "id": "3:3552847195292051829",
           "name": "tripId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "30:8325197092071778196",
-      "lastPropertyId": "23:5029006026594443824",
-      "name": "ReturnEntity",
-      "properties": [
-        {
-          "id": "1:7159250174630514347",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:688633321144220225",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:7712354582157774445",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:20699139691494007",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:3257272905913404798",
-          "name": "productName",
-          "type": 9
-        },
-        {
-          "id": "6:5966119542570929601",
-          "name": "productDescription",
-          "type": 9
-        },
-        {
-          "id": "9:2054820229075353456",
-          "name": "returnDate",
-          "type": 10
-        },
-        {
-          "id": "13:1354780863573015275",
-          "name": "productQuantityCase",
-          "type": 6
-        },
-        {
-          "id": "14:8352136082830244547",
-          "name": "productQuantityPcs",
-          "type": 6
-        },
-        {
-          "id": "15:6308530438112771624",
-          "name": "invoiceRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "12:7060883924692009282",
-          "relationTarget": "InvoiceModel"
-        },
-        {
-          "id": "16:5654710875855817213",
-          "name": "customerRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "13:8405295962581646686",
-          "relationTarget": "CustomerModel"
-        },
-        {
-          "id": "17:1442767062996121287",
-          "name": "tripRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "16:4776033954590063152",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "18:2616114769091067229",
-          "name": "productQuantityPack",
-          "type": 6
-        },
-        {
-          "id": "19:2978713147213114232",
-          "name": "productQuantityBox",
-          "type": 6
-        },
-        {
-          "id": "20:7733948270425816243",
-          "name": "isCase",
-          "type": 1
-        },
-        {
-          "id": "21:6096513534413029008",
-          "name": "isPcs",
-          "type": 1
-        },
-        {
-          "id": "22:6909169449759179596",
-          "name": "isBox",
-          "type": 1
-        },
-        {
-          "id": "23:5029006026594443824",
-          "name": "isPack",
-          "type": 1
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "31:2222338414731561434",
-      "lastPropertyId": "4:4292325636304599832",
-      "name": "ReturnModel",
-      "properties": [
-        {
-          "id": "1:3149737445133335124",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:3285981560810214996",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "4:4292325636304599832",
-          "name": "tripId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "32:5190367765380256665",
-      "lastPropertyId": "4:9163101723595439190",
-      "name": "CompletedCustomerModel",
-      "properties": [
-        {
-          "id": "1:6509687678033297242",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2428300827424217746",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:6459952616228590918",
-          "name": "tripId",
-          "type": 9
-        },
-        {
-          "id": "4:9163101723595439190",
-          "name": "timeCompleted",
-          "type": 10
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "33:4702232932726113116",
-      "lastPropertyId": "19:8356014716741193452",
-      "name": "CompletedCustomerEntity",
-      "properties": [
-        {
-          "id": "1:2081631122263565441",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:6006406697334212765",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:267814120063409867",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:7905683759712683842",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:6807520937482742362",
-          "name": "deliveryNumber",
-          "type": 9
-        },
-        {
-          "id": "6:8207918602700888103",
-          "name": "storeName",
-          "type": 9
-        },
-        {
-          "id": "7:8018805169024900810",
-          "name": "ownerName",
-          "type": 9
-        },
-        {
-          "id": "8:9024996737942869157",
-          "name": "contactNumber",
-          "type": 30
-        },
-        {
-          "id": "9:7516508171733807906",
-          "name": "address",
-          "type": 9
-        },
-        {
-          "id": "10:4405439017711572684",
-          "name": "municipality",
-          "type": 9
-        },
-        {
-          "id": "11:2391120462549753352",
-          "name": "province",
-          "type": 9
-        },
-        {
-          "id": "12:1281672098929982405",
-          "name": "modeOfPayment",
-          "type": 9
-        },
-        {
-          "id": "13:9183796705152472307",
-          "name": "timeCompleted",
-          "type": 10
-        },
-        {
-          "id": "14:2781752260426345470",
-          "name": "totalAmount",
-          "type": 8
-        },
-        {
-          "id": "15:5450074392613403862",
-          "name": "transactionRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "10:5243635373610734763",
-          "relationTarget": "TransactionModel"
-        },
-        {
-          "id": "16:2373140102148991748",
-          "name": "customerRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "11:4985843839591153857",
-          "relationTarget": "CustomerModel"
-        },
-        {
-          "id": "17:5224150141613133736",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "15:6669930884800093869",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "18:655879933433011631",
-          "name": "totalTime",
-          "type": 9
-        },
-        {
-          "id": "19:8356014716741193452",
-          "name": "modeOfPaymentString",
-          "type": 9
-        }
-      ],
-      "relations": [
-        {
-          "id": "24:6324992454358673680",
-          "name": "invoices",
-          "targetId": "9:813909493096520087"
-        },
-        {
-          "id": "25:5191412171099240435",
-          "name": "deliveryStatus",
-          "targetId": "7:743757926875478403"
-        },
-        {
-          "id": "28:6472482075989076832",
-          "name": "returns",
-          "targetId": "31:2222338414731561434"
-        }
-      ]
-    },
-    {
-      "id": "41:1498007900983199816",
-      "lastPropertyId": "4:3603718351566598495",
-      "name": "UndeliverableCustomerModel",
-      "properties": [
-        {
-          "id": "1:4853744715588708487",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:4489963106830340807",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:131988642879265621",
-          "name": "tripId",
-          "type": 9
-        },
-        {
-          "id": "4:3603718351566598495",
-          "name": "customerId",
           "type": 9
         }
       ],
@@ -1931,117 +996,6 @@
         }
       ],
       "relations": []
-    },
-    {
-      "id": "46:8984387025797531191",
-      "lastPropertyId": "18:7910129559602669704",
-      "name": "UndeliverableCustomerEntity",
-      "properties": [
-        {
-          "id": "1:8685509533717266954",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2608369877185797316",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:7603402449542992811",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:3709584509802714636",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:4281595992971248849",
-          "name": "deliveryNumber",
-          "type": 9
-        },
-        {
-          "id": "6:7986841945518961124",
-          "name": "storeName",
-          "type": 9
-        },
-        {
-          "id": "7:8596900298846992208",
-          "name": "ownerName",
-          "type": 9
-        },
-        {
-          "id": "8:1136157881071497442",
-          "name": "contactNumber",
-          "type": 30
-        },
-        {
-          "id": "9:7242929660127407819",
-          "name": "address",
-          "type": 9
-        },
-        {
-          "id": "10:6785323552713586580",
-          "name": "municipality",
-          "type": 9
-        },
-        {
-          "id": "11:2088534606867845567",
-          "name": "province",
-          "type": 9
-        },
-        {
-          "id": "12:1174106696378544901",
-          "name": "modeOfPayment",
-          "type": 9
-        },
-        {
-          "id": "13:4901481522986122322",
-          "name": "time",
-          "type": 10
-        },
-        {
-          "id": "14:2944343869770818756",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "15:7739883618297448780",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "16:2492853829283906299",
-          "name": "customerImage",
-          "type": 9
-        },
-        {
-          "id": "17:7323883443322035507",
-          "name": "customerRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "18:7731158962080929526",
-          "relationTarget": "CustomerModel"
-        },
-        {
-          "id": "18:7910129559602669704",
-          "name": "tripRefId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "19:6029004681799113222",
-          "relationTarget": "TripModel"
-        }
-      ],
-      "relations": [
-        {
-          "id": "42:3258354676529996076",
-          "name": "invoices",
-          "targetId": "9:813909493096520087"
-        }
-      ]
     },
     {
       "id": "47:3525944426048839466",
@@ -2180,7 +1134,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "47:6079813195697612926",
+          "indexId": "120:4825664026656140278",
           "relationTarget": "TripModel"
         }
       ],
@@ -2309,11 +1263,993 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "52:9083427205524041375",
+      "lastPropertyId": "16:4260745180941735885",
+      "name": "CustomerDataEntity",
+      "properties": [
+        {
+          "id": "1:4868288152570646043",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8206230229738950286",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:4725597140303171333",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:6278899991849064350",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:614509000958955798",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "6:3793187981659323346",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "7:5496476561129568530",
+          "name": "province",
+          "type": 9
+        },
+        {
+          "id": "8:5884791488567902038",
+          "name": "municipality",
+          "type": 9
+        },
+        {
+          "id": "9:6701347040662838281",
+          "name": "barangay",
+          "type": 9
+        },
+        {
+          "id": "10:2783775945740123000",
+          "name": "longitude",
+          "type": 8
+        },
+        {
+          "id": "11:3025217968909891973",
+          "name": "latitude",
+          "type": 8
+        },
+        {
+          "id": "12:5926541534332922823",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "13:1934374496140161182",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "14:1466543434623790523",
+          "name": "paymentMode",
+          "type": 9
+        },
+        {
+          "id": "15:7202673304775741392",
+          "name": "ownerName",
+          "type": 9
+        },
+        {
+          "id": "16:4260745180941735885",
+          "name": "contactNumber",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "53:5190305223310503460",
+      "lastPropertyId": "2:2394894553572228419",
+      "name": "CustomerDataModel",
+      "properties": [
+        {
+          "id": "1:2168481243069811817",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2394894553572228419",
+          "name": "pocketbaseId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "54:9218130673980506226",
+      "lastPropertyId": "13:6673957372490714795",
+      "name": "DeliveryDataEntity",
+      "properties": [
+        {
+          "id": "1:4906769591890609172",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:7358260089789875428",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:2258766517610321544",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:596307483188138072",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:4144876367608462754",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "50:6729783580412313614",
+          "relationTarget": "CustomerDataModel"
+        },
+        {
+          "id": "6:7624508358227969655",
+          "name": "invoiceId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "51:492352135283157291",
+          "relationTarget": "InvoiceDataModel"
+        },
+        {
+          "id": "7:1632832920146205993",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "52:2056104230444902586",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "8:8871873741572861845",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "9:8058838556045378331",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "10:5289778272447002516",
+          "name": "hasTrip",
+          "type": 1
+        },
+        {
+          "id": "11:7509367947342390876",
+          "name": "paymentMode",
+          "type": 9
+        },
+        {
+          "id": "12:6046998802875835427",
+          "name": "deliveryNumber",
+          "type": 9
+        },
+        {
+          "id": "13:6673957372490714795",
+          "name": "totalDeliveryTime",
+          "type": 9
+        }
+      ],
+      "relations": [
+        {
+          "id": "45:7445309286868354680",
+          "name": "deliveryUpdates",
+          "targetId": "6:3030380395827557545"
+        },
+        {
+          "id": "49:8890252336964719573",
+          "name": "invoiceItems",
+          "targetId": "61:2520708785790055940"
+        }
+      ]
+    },
+    {
+      "id": "55:8423633885083896888",
+      "lastPropertyId": "6:2998275801690102624",
+      "name": "DeliveryDataModel",
+      "properties": [
+        {
+          "id": "1:7522337741825164044",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6641313370538388014",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:3352908740349422317",
+          "name": "tripId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "56:5750131685428495714",
+      "lastPropertyId": "13:9168803752813950564",
+      "name": "DeliveryVehicleEntity",
+      "properties": [
+        {
+          "id": "1:5518541338824228705",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4929378817223943174",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8059202892796599178",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:3261140737103521717",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:1772163597076679941",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "6:6779520887551228619",
+          "name": "plateNo",
+          "type": 9
+        },
+        {
+          "id": "7:6087083418364663896",
+          "name": "make",
+          "type": 9
+        },
+        {
+          "id": "8:7229224855281799484",
+          "name": "type",
+          "type": 9
+        },
+        {
+          "id": "9:3393610763414408528",
+          "name": "wheels",
+          "type": 9
+        },
+        {
+          "id": "10:3387518068581453663",
+          "name": "volumeCapacity",
+          "type": 8
+        },
+        {
+          "id": "11:7292686564216911093",
+          "name": "weightCapacity",
+          "type": 8
+        },
+        {
+          "id": "12:2135988521692038103",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "13:9168803752813950564",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "57:3735904064588148309",
+      "lastPropertyId": "3:6792997228860389736",
+      "name": "DeliveryVehicleModel",
+      "properties": [
+        {
+          "id": "1:2474681307724591512",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2827071663528713181",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:6792997228860389736",
+          "name": "tripId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "58:8584941869586890365",
+      "lastPropertyId": "13:5572719738333128348",
+      "name": "InvoiceDataEntity",
+      "properties": [
+        {
+          "id": "1:5101684925978890544",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2542747618580257275",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8035055846937843930",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:767250777745036707",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:6334293822355052885",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "6:2112697575659830225",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "7:7242760466736211814",
+          "name": "documentDate",
+          "type": 10
+        },
+        {
+          "id": "8:5098139640876201423",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "9:7168374071322422523",
+          "name": "volume",
+          "type": 8
+        },
+        {
+          "id": "10:1250326509221853815",
+          "name": "weight",
+          "type": 8
+        },
+        {
+          "id": "11:1164927965649940950",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "55:1848184781269476166",
+          "relationTarget": "CustomerDataEntity"
+        },
+        {
+          "id": "12:4852356324185017037",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "13:5572719738333128348",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "59:6569961212987627256",
+      "lastPropertyId": "2:8084006730648569459",
+      "name": "InvoiceDataModel",
+      "properties": [
+        {
+          "id": "1:7494899090446384552",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8084006730648569459",
+          "name": "pocketbaseId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "60:5456379962994459273",
+      "lastPropertyId": "15:3414312128542141691",
+      "name": "InvoiceItemsEntity",
+      "properties": [
+        {
+          "id": "1:179043112874821257",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4305297166253711783",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:3804502667656079011",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:2701084778700999211",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:8364468300915529965",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "6:6309471862630726220",
+          "name": "brand",
+          "type": 9
+        },
+        {
+          "id": "7:8651610507598912609",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "8:6772083183977711807",
+          "name": "uom",
+          "type": 9
+        },
+        {
+          "id": "9:9204825723787185791",
+          "name": "quantity",
+          "type": 8
+        },
+        {
+          "id": "10:7379891928036427625",
+          "name": "totalBaseQuantity",
+          "type": 8
+        },
+        {
+          "id": "11:6580548185888550421",
+          "name": "uomPrice",
+          "type": 8
+        },
+        {
+          "id": "12:7974847257541097050",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "13:157734064135979928",
+          "name": "invoiceDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "56:7508340840242053858",
+          "relationTarget": "InvoiceDataEntity"
+        },
+        {
+          "id": "14:7664984616937522348",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "15:3414312128542141691",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "61:2520708785790055940",
+      "lastPropertyId": "3:4978533290324364066",
+      "name": "InvoiceItemsModel",
+      "properties": [
+        {
+          "id": "1:8801701441009767215",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:7984252080888224103",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:4978533290324364066",
+          "name": "invoiceDataId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "62:6696027886578843082",
+      "lastPropertyId": "11:9211212812383505369",
+      "name": "CancelledInvoiceEntity",
+      "properties": [
+        {
+          "id": "1:6016276785470579852",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:911468149428682187",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:5645730998315508244",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:6533963536204622638",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:1049086707635307859",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "73:2268301001151602922",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "6:4000085788755296544",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "74:3578485567881505030",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "7:5741995476175580629",
+          "name": "image",
+          "type": 9
+        },
+        {
+          "id": "8:8744520221355629524",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "9:2544935811426072395",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "10:673659440479412154",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "104:362057801517326832",
+          "relationTarget": "CustomerDataModel"
+        },
+        {
+          "id": "11:9211212812383505369",
+          "name": "invoiceId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "105:6404571701268891173",
+          "relationTarget": "InvoiceDataModel"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "63:8492922918573989072",
+      "lastPropertyId": "6:6388257097833933823",
+      "name": "CancelledInvoiceModel",
+      "properties": [
+        {
+          "id": "1:5359998800618440528",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:815476487805924351",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:4012930170989795794",
+          "name": "deliveryDataId",
+          "type": 9
+        },
+        {
+          "id": "4:7204035059790858290",
+          "name": "tripId",
+          "type": 9
+        },
+        {
+          "id": "5:8381234087228022510",
+          "name": "customerId",
+          "type": 9
+        },
+        {
+          "id": "6:6388257097833933823",
+          "name": "invoiceId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "64:4019554688609507216",
+      "lastPropertyId": "11:498185478058447605",
+      "name": "CollectionEntity",
+      "properties": [
+        {
+          "id": "1:3075379124216933668",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:718171142003326428",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:4086904969161824294",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:1259010254478584075",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:7309128930852689225",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "75:2510826988125649135",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "6:5041223312496557639",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "76:5259988568133545514",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "7:51367333003224312",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "8:7094512690254242496",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "9:2318097404791678608",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "10:8905344570507788371",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "106:1553761506678957010",
+          "relationTarget": "CustomerDataModel"
+        },
+        {
+          "id": "11:498185478058447605",
+          "name": "invoiceId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "107:45131630434287320",
+          "relationTarget": "InvoiceDataModel"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "65:4826906273048525394",
+      "lastPropertyId": "6:5061264034473684791",
+      "name": "CollectionModel",
+      "properties": [
+        {
+          "id": "1:37688900503369350",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:922268717945401595",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:904777158917823705",
+          "name": "deliveryDataId",
+          "type": 9
+        },
+        {
+          "id": "4:4543480027854611254",
+          "name": "tripId",
+          "type": 9
+        },
+        {
+          "id": "5:6604342347755008534",
+          "name": "customerId",
+          "type": 9
+        },
+        {
+          "id": "6:5061264034473684791",
+          "name": "invoiceId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "66:5369113908483710527",
+      "lastPropertyId": "14:1322378065497598722",
+      "name": "DeliveryReceiptEntity",
+      "properties": [
+        {
+          "id": "1:2828724549444558229",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3871630763802832070",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:1884981731332442006",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:2666198938965664148",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:6239827665897272987",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "77:5388113584819944273",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "6:7622812748898939351",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "78:3613385546501454754",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "7:7738367120852075695",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "8:6987594248542423449",
+          "name": "dateTimeCompleted",
+          "type": 10
+        },
+        {
+          "id": "9:3963222541239776041",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "10:8655890687803461364",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "11:9205865162335605476",
+          "name": "customerImages",
+          "type": 30
+        },
+        {
+          "id": "12:7353811758378347702",
+          "name": "customerSignature",
+          "type": 9
+        },
+        {
+          "id": "13:8429985021512645349",
+          "name": "receiptFile",
+          "type": 9
+        },
+        {
+          "id": "14:1322378065497598722",
+          "name": "totalAmount",
+          "type": 8
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "67:4289851035742724734",
+      "lastPropertyId": "11:8534009607210679578",
+      "name": "DeliveryReceiptItemsEntity",
+      "properties": [
+        {
+          "id": "1:960985303543964902",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3589750516837685247",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:5159040245389744519",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:5742247946431043013",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:8131792983990183952",
+          "name": "deliveryReceiptId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "79:2239231746914140117",
+          "relationTarget": "DeliveryReceiptModel"
+        },
+        {
+          "id": "6:3729177002167302672",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "7:6619690206865098034",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "8:695027353661576594",
+          "name": "customerImage",
+          "type": 9
+        },
+        {
+          "id": "9:2073245836900552129",
+          "name": "receiptFile",
+          "type": 9
+        },
+        {
+          "id": "10:1879915831534771554",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "11:8534009607210679578",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": [
+        {
+          "id": "48:9064645761870730284",
+          "name": "invoiceItems",
+          "targetId": "61:2520708785790055940"
+        }
+      ]
+    },
+    {
+      "id": "68:5958189581756342264",
+      "lastPropertyId": "3:7346969639673212711",
+      "name": "DeliveryReceiptItemsModel",
+      "properties": [
+        {
+          "id": "1:5616679355631951999",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1255772515846782877",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:7346969639673212711",
+          "name": "deliveryReceiptId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "69:5638905333969246812",
+      "lastPropertyId": "6:7139364902655718745",
+      "name": "DeliveryReceiptModel",
+      "properties": [
+        {
+          "id": "1:9122143144950536211",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2800682189094504379",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:1126613588922829686",
+          "name": "tripId",
+          "type": 9
+        },
+        {
+          "id": "4:2327992606865351910",
+          "name": "deliveryDataId",
+          "type": 9
+        },
+        {
+          "id": "5:8799920658252251874",
+          "name": "customerImagesString",
+          "type": 9
+        },
+        {
+          "id": "6:7139364902655718745",
+          "name": "customerImages",
+          "type": 30
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "51:644365920268088622",
-  "lastIndexId": "47:6079813195697612926",
-  "lastRelationId": "44:4081384640078222274",
+  "lastEntityId": "69:5638905333969246812",
+  "lastIndexId": "121:5476341418432294988",
+  "lastRelationId": "49:8890252336964719573",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
@@ -2330,7 +2266,21 @@
     2135318920905868119,
     572117866772752744,
     1402609585364815748,
-    7120148567131405051
+    7120148567131405051,
+    2810982542403258041,
+    6624942406754561090,
+    5432582490327826448,
+    813909493096520087,
+    2593343718872205124,
+    6887281950365048680,
+    1636938665827161760,
+    2117216250781186987,
+    8325197092071778196,
+    2222338414731561434,
+    5190367765380256665,
+    4702232932726113116,
+    1498007900983199816,
+    8984387025797531191
   ],
   "retiredIndexUids": [
     2981830705100883060,
@@ -2344,7 +2294,62 @@
     935312474712296861,
     4446192239018063099,
     1394205174110905009,
-    899601815778169880
+    899601815778169880,
+    6079813195697612926,
+    7657596910129447497,
+    1886208561651737779,
+    938783085154942789,
+    7764234828199311654,
+    3402456903208139476,
+    12771229517713532,
+    3730222485602799089,
+    6172864948547412323,
+    4720663995748975221,
+    6429149503988953500,
+    8526261447759437205,
+    1731107271344601681,
+    518642663306885988,
+    9151995988484559211,
+    4403320217953853729,
+    1726970402077863884,
+    2852350600320815169,
+    857558378186194142,
+    5535485596900826500,
+    8129482255202537649,
+    6908958383296806346,
+    7932569622179544317,
+    4586169951709319616,
+    5876197726705580579,
+    4350617180197170491,
+    4618938960140997394,
+    7865768950632988384,
+    5849448005371519222,
+    6216503592579678999,
+    2929868313853451577,
+    8392113346002922573,
+    1572312363836999092,
+    8813127732259371883,
+    5911969113098242606,
+    3943932802148224205,
+    4687192535655085016,
+    5513443102488682930,
+    5231495607980221658,
+    5250439930599153631,
+    4739623102102877132,
+    66366586473896345,
+    5919243101713377994,
+    1361690439118438072,
+    7272566313916276180,
+    7661187329471132209,
+    8141262806335892232,
+    4313790059035887863,
+    8559553551552707379,
+    7597268288597430123,
+    7516783137746932816,
+    6165004111790533116,
+    130617342430599913,
+    6693967078919351563,
+    8409512806390582317
   ],
   "retiredPropertyUids": [
     3346502891055187729,
@@ -2637,7 +2642,177 @@
     495942872694066139,
     302180669176230366,
     353255264519052879,
-    8635794056678148942
+    8635794056678148942,
+    4274432975179550722,
+    9095531140116553685,
+    2998275801690102624,
+    1119544490582682879,
+    6236750458352047417,
+    3253882744375541347,
+    8135099039353923812,
+    3381536243504511229,
+    45105488215685205,
+    1018357521837095445,
+    4087694502081403835,
+    6474825060915434468,
+    7363645517555672052,
+    5420239464119476058,
+    7303160245840236974,
+    8812957164445977657,
+    1045020115845912295,
+    6043937121149023227,
+    5866289250807945815,
+    4473423505279939315,
+    8091191658113377414,
+    5143026906601448759,
+    111157491964795591,
+    886845633227859065,
+    7862959537730988789,
+    3792298513174971000,
+    1369727991867701382,
+    7602950538999883170,
+    4657750512920984701,
+    4765256920943358881,
+    5957476963308025203,
+    4804241814732810859,
+    6558666286453278682,
+    7391864432468285792,
+    4991381980770158838,
+    4848981102286286916,
+    2252812235607604872,
+    925197155801949221,
+    7358673056707796553,
+    2829182731243011253,
+    6951871397512140651,
+    6129570854454915775,
+    7137774916926280362,
+    7923803019541041321,
+    8426379740425083318,
+    296532642051237585,
+    7335564331495633789,
+    7126038900417777501,
+    2801144532307129762,
+    6325828076300386899,
+    270983248864754213,
+    6409336372386458699,
+    5169533415623584624,
+    6497842107553043055,
+    7636815526717123652,
+    6515989377128153678,
+    634443315658693490,
+    4194123572114620536,
+    851112904590827220,
+    8986910532050463210,
+    9125521959038870111,
+    2770902239759775903,
+    4443279738750832096,
+    5221032146910871289,
+    2663816627981708346,
+    3725358458194100352,
+    2277412749602805915,
+    6433142257288463011,
+    7600171264578283543,
+    7302890908149584229,
+    4526406225289741230,
+    8186774332665517874,
+    5438979947531339030,
+    9166228944783305484,
+    5231326900758383552,
+    6307766040921005380,
+    344950642817430532,
+    1827036462628612368,
+    596861409252080956,
+    2509549930219347946,
+    7788696190495463391,
+    1182637436290937352,
+    3185695397029916180,
+    7482434781887082599,
+    7547398494399669109,
+    9212230789388552615,
+    4849920256823204710,
+    6341109722109625035,
+    5524543240484184771,
+    510632936006348073,
+    2236155664072012998,
+    2935231896130179601,
+    3913111527420347263,
+    3851258104500491561,
+    7955364885727961290,
+    2221253742651843905,
+    8974145915940495565,
+    8186513145024983979,
+    4369489657167608582,
+    8222082613003819562,
+    3440119017008134938,
+    7240213920209634204,
+    5225197093163286518,
+    8768302685213339695,
+    7159250174630514347,
+    688633321144220225,
+    7712354582157774445,
+    20699139691494007,
+    3257272905913404798,
+    5966119542570929601,
+    2054820229075353456,
+    1354780863573015275,
+    8352136082830244547,
+    6308530438112771624,
+    5654710875855817213,
+    1442767062996121287,
+    2616114769091067229,
+    2978713147213114232,
+    7733948270425816243,
+    6096513534413029008,
+    6909169449759179596,
+    5029006026594443824,
+    3149737445133335124,
+    3285981560810214996,
+    4292325636304599832,
+    6509687678033297242,
+    2428300827424217746,
+    6459952616228590918,
+    9163101723595439190,
+    2081631122263565441,
+    6006406697334212765,
+    267814120063409867,
+    7905683759712683842,
+    6807520937482742362,
+    8207918602700888103,
+    8018805169024900810,
+    9024996737942869157,
+    7516508171733807906,
+    4405439017711572684,
+    2391120462549753352,
+    1281672098929982405,
+    9183796705152472307,
+    2781752260426345470,
+    5450074392613403862,
+    2373140102148991748,
+    5224150141613133736,
+    655879933433011631,
+    8356014716741193452,
+    4853744715588708487,
+    4489963106830340807,
+    131988642879265621,
+    3603718351566598495,
+    8685509533717266954,
+    2608369877185797316,
+    7603402449542992811,
+    3709584509802714636,
+    4281595992971248849,
+    7986841945518961124,
+    8596900298846992208,
+    1136157881071497442,
+    7242929660127407819,
+    6785323552713586580,
+    2088534606867845567,
+    1174106696378544901,
+    4901481522986122322,
+    2944343869770818756,
+    7739883618297448780,
+    2492853829283906299,
+    7323883443322035507,
+    7910129559602669704
   ],
   "retiredRelationUids": [
     4626963580022962752,
@@ -2657,7 +2832,15 @@
     1587644881745869281,
     2271626364931710282,
     9194901586609090214,
-    5055001292096896164
+    5055001292096896164,
+    1211522283703357965,
+    7951814181348982632,
+    4643822862643184357,
+    8009148045859773887,
+    7971742671112932770,
+    2312004636728150997,
+    863808831836037207,
+    4081384640078222274
   ],
   "version": 1
 }

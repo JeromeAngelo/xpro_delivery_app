@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 
 class CustomerDetailsDashboard extends StatefulWidget {
-  final CustomerEntity customer;
+  final DeliveryDataEntity deliveryData;
   final void Function()? onTap;
 
   const CustomerDetailsDashboard({
     super.key,
-    required this.customer,
+    required this.deliveryData,
     this.onTap,
   });
 
@@ -23,27 +23,29 @@ class CustomerDetailsDashboard extends StatefulWidget {
 }
 
 class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
-  CustomerState? _cachedState;
+  DeliveryDataState? _cachedState;
 
   @override
   void initState() {
     super.initState();
-    _loadLocalCustomerData();
+    _loadLocalDeliveryData();
   }
 
-  void _loadLocalCustomerData() {
-    debugPrint('📱 Loading local customer data: ${widget.customer.id}');
-    context.read<CustomerBloc>().add(
-      LoadLocalCustomerLocationEvent(widget.customer.id ?? ''),
-    );
+  void _loadLocalDeliveryData() {
+    if (widget.deliveryData.id != null) {
+      debugPrint('📱 Loading local delivery data: ${widget.deliveryData.id}');
+      context.read<DeliveryDataBloc>().add(
+        GetLocalDeliveryDataByIdEvent(widget.deliveryData.id!),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<CustomerBloc, CustomerState>(
+    return BlocConsumer<DeliveryDataBloc, DeliveryDataState>(
       listenWhen:
           (previous, current) =>
-              current is CustomerLocationLoaded || current is CustomerLoaded,
+              current is DeliveryDataLoaded || current is DeliveryDataError,
       listener: (context, state) {
         setState(() {
           _cachedState = state;
@@ -51,27 +53,189 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
       },
       buildWhen:
           (previous, current) =>
-              current is CustomerLocationLoaded ||
-              current is CustomerLoaded ||
-              current is CustomerLoading ||
+              current is DeliveryDataLoaded ||
+              current is DeliveryDataLoading ||
+              current is DeliveryDataError ||
               _cachedState == null,
       builder: (context, state) {
         final effectiveState = _cachedState ?? state;
 
         // Show skeleton loading UI when in loading state and no cached data
-        if ((state is CustomerLoading || state is CustomerInitial) &&
+        if ((state is DeliveryDataLoading || state is DeliveryDataInitial) &&
             _cachedState == null) {
           return _buildLoadingDashboard(context);
         }
 
+        // Use the current delivery data or the loaded one
+        final deliveryData =
+            (effectiveState is DeliveryDataLoaded)
+                ? effectiveState.deliveryData
+                : widget.deliveryData;
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-          child: _buildDashboard(context, effectiveState),
+          child: _buildDashboard(context, deliveryData),
         );
       },
     );
   }
 
+    Widget _buildDashboard(
+    BuildContext context,
+    DeliveryDataEntity deliveryData,
+  ) {
+    final customer = deliveryData.customer.target;
+    final invoice = deliveryData.invoice.target;
+
+    // ADDED: Show shimmer loading when customer is null
+    if (customer == null) {
+      return Card(
+        elevation: 0,
+        color: Theme.of(context).colorScheme.surface,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildShimmerHeader(context),
+              const SizedBox(height: 30),
+              _buildShimmerInfoGrid(context),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(context, customer),
+            const SizedBox(height: 30),
+            _buildInfoGrid(context, deliveryData, customer, invoice),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ADDED: Shimmer header when customer is null
+  Widget _buildShimmerHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Shimmer customer name
+              Container(
+                height: 24,
+                width: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Shimmer address
+              Container(
+                height: 16,
+                width: 250,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Shimmer more icon
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            shape: BoxShape.circle,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ADDED: Shimmer info grid when customer is null
+  Widget _buildShimmerInfoGrid(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: 2.8,
+      crossAxisSpacing: 15,
+      mainAxisSpacing: 22,
+      children: List.generate(
+        6,
+        (index) => _buildShimmerInfoItem(context),
+      ),
+    );
+  }
+
+  // ADDED: Individual shimmer info item
+  Widget _buildShimmerInfoItem(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Shimmer icon
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                shape: BoxShape.circle,
+              ),
+              margin: const EdgeInsets.only(right: 5, top: 2, bottom: 15),
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Shimmer title
+                  Container(
+                    height: 16,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Shimmer subtitle
+                  Container(
+                    height: 12,
+                    width: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // UPDATED: Enhanced existing shimmer methods for consistency
   Widget _buildLoadingDashboard(BuildContext context) {
     return Card(
       elevation: 0,
@@ -81,7 +245,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Skeleton header
+            // Enhanced shimmer header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -89,7 +253,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Store name skeleton
+                      // Store name shimmer
                       Container(
                         height: 24,
                         width: 200,
@@ -99,7 +263,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      // Address skeleton
+                      // Address shimmer
                       Container(
                         height: 16,
                         width: 250,
@@ -111,7 +275,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
                     ],
                   ),
                 ),
-                // More icon skeleton
+                // More icon shimmer
                 Container(
                   width: 24,
                   height: 24,
@@ -123,7 +287,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
               ],
             ),
             const SizedBox(height: 30),
-            // Skeleton info grid
+            // Enhanced shimmer info grid
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -150,7 +314,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon skeleton
+            // Icon shimmer
             Container(
               width: 20,
               height: 20,
@@ -165,7 +329,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title skeleton
+                  // Title shimmer
                   Container(
                     height: 16,
                     width: double.infinity,
@@ -175,7 +339,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  // Subtitle skeleton
+                  // Subtitle shimmer
                   Container(
                     height: 12,
                     width: 80,
@@ -193,28 +357,8 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     );
   }
 
-  Widget _buildDashboard(BuildContext context, CustomerState state) {
-    final customer =
-        (state is CustomerLocationLoaded) ? state.customer : widget.customer;
 
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 30),
-            _buildInfoGrid(context, state, customer),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, dynamic customer) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -223,7 +367,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.customer.storeName ?? '',
+                customer?.name ?? 'Unknown Customer',
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(
                   context,
@@ -233,7 +377,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
               GestureDetector(
                 onTap: widget.onTap,
                 child: Text(
-                  widget.customer.address ?? '',
+                  _buildAddressString(customer),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
@@ -245,49 +389,86 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     );
   }
 
+  String _buildAddressString(dynamic customer) {
+    if (customer == null) return 'No address available';
+
+    final addressParts = <String>[];
+
+    if (customer.barangay != null && customer.barangay!.isNotEmpty) {
+      addressParts.add(customer.barangay!);
+    }
+    if (customer.municipality != null && customer.municipality!.isNotEmpty) {
+      addressParts.add(customer.municipality!);
+    }
+    if (customer.province != null && customer.province!.isNotEmpty) {
+      addressParts.add(customer.province!);
+    }
+
+    return addressParts.isNotEmpty
+        ? addressParts.join(', ')
+        : 'No address available';
+  }
+
   Widget _buildInfoGrid(
     BuildContext context,
-    CustomerState state,
-    CustomerEntity customer,
+    DeliveryDataEntity deliveryData,
+    dynamic customer,
+    dynamic invoice,
   ) {
-    final invoiceCount = customer.invoicesList.length;
-    final totalAmount = customer.totalAmount ?? 0.0;
-    final status =
-        customer.deliveryStatus.isNotEmpty
-            ? customer.deliveryStatus.last.title ?? "No Status"
-            : "No Status";
+    // Get delivery status from delivery updates
+    final deliveryUpdates = deliveryData.deliveryUpdates.toList();
+    final latestStatus =
+        deliveryUpdates.isNotEmpty
+            ? deliveryUpdates.last.title ?? "Pending"
+            : "Pending";
+
+    // Calculate total amount from invoice
+    final totalAmount = invoice?.totalAmount ?? 0.0;
+
+    // Since CustomerDataEntity doesn't have contact numbers, we'll use placeholder
+    //  final contactNumbers = <String>['No contact available'];
 
     debugPrint('📊 Building dashboard with:');
-    debugPrint('   🧾 Invoices count: ${customer.invoicesList.length}');
+    debugPrint('   🏪 Customer: ${customer?.name}');
+    debugPrint('   🧾 Invoice: ${invoice?.name}');
     debugPrint('   💰 Total amount: $totalAmount');
+    debugPrint('   📦 Delivery status: $latestStatus');
 
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 2.8,
-      crossAxisSpacing: 5,
+      crossAxisSpacing: 15,
       mainAxisSpacing: 22,
       children: [
         _buildInfoItem(
           context,
-          StatusIcons.getStatusIcon(status),
-          status,
-          "Delivery Status",
+          Icons.person,
+          customer?.ownerName ?? "No User Available",
+          "Contact Person",
         ),
         _buildInfoItem(
           context,
-          Icons.person,
-          customer.ownerName ?? "",
-          "Contact Person",
+          StatusIcons.getStatusIcon(latestStatus),
+          latestStatus,
+          "Delivery Status",
         ),
-        _buildContactNumbers(context, customer.contactNumber ?? []),
+
+        // _buildContactNumbers(context, contactNumbers),
         _buildInfoItem(
           context,
           Icons.receipt,
-          invoiceCount.toString(),
-          "Invoice/Invoices",
+          invoice?.refId ?? invoice?.name ?? "No Invoice",
+          "Invoice Number",
         ),
+        _buildInfoItem(
+          context,
+          Icons.contact_phone,
+          customer?.contactNumber ?? "",
+          "Contact Number",
+        ),
+
         _buildInfoItem(
           context,
           Icons.attach_money,
@@ -297,22 +478,8 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         _buildInfoItem(
           context,
           Icons.payment,
-          customer.modeOfPayment ?? "",
+          customer?.paymentMode ?? "Not specified",
           "Payment Mode",
-        ),
-      ],
-    );
-  }
-
-  Widget _buildContactNumbers(BuildContext context, List<String> phoneNumbers) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildInfoItem(
-          context,
-          Icons.phone,
-          phoneNumbers.take(2).join('\n'),
-          "Contact Numbers",
         ),
       ],
     );
@@ -347,6 +514,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
                   if (subtitle == "Contact Numbers")
                     ...title
                         .split('\n')
+                        .where((number) => number.isNotEmpty)
                         .map(
                           (number) => GestureDetector(
                             onTap: () => _launchPhoneCall(number),

@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/presentation/bloc/transaction_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/presentation/bloc/transaction_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/presentation/bloc/transaction_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_state.dart';
 
 class CompletedCustomerDetailsScreen extends StatefulWidget {
-  final String customerId;
+  final String collectionId;
 
-  const CompletedCustomerDetailsScreen({
-    super.key,
-    required this.customerId,
-  });
+  const CompletedCustomerDetailsScreen({super.key, required this.collectionId});
 
   @override
   State<CompletedCustomerDetailsScreen> createState() =>
@@ -26,13 +20,12 @@ class _CompletedCustomerDetailsScreenState
   @override
   void initState() {
     super.initState();
-    context
-        .read<CompletedCustomerBloc>()
-        .add(GetCompletedCustomerByIdEvent(widget.customerId));
+    debugPrint('🔄 Loading collection details for ID: ${widget.collectionId}');
 
-    context
-        .read<TransactionBloc>()
-        .add(GetTransactionsByCompletedCustomerEvent(widget.customerId));
+    // Load collection by ID using the new bloc
+    context.read<CollectionsBloc>().add(
+      GetCollectionByIdEvent(widget.collectionId),
+    );
   }
 
   @override
@@ -51,170 +44,295 @@ class _CompletedCustomerDetailsScreenState
             icon: const Icon(Icons.print),
             onPressed: () {
               // PDF generation logic here
+              debugPrint('🖨️ PDF generation requested');
             },
           ),
         ],
       ),
-      body: MultiBlocListener(
-        listeners: [
-          BlocListener<CompletedCustomerBloc, CompletedCustomerState>(
-            listener: (context, state) {
-              if (state is CompletedCustomerError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
-                );
-              }
-            },
-          ),
-          BlocListener<TransactionBloc, TransactionState>(
-            listener: (context, state) {
-              if (state is TransactionError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
-                );
-              }
-            },
-          ),
-        ],
-        child: BlocBuilder<CompletedCustomerBloc, CompletedCustomerState>(
-          builder: (context, completedCustomerState) {
-            if (completedCustomerState is CompletedCustomerByIdLoaded) {
-              final customer = completedCustomerState.customer;
+      body: BlocListener<CollectionsBloc, CollectionsState>(
+        listener: (context, state) {
+          if (state is CollectionsError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${state.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        child: BlocBuilder<CollectionsBloc, CollectionsState>(
+          builder: (context, state) {
+            debugPrint('📋 Current collections state: ${state.runtimeType}');
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Store Info Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Store Information',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const Divider(),
-                            _buildInfoRow(
-                                'Store Name', customer.storeName ?? ''),
-                            _buildInfoRow('Owner', customer.ownerName ?? ''),
-                            _buildInfoRow('Address', customer.address ?? ''),
-                            _buildInfoRow(
-                                'Contact', customer.contactNumber?.first ?? ''),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    BlocBuilder<TransactionBloc, TransactionState>(
-                      builder: (context, transactionState) {
-                        if (transactionState is TransactionsLoaded) {
-                          final transaction =
-                              transactionState.transactions.firstOrNull;
+            if (state is CollectionsLoading) {
+              return const _LoadingWidget();
+            }
 
-                          debugPrint('🎯 Transaction State Details:');
-                          debugPrint('   📋 Full Transaction: $transaction');
-                          debugPrint(
-                              '   📅 Transaction Date: ${transaction?.transactionDate}');
-                          debugPrint(
-                              '   📊 Transactions Length: ${transactionState.transactions.length}');
-                          return Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Collection Information',
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge,
-                                  ),
-                                  const Divider(),
-                                  _buildInfoRow(
-                                    'Total Amount',
-                                    '₱${double.tryParse(transaction?.totalAmount.toString() ?? '0')?.toStringAsFixed(2) ?? '0.00'}',
-                                  ),
-                                  _buildInfoRow(
-                                    'Payment Mode',
-                                    transaction?.modeOfPayment
-                                            .toString()
-                                            .split('.')
-                                            .last
-                                            .replaceAllMapped(
-                                              RegExp(r'([A-Z][a-z]+)'),
-                                              (match) =>
-                                                  '${match.group(1)?[0].toUpperCase()}${match.group(1)?.substring(1)}',
-                                            )
-                                            .replaceAllMapped(
-                                              RegExp(r'([a-z])([A-Z])'),
-                                              (match) =>
-                                                  '${match.group(1)} ${match.group(2)}',
-                                            ) ??
-                                        '',
-                                  ),
-                                  _buildInfoRow(
-                                    'Reference Number',
-                                    transaction?.refNumber?.toString() ?? 'N/A',
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                        return const Center(child: CircularProgressIndicator());
-                      },
-                    ),
+            if (state is CollectionLoaded) {
+              final collection = state.collection;
+              debugPrint('✅ Collection loaded: ${collection.id}');
 
-                    const SizedBox(height: 16),
+              return _buildCollectionDetails(context, collection);
+            }
 
-                    // Invoices Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Invoices',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const Divider(),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: customer.invoices.length,
-                              itemBuilder: (context, index) {
-                                final invoice = customer.invoices[index];
-                                return ListTile(
-                                  title:
-                                      Text('Invoice #${invoice.invoiceNumber}'),
-                                  subtitle: Text(
-                                      '₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}'),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            if (state is CollectionsError) {
+              return _ErrorWidget(
+                message: state.message,
+                onRetry: () {
+                  context.read<CollectionsBloc>().add(
+                    GetCollectionByIdEvent(widget.collectionId),
+                  );
+                },
               );
             }
-            if (completedCustomerState is CompletedCustomerLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return const SizedBox.shrink();
+
+            return const _EmptyWidget();
           },
         ),
       ),
     );
   }
 
-   Widget _buildInfoRow(String label, String value) {
+  Widget _buildCollectionDetails(BuildContext context, collection) {
+    final customer = collection.customer.target;
+    final invoice = collection.invoice.target;
+    final deliveryData = collection.deliveryData.target;
+    final trip = collection.trip.target;
+
+    debugPrint('🎯 Collection Details:');
+    debugPrint('   📦 Collection ID: ${collection.id}');
+    debugPrint('   👤 Customer: ${customer?.name ?? 'Unknown'}');
+    debugPrint('   💰 Total Amount: ${collection.totalAmount}');
+    debugPrint('   📄 Invoice: ${invoice?.name ?? 'No invoice'}');
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<CollectionsBloc>().add(
+          GetCollectionByIdEvent(widget.collectionId),
+        );
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Collection Summary Card
+            _buildCollectionSummaryCard(
+              context,
+              collection,
+              customer,
+              deliveryData,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Customer Information Card
+            if (customer != null) ...[
+              _buildCustomerInfoCard(context, customer),
+              const SizedBox(height: 16),
+            ],
+
+            // Invoice Information Card
+            if (invoice != null) ...[
+              _buildInvoiceInfoCard(context, invoice, collection),
+              const SizedBox(height: 16),
+            ],
+
+            // Trip Information Card
+            if (trip != null) ...[_buildTripInfoCard(context, trip)],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollectionSummaryCard(
+    BuildContext context,
+    collection,
+    customer,
+    deliveryData,
+  ) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.receipt_long,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Collection Summary',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            _buildInfoRow(
+              'Delivery Number',
+              deliveryData.deliveryNumber ?? 'Unknown Store',
+            ),
+
+            _buildInfoRow(
+              'Total Amount',
+              '₱${collection.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+              isHighlighted: true,
+            ),
+            _buildInfoRow(
+              'Payment Mode',
+              customer.paymentMode ?? 'Unknown Store',
+            ),
+
+            _buildInfoRow('Created', _formatDate(collection.created)),
+            _buildInfoRow('Last Updated', _formatDate(collection.updated)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomerInfoCard(BuildContext context, customer) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.store,
+                  color: Theme.of(context).colorScheme.secondary,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Customer Information',
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            _buildInfoRow('Store Name', customer.name ?? 'Unknown Store'),
+            _buildInfoRow('Owner Name', customer.ownerName ?? 'Unknown Owner'),
+            _buildInfoRow(
+              'Address',
+              customer.province ?? 'No address provided',
+            ),
+            _buildInfoRow(
+              'Contact Number',
+              customer.contactNumber ?? 'No contact',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceInfoCard(BuildContext context, invoice, collection) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.description,
+                  color: Theme.of(context).colorScheme.tertiary,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Invoice Information',
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            _buildInfoRow(
+              'Invoice Number',
+              invoice.refId ?? invoice.name ?? 'Unknown',
+            ),
+            _buildInfoRow(
+              'Invoice Amount',
+              '₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+              isHighlighted: true,
+            ),
+            _buildInfoRow(
+              'Collection Amount',
+              '₱${collection.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+              isHighlighted: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTripInfoCard(BuildContext context, trip) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.route,
+                  color: Theme.of(context).colorScheme.secondary,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Trip Information',
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            _buildInfoRow('Trip Number', trip.tripNumberId ?? 'Unknown'),
+            _buildInfoRow(
+              'Status',
+              trip.isAccepted == true ? 'Accepted' : 'Pending',
+            ),
+            _buildInfoRow(
+              'End Trip',
+              trip.isEndTrip == true ? 'Completed' : 'In Progress',
+            ),
+            if (trip.timeAccepted != null)
+              _buildInfoRow('Time Accepted', _formatDate(trip.timeAccepted)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    String label,
+    String value, {
+    bool isHighlighted = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -225,7 +343,13 @@ class _CompletedCustomerDetailsScreenState
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color:
+                    isHighlighted
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -233,12 +357,131 @@ class _CompletedCustomerDetailsScreenState
             flex: 3,
             child: Text(
               value,
-              style: const TextStyle(overflow: TextOverflow.ellipsis),
+              style: TextStyle(
+                overflow: TextOverflow.ellipsis,
+                fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+                color:
+                    isHighlighted
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface,
+              ),
               textAlign: TextAlign.end,
               maxLines: 2,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+// Loading widget
+class _LoadingWidget extends StatelessWidget {
+  const _LoadingWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('Loading collection details...'),
+        ],
+      ),
+    );
+  }
+}
+
+// Error widget
+class _ErrorWidget extends StatelessWidget {
+  final String message;
+  final VoidCallback? onRetry;
+
+  const _ErrorWidget({required this.message, this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error Loading Collection',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Empty widget
+class _EmptyWidget extends StatelessWidget {
+  const _EmptyWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Collection Data',
+              style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Collection details are not available at the moment.',
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                context.push('/collection-screen');
+              },
+              child: const Text('Back to Collections'),
+            ),
+          ],
+        ),
       ),
     );
   }

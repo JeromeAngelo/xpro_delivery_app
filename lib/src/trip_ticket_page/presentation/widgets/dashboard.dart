@@ -83,13 +83,13 @@ class TripTicketDashBoard extends StatelessWidget {
         _buildInfoItem(
           context,
           Icons.numbers,
-          tripState.trip.vehicle.first.vehiclePlateNumber ?? 'Not Assigned',
+          tripState.trip.deliveryVehicle.target!.name ?? 'Not Assigned',
           'Plate Number',
         ),
         _buildInfoItem(
           context,
           Icons.local_shipping,
-          tripState.trip.vehicle.first.vehicleName ?? 'Not Assigned',
+          tripState.trip.deliveryVehicle.target!.make ?? 'Not Assigned',
           'Vehicle',
         ),
         _buildInfoItem(
@@ -104,7 +104,7 @@ class TripTicketDashBoard extends StatelessWidget {
         _buildInfoItem(
           context,
           Icons.type_specimen_outlined,
-          tripState.trip.vehicle.first.vehicleType ?? 'Not Assigned',
+          tripState.trip.deliveryVehicle.target!.type ?? 'Not Assigned',
           'Vehicle Type',
         ),
       ],

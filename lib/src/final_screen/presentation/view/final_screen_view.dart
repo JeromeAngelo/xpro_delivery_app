@@ -8,7 +8,6 @@ import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/final_screen/presentation/widget/confirmation_dialog.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/screen/summary_collection_screen.dart';
-import 'package:x_pro_delivery_app/src/summary_trip/presentation/screen/summary_return_screen.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/screen/summary_undeliverable_screen.dart';
 
 class FinalScreenView extends StatefulWidget {
@@ -87,7 +86,7 @@ class _FinalScreenViewState extends State<FinalScreenView>
         controller: _tabController,
         children: const [
           SummaryCollectionScreen(),
-          SummaryReturnScreen(),
+         // SummaryReturnScreen(),
           SummaryUndeliverableScreen(),
         ],
       ),

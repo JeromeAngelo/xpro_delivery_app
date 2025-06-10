@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
+
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 
 class QRScannerView extends StatefulWidget {
@@ -83,7 +84,7 @@ class _QRScannerViewState extends State<QRScannerView>
               // Initialize delivery updates
               context.read<DeliveryUpdateBloc>().add(
                 InitializePendingStatusEvent(
-                  state.trip.customers
+                  state.trip.deliveryData
                       .map((customer) => customer.id ?? '')
                       .where((id) => id.isNotEmpty)
                       .toList(),
@@ -91,8 +92,8 @@ class _QRScannerViewState extends State<QRScannerView>
               );
 
               // Get customer data
-              context.read<CustomerBloc>().add(
-                GetCustomerEvent(state.trip.id!),
+              context.read<DeliveryDataBloc>().add(
+                GetDeliveryDataByTripIdEvent(state.trip.id!),
               );
 
               // Close the scanner screen and navigate to trip ticket view

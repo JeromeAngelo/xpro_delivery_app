@@ -3,21 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/model/customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/data/model/undeliverable_customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/presentation/bloc/undeliverable_customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/presentation/bloc/undeliverable_customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/undeliverable_customer/presentation/bloc/undeliverable_customer_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/enums/undeliverable_reason.dart';
 
 class UndeliverableScreen extends StatefulWidget {
-  final CustomerEntity customer;
+  final DeliveryDataEntity customer;
   final String statusId;
 
   const UndeliverableScreen({
@@ -186,44 +183,59 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<UndeliverableCustomerBloc, UndeliverableCustomerState>(
-      listener: (context, state) {
-        if (state is UndeliverableCustomerLoaded) {
-          if (widget.customer.id != null) {
-            debugPrint('🔄 Processing undeliverable status update');
-            context.read<DeliveryUpdateBloc>().add(
-              UpdateDeliveryStatusEvent(
-                customerId: widget.customer.id ?? '',
-                statusId: widget.statusId,
-              ),
-            );
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<CancelledInvoiceBloc, CancelledInvoiceState>(
+          listener: (context, state) {
+            if (state is CancelledInvoiceCreated) {
+              debugPrint('🔄 Processing cancelled invoice creation success');
 
-            final customerBloc = context.read<CustomerBloc>();
-            Future.wait<void>([
-              customerBloc.stream.firstWhere(
-                (state) => state is CustomerLocationLoaded,
-              ),
-              Future(
-                () => customerBloc.add(
-                  LoadLocalCustomerLocationEvent(widget.customer.id ?? ''),
+              // Navigate immediately after local creation
+              debugPrint(
+                '🚀 Navigating to target screen while background sync continues',
+              );
+              // Navigate immediately - don't wait for delivery data refresh
+              context.go(
+                '/delivery-and-invoice/${widget.customer.id}',
+                extra: widget.customer,
+              );
+
+              // Update delivery status
+              context.read<DeliveryUpdateBloc>().add(
+                UpdateDeliveryStatusEvent(
+                  customerId: widget.customer.id ?? '',
+                  statusId: widget.statusId,
                 ),
-              ),
-              Future(
-                () => customerBloc.add(
-                  GetCustomerLocationEvent(widget.customer.id ?? ''),
+              );
+
+              // Refresh delivery data in background (optional)
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  final deliveryDataBloc = context.read<DeliveryDataBloc>();
+                  deliveryDataBloc.add(
+                    GetLocalDeliveryDataByIdEvent(widget.customer.id ?? ''),
+                  );
+                  deliveryDataBloc.add(
+                    GetDeliveryDataByIdEvent(widget.customer.id ?? ''),
+                  );
+                }
+              });
+            } else if (state is CancelledInvoiceError) {
+              debugPrint(
+                '❌ Cancelled invoice creation failed: ${state.message}',
+              );
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Failed to create cancelled invoice: ${state.message}',
+                  ),
+                  backgroundColor: Colors.red,
                 ),
-              ),
-            ]).then((_) {
-              if (mounted) {
-                context.go(
-                  '/delivery-and-invoice/${widget.customer.id}',
-                  extra: widget.customer,
-                );
-              }
-            });
-          }
-        }
-      },
+              );
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Mark as Undelivered'),
@@ -235,7 +247,7 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.customer.storeName ?? 'Customer',
+                widget.customer.customer.target?.name ?? 'Customer',
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -256,63 +268,101 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed:
-                        _isFormValid()
-                            ? () {
-                              debugPrint('📝 Creating undeliverable record');
+                  BlocBuilder<CancelledInvoiceBloc, CancelledInvoiceState>(
+                    builder: (context, state) {
+                      final isLoading = state is CancelledInvoiceLoading;
 
-                              // Ensure customer is properly cast
-                              if (widget.customer is CustomerModel) {
-                                context.read<UndeliverableCustomerBloc>().add(
-                                  CreateUndeliverableCustomerEvent(
-                                    UndeliverableCustomerModel(
-                                      customer:
-                                          widget.customer as CustomerModel,
-                                      reason: _selectedReason,
-                                      time: DateTime.now().toUtc(),
-                                      customerImage: _images
-                                          .map((image) => image.path)
-                                          .join(','),
-                                    ),
-                                    widget.customer.id ?? '',
+                      return ElevatedButton(
+                        onPressed:
+                            _isFormValid() && !isLoading
+                                ? () {
+                                  debugPrint('📝 Creating cancelled invoice');
+                                  debugPrint(
+                                    '🏪 Customer: ${widget.customer.customer.target?.name}',
+                                  );
+                                  debugPrint(
+                                    '📋 Reason: ${_selectedReason.toString().split('.').last}',
+                                  );
+                                  debugPrint('📷 Images: ${_images.length}');
+
+                                  final deliveryDataId = widget.customer.id;
+
+                                  if (deliveryDataId != null) {
+                                    // Show immediate feedback
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Row(
+                                          children: [
+                                            SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            SizedBox(width: 12),
+                                            Text('Saving cancelled invoice...'),
+                                          ],
+                                        ),
+                                        duration: Duration(seconds: 2),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+
+                                    // Create cancelled invoice
+                                    context.read<CancelledInvoiceBloc>().add(
+                                      CreateCancelledInvoiceByDeliveryDataIdEvent(
+                                        deliveryDataId: deliveryDataId,
+                                        reason: _selectedReason,
+                                        image:
+                                            _images.isNotEmpty
+                                                ? _images.first.path
+                                                : null,
+                                      ),
+                                    );
+                                  } else {
+                                    debugPrint(
+                                      '⚠️ No delivery data ID available',
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Unable to create cancelled invoice: Missing delivery data',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                                : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              _isFormValid() && !isLoading
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                        ),
+                        child:
+                            isLoading
+                                ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
                                   ),
-                                );
-
-                                // Update delivery status
-                                context.read<DeliveryUpdateBloc>().add(
-                                  UpdateDeliveryStatusEvent(
-                                    customerId: widget.customer.id ?? '',
-                                    statusId: widget.statusId,
+                                )
+                                : Text(
+                                  'Save',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.surface,
                                   ),
-                                );
-
-                                // Navigate after data is refreshed
-                                context.pushReplacement(
-                                  '/delivery-and-invoice/${widget.customer.id}',
-                                  extra: widget.customer,
-                                );
-                              } else {
-                                debugPrint(
-                                  '⚠️ Invalid customer type: ${widget.customer.runtimeType}',
-                                );
-                              }
-                            }
-                            : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          _isFormValid()
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                    ),
-                    child: Text(
-                      'Save',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.surface,
-                      ),
-                    ),
+                                ),
+                      );
+                    },
                   ),
                 ],
               ),

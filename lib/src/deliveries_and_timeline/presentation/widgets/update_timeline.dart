@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:timelines/timelines.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
@@ -9,12 +9,12 @@ import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widg
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/tile_for_trip_timeline.dart';
 
 class UpdateTimeline extends StatelessWidget {
-  final List<CustomerEntity> customers;
+  final List<DeliveryDataEntity> deliveries;
   final List<TripUpdateEntity> tripUpdates;
 
   const UpdateTimeline({
     super.key,
-    required this.customers,
+    required this.deliveries,
     required this.tripUpdates,
   });
 
@@ -23,19 +23,19 @@ class UpdateTimeline extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is UserTripLoaded) {
-          debugPrint('📊 Building timeline with ${customers.length} customers and ${tripUpdates.length} updates');
+          debugPrint('📊 Building timeline with ${deliveries.length} deliveries and ${tripUpdates.length} updates');
 
           final timelineItems = [
-            ...customers.map((customer) => TimelineItem(
-                  date: customer.deliveryStatus.lastOrNull?.time ?? DateTime.now(),
+            ...deliveries.map((delivery) => TimelineItem(
+                  date: _getLatestDeliveryDate(delivery),
                   isCustomer: true,
-                  customer: customer,
+                  delivery: delivery,
                   tripUpdate: null,
                 )),
             ...tripUpdates.map((update) => TimelineItem(
                   date: update.date ?? DateTime.now(),
                   isCustomer: false,
-                  customer: null,
+                  delivery: null,
                   tripUpdate: update,
                 )),
           ]..sort((a, b) => b.date.compareTo(a.date));
@@ -68,7 +68,7 @@ class UpdateTimeline extends StatelessWidget {
                         return Padding(
                           padding: const EdgeInsets.only(left: 8.0),
                           child: TileForTimeline(
-                            customer: TileForTimeline.defaultLocalTile(state.trip.id!),
+                            deliveryData: TileForTimeline.defaultLocalTile(state.trip.id!),
                             isLocalTile: true,
                           ),
                         );
@@ -79,7 +79,7 @@ class UpdateTimeline extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 8.0),
                         child: item.isCustomer
                             ? TileForTimeline(
-                                customer: item.customer!,
+                                deliveryData: item.delivery!,
                               )
                             : TileForTripTimeline(
                                 update: item.tripUpdate!,
@@ -133,24 +133,32 @@ class UpdateTimeline extends StatelessWidget {
       },
     );
   }
+
+  DateTime _getLatestDeliveryDate(DeliveryDataEntity delivery) {
+    final deliveryUpdates = delivery.deliveryUpdates.toList();
+    if (deliveryUpdates.isNotEmpty) {
+      return deliveryUpdates.last.created ?? DateTime.now();
+    }
+    return delivery.created ?? DateTime.now();
+  }
 }
 
 class TimelineItem {
   final DateTime date;
   final bool isCustomer;
-  final CustomerEntity? customer;
+  final DeliveryDataEntity? delivery;
   final TripUpdateEntity? tripUpdate;
 
   TimelineItem({
     required this.date,
     required this.isCustomer,
-    this.customer,
+    this.delivery,
     this.tripUpdate,
   });
 
   @override
   String toString() {
     return 'TimelineItem(date: $date, isCustomer: $isCustomer, '
-        'customer: ${customer?.id}, tripUpdate: ${tripUpdate?.id})';
+        'delivery: ${delivery?.id}, tripUpdate: ${tripUpdate?.id})';
   }
 }

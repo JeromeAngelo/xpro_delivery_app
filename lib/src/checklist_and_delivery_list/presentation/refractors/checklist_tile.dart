@@ -16,6 +16,11 @@ class ChecklistTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Debug print to check the checked state
+    debugPrint(
+      '🔍 ChecklistTile - ${checklist.objectName}: isChecked=$isChecked, entity.isChecked=${checklist.isChecked}',
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: CommonListTiles(
@@ -27,12 +32,15 @@ class ChecklistTile extends StatelessWidget {
         trailing: Transform.scale(
           scale: 1.1,
           child: Checkbox(
-            value: isChecked,
+            value: isChecked, // Use the passed isChecked parameter
             onChanged: onChanged,
             activeColor: Theme.of(context).colorScheme.primary,
+            checkColor: Colors.white, // Ensure check mark is visible
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
           ),
         ),
         titleStyle: Theme.of(context).textTheme.titleMedium?.copyWith(

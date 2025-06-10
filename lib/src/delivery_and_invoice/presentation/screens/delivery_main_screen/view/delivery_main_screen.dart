@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/customer_details_dashboard.dart';
@@ -12,7 +12,7 @@ import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_delivery_btn.dart';
 
 class DeliveryMainScreen extends StatefulWidget {
-  final CustomerEntity? selectedCustomer;
+  final DeliveryDataEntity? selectedCustomer;
 
   const DeliveryMainScreen({super.key, this.selectedCustomer});
 
@@ -24,13 +24,13 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
     with AutomaticKeepAliveClientMixin {
   bool isMapMinimized = false;
   bool _isDataInitialized = false;
-  CustomerState? _cachedState;
+  DeliveryDataState? _cachedState;
 
   @override
   void initState() {
     super.initState();
     if (widget.selectedCustomer != null) {
-      _cachedState = CustomerLocationLoaded(widget.selectedCustomer!);
+      _cachedState = DeliveryDataLoaded(widget.selectedCustomer!);
     }
     _initializeLocalData();
   }
@@ -38,10 +38,13 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
   void _initializeLocalData() {
     if (!_isDataInitialized && widget.selectedCustomer != null) {
       debugPrint(
-        '📱 Loading local data for customer: ${widget.selectedCustomer!.id}',
+        '📱 Loading local data for delivery: ${widget.selectedCustomer!.id}',
       );
-      context.read<CustomerBloc>().add(
-        LoadLocalCustomerLocationEvent(widget.selectedCustomer!.id ?? ''),
+      context.read<DeliveryDataBloc>()
+        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id!))
+        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id!));
+      context.read<DeliveryUpdateBloc>().add(
+        LoadLocalDeliveryStatusChoicesEvent(widget.selectedCustomer!.id!),
       );
       _isDataInitialized = true;
     }
@@ -49,9 +52,9 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
 
   Future<void> _refreshData() async {
     if (widget.selectedCustomer?.id != null) {
-      context.read<CustomerBloc>().add(
-        LoadLocalCustomerLocationEvent(widget.selectedCustomer!.id!),
-      );
+      context.read<DeliveryDataBloc>()
+        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id!))
+        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id!));
       context.read<DeliveryUpdateBloc>().add(
         LoadLocalDeliveryStatusChoicesEvent(widget.selectedCustomer!.id!),
       );
@@ -71,21 +74,23 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
-    return BlocBuilder<CustomerBloc, CustomerState>(
+    return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
       buildWhen:
           (previous, current) =>
-              current is CustomerLocationLoaded || _cachedState == null,
+              current is DeliveryDataLoaded || _cachedState == null,
       builder: (context, state) {
-        final customerState = _cachedState ?? state;
-        if (customerState is CustomerLocationLoaded) {
-          return _buildSelectedCustomerView(customerState.customer);
+        final deliveryDataState = _cachedState ?? state;
+        if (deliveryDataState is DeliveryDataLoaded) {
+          return _buildSelectedCustomerView(deliveryDataState.deliveryData);
         }
         return const SizedBox.shrink();
       },
     );
   }
 
-  Widget _buildSelectedCustomerView(CustomerEntity customer) {
+  Widget _buildSelectedCustomerView(DeliveryDataEntity deliveryData) {
+    final customer = deliveryData.customer.target;
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _refreshData,
@@ -97,59 +102,60 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
                   child: Column(
                     children: [
                       CustomerDetailsDashboard(
-                        customer: customer,
+                        deliveryData: deliveryData,
                         onTap: () {
-                          final lat = parseCoordinate(customer.latitude);
-                          final lng = parseCoordinate(customer.longitude);
+                          final lat = parseCoordinate('${customer?.latitude}');
+                          final lng = parseCoordinate('${customer?.longitude}');
                           if (lat != null && lng != null) {
                             // Map focus handling if needed
                           }
                         },
                       ),
-                      // Notes section
-                      if (customer.hasNotes == true) ...[
-                        Container(
-                          margin: const EdgeInsets.all(16),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceVariant,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.outline.withOpacity(0.5),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.note_alt_outlined,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Notes',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium!
-                                        .copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                customer.notes ?? '',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      _buildMapSection(customer),
+
+                      // // Notes section
+                      // if (customer?.hasNotes == true) ...[
+                      //   Container(
+                      //     margin: const EdgeInsets.all(16),
+                      //     padding: const EdgeInsets.all(12),
+                      //     decoration: BoxDecoration(
+                      //       color: Theme.of(context).colorScheme.surfaceVariant,
+                      //       borderRadius: BorderRadius.circular(8),
+                      //       border: Border.all(
+                      //         color: Theme.of(
+                      //           context,
+                      //         ).colorScheme.outline.withOpacity(0.5),
+                      //       ),
+                      //     ),
+                      //     child: Column(
+                      //       crossAxisAlignment: CrossAxisAlignment.start,
+                      //       children: [
+                      //         Row(
+                      //           children: [
+                      //             Icon(
+                      //               Icons.note_alt_outlined,
+                      //               color:
+                      //                   Theme.of(context).colorScheme.primary,
+                      //             ),
+                      //             const SizedBox(width: 8),
+                      //             Text(
+                      //               'Notes',
+                      //               style: Theme.of(context)
+                      //                   .textTheme
+                      //                   .titleMedium!
+                      //                   .copyWith(fontWeight: FontWeight.bold),
+                      //             ),
+                      //           ],
+                      //         ),
+                      //         const SizedBox(height: 8),
+                      //         Text(
+                      //           customer?.notes ?? '',
+                      //           style: Theme.of(context).textTheme.bodyMedium,
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // ],
+                      _buildMapSection(deliveryData),
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Padding(
@@ -167,7 +173,7 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
                           ),
                         ),
                       ),
-                      DeliveryTimeline(customerId: customer.id ?? ''),
+                      DeliveryTimeline(customerId: '${deliveryData.id}'),
                       const SizedBox(height: 80),
                     ],
                   ),
@@ -179,8 +185,8 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
               right: 0,
               bottom: 0,
               child: UpdateDeliveryBtn(
-                currentStatus: customer.deliveryStatus.firstOrNull?.title ?? '',
-                customerId: customer.id ?? '',
+                currentStatus: _getCurrentDeliveryStatus(deliveryData),
+                customerId: deliveryData.id ?? '',
                 isDisabled: false,
               ),
             ),
@@ -190,9 +196,14 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
     );
   }
 
-  Widget _buildMapSection(CustomerEntity? customer) {
+  String _getCurrentDeliveryStatus(DeliveryDataEntity deliveryData) {
+    final deliveryUpdates = deliveryData.deliveryUpdates.toList();
+    return deliveryUpdates.isNotEmpty ? deliveryUpdates.last.title ?? '' : '';
+  }
+
+  Widget _buildMapSection(DeliveryDataEntity deliveryData) {
     final latestStatus =
-        customer?.deliveryStatus.lastOrNull?.title?.toLowerCase().trim() ?? '';
+        _getCurrentDeliveryStatus(deliveryData).toLowerCase().trim();
     debugPrint('🗺️ Latest delivery status: $latestStatus');
 
     final hideMapStatuses = [
@@ -219,7 +230,7 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
             ),
           ),
           child: CustomerMapScreen(
-            selectedCustomer: customer,
+            selectedCustomer: deliveryData,
             height: isMapMinimized ? 150.0 : 300.0,
           ),
         ),

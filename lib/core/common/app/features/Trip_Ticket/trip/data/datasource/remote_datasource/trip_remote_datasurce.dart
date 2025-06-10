@@ -51,6 +51,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
 
   final PocketBase _pocketBaseClient;
   final TripLocalDatasource _tripLocalDatasource;
+
   @override
   Future<TripModel> loadTrip() async {
     try {
@@ -135,7 +136,8 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .collection('tripticket')
           .getFullList(
             filter: 'qrCode = "$qrData"',
-            expand: 'customers,timeline,personels,vehicle,checklist',
+            expand:
+                'customers,timeline,personels,vehicle,checklist,deliveryData,deliveryVehicle',
           );
 
       if (records.isEmpty) {
@@ -153,18 +155,133 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         );
       }
 
-      final mappedData = {
-        'id': record.id,
-        'collectionId': record.collectionId,
-        'collectionName': record.collectionName,
-        ...record.data,
-        'timeline': _mapTimeline(record),
-        'personels': _mapPersonels(record),
-        'checklist': _mapChecklist(record),
-        'vehicle': _mapVehicle(record),
-        'isAccepted': record.data['isAccepted'],
-        'timeAccepted': record.data['timeAccepted'],
-      };
+      // Enhanced safe date parsing function with multiple fallbacks
+      DateTime? parseDate(dynamic value) {
+        if (value == null) return null;
+
+        String strValue = value.toString().trim();
+        if (strValue.isEmpty) return null;
+
+        try {
+          // Try standard ISO format first
+          return DateTime.parse(strValue);
+        } catch (e) {
+          debugPrint(
+            '⚠️ Standard date parsing failed: $e for value: $strValue',
+          );
+
+          try {
+            // Try Unix timestamp (milliseconds)
+            if (strValue.length >= 10 && RegExp(r'^\d+$').hasMatch(strValue)) {
+              int timestamp = int.parse(strValue);
+              // If it's in seconds (10 digits), convert to milliseconds
+              if (strValue.length == 10) {
+                timestamp *= 1000;
+              }
+              return DateTime.fromMillisecondsSinceEpoch(timestamp);
+            }
+
+            // Try various date formats
+            final formats = [
+              // Add more formats as needed
+              RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$'), // MM/DD/YYYY
+              RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})$'), // YYYY-MM-DD
+              RegExp(r'^(\d{1,2})-(\d{1,2})-(\d{4})$'), // DD-MM-YYYY
+            ];
+
+            for (var format in formats) {
+              if (format.hasMatch(strValue)) {
+                var match = format.firstMatch(strValue)!;
+                if (format.pattern == r'^(\d{1,2})/(\d{1,2})/(\d{4})$') {
+                  // MM/DD/YYYY
+                  return DateTime(
+                    int.parse(match.group(3)!),
+                    int.parse(match.group(1)!),
+                    int.parse(match.group(2)!),
+                  );
+                } else if (format.pattern == r'^(\d{4})-(\d{1,2})-(\d{1,2})$') {
+                  // YYYY-MM-DD
+                  return DateTime(
+                    int.parse(match.group(1)!),
+                    int.parse(match.group(2)!),
+                    int.parse(match.group(3)!),
+                  );
+                } else if (format.pattern == r'^(\d{1,2})-(\d{1,2})-(\d{4})$') {
+                  // DD-MM-YYYY
+                  return DateTime(
+                    int.parse(match.group(3)!),
+                    int.parse(match.group(2)!),
+                    int.parse(match.group(1)!),
+                  );
+                }
+              }
+            }
+
+            // If all else fails, return current time
+            debugPrint(
+              '⚠️ All date parsing attempts failed for: $strValue, using current time',
+            );
+            return DateTime.now();
+          } catch (e2) {
+            debugPrint(
+              '⚠️ Alternative date parsing failed: $e2 for value: $strValue',
+            );
+            return null;
+          }
+        }
+      }
+
+      // Safely extract data from the record
+      Map<String, dynamic> extractData() {
+        try {
+          final data = {
+            'id': record.id,
+            'collectionId': record.collectionId,
+            'collectionName': record.collectionName,
+            ...Map<String, dynamic>.from(record.data),
+          };
+
+          // Ensure boolean fields are properly set
+          data['isAccepted'] = record.data['isAccepted'] == true;
+          data['isEndTrip'] = record.data['isEndTrip'] == true;
+
+          data['deliveryData'] = _mapDeliveryData(record);
+
+          // Handle date fields
+          data['timeAccepted'] = parseDate(record.data['timeAccepted']);
+          data['created'] = parseDate(record.data['created']);
+          data['updated'] = parseDate(record.data['updated']);
+          data['timeEndTrip'] = parseDate(record.data['timeEndTrip']);
+
+          // Handle relations
+          data['personels'] = _mapPersonels(record);
+          data['checklist'] = _mapChecklist(record);
+
+          // Handle deliveryData if available
+          if (record.expand.containsKey('deliveryData') &&
+              record.expand['deliveryData'] != null) {
+            data['deliveryData'] =
+                (record.expand['deliveryData'] as List).map((item) {
+                  final deliveryData = item as RecordModel;
+                  return {'id': deliveryData.id, ...deliveryData.data};
+                }).toList();
+          }
+
+          return data;
+        } catch (e) {
+          debugPrint('⚠️ Error extracting data: $e');
+          // Return minimal valid data to avoid further errors
+          return {
+            'id': record.id,
+            'collectionId': record.collectionId,
+            'collectionName': record.collectionName,
+            'isAccepted': false,
+            'isEndTrip': false,
+          };
+        }
+      }
+
+      final mappedData = extractData();
 
       debugPrint('✅ REMOTE: Trip found for QR code');
       return TripModel.fromJson(mappedData);
@@ -188,7 +305,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             filter:
                 'tripNumberId = "$tripNumberId" && isAccepted = false && isEndTrip = false',
             expand:
-                'customers,customers.deliveryStatus,personels,vehicle,checklist',
+                'customers,timeline,personels,vehicle,checklist,deliveryData,deliveryVehicle',
           );
 
       if (records.isEmpty) {
@@ -199,33 +316,139 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       }
 
       final record = records.first;
-      final mappedData = {
-        'id': record.id,
-        'collectionId': record.collectionId,
-        'collectionName': record.collectionName,
-        ...record.data,
-        'customers':
-            (record.expand['customers'] as List?)?.map((c) {
-              final customerData = c as RecordModel;
-              return {
-                'id': customerData.id,
-                ...customerData.data,
-                'expand': {
-                  'deliveryStatus':
-                      customerData.expand['deliveryStatus']
-                          ?.map((status) => (status).data)
-                          .toList() ??
-                      [],
-                },
-              };
-            }).toList() ??
-            [],
-        'personels': _mapPersonels(record),
-        'checklist': _mapChecklist(record),
-        'vehicle': _mapVehicle(record),
-        'isAccepted': record.data['isAccepted'],
-        'timeAccepted': record.data['timeAccepted'],
-      };
+
+      // Enhanced safe date parsing function with multiple fallbacks
+      DateTime? parseDate(dynamic value) {
+        if (value == null) return null;
+
+        String strValue = value.toString().trim();
+        if (strValue.isEmpty) return null;
+
+        try {
+          // Try standard ISO format first
+          return DateTime.parse(strValue);
+        } catch (e) {
+          debugPrint(
+            '⚠️ Standard date parsing failed: $e for value: $strValue',
+          );
+
+          try {
+            // Try Unix timestamp (milliseconds)
+            if (strValue.length >= 10 && RegExp(r'^\d+$').hasMatch(strValue)) {
+              int timestamp = int.parse(strValue);
+              // If it's in seconds (10 digits), convert to milliseconds
+              if (strValue.length == 10) {
+                timestamp *= 1000;
+              }
+              return DateTime.fromMillisecondsSinceEpoch(timestamp);
+            }
+
+            // Try various date formats
+            final formats = [
+              // Add more formats as needed
+              RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$'), // MM/DD/YYYY
+              RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})$'), // YYYY-MM-DD
+              RegExp(r'^(\d{1,2})-(\d{1,2})-(\d{4})$'), // DD-MM-YYYY
+            ];
+
+            for (var format in formats) {
+              if (format.hasMatch(strValue)) {
+                var match = format.firstMatch(strValue)!;
+                if (format.pattern == r'^(\d{1,2})/(\d{1,2})/(\d{4})$') {
+                  // MM/DD/YYYY
+                  return DateTime(
+                    int.parse(match.group(3)!),
+                    int.parse(match.group(1)!),
+                    int.parse(match.group(2)!),
+                  );
+                } else if (format.pattern == r'^(\d{4})-(\d{1,2})-(\d{1,2})$') {
+                  // YYYY-MM-DD
+                  return DateTime(
+                    int.parse(match.group(1)!),
+                    int.parse(match.group(2)!),
+                    int.parse(match.group(3)!),
+                  );
+                } else if (format.pattern == r'^(\d{1,2})-(\d{1,2})-(\d{4})$') {
+                  // DD-MM-YYYY
+                  return DateTime(
+                    int.parse(match.group(3)!),
+                    int.parse(match.group(2)!),
+                    int.parse(match.group(1)!),
+                  );
+                }
+              }
+            }
+
+            // If all else fails, return current time
+            debugPrint(
+              '⚠️ All date parsing attempts failed for: $strValue, using current time',
+            );
+            return DateTime.now();
+          } catch (e2) {
+            debugPrint(
+              '⚠️ Alternative date parsing failed: $e2 for value: $strValue',
+            );
+            return null;
+          }
+        }
+      }
+
+      // Safely extract data from the record
+      Map<String, dynamic> extractData() {
+        try {
+          final data = {
+            'id': record.id,
+            'collectionId': record.collectionId,
+            'collectionName': record.collectionName,
+            ...Map<String, dynamic>.from(record.data),
+          };
+
+          // Ensure boolean fields are properly set
+          data['isAccepted'] = record.data['isAccepted'] == true;
+          data['isEndTrip'] = record.data['isEndTrip'] == true;
+
+          // Handle date fields
+          data['timeAccepted'] = parseDate(record.data['timeAccepted']);
+          data['created'] = parseDate(record.data['created']);
+          data['updated'] = parseDate(record.data['updated']);
+          data['timeEndTrip'] = parseDate(record.data['timeEndTrip']);
+
+          // Handle relations
+          if (record.expand.containsKey('personels') &&
+              record.expand['personels'] != null) {
+            data['personels'] = _mapPersonels(record);
+          }
+
+          if (record.expand.containsKey('checklist') &&
+              record.expand['checklist'] != null) {
+            data['checklist'] = _mapChecklist(record);
+          }
+
+          // Handle deliveryData if available
+          if (record.expand.containsKey('deliveryData') &&
+              record.expand['deliveryData'] != null) {
+            data['deliveryData'] = _mapDeliveryData(record);
+          }
+
+          // Handle deliveryVehicle if available
+          data['deliveryVehicle'] = record.expand['deliveryVehicle'] != null;
+
+          return data;
+        } catch (e) {
+          debugPrint('⚠️ Error extracting data: $e');
+          // Return minimal valid data to avoid further errors
+          return {
+            'id': record.id,
+            'collectionId': record.collectionId,
+            'collectionName': record.collectionName,
+            'tripNumberId': record.data['tripNumberId'],
+            'isAccepted': false,
+            'isEndTrip': false,
+          };
+        }
+      }
+
+      final mappedData = extractData();
 
       debugPrint('✅ REMOTE: Trip found and mapped successfully');
       debugPrint('   🎫 Trip Number: ${record.data['tripNumberId']}');
@@ -285,7 +508,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .collection('tripticket')
           .getOne(
             actualTripId,
-            expand: 'customers,timeline,personels,vehicle,checklist',
+            expand: 'personels,checklist,deliveryData,deliveryVehicle',
           );
 
       if (tripRecord.data['isAccepted'] == true) {
@@ -293,6 +516,82 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           message: 'Trip has already been accepted by another user',
           statusCode: '403',
         );
+      }
+
+      // Enhanced safe date parsing function with multiple fallbacks
+      DateTime? parseDate(dynamic value) {
+        if (value == null) return null;
+
+        String strValue = value.toString().trim();
+        if (strValue.isEmpty) return null;
+
+        try {
+          // Try standard ISO format first
+          return DateTime.parse(strValue);
+        } catch (e) {
+          debugPrint(
+            '⚠️ Standard date parsing failed: $e for value: $strValue',
+          );
+
+          try {
+            // Try Unix timestamp (milliseconds)
+            if (strValue.length >= 10 && RegExp(r'^\d+$').hasMatch(strValue)) {
+              int timestamp = int.parse(strValue);
+              // If it's in seconds (10 digits), convert to milliseconds
+              if (strValue.length == 10) {
+                timestamp *= 1000;
+              }
+              return DateTime.fromMillisecondsSinceEpoch(timestamp);
+            }
+
+            // Try various date formats
+            final formats = [
+              // Add more formats as needed
+              RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$'), // MM/DD/YYYY
+              RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})$'), // YYYY-MM-DD
+              RegExp(r'^(\d{1,2})-(\d{1,2})-(\d{4})$'), // DD-MM-YYYY
+            ];
+
+            for (var format in formats) {
+              if (format.hasMatch(strValue)) {
+                var match = format.firstMatch(strValue)!;
+                if (format.pattern == r'^(\d{1,2})/(\d{1,2})/(\d{4})$') {
+                  // MM/DD/YYYY
+                  return DateTime(
+                    int.parse(match.group(3)!),
+                    int.parse(match.group(1)!),
+                    int.parse(match.group(2)!),
+                  );
+                } else if (format.pattern == r'^(\d{4})-(\d{1,2})-(\d{1,2})$') {
+                  // YYYY-MM-DD
+                  return DateTime(
+                    int.parse(match.group(1)!),
+                    int.parse(match.group(2)!),
+                    int.parse(match.group(3)!),
+                  );
+                } else if (format.pattern == r'^(\d{1,2})-(\d{1,2})-(\d{4})$') {
+                  // DD-MM-YYYY
+                  return DateTime(
+                    int.parse(match.group(3)!),
+                    int.parse(match.group(2)!),
+                    int.parse(match.group(1)!),
+                  );
+                }
+              }
+            }
+
+            // If all else fails, return current time
+            debugPrint(
+              '⚠️ All date parsing attempts failed for: $strValue, using current time',
+            );
+            return DateTime.now();
+          } catch (e2) {
+            debugPrint(
+              '⚠️ Alternative date parsing failed: $e2 for value: $strValue',
+            );
+            return null;
+          }
+        }
       }
 
       final checklistItems = [
@@ -336,10 +635,11 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .collection('delivery_team')
           .create(
             body: {
-              'vehicle':
-                  tripRecord.expand['vehicle'] is List
-                      ? (tripRecord.expand['vehicle'] as List).first.id
-                      : (tripRecord.expand['vehicle'] as RecordModel?)?.id,
+              'deliveryVehicle':
+                  tripRecord.expand['deliveryVehicle'] is List
+                      ? (tripRecord.expand['deliveryVehicle'] as List).first.id
+                      : (tripRecord.expand['deliveryVehicle'] as RecordModel?)
+                          ?.id,
               'personels':
                   (tripRecord.expand['personels'] as List?)
                       ?.map((p) => (p as RecordModel).id)
@@ -349,7 +649,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
               'tripTicket': tripRecord.id,
               'isAccepted': true,
               'activeDeliveries':
-                  (tripRecord.expand['customers'] as List?)?.length
+                  (tripRecord.expand['deliveryData'] as List?)?.length
                       .toString() ??
                   '0',
             },
@@ -372,33 +672,17 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         );
       }
 
-      // After assigning delivery team to vehicle
-      if (tripRecord.expand['vehicle'] is List) {
-        await Future.delayed(delay);
-        final vehicleId = (tripRecord.expand['vehicle'] as List).first.id;
-        await _pocketBaseClient
-            .collection('vehicle')
-            .update(
-              vehicleId,
-              body: {
-                'delivery_team': deliveryTeamRecord.id,
-                'trip': actualTripId, // Add trip reference to vehicle
-              },
-            );
-        debugPrint('✅ Assigned delivery team and trip to vehicle: $vehicleId');
-      }
-
       final inTransitStatus = await _pocketBaseClient
           .collection('delivery_status_choices')
           .getFirstListItem('title = "In Transit"');
 
-      final customers = tripRecord.expand['customers'] as List? ?? [];
+      final customers = tripRecord.expand['deliveryData'] as List? ?? [];
       for (var customer in customers) {
         final deliveryUpdateRecord = await _pocketBaseClient
             .collection('delivery_update')
             .create(
               body: {
-                'customer': customer.id,
+                'deliveryData': customer.id,
                 'status': inTransitStatus.id,
                 'title': inTransitStatus.data['title'],
                 'subtitle': inTransitStatus.data['subtitle'],
@@ -409,23 +693,14 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             );
 
         await _pocketBaseClient
-            .collection('customers')
+            .collection('deliveryData')
             .update(
               customer.id,
               body: {
-                'deliveryStatus+': [deliveryUpdateRecord.id],
+                'deliveryUpdates+': [deliveryUpdateRecord.id],
+                'invoiceStatus': 'truck'
               },
             );
-
-        final customerInvoices = await _pocketBaseClient
-            .collection('invoices')
-            .getList(filter: 'customer = "${customer.id}"');
-
-        for (var invoice in customerInvoices.items) {
-          await _pocketBaseClient
-              .collection('invoices')
-              .update(invoice.id, body: {'status': 'truck'});
-        }
       }
 
       final trackingRecord = await _pocketBaseClient
@@ -491,7 +766,8 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             body: {
               'tripNumberId': tripRecord.data['tripNumberId'],
               'trip': tripRecord.id,
-              'deliveryTeam': deliveryTeamRecord.id,
+              'hasTrip': 'true',
+              // 'deliveryTeam': deliveryTeamRecord.id,
             },
           );
 
@@ -513,46 +789,71 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           );
       debugPrint('✅ Created trip history record: ${userTripHistoryRecord.id}');
 
-      // Update user's trip_collection field to include the new history record
-      // Using PocketBase's "+=" operator to append to the relation field
-      // This ensures we're adding to the existing list, not replacing it
-      debugPrint('🔄 Updating user trip_collection field');
-      await _pocketBaseClient
-          .collection('users')
-          .update(
-            userId,
-            body: {
-              'trip_collection+': [
-                userTripHistoryRecord.id,
-              ], // Use += operator to append
-            },
-          );
-      debugPrint(
-        '✅ Added new trip history record to user trip_collection field',
-      );
-
       await _pocketBaseClient
           .collection('tripticket')
           .update(tripRecord.id, body: {'user': userId});
 
-      final mappedData = {
-        'id': tripRecord.id,
-        'collectionId': tripRecord.collectionId,
-        'collectionName': tripRecord.collectionName,
-        ...tripRecord.data,
-        'isAccepted': true,
-        'delivery_team': deliveryTeamRecord.toJson(),
-        'tracking': trackingRecord.toJson(),
-        'otp': otpRecord.toJson(),
-        'endTripOtp': endTripOtpRecord.toJson(),
-        'timeline': _mapTimeline(tripRecord),
-        'personels': _mapPersonels(tripRecord),
-        'checklist': _mapChecklist(tripRecord),
-        'vehicle': _mapVehicle(tripRecord),
-        'timeAccepted': DateTime.now().toIso8601String(),
-      };
+      // Safely extract data from the record and ensure all DateTime objects are converted to strings
+      Map<String, dynamic> extractData() {
+        try {
+          final data = {
+            'id': tripRecord.id,
+            'collectionId': tripRecord.collectionId,
+            'collectionName': tripRecord.collectionName,
+            ...Map<String, dynamic>.from(tripRecord.data),
+            'isAccepted': true,
+            'delivery_team': _convertRecordToJson(deliveryTeamRecord),
+            'deliveryData': _mapDeliveryData(tripRecord),
+            'tracking': _convertRecordToJson(trackingRecord),
+            'otp': _convertRecordToJson(otpRecord),
+            'deliveryVehicle': tripRecord.data['deliveryVehicle'],
+            'endTripOtp': _convertRecordToJson(endTripOtpRecord),
+            'timeline': _mapTimeline(tripRecord),
+            'personels': _mapPersonels(tripRecord),
+            'checklist': _mapChecklist(tripRecord),
+            'vehicle': _mapVehicle(tripRecord),
+            'timeAccepted': DateTime.now().toIso8601String(),
+          };
 
-      await prefs.setString('user_trip_data', jsonEncode(mappedData));
+          // Handle date fields - convert all DateTime objects to ISO8601 strings
+          if (tripRecord.data['created'] != null) {
+            final createdDate = parseDate(tripRecord.data['created']);
+            data['created'] = createdDate?.toIso8601String();
+          }
+
+          if (tripRecord.data['updated'] != null) {
+            final updatedDate = parseDate(tripRecord.data['updated']);
+            data['updated'] = updatedDate?.toIso8601String();
+          }
+
+          if (tripRecord.data['timeEndTrip'] != null) {
+            final timeEndTripDate = parseDate(tripRecord.data['timeEndTrip']);
+            data['timeEndTrip'] = timeEndTripDate?.toIso8601String();
+          }
+
+          return data;
+        } catch (e) {
+          debugPrint('⚠️ Error extracting data: $e');
+          // Return minimal valid data to avoid further errors
+          return {
+            'id': tripRecord.id,
+            'collectionId': tripRecord.collectionId,
+            'collectionName': tripRecord.collectionName,
+            'isAccepted': true,
+            'delivery_team': _convertRecordToJson(deliveryTeamRecord),
+            'tracking': _convertRecordToJson(trackingRecord),
+            'otp': _convertRecordToJson(otpRecord),
+            'endTripOtp': _convertRecordToJson(endTripOtpRecord),
+            'timeAccepted': DateTime.now().toIso8601String(),
+          };
+        }
+      }
+
+      final mappedData = extractData();
+
+      // Ensure the data is JSON-serializable before storing
+      final jsonString = jsonEncode(mappedData);
+      await prefs.setString('user_trip_data', jsonString);
       debugPrint('💾 Cached new trip assignment data');
 
       final acceptedTripModel = TripModel.fromJson(mappedData);
@@ -563,68 +864,104 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
     } catch (e) {
       debugPrint('❌ Error in acceptTrip: $e');
       throw ServerException(
-        message: 'Failed to accept trip: ${e.toString()}',
+        message: 'Failed to accept trip: $e',
         statusCode: '500',
       );
     }
   }
 
-  dynamic _mapTimeline(RecordModel tripRecord) {
-    debugPrint('🔄 Mapping timeline');
-    if (tripRecord.expand['timeline'] is List) {
-      final timeline =
-          (tripRecord.expand['timeline'] as List).first as RecordModel;
-      return {
-        ...timeline.data,
-        'id': timeline.id,
-        'created': null,
-        'updated': null,
-      };
+  List<Map<String, dynamic>> _mapDeliveryData(RecordModel tripRecord) {
+    try {
+      final deliveryData = tripRecord.expand['deliveryData'] as List? ?? [];
+      return deliveryData.map((item) {
+        final record = item as RecordModel;
+        return _convertRecordToJson(record);
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping delivery data: $e');
+      return [];
     }
-    return null;
+  }
+
+  // Helper methods to ensure JSON-serializable objects
+  List<Map<String, dynamic>> _mapTimeline(RecordModel tripRecord) {
+    try {
+      final timeline = tripRecord.expand['timeline'] as List? ?? [];
+      return timeline.map((item) {
+        final record = item as RecordModel;
+        return _convertRecordToJson(record);
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping timeline: $e');
+      return [];
+    }
   }
 
   List<Map<String, dynamic>> _mapPersonels(RecordModel tripRecord) {
-    debugPrint('👥 Mapping personnel');
-    return (tripRecord.expand['personels'] as List?)?.map((p) {
-          final personnel = p as RecordModel;
-          return {
-            ...personnel.data,
-            'id': personnel.id,
-            'created': null,
-            'updated': null,
-          };
-        }).toList() ??
-        [];
+    try {
+      final personels = tripRecord.expand['personels'] as List? ?? [];
+      return personels.map((item) {
+        final record = item as RecordModel;
+        return _convertRecordToJson(record);
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping personels: $e');
+      return [];
+    }
   }
 
   List<Map<String, dynamic>> _mapChecklist(RecordModel tripRecord) {
-    debugPrint('📋 Mapping checklist');
-    return (tripRecord.expand['checklist'] as List?)?.map((c) {
-          final checklist = c as RecordModel;
-          return {
-            ...checklist.data,
-            'id': checklist.id,
-            'created': null,
-            'updated': null,
-          };
-        }).toList() ??
-        [];
+    try {
+      final checklist = tripRecord.expand['checklist'] as List? ?? [];
+      return checklist.map((item) {
+        final record = item as RecordModel;
+        return _convertRecordToJson(record);
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping checklist: $e');
+      return [];
+    }
   }
 
-  dynamic _mapVehicle(RecordModel tripRecord) {
-    debugPrint('🚗 Mapping vehicle');
-    if (tripRecord.expand['vehicle'] is List) {
-      final vehicle =
-          (tripRecord.expand['vehicle'] as List).first as RecordModel;
+  List<Map<String, dynamic>> _mapVehicle(RecordModel tripRecord) {
+    try {
+      final vehicle = tripRecord.expand['vehicle'] as List? ?? [];
+      return vehicle.map((item) {
+        final record = item as RecordModel;
+        return _convertRecordToJson(record);
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping vehicle: $e');
+      return [];
+    }
+  }
+
+  Map<String, dynamic> _convertRecordToJson(RecordModel record) {
+    try {
+      final data = {
+        'id': record.id,
+        'collectionId': record.collectionId,
+        'collectionName': record.collectionName,
+      };
+
+      // Add all data fields, ensuring DateTime objects are converted to strings
+      record.data.forEach((key, value) {
+        if (value is DateTime) {
+          data[key] = value.toIso8601String();
+        } else {
+          data[key] = value;
+        }
+      });
+
+      return data;
+    } catch (e) {
+      debugPrint('⚠️ Error converting record to JSON: $e');
       return {
-        ...vehicle.data,
-        'id': vehicle.id,
-        'created': null,
-        'updated': null,
+        'id': record.id,
+        'collectionId': record.collectionId,
+        'collectionName': record.collectionName,
       };
     }
-    return null;
   }
 
   @override
@@ -815,7 +1152,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .getOne(
             id,
             expand:
-                'customers,customers.deliveryStatus,customers.invoices(customer),customers.invoices.productList,personels,vehicle,checklist,invoices,invoices.productList,delivery_team',
+                'customers,customers.deliveryStatus,customers.invoices(customer),customers.invoices.productList,personels,vehicle,checklist,invoices,invoices.productList,delivery_team,deliveryData,deliveryVehicle',
           );
 
       final mappedData = {
@@ -823,6 +1160,20 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'collectionId': record.collectionId,
         'collectionName': record.collectionName,
         ...record.data,
+        'deliveryData':
+            (record.expand['deliveryData'] as List?)?.map((c) {
+              final customerData = c as RecordModel;
+              final deliveryStatus =
+                  customerData.expand['deliveryStatus'] as List? ?? [];
+
+              return {
+                ...customerData.data,
+                'id': customerData.id,
+                'deliveryStatus':
+                    deliveryStatus.map((status) => status.data).toList(),
+              };
+            }).toList() ??
+            [],
         'customers':
             (record.expand['customers'] as List?)?.map((c) {
               final customerData = c as RecordModel;
@@ -868,6 +1219,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'checklist': _mapChecklist(record),
         'vehicle': _mapVehicle(record),
         'isAccepted': record.data['isAccepted'],
+        'deliveryVehicle': record.data['deliveryVehicle'],
         'timeAccepted': record.data['timeAccepted'],
         'longitude': record.data['longitude'],
         'latitude': record.data['latitude'],
@@ -924,7 +1276,8 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .collection('tripticket')
           .getOne(
             actualTripId,
-            expand: 'customers,timeline,personels,vehicle,checklist',
+            expand:
+                'customers,timeline,personels,vehicle,checklist,deliveryData,deliveryVehicle',
           );
 
       // Update trip status
@@ -998,105 +1351,430 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       );
     }
   }
-
   @override
-Future<TripModel> updateTripLocation(
-  String tripId,
-  double latitude,
-  double longitude,
-) async {
-  try {
-    debugPrint('🔄 REMOTE: Updating trip location for ID: $tripId');
-    debugPrint('📍 Coordinates: Lat: $latitude, Long: $longitude');
+  Future<TripModel> updateTripLocation(
+    String tripId,
+    double latitude,
+    double longitude,
+  ) async {
+    try {
+      debugPrint('🔄 REMOTE: Updating trip location for ID: $tripId');
+      debugPrint('📍 Coordinates: Lat: $latitude, Long: $longitude');
 
-    // Extract trip ID if we received a JSON object
-    String actualTripId;
-    if (tripId.startsWith('{')) {
-      final tripData = jsonDecode(tripId);
-      actualTripId = tripData['id'];
-    } else {
-      actualTripId = tripId;
+      // Extract trip ID if we received a JSON object
+      String actualTripId;
+      if (tripId.startsWith('{')) {
+        final tripData = jsonDecode(tripId);
+        actualTripId = tripData['id'];
+      } else {
+        actualTripId = tripId;
+      }
+
+      debugPrint('🎯 Using trip ID: $actualTripId');
+
+      // Get the current trip record
+      final tripRecord = await _pocketBaseClient
+          .collection('tripticket')
+          .getOne(
+            actualTripId,
+            expand: 'customers,timeline,personels,vehicle,checklist',
+          );
+
+      // Update the trip with new coordinates
+      final updatedRecord = await _pocketBaseClient
+          .collection('tripticket')
+          .update(
+            actualTripId,
+            body: {
+              'latitude': latitude.toString(),
+              'longitude': longitude.toString(),
+              'updated': DateTime.now().toIso8601String(),
+            },
+          );
+
+      // Create a new record in trip_coordinates_updates collection
+      await _createTripCoordinateUpdate(actualTripId, latitude, longitude);
+
+      debugPrint('✅ Trip location updated successfully');
+
+      // Create a TripModel from the updated record with safe data preparation
+      final mappedData = _prepareTripDataSafely(
+        tripRecord,
+        updatedRecord,
+        latitude,
+        longitude,
+      );
+      final updatedTripModel = TripModel.fromJson(mappedData);
+      return updatedTripModel;
+    } catch (e) {
+      debugPrint('❌ Error updating trip location: $e');
+      throw ServerException(
+        message: 'Failed to update trip location: ${e.toString()}',
+        statusCode: '500',
+      );
     }
-    
-    debugPrint('🎯 Using trip ID: $actualTripId');
-
-    // Get the current trip record
-    final tripRecord = await _pocketBaseClient
-        .collection('tripticket')
-        .getOne(
-          actualTripId,
-          expand: 'customers,timeline,personels,vehicle,checklist',
-        );
-
-    // Update the trip with new coordinates
-    final updatedRecord = await _pocketBaseClient
-        .collection('tripticket')
-        .update(
-          actualTripId,
-          body: {
-            'latitude': latitude.toString(),
-            'longitude': longitude.toString(),
-            'updated': DateTime.now().toIso8601String(),
-          },
-        );
-    
-    // Create a new record in trip_coordinates_updates collection
-    await _createTripCoordinateUpdate(actualTripId, latitude, longitude);
-
-    debugPrint('✅ Trip location updated successfully');
-
-    // Create a TripModel from the updated record
-    final mappedData = {
-      'id': updatedRecord.id,
-      'collectionId': updatedRecord.collectionId,
-      'collectionName': updatedRecord.collectionName,
-      ...updatedRecord.data,
-      'timeline': _mapTimeline(tripRecord),
-      'personels': _mapPersonels(tripRecord),
-      'checklist': _mapChecklist(tripRecord),
-      'vehicle': _mapVehicle(tripRecord),
-      'latitude': latitude,
-      'longitude': longitude,
-    };
-
-    final updatedTripModel = TripModel.fromJson(mappedData);
-    return updatedTripModel;
-  } catch (e) {
-    debugPrint('❌ Error updating trip location: $e');
-    throw ServerException(
-      message: 'Failed to update trip location: ${e.toString()}',
-      statusCode: '500',
-    );
   }
-}
 
-// New function to create a record in trip_coordinates_updates collection
-Future<void> _createTripCoordinateUpdate(
-  String tripId,
-  double latitude,
-  double longitude,
-) async {
-  try {
-    debugPrint('🔄 Creating trip coordinate update record');
-    
-    // Create the record in trip_coordinates_updates collection
-    await _pocketBaseClient.collection('trip_coordinates_updates').create(
-      body: {
-        'trip': tripId,
+  // Safe helper method to prepare trip data with proper type handling
+  Map<String, dynamic> _prepareTripDataSafely(
+    RecordModel tripRecord,
+    RecordModel updatedRecord,
+    double latitude,
+    double longitude,
+  ) {
+    try {
+      final data = {
+        'id': updatedRecord.id,
+        'collectionId': updatedRecord.collectionId,
+        'collectionName': updatedRecord.collectionName,
         'latitude': latitude,
         'longitude': longitude,
-        // Add timestamp for when this coordinate was recorded
-        'created': DateTime.now().toIso8601String(),
-      },
-    );
-    
-    debugPrint('✅ Trip coordinate update record created successfully');
-  } catch (e) {
-    // Log the error but don't throw - we don't want to fail the main update
-    // if this secondary record creation fails
-    debugPrint('⚠️ Error creating trip coordinate update record: $e');
-    // You could implement a retry mechanism or queue here if needed
+      };
+
+      // Add all data fields with safe type conversion
+      updatedRecord.data.forEach((key, value) {
+        data[key] = _convertValueSafely(key, value);
+      });
+
+      // Add expanded relations with safe mapping
+      data['timeline'] = _mapTimelineSafely(tripRecord);
+      data['personels'] = _mapPersonelsSafely(tripRecord);
+      data['checklist'] = _mapChecklistSafely(tripRecord);
+      data['vehicle'] = _mapVehicleSafely(tripRecord);
+
+      return data;
+    } catch (e) {
+      debugPrint('⚠️ Error preparing trip data: $e');
+      // Return minimal valid data to avoid further errors
+      return {
+        'id': updatedRecord.id,
+        'collectionId': updatedRecord.collectionId,
+        'collectionName': updatedRecord.collectionName,
+        'latitude': latitude,
+        'longitude': longitude,
+        'updated': DateTime.now().toIso8601String(),
+      };
+    }
   }
-}
+
+  // Safe value conversion method
+  dynamic _convertValueSafely(String key, dynamic value) {
+    try {
+      if (value == null) return null;
+
+      // Handle DateTime objects
+      if (value is DateTime) {
+        return value.toIso8601String();
+      }
+
+      // Handle date fields that might be strings
+      if (_isDateField(key)) {
+        if (value is String && value.isNotEmpty) {
+          final parsedDate = _parseDateSafely(value);
+          return parsedDate?.toIso8601String() ?? value;
+        } else if (value is List && value.isEmpty) {
+          // Handle empty lists that shouldn't be date fields
+          return null;
+        }
+        return value;
+      }
+
+      // Handle different data types appropriately
+      if (value is List) {
+        // Don't try to parse lists as dates
+        return value;
+      }
+
+      if (value is Map) {
+        return value;
+      }
+
+      if (value is bool || value is int || value is double) {
+        return value;
+      }
+
+      // For strings, return as-is unless it's a date field
+      return value;
+    } catch (e) {
+      debugPrint('⚠️ Error converting value for key $key: $e');
+      return value; // Return original value if conversion fails
+    }
+  }
+
+  // Enhanced and safer date parsing function
+  DateTime? _parseDateSafely(dynamic value) {
+    if (value == null) return null;
+
+    // Handle non-string types
+    if (value is! String) {
+      if (value is List && value.isEmpty) {
+        return null; // Empty list is not a date
+      }
+      if (value is int) {
+        // Could be a timestamp
+        try {
+          return DateTime.fromMillisecondsSinceEpoch(
+            value > 9999999999 ? value : value * 1000,
+          );
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    String strValue = value.toString().trim();
+    if (strValue.isEmpty || strValue == '[]' || strValue == '{}') {
+      return null;
+    }
+
+    try {
+      // Try standard ISO format first
+      return DateTime.parse(strValue);
+    } catch (e) {
+      debugPrint('⚠️ Standard date parsing failed for: $strValue');
+
+      try {
+        // Try Unix timestamp (milliseconds)
+        if (strValue.length >= 10 && RegExp(r'^\d+$').hasMatch(strValue)) {
+          int timestamp = int.parse(strValue);
+          // If it's in seconds (10 digits), convert to milliseconds
+          if (strValue.length == 10) {
+            timestamp *= 1000;
+          }
+          return DateTime.fromMillisecondsSinceEpoch(timestamp);
+        }
+
+        // Try various date formats
+        final formats = [
+          RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$'), // MM/DD/YYYY
+          RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})$'), // YYYY-MM-DD
+          RegExp(r'^(\d{1,2})-(\d{1,2})-(\d{4})$'), // DD-MM-YYYY
+          RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{2})$'), // MM/DD/YY
+          RegExp(r'^(\d{4})/(\d{1,2})/(\d{1,2})$'), // YYYY/MM/DD
+        ];
+
+        for (var format in formats) {
+          if (format.hasMatch(strValue)) {
+            var match = format.firstMatch(strValue)!;
+            try {
+              if (format.pattern == r'^(\d{1,2})/(\d{1,2})/(\d{4})$') {
+                // MM/DD/YYYY
+                return DateTime(
+                  int.parse(match.group(3)!),
+                  int.parse(match.group(1)!),
+                  int.parse(match.group(2)!),
+                );
+              } else if (format.pattern == r'^(\d{4})-(\d{1,2})-(\d{1,2})$') {
+                // YYYY-MM-DD
+                return DateTime(
+                  int.parse(match.group(1)!),
+                  int.parse(match.group(2)!),
+                  int.parse(match.group(3)!),
+                );
+              } else if (format.pattern == r'^(\d{1,2})-(\d{1,2})-(\d{4})$') {
+                // DD-MM-YYYY
+                return DateTime(
+                  int.parse(match.group(3)!),
+                  int.parse(match.group(2)!),
+                  int.parse(match.group(1)!),
+                );
+              } else if (format.pattern == r'^(\d{1,2})/(\d{1,2})/(\d{2})$') {
+                // MM/DD/YY
+                int year = int.parse(match.group(3)!);
+                year += year <= 30 ? 2000 : 1900;
+                return DateTime(
+                  year,
+                  int.parse(match.group(1)!),
+                  int.parse(match.group(2)!),
+                );
+              } else if (format.pattern == r'^(\d{4})/(\d{1,2})/(\d{1,2})$') {
+                // YYYY/MM/DD
+                return DateTime(
+                  int.parse(match.group(1)!),
+                  int.parse(match.group(2)!),
+                  int.parse(match.group(3)!),
+                );
+              }
+            } catch (e) {
+              debugPrint('⚠️ Error parsing date with format: $e');
+              continue;
+            }
+          }
+        }
+
+        // Try parsing with time components
+        if (strValue.contains('T') || strValue.contains(' ')) {
+          try {
+            return DateTime.parse(strValue.replaceAll(' ', 'T'));
+          } catch (e) {
+            debugPrint('⚠️ ISO format parsing failed: $e');
+          }
+        }
+
+        // If all parsing fails, return null instead of current time
+        debugPrint('⚠️ All date parsing attempts failed for: $strValue');
+        return null;
+      } catch (e2) {
+        debugPrint('⚠️ Alternative date parsing failed: $e2 for value: $strValue');
+        return null;
+      }
+    }
+  }
+
+  // Helper method to check if a field is a date field
+  bool _isDateField(String fieldName) {
+    final dateFields = [
+      'created',
+      'updated',
+      'timeAccepted',
+      'timeEndTrip',
+      'timestamp',
+      'date',
+      'time',
+      'deliveredAt',
+      'completedAt',
+      'startTime',
+      'endTime',
+    ];
+    return dateFields.contains(fieldName.toLowerCase()) ||
+           fieldName.toLowerCase().contains('time') ||
+           fieldName.toLowerCase().contains('date');
+  }
+
+  // Safe mapping methods
+  List<Map<String, dynamic>> _mapTimelineSafely(RecordModel tripRecord) {
+    try {
+      final timeline = tripRecord.expand['timeline'] as List? ?? [];
+      return timeline.map((item) {
+        if (item is RecordModel) {
+          return _convertRecordToJsonSafely(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping timeline: $e');
+      return [];
+    }
+  }
+
+  List<Map<String, dynamic>> _mapPersonelsSafely(RecordModel tripRecord) {
+    try {
+      final personels = tripRecord.expand['personels'] as List? ?? [];
+      return personels.map((item) {
+        if (item is RecordModel) {
+          return _convertRecordToJsonSafely(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping personels: $e');
+      return [];
+    }
+  }
+
+  List<Map<String, dynamic>> _mapChecklistSafely(RecordModel tripRecord) {
+    try {
+      final checklist = tripRecord.expand['checklist'] as List? ?? [];
+      return checklist.map((item) {
+        if (item is RecordModel) {
+          return _convertRecordToJsonSafely(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping checklist: $e');
+      return [];
+    }
+  }
+
+  List<Map<String, dynamic>> _mapVehicleSafely(RecordModel tripRecord) {
+    try {
+      final vehicle = tripRecord.expand['vehicle'] as List? ?? [];
+      return vehicle.map((item) {
+        if (item is RecordModel) {
+          return _convertRecordToJsonSafely(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error mapping vehicle: $e');
+      return [];
+    }
+  }
+
+  // Safe record conversion with proper type handling
+  Map<String, dynamic> _convertRecordToJsonSafely(RecordModel record) {
+    try {
+      final data = {
+        'id': record.id,
+        'collectionId': record.collectionId,
+        'collectionName': record.collectionName,
+      };
+
+      // Add all data fields with safe conversion
+      record.data.forEach((key, value) {
+        data[key] = _convertValueSafely(key, value);
+      });
+
+      return data;
+    } catch (e) {
+      debugPrint('⚠️ Error converting record to JSON: $e');
+      return {
+        'id': record.id,
+        'collectionId': record.collectionId,
+        'collectionName': record.collectionName,
+      };
+    }
+  }
+
+  // Enhanced trip coordinate update creation with better error handling
+  Future<void> _createTripCoordinateUpdate(
+    String tripId,
+    double latitude,
+    double longitude,
+  ) async {
+    try {
+      debugPrint('🔄 Creating trip coordinate update record');
+
+      final now = DateTime.now();
+      final timestamp = now.toIso8601String();
+
+      // Create the record in trip_coordinates_updates collection
+      await _pocketBaseClient
+          .collection('trip_coordinates_updates')
+          .create(
+            body: {
+              'trip': tripId,
+              'latitude': latitude.toString(),
+              'longitude': longitude.toString(),
+              'created': timestamp,
+              'updated': timestamp,
+              
+            },
+          );
+
+      debugPrint('✅ Trip coordinate update record created successfully');
+    } catch (e) {
+      debugPrint('⚠️ Error creating trip coordinate update record: $e');
+      
+      try {
+        // Attempt a simplified version
+        await _pocketBaseClient
+            .collection('trip_coordinates_updates')
+            .create(
+              body: {
+                'trip': tripId,
+                'latitude': latitude.toString(),
+                'longitude': longitude.toString(),
+                'created': DateTime.now().toIso8601String(),
+              },
+            );
+        debugPrint('✅ Trip coordinate update record created (simplified)');
+      } catch (e2) {
+        debugPrint('❌ Failed to create coordinate update record: $e2');
+      }
+    }
+  }
 
 }

@@ -1,18 +1,16 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/view/delivery_main_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/dialog_instruction.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/invoice_screen.dart';
+
 class DeliveryAndInvoiceView extends StatefulWidget {
-  final CustomerEntity? selectedCustomer;
+  final DeliveryDataEntity? selectedCustomer;
 
   const DeliveryAndInvoiceView({
     super.key,
@@ -25,6 +23,8 @@ class DeliveryAndInvoiceView extends StatefulWidget {
 
 class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
   int _selectedIndex = 0;
+  String _deliveryNumber = 'Loading...';
+  DeliveryDataState? _cachedState;
 
   @override
   void initState() {
@@ -36,12 +36,27 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
     if (widget.selectedCustomer != null) {
       debugPrint('📱 Loading local data for customer: ${widget.selectedCustomer!.id}');
       
-      final customerBloc = context.read<CustomerBloc>();
-      customerBloc.add(LoadLocalCustomerLocationEvent(widget.selectedCustomer!.id ?? ''));
-
-      final invoiceBloc = context.read<InvoiceBloc>();
-      invoiceBloc.add(const LoadLocalInvoiceEvent());
+      // Set initial delivery number if available
+      _updateDeliveryNumber(widget.selectedCustomer!);
+      
+      final customerBloc = context.read<DeliveryDataBloc>();
+      customerBloc
+        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''))
+        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
     }
+  }
+
+  void _updateDeliveryNumber(DeliveryDataEntity deliveryData) {
+    setState(() {
+      _deliveryNumber = deliveryData.deliveryNumber ?? 
+                      deliveryData.customer.target?.name ?? 
+                      'Unknown Delivery';
+    });
+    
+    debugPrint('🏷️ Delivery number updated: $_deliveryNumber');
+    debugPrint('   📦 Delivery Data ID: ${deliveryData.id}');
+    debugPrint('   🔢 Delivery Number: ${deliveryData.deliveryNumber}');
+    debugPrint('   👤 Customer Name: ${deliveryData.customer.target?.name}');
   }
 
   late final List<Widget> _screens = [
@@ -51,59 +66,100 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CustomerBloc, CustomerState>(
-      builder: (context, state) {
-        String deliveryNumber = '';
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<DeliveryDataBloc, DeliveryDataState>(
+          listener: (context, state) {
+            debugPrint('🎯 DeliveryDataBloc state changed: $state');
+            
+            if (state is DeliveryDataLoaded) {
+              setState(() => _cachedState = state);
+              _updateDeliveryNumber(state.deliveryData);
+            } else if (state is AllDeliveryDataLoaded && state.deliveryData.isNotEmpty) {
+              // Find the matching delivery data
+              final matchingDelivery = state.deliveryData.firstWhere(
+                (delivery) => delivery.id == widget.selectedCustomer?.id,
+                orElse: () => state.deliveryData.first,
+              );
+              setState(() => _cachedState = state);
+              _updateDeliveryNumber(matchingDelivery);
+            }
+          },
+        ),
+      ],
+      child: BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+        builder: (context, state) {
+          debugPrint('🎯 Building DeliveryAndInvoiceView with state: $state');
+          debugPrint('🏷️ Current delivery number: $_deliveryNumber');
 
-        if (state is CustomerLocationLoaded) {
-          deliveryNumber = state.customer.deliveryNumber ?? '';
-        }
+          // Use cached state if available for better UX
+          final effectiveState = (state is DeliveryDataLoaded || state is AllDeliveryDataLoaded) 
+              ? state 
+              : _cachedState;
 
-        return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => context.go('/delivery-and-timeline'),
+          // Extract delivery number from current state
+          String displayDeliveryNumber = _deliveryNumber;
+          
+          if (effectiveState is DeliveryDataLoaded) {
+            displayDeliveryNumber = effectiveState.deliveryData.deliveryNumber ?? 
+                                  effectiveState.deliveryData.customer.target?.name ?? 
+                                  'Unknown Delivery';
+          } else if (effectiveState is AllDeliveryDataLoaded && effectiveState.deliveryData.isNotEmpty) {
+            final matchingDelivery = effectiveState.deliveryData.firstWhere(
+              (delivery) => delivery.id == widget.selectedCustomer?.id,
+              orElse: () => effectiveState.deliveryData.first,
+            );
+            displayDeliveryNumber = matchingDelivery.deliveryNumber ?? 
+                                  matchingDelivery.customer.target?.name ?? 
+                                  'Unknown Delivery';
+          }
+
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.go('/delivery-and-timeline'),
+              ),
+              title: Text(
+                displayDeliveryNumber,
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+              ),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.info_outline_rounded),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const DeliveryInstructionsDialog(),
+                    );
+                  },
+                ),
+              ],
             ),
-            title: Text(
-              deliveryNumber,
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                color: Theme.of(context).colorScheme.surface,
-              ),
+            body: IndexedStack(
+              index: _selectedIndex,
+              children: _screens,
             ),
-            centerTitle: true,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.info_outline_rounded),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const DeliveryInstructionsDialog(),
-                  );
-                },
-              ),
-            ],
-          ),
-          body: IndexedStack(
-            index: _selectedIndex,
-            children: _screens,
-          ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) => setState(() => _selectedIndex = index),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.local_shipping),
-                label: 'Deliveries',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.receipt),
-                label: 'Invoices',
-              ),
-            ],
-          ),
-        );
-      },
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: (index) => setState(() => _selectedIndex = index),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.local_shipping),
+                  label: 'Deliveries',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.receipt),
+                  label: 'Invoices',
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/presentation/bloc/delivery_team_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/presentation/bloc/delivery_team_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_state.dart';
 
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
@@ -159,16 +159,20 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
               _buildInfoItem(
                 context,
                 Icons.numbers,
-                team.vehicle.isNotEmpty
-                    ? team.vehicle.first.vehiclePlateNumber ?? 'Not Assigned'
+                team.deliveryVehicle.target != null
+                    ? team.deliveryVehicle.target!.name ?? 'Not Assigned'
                     : 'Not Assigned',
                 'Plate Number',
               ),
               _buildInfoItem(
                 context,
                 Icons.local_shipping,
-                team.vehicle.isNotEmpty
-                    ? team.vehicle.first.vehicleName ?? 'Not Assigned'
+                team.deliveryVehicle.target != null
+                    ? '${team.deliveryVehicle.target!.make ?? ''} ${team.deliveryVehicle.target!.name ?? ''}'
+                            .trim()
+                            .isEmpty
+                        ? team.deliveryVehicle.target!.name ?? 'Not Assigned'
+                        : '${team.deliveryVehicle.target!.make ?? ''} '
                     : 'Not Assigned',
                 'Vehicle',
               ),

@@ -1,94 +1,117 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/model/customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/model/product_model.dart';
-import 'package:x_pro_delivery_app/core/enums/product_return_reason.dart';
 
 class ConfirmSummaryOrderProductBtn extends StatelessWidget {
-  final List<ProductModel> products;
-  final InvoiceModel invoice;
-  final CustomerModel customer;
-  final double confirmTotalAmount;
+  final String deliveryDataId;
+  final String title;
+  final String amount;
 
   const ConfirmSummaryOrderProductBtn({
     super.key,
-    required this.products,
-    required this.invoice,
-    required this.customer,
-    required this.confirmTotalAmount,
+    required this.deliveryDataId,
+    required this.title,
+    required this.amount,
   });
 
   @override
   Widget build(BuildContext context) {
-    return RoundedButton(
-      label: 'Confirm Order Summary',
-      onPressed: () {
-        debugPrint('🔄 Starting confirmation process');
-        debugPrint('💰 Total Amount to record: $confirmTotalAmount');
-
-        // Record total amount and update invoice status
-        context.read<ProductsBloc>().add(
-          ConfirmDeliveryProductsEvent(
-            invoiceId: invoice.id ?? '',
-            confirmTotalAmount: confirmTotalAmount,
-            customerId: customer.id ?? '',
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
-        );
+        ],
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  amount,
+                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            RoundedButton(
+              label: 'Confirm Order',
+              onPressed: () {
+                debugPrint(
+                  '✅ Order confirmed, navigating back to delivery view',
+                );
+                debugPrint('   📦 Delivery Data ID: $deliveryDataId');
 
-        // Navigate back to delivery screen
-        context.go('/delivery-and-invoice/${customer.id}', extra: customer);
+                // Get the current delivery data from the bloc state
+                final deliveryDataState =
+                    context.read<DeliveryDataBloc>().state;
 
-        //force to set the invoice into unloaded
-        context.read<InvoiceBloc>().add(SetInvoiceUnloadedEvent(invoice.id!));
+                if (deliveryDataState is DeliveryDataLoaded) {
+                  // Navigate back to delivery and invoice view with the delivery data
 
-        // Process returns if any
-        for (var product in products) {
-          if (product.isCase == true) {
-            final returnCaseQty =
-                (product.case_ ?? 0) - (product.unloadedProductCase ?? 0);
-            if (returnCaseQty > 0 ||
-                product.returnReason != ProductReturnReason.none) {
-              _processProductReturn(context, product);
-            }
-          }
-        }
+                  context.read<DeliveryDataBloc>().add(
+                    SetInvoiceIntoUnloadedEvent(deliveryDataId),
+                  );
+                  context.go(
+                    '/delivery-and-invoice/$deliveryDataId',
+                    extra: deliveryDataState.deliveryData,
+                  );
 
-        // Refresh customer data
-        context.read<CustomerBloc>().add(
-          GetCustomerLocationEvent(customer.id ?? ''),
-        );
-        context.read<InvoiceBloc>().add(const GetInvoiceEvent());
-        context.read<ProductsBloc>().add(const GetProductsEvent());
-      },
-    );
-  }
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Order confirmed successfully!'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                } else {
+                  // If no data available, navigate without extra and let the screen load data
+                  debugPrint(
+                    '⚠️ No delivery data available in state, navigating without extra',
+                  );
+                  context.go('/delivery-and-invoice/$deliveryDataId');
 
-  void _processProductReturn(BuildContext context, ProductModel product) {
-    debugPrint('📦 Processing return for product: ${product.name}');
-    debugPrint('   - Total Cases: ${product.case_}');
-    debugPrint('   - Unloaded Cases: ${product.unloadedProductCase}');
-    debugPrint('   - Return Reason: ${product.returnReason}');
-
-    context.read<ProductsBloc>().add(
-      AddToReturnEvent(
-        productId: product.id!,
-        reason: product.returnReason ?? ProductReturnReason.none,
-        returnProductCase:
-            (product.case_ ?? 0) - (product.unloadedProductCase ?? 0),
-        returnProductPc: (product.pcs ?? 0) - (product.unloadedProductPc ?? 0),
-        returnProductPack:
-            (product.pack ?? 0) - (product.unloadedProductPack ?? 0),
-        returnProductBox:
-            (product.box ?? 0) - (product.unloadedProductBox ?? 0),
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Order confirmed! Loading delivery data...',
+                      ),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              buttonColour: Theme.of(context).colorScheme.primary,
+              icon: Icon(
+                Icons.check_circle,
+                color: Theme.of(context).colorScheme.surface,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

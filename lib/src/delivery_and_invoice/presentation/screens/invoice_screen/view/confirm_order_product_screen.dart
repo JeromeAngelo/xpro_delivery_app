@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/model/customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/model/product_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_state.dart';
+import 'package:intl/intl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/utils/confirm_product_list.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/utils/confirm_summary_order_product_btn.dart';
-import 'package:intl/intl.dart';
+
 class ConfirmOrderProductScreen extends StatefulWidget {
-  final InvoiceModel invoice;
-  final List<ProductModel> products;
-  final CustomerModel customer;
+  final String deliveryDataId;
+  final String invoiceNumber;
 
   const ConfirmOrderProductScreen({
     super.key,
-    required this.invoice,
-    required this.products,
-    required this.customer,
+    required this.deliveryDataId,
+    required this.invoiceNumber,
   });
 
   @override
@@ -27,47 +24,51 @@ class ConfirmOrderProductScreen extends StatefulWidget {
 
 class _ConfirmOrderProductScreenState extends State<ConfirmOrderProductScreen> {
   final currencyFormatter = NumberFormat("#,##0.00", "en_US");
+  bool _isDataInitialized = false;
+  DeliveryDataState? _cachedState;
 
-  double _calculateTotal(List<ProductModel> products) {
-    double total = 0.0;
-    debugPrint('🧮 Starting total calculation');
-    
-    for (var product in products) {
-      if (product.isCase == true) {
-        final caseTotal = (product.pricePerCase ?? 0) * (product.unloadedProductCase ?? 0);
-        total += caseTotal;
-        debugPrint('📦 Case calculation for ${product.name}:');
-        debugPrint('   Price per case: ${product.pricePerCase}');
-        debugPrint('   Unloaded cases: ${product.unloadedProductCase}');
-        debugPrint('   Subtotal: $caseTotal');
-      }
-      if (product.isPc == true) {
-        final pcTotal = (product.pricePerPc ?? 0) * (product.unloadedProductPc ?? 0);
-        total += pcTotal;
-        debugPrint('🔢 Piece calculation for ${product.name}:');
-        debugPrint('   Price per piece: ${product.pricePerPc}');
-        debugPrint('   Unloaded pieces: ${product.unloadedProductPc}');
-        debugPrint('   Subtotal: $pcTotal');
-      }
-      if (product.isPack == true) {
-        final packTotal = (product.pricePerCase ?? 0) * (product.unloadedProductPack ?? 0);
-        total += packTotal;
-        debugPrint('📦 Pack calculation for ${product.name}:');
-        debugPrint('   Price per pack: ${product.pricePerCase}');
-        debugPrint('   Unloaded packs: ${product.unloadedProductPack}');
-        debugPrint('   Subtotal: $packTotal');
-      }
-      if (product.isBox == true) {
-        final boxTotal = (product.pricePerPc ?? 0) * (product.unloadedProductBox ?? 0);
-        total += boxTotal;
-        debugPrint('📦 Box calculation for ${product.name}:');
-        debugPrint('   Price per box: ${product.pricePerPc}');
-        debugPrint('   Unloaded boxes: ${product.unloadedProductBox}');
-        debugPrint('   Subtotal: $boxTotal');
-      }
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    if (!_isDataInitialized) {
+      debugPrint(
+        '🔄 Loading delivery data for confirmation: ${widget.deliveryDataId}',
+      );
+
+      // Load local delivery data first
+      context.read<DeliveryDataBloc>().add(
+        GetLocalDeliveryDataByIdEvent(widget.deliveryDataId),
+      );
+
+      // Then load from remote
+      context.read<DeliveryDataBloc>().add(
+        GetDeliveryDataByIdEvent(widget.deliveryDataId),
+      );
+
+      _isDataInitialized = true;
     }
-    
-    debugPrint('💰 Final total amount: $total');
+  }
+
+  double _calculateTotal(List<dynamic> invoiceItems) {
+    double total = 0.0;
+    debugPrint(
+      '🧮 Starting total calculation for ${invoiceItems.length} items',
+    );
+
+    for (var item in invoiceItems) {
+      // Get the total amount directly from the invoice item entity
+      final itemTotalAmount = item.totalAmount ?? 0.0;
+      total += itemTotalAmount;
+
+      debugPrint('💰 Item: ${item.name}');
+      debugPrint('   Total Amount: ₱${itemTotalAmount.toStringAsFixed(2)}');
+    }
+
+    debugPrint('💰 Final calculated total: ₱${total.toStringAsFixed(2)}');
     return total;
   }
 
@@ -75,90 +76,163 @@ class _ConfirmOrderProductScreenState extends State<ConfirmOrderProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Invoice #${widget.invoice.invoiceNumber}'),
+        title: Text('Confirm Invoice #${widget.invoiceNumber}'),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      // Add this import at the top
+
+      // Replace the existing body structure (around lines 80-150) with:
+      body: BlocListener<DeliveryDataBloc, DeliveryDataState>(
+        listener: (context, state) {
+          if (state is DeliveryDataLoaded) {
+            setState(() {
+              _cachedState = state;
+            });
+            debugPrint('✅ Delivery data loaded for confirmation');
+          }
+        },
+        child: BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+          builder: (context, state) {
+            debugPrint(
+              '🎯 Building ConfirmOrderProductScreen with state: $state',
+            );
+
+            if (state is DeliveryDataLoading && _cachedState == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state is DeliveryDataError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error Loading Order',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.message,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            // Determine effective state
+            DeliveryDataState? effectiveState;
+            if (state is DeliveryDataLoaded) {
+              effectiveState = state;
+            } else if (_cachedState is DeliveryDataLoaded) {
+              effectiveState = _cachedState;
+            }
+
+            if (effectiveState is DeliveryDataLoaded) {
+              final deliveryData = effectiveState.deliveryData;
+              final invoiceItems = deliveryData.invoiceItems;
+
+              if (invoiceItems.isEmpty) {
+                return const Center(child: Text('Please Wait.......'));
+              }
+
+              return Stack(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Order Details',
-                          style: Theme.of(context).textTheme.titleLarge,
+                  CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 5,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Order Confirmation',
+                                          style:
+                                              Theme.of(
+                                                context,
+                                              ).textTheme.titleLarge,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        ListView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemCount: invoiceItems.length,
+                                          itemBuilder: (context, index) {
+                                            return ConfirmProductList(
+                                              invoiceItem: invoiceItems[index],
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Space for button
+                          ],
                         ),
-                        const SizedBox(height: 10),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: widget.products.length,
-                          itemBuilder: (context, index) {
-                            return ConfirmProductList(
-                              product: widget.products[index],
-                              onProductChanged: () {
-                                setState(() {});
-                              },
-                            );
-                          },
+                      ),
+                    ],
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Column(
+                      children: [
+                        ConfirmSummaryOrderProductBtn(
+                          deliveryDataId: widget.deliveryDataId,
+                          title: 'Total Amount',
+                          amount:
+                              '₱${_calculateTotal(invoiceItems).toStringAsFixed(2)}',
                         ),
                       ],
                     ),
                   ),
                 ],
+              );
+            }
+
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading order details...'),
+                ],
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Total Amount:',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        BlocBuilder<ProductsBloc, ProductsState>(
-                          builder: (context, state) {
-                            final total = _calculateTotal(widget.products);
-                            return Text(
-                              '₱${currencyFormatter.format(total)}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ConfirmSummaryOrderProductBtn(
-                  products: widget.products,
-                  customer: widget.customer,
-                  invoice: widget.invoice,
-                  confirmTotalAmount: _calculateTotal(widget.products),
-                ),
-              ],
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }

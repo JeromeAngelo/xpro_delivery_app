@@ -1,27 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/model/customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/model/product_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_state.dart';
-import 'package:x_pro_delivery_app/core/enums/product_return_reason.dart';
+import 'package:flutter/services.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/entity/invoice_items_entity.dart';
 
 class ProductList extends StatefulWidget {
-  final ProductModel product;
-  final InvoiceModel invoice;
-  final CustomerModel customer;
-  final VoidCallback onStatusUpdate;
+  final InvoiceItemsEntity invoiceItem;
+  final Function(int baseQuantity)? onBaseQuantityChanged;
 
   const ProductList({
     super.key,
-    required this.product,
-    required this.invoice,
-    required this.customer,
-    required this.onStatusUpdate,
+    required this.invoiceItem,
+    this.onBaseQuantityChanged,
   });
 
   @override
@@ -29,44 +17,96 @@ class ProductList extends StatefulWidget {
 }
 
 class _ProductListState extends State<ProductList> {
-  final TextEditingController caseController = TextEditingController();
-  final TextEditingController pcsController = TextEditingController();
-  final TextEditingController packController = TextEditingController();
-  final TextEditingController boxController = TextEditingController();
-  bool showSecondaryUnits = false;
+  late TextEditingController _baseQuantityController;
+  late FocusNode _baseQuantityFocusNode;
+  int _maxQuantity = 0;
+  int _currentBaseQuantity = 0;
 
   @override
   void initState() {
     super.initState();
+    _initializeQuantities();
+    _setupControllers();
+
+    debugPrint('📦 Initializing invoice item: ${widget.invoiceItem.name}');
+    debugPrint('   📊 Quantity: ${widget.invoiceItem.quantity}');
+    debugPrint('   📊 Base Quantity: $_currentBaseQuantity');
+    debugPrint('   💰 Unit Price: ${widget.invoiceItem.uomPrice}');
+    debugPrint('   💵 Total Amount: ${widget.invoiceItem.totalAmount}');
     debugPrint(
-        '📦 Initializing product quantities with ordered values as default');
+      '   🔗 Delivery Data ID: ${widget.invoiceItem.invoiceData.target?.id}',
+    );
+  }
 
-    if (widget.product.isCase == true) {
-      widget.product.unloadedProductCase = widget.product.case_;
-      caseController.text = widget.product.case_?.toString() ?? '0';
-      debugPrint(
-          'Case: Ordered ${widget.product.case_}, Unloaded ${widget.product.unloadedProductCase}');
+  void _initializeQuantities() {
+    _maxQuantity = (widget.invoiceItem.quantity ?? 0).toInt();
+    _currentBaseQuantity =
+        (widget.invoiceItem.totalBaseQuantity ?? _maxQuantity).toInt();
+
+    // Ensure base quantity doesn't exceed max quantity
+    if (_currentBaseQuantity > _maxQuantity) {
+      _currentBaseQuantity = _maxQuantity;
+    }
+  }
+
+  void _setupControllers() {
+    _baseQuantityController = TextEditingController(
+      text: _currentBaseQuantity.toString(),
+    );
+    _baseQuantityFocusNode = FocusNode();
+
+    _baseQuantityController.addListener(_onBaseQuantityChanged);
+    _baseQuantityFocusNode.addListener(_onFocusChanged);
+  }
+
+  void _onBaseQuantityChanged() {
+    final text = _baseQuantityController.text;
+
+    if (text.isEmpty) {
+      // Consider empty as 0
+      _updateBaseQuantity(0);
+      return;
     }
 
-    if (widget.product.isPc == true) {
-      widget.product.unloadedProductPc = widget.product.pcs;
-      pcsController.text = widget.product.pcs?.toString() ?? '0';
-      debugPrint(
-          'PC: Ordered ${widget.product.pcs}, Unloaded ${widget.product.unloadedProductPc}');
+    final value = int.tryParse(text);
+    if (value != null) {
+      // Restrict to max quantity
+      if (value > _maxQuantity) {
+        _baseQuantityController.text = _maxQuantity.toString();
+        _baseQuantityController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _baseQuantityController.text.length),
+        );
+        _updateBaseQuantity(_maxQuantity);
+      } else if (value < 0) {
+        _baseQuantityController.text = '0';
+        _baseQuantityController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _baseQuantityController.text.length),
+        );
+        _updateBaseQuantity(0);
+      } else {
+        _updateBaseQuantity(value);
+      }
     }
+  }
 
-    if (widget.product.isPack == true) {
-      widget.product.unloadedProductPack = widget.product.pack;
-      packController.text = widget.product.pack?.toString() ?? '0';
-      debugPrint(
-          'Pack: Ordered ${widget.product.pack}, Unloaded ${widget.product.unloadedProductPack}');
+  void _onFocusChanged() {
+    if (!_baseQuantityFocusNode.hasFocus) {
+      // When focus is lost, ensure we have a valid value
+      if (_baseQuantityController.text.isEmpty) {
+        _baseQuantityController.text = '0';
+        _updateBaseQuantity(0);
+      }
     }
+  }
 
-    if (widget.product.isBox == true) {
-      widget.product.unloadedProductBox = widget.product.box;
-      boxController.text = widget.product.box?.toString() ?? '0';
-      debugPrint(
-          'Box: Ordered ${widget.product.box}, Unloaded ${widget.product.unloadedProductBox}');
+  void _updateBaseQuantity(int newValue) {
+    if (_currentBaseQuantity != newValue) {
+      setState(() {
+        _currentBaseQuantity = newValue;
+      });
+
+      debugPrint('📊 Base quantity updated: $newValue (max: $_maxQuantity)');
+      widget.onBaseQuantityChanged?.call(newValue);
     }
   }
 
@@ -74,10 +114,13 @@ class _ProductListState extends State<ProductList> {
     return Row(
       children: [
         CircleAvatar(
-          backgroundColor:
-              Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          child: Icon(Icons.inventory_2,
-              color: Theme.of(context).colorScheme.primary),
+          backgroundColor: Theme.of(
+            context,
+          ).colorScheme.primary.withOpacity(0.1),
+          child: Icon(
+            Icons.inventory_2,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -85,16 +128,23 @@ class _ProductListState extends State<ProductList> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.product.name ?? 'No Name',
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                widget.invoiceItem.name ?? 'No Name',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
               ),
-              Text(
-                widget.product.description ?? 'No Description',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              _buildReturnReasonDropdown(), // Add this line
+              if (widget.invoiceItem.brand != null &&
+                  widget.invoiceItem.brand!.isNotEmpty)
+                Text(
+                  'Brand: ${widget.invoiceItem.brand}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              if (widget.invoiceItem.refId != null &&
+                  widget.invoiceItem.refId!.isNotEmpty)
+                Text(
+                  'Ref: ${widget.invoiceItem.refId}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
             ],
           ),
         ),
@@ -102,255 +152,184 @@ class _ProductListState extends State<ProductList> {
     );
   }
 
-  Widget _buildQuantityInput({
-    required String unit,
-    required TextEditingController controller,
-    required int maxQuantity,
-  }) {
-    return BlocBuilder<CustomerBloc, CustomerState>(
-      builder: (context, state) {
-        bool isUnloading = false;
-        if (state is CustomerLocationLoaded) {
-          isUnloading = state.customer.deliveryStatus.lastOrNull?.title
-                  ?.toLowerCase()
-                  .trim() ==
-              'unloading';
-        }
-
-        return Padding(
-          padding: const EdgeInsets.only(right: 40),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
+  Widget _buildQuantitySection() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 40),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            widget.invoiceItem.uom ?? 'UOM',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 24),
+          Column(
             children: [
-              Text(
-                unit,
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(width: 24),
-              Column(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 40,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      maxQuantity.toString(),
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
+              Container(
+                width: 80,
+                height: 40,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 12,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _maxQuantity.toString(),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  Text('Ordered', style: Theme.of(context).textTheme.bodySmall),
-                ],
+                ),
               ),
-              const SizedBox(width: 24),
-              Column(
-                children: [
-                  SizedBox(
-                    width: 80,
-                    height: 40,
-                    child: TextFormField(
-                      controller: controller,
-                      enabled: isUnloading,
-                      textAlign: TextAlign.center,
-                      keyboardType: TextInputType.number,
-                      showCursor: true,
-                      onTap: () => controller.selection = TextSelection(
-                        baseOffset: 0,
-                        extentOffset: controller.text.length,
-                      ),
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 12,
-                        ),
-                        filled: !isUnloading,
-                        fillColor: !isUnloading
-                            ? Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest
-                            : null,
-                      ),
-                      onChanged: (value) {
-                        final intValue = int.tryParse(value) ?? 0;
-                        if (intValue <= maxQuantity) {
-                          if (unit == 'CASE') {
-                            widget.product.unloadedProductCase = intValue;
-                          } else if (unit == 'PCS') {
-                            widget.product.unloadedProductPc = intValue;
-                          }
+              Text('Quantity', style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+          const SizedBox(width: 24),
+          Column(
+            children: [
+              Container(
+                width: 80,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color:
+                        _baseQuantityFocusNode.hasFocus
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey.shade300,
+                    width: _baseQuantityFocusNode.hasFocus ? 2 : 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: TextField(
+                  controller: _baseQuantityController,
+                  focusNode: _baseQuantityFocusNode,
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(3), // Reasonable limit
+                  ],
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 4,
+                    ),
+                    isDense: true,
+                  ),
+                  onTap: () {
+                    // Select all text when user taps the field
+                    _baseQuantityController.selection = TextSelection(
+                      baseOffset: 0,
+                      extentOffset: _baseQuantityController.text.length,
+                    );
+                  },
+                  onSubmitted: (value) {
+                    _baseQuantityFocusNode.unfocus();
+                  },
+                ),
+              ),
 
-                          context.read<ProductsBloc>().add(
-                                UpdateProductQuantitiesEvent(
-                                  productId: widget.product.id!,
-                                  unloadedProductCase:
-                                      int.tryParse(caseController.text) ?? 0,
-                                  unloadedProductPc:
-                                      int.tryParse(pcsController.text) ?? 0,
-                                  unloadedProductPack:
-                                      int.tryParse(packController.text) ?? 0,
-                                  unloadedProductBox:
-                                      int.tryParse(boxController.text) ?? 0,
-                                ),
-                              );
-                        }
-                      },
-                    ),
-                  ),
-                  Text('Unloaded',
-                      style: Theme.of(context).textTheme.bodySmall),
-                ],
+              Text(
+                'Base Qty',
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color:
+                      _baseQuantityFocusNode.hasFocus
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                ),
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  Widget _buildReturnReasonDropdown() {
-    return BlocBuilder<ProductsBloc, ProductsState>(
-      builder: (context, state) {
-        return Container(
-          width: 150,
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<ProductReturnReason>(
-              value: widget.product.returnReason ?? ProductReturnReason.none,
-              isExpanded: true,
-              isDense: true,
-              items: ProductReturnReason.values.map((reason) {
-                return DropdownMenuItem(
-                  value: reason,
-                  child: Text(
-                    _formatReason(reason.name),
-                    style: TextStyle(
-                      color: _isReturnReasonEnabled()
-                          ? null
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.38),
-                    ),
-                  ),
-                );
-              }).toList(),
-              onChanged: _isReturnReasonEnabled()
-                  ? (ProductReturnReason? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          widget.product.returnReason = newValue;
-                        });
-                        context.read<ProductsBloc>().add(
-                              UpdateReturnReasonEvent(
-                                productId: widget.product.id!,
-                                reason: newValue,
-                                returnProductCase:
-                                    int.tryParse(caseController.text) ?? 0,
-                                returnProductPc:
-                                    int.tryParse(pcsController.text) ?? 0,
-                                returnProductPack:
-                                    int.tryParse(packController.text) ?? 0,
-                                returnProductBox:
-                                    int.tryParse(boxController.text) ?? 0,
-                              ),
-                            );
-                      }
-                    }
-                  : null,
+  Widget _buildPriceSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Unit Price', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                '₱${widget.invoiceItem.uomPrice?.toStringAsFixed(2) ?? '0.00'}',
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Total Amount',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              Text(
+                '₱${widget.invoiceItem.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuantityInfo() {
+    if (_currentBaseQuantity != _maxQuantity) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.primaryContainer.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.info_outline,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
             ),
-          ),
-        );
-      },
-    );
-  }
-
-  String _formatReason(String reason) {
-    return reason
-        .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')
-        .trim()
-        .split(' ')
-        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
-        .join(' ');
-  }
-
-  bool _isReturnReasonEnabled() {
-    bool hasUnloadedChanges = false;
-
-    if (widget.product.isCase == true) {
-      final unloadedCase = int.tryParse(caseController.text) ?? 0;
-      hasUnloadedChanges = unloadedCase < (widget.product.case_ ?? 0);
+            const SizedBox(width: 6),
+            Text(
+              'Delivering $_currentBaseQuantity of $_maxQuantity items',
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
     }
-
-    if (widget.product.isPc == true) {
-      final unloadedPcs = int.tryParse(pcsController.text) ?? 0;
-      hasUnloadedChanges =
-          hasUnloadedChanges || unloadedPcs < (widget.product.pcs ?? 0);
-    }
-
-    if (widget.product.isPack == true) {
-      final unloadedPack = int.tryParse(packController.text) ?? 0;
-      hasUnloadedChanges =
-          hasUnloadedChanges || unloadedPack < (widget.product.pack ?? 0);
-    }
-
-    if (widget.product.isBox == true) {
-      final unloadedBox = int.tryParse(boxController.text) ?? 0;
-      hasUnloadedChanges =
-          hasUnloadedChanges || unloadedBox < (widget.product.box ?? 0);
-    }
-
-    return hasUnloadedChanges;
-  }
-
-  Widget _buildUnitsSection() {
-    return Column(
-      children: [
-        if (widget.product.isCase == true)
-          _buildQuantityInput(
-            controller: caseController,
-            maxQuantity: widget.product.case_ ?? 0,
-            unit: widget.product.primaryUnit?.name ?? 'CASE',
-          ),
-        if (widget.product.isPc == true) ...[
-          const SizedBox(height: 16),
-          _buildQuantityInput(
-            controller: pcsController,
-            maxQuantity: widget.product.pcs ?? 0,
-            unit: widget.product.secondaryUnit?.name ?? 'PCS',
-          ),
-        ],
-        if (widget.product.isPack == true) ...[
-          const SizedBox(height: 16),
-          _buildQuantityInput(
-            controller: packController,
-            maxQuantity: widget.product.pack ?? 0,
-            unit: 'PACK',
-          ),
-        ],
-        if (widget.product.isBox == true) ...[
-          const SizedBox(height: 16),
-          _buildQuantityInput(
-            controller: boxController,
-            maxQuantity: widget.product.box ?? 0,
-            unit: 'BOX',
-          ),
-        ],
-      ],
-    );
+    return const SizedBox.shrink();
   }
 
   @override
@@ -367,8 +346,11 @@ class _ProductListState extends State<ProductList> {
           children: [
             _buildProductHeader(),
             const SizedBox(height: 20),
-            _buildUnitsSection(),
-            const SizedBox(height: 20),
+            _buildQuantitySection(),
+            _buildQuantityInfo(),
+            const SizedBox(height: 16),
+            _buildPriceSection(),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -377,10 +359,10 @@ class _ProductListState extends State<ProductList> {
 
   @override
   void dispose() {
-    caseController.dispose();
-    pcsController.dispose();
-    packController.dispose();
-    boxController.dispose();
+    _baseQuantityController.removeListener(_onBaseQuantityChanged);
+    _baseQuantityFocusNode.removeListener(_onFocusChanged);
+    _baseQuantityController.dispose();
+    _baseQuantityFocusNode.dispose();
     super.dispose();
   }
 }

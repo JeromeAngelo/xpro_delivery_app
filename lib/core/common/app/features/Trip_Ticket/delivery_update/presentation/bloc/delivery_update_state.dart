@@ -38,14 +38,20 @@ class DeliveryUpdateError extends DeliveryUpdateState {
   @override
   List<Object> get props => [message, isLocalError];
 }
+// Replace the existing DeliveryCompletionSuccess with this:
 class DeliveryCompletionSuccess extends DeliveryUpdateState {
-  final String customerId;
+  final String deliveryDataId;
+  final String? tripId;
   
-  const DeliveryCompletionSuccess(this.customerId);
+  const DeliveryCompletionSuccess({
+    required this.deliveryDataId,
+    this.tripId,
+  });
   
   @override
-  List<Object> get props => [customerId];
+  List<Object?> get props => [deliveryDataId, tripId];
 }
+
 
 // delivery_update_state.dart
 class EndDeliveryStatusChecked extends DeliveryUpdateState {

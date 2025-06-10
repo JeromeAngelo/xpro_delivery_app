@@ -3,16 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/model/customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/domain/entity/invoice_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/model/product_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/presentation/bloc/products_event.dart';
+
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/view/auth_screen_view.dart';
@@ -27,25 +21,24 @@ import 'package:x_pro_delivery_app/src/delivery_team/presentation/view/delivery_
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/view/end_trip_otp_screen.dart';
 import 'package:x_pro_delivery_app/src/final_screen/presentation/view/final_screen_view.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/specific_completed_customer_screen.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/return_screen/widgets/specific_return_customer_screen.dart';
 import 'package:x_pro_delivery_app/src/greetings/presentation/view/greeting_view.dart';
 import 'package:x_pro_delivery_app/src/homepage/presentation/view/homepage_view.dart';
 import 'package:x_pro_delivery_app/src/loader/presentation/view/loading_screen.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/view/onboarding_view.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/view/first_otp_screen_view.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/view/collection_screen.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/return_screen/view/return_screen.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/undelivered_customer/view/undelivered_customers_screen.dart';
 
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/view/finalize_deliveries_view.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/specific_screens/customers_collection_screen.dart';
-import 'package:x_pro_delivery_app/src/summary_trip/presentation/specific_screens/customers_return_screen.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/view/summary_trip_view.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/view/get_trip_ticket_view.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/widgets/accepting_trip_loading_screen.dart';
 
-import '../../src/transcation_screeen/presentation/view/transaction_view.dart';
-import '../common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
+import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
+import '../../src/transcation_screen/presentation/view/transaction_view.dart';
+import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
+import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_event.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -124,27 +117,40 @@ final router = GoRouter(
       builder: (context, state) => const DeliveryAndTimeline(),
     ),
     GoRoute(
-      path: '/delivery-and-invoice/:customerId',
+  path: '/delivery-and-invoice/:customerId',
+  builder: (context, state) {
+    // Load local data immediately
+    context.read<DeliveryDataBloc>()
+      ..add(GetLocalDeliveryDataByIdEvent(state.pathParameters['customerId']!))
+      ..add(GetDeliveryDataByIdEvent(state.pathParameters['customerId']!));
+
+    // Use the customer from extra data if available, otherwise use a placeholder
+    final customer = state.extra as DeliveryDataEntity?;
+
+    return DeliveryAndInvoiceView(
+      selectedCustomer: customer, // This can now be null and handled in the view
+    );
+  },
+),
+  // NEW ROUTE: Specific Undelivered Customer Details
+    GoRoute(
+      path: '/undelivered-customer-details/:cancelledInvoiceId',
+      name: 'undelivered-customer-details',
       builder: (context, state) {
-        // Load local data immediately
-        context.read<CustomerBloc>().add(LoadLocalCustomerLocationEvent(
-            state.pathParameters['customerId']!));
-
-        context.read<InvoiceBloc>().add(const LoadLocalInvoiceEvent());
-
-        // Use the customer from extra data while local loads
-        final customer = state.extra as CustomerEntity;
-
-        return DeliveryAndInvoiceView(
-          selectedCustomer: customer,
+        final cancelledInvoiceId = state.pathParameters['cancelledInvoiceId']!;
+        debugPrint('🔄 Navigating to undelivered customer details: $cancelledInvoiceId');
+        
+        return SpecificUndeliveredCustomerScreen(
+          cancelledInvoiceId: cancelledInvoiceId,
         );
       },
     ),
+
     GoRoute(
       path: '/add-delivery-status',
       name: 'add-delivery-status',
       builder: (context, state) => AddDeliveryStatusScreen(
-        customer: state.extra as CustomerEntity,
+        customer: state.extra as DeliveryDataEntity,
       ),
     ),
 
@@ -154,7 +160,7 @@ final router = GoRouter(
   builder: (context, state) {
     final Map<String, dynamic> extra = state.extra as Map<String, dynamic>;
     return UndeliverableScreen(
-      customer: extra['customer'] as CustomerEntity,
+      customer: extra['customer'] as DeliveryDataEntity,
       statusId: extra['statusId'] as String,
     );
   },
@@ -172,43 +178,49 @@ final router = GoRouter(
     debugPrint('🔄 Navigating to product list with params: ${state.pathParameters}');
     
     // Load products for this invoice immediately
-    context.read<ProductsBloc>().add(
-      LoadLocalProductsByInvoiceIdEvent(state.pathParameters['invoiceId']!)
+    context.read<InvoiceItemsBloc>().add(
+      GetInvoiceItemsByInvoiceDataIdEvent(state.pathParameters['invoiceId']!)
     );
 
     return ProductListScreen(
       invoiceId: state.pathParameters['invoiceId']!,
       invoiceNumber: state.pathParameters['invoiceNumber']!,
-      customer: state.extra as CustomerEntity,
+      customer: state.extra as DeliveryDataEntity,
     );
   },
 ),
 
+   
+
     GoRoute(
-      path: '/transaction/:id',
+      path: '/transaction',
       builder: (context, state) {
         final extraData = state.extra as Map<String, dynamic>;
+        
         return TransactionView(
-          customer: extraData['customer'] as CustomerEntity,
-          selectedInvoices:
-              extraData['selectedInvoices'] as List<InvoiceEntity>,
-          generatedPdf: extraData['generatedPdf'] as Uint8List,
+          deliveryData: extraData['deliveryData'] as DeliveryDataEntity,
+          generatedPdf: extraData['generatedPdf'] as Uint8List?, // Allow null
         );
       },
     ),
+
+
+
+
     GoRoute(
-      path: '/confirm-order/:invoiceId',
-      name: 'confirm-order',
-      builder: (context, state) {
-        final Map<String, dynamic> extraData =
-            state.extra as Map<String, dynamic>;
-        return ConfirmOrderProductScreen(
-          invoice: extraData['invoice'] as InvoiceModel,
-          products: extraData['products'] as List<ProductModel>,
-          customer: extraData['customer'] as CustomerModel,
-        );
-      },
-    ),
+  path: '/confirm-order/:deliveryDataId',
+  name: 'confirm-order',
+  builder: (context, state) {
+    final deliveryDataId = state.pathParameters['deliveryDataId']!;
+    final extra = state.extra as Map<String, dynamic>?;
+    final invoiceNumber = extra?['invoiceNumber'] ?? 'Unknown';
+    
+    return ConfirmOrderProductScreen(
+      deliveryDataId: deliveryDataId,
+      invoiceNumber: invoiceNumber,
+    );
+  },
+),
     GoRoute(
       path: '/finalize-deliveries',
       name: 'finalize-deliveries',
@@ -225,39 +237,39 @@ final router = GoRouter(
       builder: (context, state) {
         final customerId = state.pathParameters['customerId']!;
         return CompletedCustomerDetailsScreen(
-          customerId: customerId,
+           collectionId: customerId,
         );
       },
     ),
-    GoRoute(
-      path: '/view-returns',
-      name: 'view-returns',
-      builder: (context, state) => const ReturnScreen(),
-    ),
-    GoRoute(
-      path: '/return-details/:customerId',
-      name: 'return-details',
-      builder: (context, state) {
-        final customerId = state.pathParameters['customerId']!;
-        return SpecificReturnCustomerScreen(
-          customerId: customerId,
-        );
-      },
-    ),
+    // GoRoute(
+    //   path: '/view-returns',
+    //   name: 'view-returns',
+    //   builder: (context, state) => const ReturnScreen(),
+    // ),
+    // GoRoute(
+    //   path: '/return-details/:customerId',
+    //   name: 'return-details',
+    //   builder: (context, state) {
+    //     final customerId = state.pathParameters['customerId']!;
+    //     return SpecificReturnCustomerScreen(
+    //       customerId: customerId,
+    //     );
+    //   },
+    // ),
     GoRoute(
   path: '/summary-collection/:customerId',
   builder: (context, state) {
     final customerId = state.pathParameters['customerId']!;
-    return CustomersCollectionScreen(customerId: customerId);
+    return CustomersCollectionScreen( collectionId: customerId,);
   },
 ),
-GoRoute(
-  path: '/summary-return/:customerId',
-  builder: (context, state) {
-    final customerId = state.pathParameters['customerId']!;
-    return CustomersReturnScreen(customerId: customerId);
-  },
-),
+// GoRoute(
+//   path: '/summary-return/:customerId',
+//   builder: (context, state) {
+//     final customerId = state.pathParameters['customerId']!;
+//     return CustomersReturnScreen(customerId: customerId);
+//   },
+// ),
 
     GoRoute(
       path: '/view-uc',

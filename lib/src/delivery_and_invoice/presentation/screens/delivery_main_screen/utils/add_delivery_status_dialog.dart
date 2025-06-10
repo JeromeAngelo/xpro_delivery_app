@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
+
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 
 class AddDeliveryStatusScreen extends StatefulWidget {
-  final CustomerEntity customer;
+  final DeliveryDataEntity customer;
 
   const AddDeliveryStatusScreen({
     super.key,
@@ -157,7 +158,7 @@ class _AddDeliveryStatusScreenState extends State<AddDeliveryStatusScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.customer.storeName ?? 'Customer',
+              widget.customer.customer.target!.name ?? 'Customer',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -214,15 +215,15 @@ class _AddDeliveryStatusScreenState extends State<AddDeliveryStatusScreen> {
                               //       ),
                               //     );
 
-                              final customerBloc = context.read<CustomerBloc>();
+                              final customerBloc = context.read<DeliveryDataBloc>();
                               await Future.wait<void>([
                                 customerBloc.stream.firstWhere(
-                                    (state) => state is CustomerLocationLoaded),
+                                    (state) => state is DeliveryDataLoaded),
                                 Future(() => customerBloc.add(
-                                    LoadLocalCustomerLocationEvent(
+                                    GetLocalDeliveryDataByIdEvent(
                                         widget.customer.id ?? ''))),
                                 Future(() => customerBloc.add(
-                                    GetCustomerLocationEvent(
+                                    GetDeliveryDataByIdEvent(
                                         widget.customer.id ?? ''))),
                               ]);
 

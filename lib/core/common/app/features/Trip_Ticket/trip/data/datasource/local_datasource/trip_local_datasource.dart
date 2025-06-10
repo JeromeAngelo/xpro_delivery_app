@@ -1,30 +1,26 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/delivery_team/data/models/delivery_team_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/personels/data/models/personel_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Delivery_Team/vehicle/data/model/vehicle_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/data/model/customer_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/products/data/model/product_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/model/end_trip_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/data/models/otp_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/data/model/customer_data_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
 
+import '../../../../invoice_data/data/model/invoice_data_model.dart';
 import '../../../../../end_trip_checklist/data/model/end_trip_checklist_model.dart';
-import '../../../../completed_customer/data/models/completed_customer_model.dart';
-import '../../../../return_product/data/model/return_model.dart';
-import '../../../../transaction/data/model/transaction_model.dart';
-import '../../../../undeliverable_customer/data/model/undeliverable_customer_model.dart';
+
 
 abstract class TripLocalDatasource {
   Future<TripModel> loadTrip();
@@ -32,7 +28,6 @@ abstract class TripLocalDatasource {
   Future<(TripModel, String)> acceptTrip(String tripId);
   Future<void> saveTrip(TripModel trip);
   Future<void> autoSaveTrip(TripModel trip);
-  Future<void> saveCustomers(List<CustomerModel> customers);
   Future<void> saveDeliveryTeam(DeliveryTeamModel deliveryTeam);
   Future<void> savePersonnel(List<PersonelModel> personnel);
   Future<void> saveVehicles(List<VehicleModel> vehicles);
@@ -51,11 +46,7 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
   TripModel? _cachedTrip;
   String? _trackingId;
 
-  TripLocalDatasourceImpl(
-    this._store,
-    this._tripBox,
-    this._pocketBaseClient,
-  );
+  TripLocalDatasourceImpl(this._store, this._tripBox, this._pocketBaseClient);
 
   @override
   Future<TripModel> loadTrip() async {
@@ -82,8 +73,9 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
   Future<TripModel> searchTripByNumber(String tripNumberId) async {
     debugPrint('🔍 Searching for trip: $tripNumberId');
 
-    final trips =
-        _tripBox.getAll().where((trip) => trip.tripNumberId == tripNumberId);
+    final trips = _tripBox.getAll().where(
+      (trip) => trip.tripNumberId == tripNumberId,
+    );
 
     if (trips.isEmpty) {
       debugPrint('❌ Trip not found: $tripNumberId');
@@ -93,7 +85,6 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
     debugPrint('✅ Found trip: ${trips.first.tripNumberId}');
     return trips.first;
   }
-
 @override
 Future<(TripModel, String)> acceptTrip(String inputTripId) async {
   debugPrint('🔄 Processing trip acceptance locally');
@@ -136,27 +127,91 @@ Future<(TripModel, String)> acceptTrip(String inputTripId) async {
   debugPrint('📝 Generating local checklist items');
   final checklistBox = _store.box<ChecklistModel>();
   final checklistIds = checklistBox.putMany(checklistItems);
+  
   debugPrint('✅ Created ${checklistIds.length} checklist items locally');
 
-  // Create accepted trip model with checklist
+  // Create delivery team with personnel and vehicle
+  final deliveryTeamModel = DeliveryTeamModel(
+    id: 'local_delivery_team_${DateTime.now().millisecondsSinceEpoch}',
+    collectionId: 'delivery_team',
+    collectionName: 'delivery_team',
+    personels: [], // Will be populated from remote data
+    checklist: checklistItems,
+    vehicleList: [], // Will be populated from remote data
+    activeDeliveries: 0,
+    totalDelivered: 0,
+    undeliveredCustomers: 0,
+    totalDistanceTravelled: 0.0,
+    created: DateTime.now(),
+    updated: DateTime.now(),
+  );
+
+  // Save delivery team to local storage
+  final deliveryTeamBox = _store.box<DeliveryTeamModel>();
+  final deliveryTeamId = deliveryTeamBox.put(deliveryTeamModel);
+  debugPrint('✅ Created delivery team with ID: $deliveryTeamId');
+
+  // Create OTP record
+  final otpModel = OtpModel(
+    id: 'local_otp_${DateTime.now().millisecondsSinceEpoch}',
+   
+    otpCode: null,
+    isVerified: false,
+    verifiedAt: null,
+    generatedCode: '123456',
+    intransitOdometer: null,
+   
+  );
+
+  final otpBox = _store.box<OtpModel>();
+  final otpId = otpBox.put(otpModel);
+  debugPrint('✅ Created OTP with ID: $otpId');
+
+  // Create End Trip OTP record
+  final endTripOtpModel = EndTripOtpModel(
+    id: 'local_end_trip_otp_${DateTime.now().millisecondsSinceEpoch}',
+    
+    otpCode: null,
+    isVerified: false,
+    verifiedAt: null,
+    generatedCode: '123456',
+    endTripOdometer: null,
+   
+  );
+
+  final endTripOtpBox = _store.box<EndTripOtpModel>();
+  final endTripOtpId = endTripOtpBox.put(endTripOtpModel);
+  debugPrint('✅ Created End Trip OTP with ID: $endTripOtpId');
+
+  // Create accepted trip model with all required relationships
   final acceptedTrip = TripModel(
     id: inputTripId,
     collectionId: 'trips',
     collectionName: 'trips',
-    customersList: const [],
-    personelsList: const [],
+    deliveryDataList: const [], // Will be populated from remote
+    personelsList: const [], // Will be populated from remote
     checklistItems: checklistItems,
-    vehicleList: const [],
+    vehicleList: const [], // Will be populated from remote
     created: DateTime.now(),
     updated: DateTime.now(),
     isAccepted: true,
     timeAccepted: DateTime.now(),
-    objectBoxId: 1
+    objectBoxId: 1,
   );
+
+  // Set up relationships
+  acceptedTrip.deliveryTeam.target = deliveryTeamModel;
+  acceptedTrip.otp.target = otpModel;
+  acceptedTrip.endTripOtp.target = endTripOtpModel;
+  acceptedTrip.checklist.addAll(checklistItems);
 
   // Store in local database
   final savedTripId = _tripBox.put(acceptedTrip);
   debugPrint('✅ Trip saved with ObjectBox ID: $savedTripId');
+
+  // Update delivery team with trip reference
+  deliveryTeamModel.tripId = inputTripId;
+  deliveryTeamBox.put(deliveryTeamModel);
 
   // Link trip to current user
   final userBox = _store.box<LocalUsersModel>();
@@ -174,17 +229,181 @@ Future<(TripModel, String)> acceptTrip(String inputTripId) async {
     'tripNumberId': acceptedTrip.tripNumberId,
     'trip': {
       'id': acceptedTrip.id,
-      'tripNumberId': acceptedTrip.tripNumberId
+      'tripNumberId': acceptedTrip.tripNumberId,
     },
-    'tokenKey': currentUser.token
+    'tokenKey': currentUser.token,
   };
 
   await prefs.setString('user_data', jsonEncode(updatedUserData));
   debugPrint('✅ Updated user data in SharedPreferences with new trip');
 
   _cachedTrip = acceptedTrip;
+  
+  // Generate tracking ID for consistency with remote
+  _trackingId = 'local_tracking_${DateTime.now().millisecondsSinceEpoch}';
+  
   return (acceptedTrip, _trackingId ?? '');
 }
+
+// Add method to sync remote data after trip acceptance
+Future<void> syncRemoteTripData(TripModel remoteTripData) async {
+  try {
+    debugPrint('🔄 Syncing remote trip data to local storage');
+    
+    // Get the local trip
+    final localTrip = await loadTrip();
+    
+    // Sync delivery data
+    if (remoteTripData.deliveryData.isNotEmpty) {
+      final deliveryDataBox = _store.box<DeliveryDataModel>();
+      final customerBox = _store.box<CustomerDataModel>();
+      final invoiceBox = _store.box<InvoiceDataModel>();
+      
+      for (final deliveryData in remoteTripData.deliveryData) {
+        deliveryData.tripId = localTrip.id;
+        
+        // Save related customer and invoice data
+        if (deliveryData.customer.target != null) {
+          customerBox.put(deliveryData.customer.target!);
+          debugPrint('✅ Synced customer: ${deliveryData.customer.target!.id}');
+        }
+        if (deliveryData.invoice.target != null) {
+          invoiceBox.put(deliveryData.invoice.target!);
+          debugPrint('✅ Synced invoice: ${deliveryData.invoice.target!.id}');
+        }
+        
+        deliveryDataBox.put(deliveryData);
+      }
+      debugPrint('✅ Synced ${remoteTripData.deliveryData.length} delivery data records');
+    }
+
+    // Sync personnel
+    if (remoteTripData.personels.isNotEmpty) {
+      final personnelBox = _store.box<PersonelModel>();
+      for (final personnel in remoteTripData.personels) {
+        personnel.tripId = localTrip.id;
+        personnelBox.put(personnel);
+      }
+      debugPrint('✅ Synced ${remoteTripData.personels.length} personnel');
+    }
+
+    // Sync vehicles
+    if (remoteTripData.vehicle.isNotEmpty) {
+      final vehicleBox = _store.box<VehicleModel>();
+      for (final vehicle in remoteTripData.vehicle) {
+        vehicle.tripId = localTrip.id;
+        vehicleBox.put(vehicle);
+      }
+      debugPrint('✅ Synced ${remoteTripData.vehicle.length} vehicles');
+    }
+
+    // Sync delivery team
+    if (remoteTripData.deliveryTeam.target != null) {
+      final deliveryTeamBox = _store.box<DeliveryTeamModel>();
+      final remoteDeliveryTeam = remoteTripData.deliveryTeam.target!;
+      remoteDeliveryTeam.tripId = localTrip.id;
+      deliveryTeamBox.put(remoteDeliveryTeam);
+      debugPrint('✅ Synced delivery team: ${remoteDeliveryTeam.id}');
+    }
+
+   
+
+    // Update the local trip with synced data
+    final updatedTrip = localTrip.copyWith(
+      deliveryDataList: remoteTripData.deliveryData,
+      personelsList: remoteTripData.personels,
+      vehicleList: remoteTripData.vehicle,
+    );
+
+    // Set up relationships
+    if (remoteTripData.deliveryTeam.target != null) {
+      updatedTrip.deliveryTeam.target = remoteTripData.deliveryTeam.target;
+    }
+    
+    updatedTrip.deliveryData.addAll(remoteTripData.deliveryData);
+    updatedTrip.personels.addAll(remoteTripData.personels);
+    updatedTrip.vehicle.addAll(remoteTripData.vehicle);
+
+    // Save updated trip
+    _tripBox.put(updatedTrip);
+    _cachedTrip = updatedTrip;
+    
+    debugPrint('✅ Remote trip data synced successfully');
+    
+  } catch (e) {
+    debugPrint('❌ Failed to sync remote trip data: $e');
+    throw CacheException(message: 'Failed to sync remote trip data: $e');
+  }
+}
+
+// Add method to get complete trip data with all relationships
+Future<TripModel> getCompleteTripData() async {
+  try {
+    debugPrint('📦 Loading complete trip data with all relationships');
+    
+    final trip = await loadTrip();
+    
+    // Load delivery data
+    final deliveryDataBox = _store.box<DeliveryDataModel>();
+    final deliveryDataList = deliveryDataBox.query(
+      DeliveryDataModel_.tripId.equals(trip.id ?? '')
+    ).build().find();
+    
+    // Load personnel
+    final personnelBox = _store.box<PersonelModel>();
+    final personnelList = personnelBox.query(
+      PersonelModel_.tripId.equals(trip.id ?? '')
+    ).build().find();
+    
+    // Load vehicles
+    final vehicleBox = _store.box<VehicleModel>();
+    final vehicleList = vehicleBox.query(
+      VehicleModel_.tripId.equals(trip.id ?? '')
+    ).build().find();
+    
+    // Load delivery vehicles
+    final deliveryVehicleBox = _store.box<DeliveryVehicleModel>();
+    final deliveryVehicleList = deliveryVehicleBox.query(
+      DeliveryVehicleModel_.tripId.equals(trip.id ?? '')
+    ).build().find();
+    
+    // Load delivery team
+    final deliveryTeamBox = _store.box<DeliveryTeamModel>();
+    final deliveryTeam = deliveryTeamBox.query(
+      DeliveryTeamModel_.tripId.equals(trip.id ?? '')
+    ).build().findFirst();
+    
+    debugPrint('📊 Complete trip data loaded:');
+    debugPrint('   🚛 Delivery Data: ${deliveryDataList.length}');
+    debugPrint('   👥 Personnel: ${personnelList.length}');
+    debugPrint('   🚗 Vehicles: ${vehicleList.length}');
+    debugPrint('   🚚 Delivery Vehicles: ${deliveryVehicleList.length}');
+    debugPrint('   👨‍💼 Delivery Team: ${deliveryTeam?.id ?? 'None'}');
+    
+    // Create complete trip model
+    final completeTrip = trip.copyWith(
+      deliveryDataList: deliveryDataList,
+      personelsList: personnelList,
+      vehicleList: vehicleList,
+    );
+    
+    // Set up relationships
+    if (deliveryTeam != null) {
+      completeTrip.deliveryTeam.target = deliveryTeam;
+    }
+    
+    completeTrip.deliveryData.addAll(deliveryDataList);
+    completeTrip.personels.addAll(personnelList);
+    completeTrip.vehicle.addAll(vehicleList);
+    
+    return completeTrip;
+    
+  } catch (e) {
+    debugPrint('❌ Failed to load complete trip data: $e');
+    throw CacheException(message: 'Failed to load complete trip data: $e');
+  }
+}
+
 
 
   @override
@@ -227,13 +446,11 @@ Future<(TripModel, String)> acceptTrip(String inputTripId) async {
       debugPrint('📊 LOCAL: Storage verification:');
       debugPrint('   🚛 Delivery Team: ${storedTrip?.deliveryTeam.target?.id}');
       debugPrint('   👥 Personnel: ${storedTrip?.personels.length}');
-      debugPrint('   🏪 Customers: ${storedTrip?.customers.length}');
     } catch (e) {
       debugPrint('❌ LOCAL: Save failed - $e');
       throw CacheException(message: e.toString());
     }
   }
-
 @override
 Future<void> autoSaveTrip(TripModel trip) async {
   try {
@@ -249,6 +466,28 @@ Future<void> autoSaveTrip(TripModel trip) async {
       deliveryTeam.tripId = trip.id;
       deliveryTeamBox.put(deliveryTeam);
       debugPrint('✅ Saved delivery team: ${deliveryTeam.id}');
+    }
+
+    // Save delivery data if it exists
+    if (trip.deliveryData.isNotEmpty) {
+      final deliveryDataBox = _store.box<DeliveryDataModel>();
+      final customerBox = _store.box<CustomerDataModel>();
+      final invoiceBox = _store.box<InvoiceDataModel>();
+      
+      for (final delivery in trip.deliveryData) {
+        delivery.tripId = trip.id;
+        
+        // Save related customer and invoice data first
+        if (delivery.customer.target != null) {
+          customerBox.put(delivery.customer.target!);
+        }
+        if (delivery.invoice.target != null) {
+          invoiceBox.put(delivery.invoice.target!);
+        }
+        
+        deliveryDataBox.put(delivery);
+      }
+      debugPrint('✅ Saved ${trip.deliveryData.length} delivery data records');
     }
 
     if (trip.otp.target != null) {
@@ -297,20 +536,11 @@ Future<void> autoSaveTrip(TripModel trip) async {
       debugPrint('✅ Saved ${trip.checklist.length} checklist items');
     }
 
-    // Save customers
-    if (trip.customers.isNotEmpty) {
-      final customerBox = _store.box<CustomerModel>();
-      for (final customer in trip.customers) {
-        customer.tripId = trip.id;
-        customerBox.put(customer);
-      }
-      debugPrint('✅ Saved ${trip.customers.length} customers');
-    }
+   
 
     // Create a complete trip model with all fields
     final tripToSave = TripModel(
       id: trip.id,
-   //pocketbaseId: trip.id, // Important for queries by ID
       collectionId: trip.collectionId,
       collectionName: trip.collectionName,
       tripNumberId: trip.tripNumberId,
@@ -322,7 +552,7 @@ Future<void> autoSaveTrip(TripModel trip) async {
       timeAccepted: trip.timeAccepted ?? DateTime.now(),
       isEndTrip: trip.isEndTrip,
       timeEndTrip: trip.timeEndTrip,
-      objectBoxId: 1
+      objectBoxId: 1,
     );
 
     // Save the trip
@@ -346,16 +576,13 @@ Future<void> autoSaveTrip(TripModel trip) async {
     // Update user data in SharedPreferences to include trip
     final prefs = await SharedPreferences.getInstance();
     final storedUserData = prefs.getString('user_data');
-    
+
     if (storedUserData != null) {
       try {
         final userData = jsonDecode(storedUserData);
         userData['tripNumberId'] = trip.tripNumberId;
-        userData['trip'] = {
-          'id': trip.id,
-          'tripNumberId': trip.tripNumberId
-        };
-        
+        userData['trip'] = {'id': trip.id, 'tripNumberId': trip.tripNumberId};
+
         await prefs.setString('user_data', jsonEncode(userData));
         debugPrint('✅ Updated user data in SharedPreferences with trip info');
       } catch (e) {
@@ -400,19 +627,58 @@ Future<void> autoSaveTrip(TripModel trip) async {
     }
   }
 
+  Future<void> cacheDeliveryDataForTrip(String tripId) async {
+  try {
+    debugPrint('📦 Caching delivery data for trip: $tripId');
+    
+    // You'll need to fetch delivery data from remote and cache it
+    // This should be called after trip acceptance
+    
+    // Example of how to cache delivery data:
+    // final deliveryDataBox = _store.box<DeliveryDataModel>();
+    // final customerBox = _store.box<CustomerModel>();
+    // final invoiceBox = _store.box<InvoiceModel>();
+    
+    // Fetch delivery data from remote source (you'll need to implement this)
+    // final remoteDeliveryData = await _fetchDeliveryDataFromRemote(tripId);
+    
+    // Cache customers first
+    // for (final delivery in remoteDeliveryData) {
+    //   if (delivery.customerData != null) {
+    //     customerBox.put(delivery.customerData!);
+    //   }
+    //   if (delivery.invoiceData != null) {
+    //     invoiceBox.put(delivery.invoiceData!);
+    //   }
+    // }
+    
+    // Then cache delivery data with relationships
+    // deliveryDataBox.putMany(remoteDeliveryData);
+    
+    debugPrint('✅ Delivery data cached successfully');
+  } catch (e) {
+    debugPrint('❌ Failed to cache delivery data: $e');
+    throw CacheException(message: e.toString());
+  }
+}
+
+
   @override
   Future<void> saveChecklist(List<ChecklistModel> checklist) async {
     debugPrint(
-        '💾 Saving ${checklist.length} checklist items to local storage');
+      '💾 Saving ${checklist.length} checklist items to local storage',
+    );
     final checklistBox = _store.box<ChecklistModel>();
     checklistBox.putMany(checklist);
   }
 
-  @override
-  Future<void> saveCustomers(List<CustomerModel> customers) async {
-    debugPrint('💾 Saving ${customers.length} customers to local storage');
-    final customerBox = _store.box<CustomerModel>();
-    customerBox.putMany(customers);
+
+  Future<void> saveDeliveryData(List<DeliveryDataModel> deliveryData) async {
+    debugPrint(
+      '💾 Saving ${deliveryData.length} delivery data to local storage',
+    );
+    final deliveryDataBox = _store.box<DeliveryDataModel>();
+    deliveryDataBox.putMany(deliveryData);
   }
 
   @override
@@ -441,10 +707,11 @@ Future<void> autoSaveTrip(TripModel trip) async {
   Future<String> calculateTotalTripDistance(String tripId) async {
     try {
       debugPrint('📊 LOCAL: Calculating total trip distance');
-      final trip = _tripBox
-          .query(TripModel_.pocketbaseId.equals(tripId))
-          .build()
-          .findFirst();
+      final trip =
+          _tripBox
+              .query(TripModel_.pocketbaseId.equals(tripId))
+              .build()
+              .findFirst();
 
       if (trip != null) {
         final startOdometer = trip.otp.target?.intransitOdometer ?? '0';
@@ -456,7 +723,8 @@ Future<void> autoSaveTrip(TripModel trip) async {
 
         _tripBox.put(trip);
         debugPrint(
-            '✅ LOCAL: Total trip distance calculated: $totalDistance km');
+          '✅ LOCAL: Total trip distance calculated: $totalDistance km',
+        );
         return totalDistance;
       } else {
         throw const CacheException(message: 'Trip not found in local storage');
@@ -466,113 +734,109 @@ Future<void> autoSaveTrip(TripModel trip) async {
       throw CacheException(message: e.toString());
     }
   }
-@override
-Future<void> endTrip() async {
-  try {
-    debugPrint('🧹 Starting complete data cleanup');
 
-    // Get current user before clearing data
-    final prefs = await SharedPreferences.getInstance();
-    final storedUserData = prefs.getString('user_data');
-    
-    if (storedUserData != null) {
-      try {
-        // Parse the stored user data
-        final userData = jsonDecode(storedUserData);
-        
-        // Update user's trip assignment in ObjectBox
-        final userBox = _store.box<LocalUsersModel>();
-        
-        // Find the current user
-        final users = userBox.getAll();
-        for (final user in users) {
-          // Clear trip assignment
-          user.trip.target = null;
-          user.tripId = null;
-          userBox.put(user);
-          debugPrint('✅ Cleared trip assignment for user: ${user.id}');
+  @override
+  Future<void> endTrip() async {
+    try {
+      debugPrint('🧹 Starting complete data cleanup');
+
+      // Get current user before clearing data
+      final prefs = await SharedPreferences.getInstance();
+      final storedUserData = prefs.getString('user_data');
+
+      if (storedUserData != null) {
+        try {
+          // Parse the stored user data
+          final userData = jsonDecode(storedUserData);
+
+          // Update user's trip assignment in ObjectBox
+          final userBox = _store.box<LocalUsersModel>();
+
+          // Find the current user
+          final users = userBox.getAll();
+          for (final user in users) {
+            // Clear trip assignment
+            user.trip.target = null;
+            user.tripId = null;
+            userBox.put(user);
+            debugPrint('✅ Cleared trip assignment for user: ${user.id}');
+          }
+
+          // Create updated user data without trip information
+          final updatedUserData = {
+            'id': userData['id'],
+            'collectionId': userData['collectionId'],
+            'collectionName': userData['collectionName'],
+            'email': userData['email'],
+            'name': userData['name'],
+            'tripNumberId': null, // Explicitly set to null
+            'trip': null, // Explicitly set to null
+            'tokenKey': userData['tokenKey'],
+          };
+
+          // Save the updated user data to SharedPreferences
+          await prefs.setString('user_data', jsonEncode(updatedUserData));
+          debugPrint(
+            '✅ Updated user data in SharedPreferences - removed trip assignment',
+          );
+
+          // Also remove any trip-related keys completely
+          await prefs.remove('trip');
+          await prefs.remove('tripNumberId');
+          await prefs.remove('tripId');
+          debugPrint('✅ Removed all trip-related keys from SharedPreferences');
+        } catch (e) {
+          debugPrint('⚠️ Error updating user data: $e');
+          // Continue with cleanup even if user data update fails
         }
-        
-        // Create updated user data without trip information
-        final updatedUserData = {
-          'id': userData['id'],
-          'collectionId': userData['collectionId'],
-          'collectionName': userData['collectionName'],
-          'email': userData['email'],
-          'name': userData['name'],
-          'tripNumberId': null,  // Explicitly set to null
-          'trip': null,          // Explicitly set to null
-          'tokenKey': userData['tokenKey']
-        };
-        
-        // Save the updated user data to SharedPreferences
-        await prefs.setString('user_data', jsonEncode(updatedUserData));
-        debugPrint('✅ Updated user data in SharedPreferences - removed trip assignment');
-        
-        // Also remove any trip-related keys completely
-        await prefs.remove('trip');
-        await prefs.remove('tripNumberId');
-        await prefs.remove('tripId');
-        debugPrint('✅ Removed all trip-related keys from SharedPreferences');
-      } catch (e) {
-        debugPrint('⚠️ Error updating user data: $e');
-        // Continue with cleanup even if user data update fails
       }
+
+      // Clear all ObjectBox data
+      _store.box<TripModel>().removeAll();
+      _store.box<DeliveryTeamModel>().removeAll();
+      _store.box<PersonelModel>().removeAll();
+      _store.box<VehicleModel>().removeAll();
+      _store.box<ChecklistModel>().removeAll();
+      _store.box<DeliveryUpdateModel>().removeAll();
+      _store.box<EndTripChecklistModel>().removeAll();
+      _store.box<DeliveryDataModel>().removeAll();
+      _store.box<DeliveryVehicleModel>().removeAll();
+
+      _store.box<TripUpdateModel>().removeAll();
+      _store.box<OtpModel>().removeAll(); // Also clear OTP data
+      _store.box<EndTripOtpModel>().removeAll(); // Also clear EndTripOtp data
+      debugPrint('✅ Cleared all ObjectBox data');
+
+      // Clear cached states
+      _cachedTrip = null;
+      _trackingId = null;
+
+      // Clear other SharedPreferences data
+      await prefs.remove('user_trip_data');
+      await prefs.remove('trip_cache');
+      await prefs.remove('delivery_status_cache');
+      await prefs.remove('customer_cache');
+      await prefs.remove('active_trip');
+      await prefs.remove('last_trip_id');
+      await prefs.remove('last_trip_number');
+
+      // Verify the cleanup was successful
+      final tripCount = _store.box<TripModel>().count();
+      final userDataAfterCleanup = prefs.getString('user_data');
+      if (userDataAfterCleanup != null) {
+        final parsedData = jsonDecode(userDataAfterCleanup);
+        debugPrint('✅ Verification - User data after cleanup:');
+        debugPrint('   👤 Name: ${parsedData['name']}');
+        debugPrint('   📧 Email: ${parsedData['email']}');
+        debugPrint('   🎫 Trip Number: ${parsedData['tripNumberId']}');
+        debugPrint('   🎫 Trip: ${parsedData['trip']}');
+      }
+      debugPrint('✅ Verification - Trip count after cleanup: $tripCount');
+
+      debugPrint('✅ All data and caches cleared successfully');
+    } catch (e) {
+      debugPrint('❌ Error clearing data: $e');
+      throw CacheException(message: e.toString());
     }
-
-    // Clear all ObjectBox data
-    _store.box<TripModel>().removeAll();
-    _store.box<CustomerModel>().removeAll();
-    _store.box<DeliveryTeamModel>().removeAll();
-    _store.box<PersonelModel>().removeAll();
-    _store.box<VehicleModel>().removeAll();
-    _store.box<ChecklistModel>().removeAll();
-    _store.box<InvoiceModel>().removeAll();
-    _store.box<ProductModel>().removeAll();
-    _store.box<DeliveryUpdateModel>().removeAll();
-    _store.box<CompletedCustomerModel>().removeAll();
-    _store.box<ReturnModel>().removeAll();
-    _store.box<TransactionModel>().removeAll();
-    _store.box<EndTripChecklistModel>().removeAll();
-    _store.box<UndeliverableCustomerModel>().removeAll();
-    _store.box<TripUpdateModel>().removeAll();
-    _store.box<OtpModel>().removeAll();      // Also clear OTP data
-    _store.box<EndTripOtpModel>().removeAll(); // Also clear EndTripOtp data
-    debugPrint('✅ Cleared all ObjectBox data');
-
-    // Clear cached states
-    _cachedTrip = null;
-    _trackingId = null;
-
-    // Clear other SharedPreferences data
-    await prefs.remove('user_trip_data');
-    await prefs.remove('trip_cache');
-    await prefs.remove('delivery_status_cache');
-    await prefs.remove('customer_cache');
-    await prefs.remove('active_trip');
-    await prefs.remove('last_trip_id');
-    await prefs.remove('last_trip_number');
-    
-    // Verify the cleanup was successful
-    final tripCount = _store.box<TripModel>().count();
-    final userDataAfterCleanup = prefs.getString('user_data');
-    if (userDataAfterCleanup != null) {
-      final parsedData = jsonDecode(userDataAfterCleanup);
-      debugPrint('✅ Verification - User data after cleanup:');
-      debugPrint('   👤 Name: ${parsedData['name']}');
-      debugPrint('   📧 Email: ${parsedData['email']}');
-      debugPrint('   🎫 Trip Number: ${parsedData['tripNumberId']}');
-      debugPrint('   🎫 Trip: ${parsedData['trip']}');
-    }
-    debugPrint('✅ Verification - Trip count after cleanup: $tripCount');
-
-    debugPrint('✅ All data and caches cleared successfully');
-  } catch (e) {
-    debugPrint('❌ Error clearing data: $e');
-    throw CacheException(message: e.toString());
   }
-}
-
-
-
 }

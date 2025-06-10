@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+
 class TileForTimeline extends StatelessWidget {
-  final CustomerEntity customer;
+  final DeliveryDataEntity deliveryData;
   final bool isLocalTile;
 
   const TileForTimeline({
     super.key,
-    required this.customer,
+    required this.deliveryData,
     this.isLocalTile = false,
   });
 
-  static CustomerEntity defaultLocalTile(String tripId) => CustomerEntity(
-    storeName: 'Start Delivery',
-    address: 'Warehouse',
-    municipality: 'San Fernando',
-    province: 'Pampanga',
-    deliveryStatusList: [
+  static DeliveryDataEntity defaultLocalTile(String tripId) => DeliveryDataEntity(
+    id: 'start_delivery',
+    deliveryNumber: 'START-001',
+    paymentMode: 'Cash',
+    created: DateTime.now(),
+    updated: DateTime.now(),
+    hasTrip: true,
+    deliveryUpdatesList: [
       DeliveryUpdateModel(
         title: 'Start Delivery',
         subtitle: 'Trip accepted and delivery started',
@@ -36,7 +39,8 @@ class TileForTimeline extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is UserTripLoaded) {
-          final latestStatus = customer.deliveryStatus.lastOrNull;
+          final customer = deliveryData.customer.target;
+          final latestStatus = _getLatestDeliveryStatus();
 
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -56,7 +60,7 @@ class TileForTimeline extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            customer.storeName ?? 'No Store Name',
+                            customer?.name ?? 'No Customer Name',
                             style: Theme.of(context).textTheme.titleMedium!.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -75,7 +79,7 @@ class TileForTimeline extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '${customer.address}, ${customer.municipality}, ${customer.province}',
+                            _buildAddressString(customer),
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
@@ -129,7 +133,7 @@ class TileForTimeline extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _formatTime(latestStatus.time ?? DateTime.now()),
+                                _formatTime(latestStatus.created ?? DateTime.now()),
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall!
@@ -138,7 +142,7 @@ class TileForTimeline extends StatelessWidget {
                                     ),
                               ),
                               Text(
-                                _formatDate(latestStatus.time ?? DateTime.now()),
+                                _formatDate(latestStatus.created ?? DateTime.now()),
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall!
@@ -165,6 +169,31 @@ class TileForTimeline extends StatelessWidget {
         return const SizedBox.shrink();
       },
     );
+  }
+
+  dynamic _getLatestDeliveryStatus() {
+    final deliveryUpdates = deliveryData.deliveryUpdates.toList();
+    return deliveryUpdates.isNotEmpty ? deliveryUpdates.last : null;
+  }
+
+  String _buildAddressString(dynamic customer) {
+    if (customer == null) return 'No address available';
+    
+    final addressParts = <String>[];
+    
+    if (customer.barangay != null && customer.barangay!.isNotEmpty) {
+      addressParts.add(customer.barangay!);
+    }
+    if (customer.municipality != null && customer.municipality!.isNotEmpty) {
+      addressParts.add(customer.municipality!);
+    }
+    if (customer.province != null && customer.province!.isNotEmpty) {
+      addressParts.add(customer.province!);
+    }
+    
+    return addressParts.isNotEmpty 
+        ? addressParts.join(', ')
+        : 'No address available';
   }
 
   String _formatTime(DateTime dateTime) {

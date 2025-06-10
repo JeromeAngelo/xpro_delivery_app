@@ -1,8 +1,8 @@
 
 import 'package:equatable/equatable.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 
 
 abstract class TripState extends Equatable {
@@ -59,14 +59,16 @@ class TrackingStarted extends TripState {
 
 class TripLoaded extends TripState {
   final TripEntity trip;
-  final CustomerState customerState;
+  final DeliveryDataState customerState;
   final TripUpdatesState timelineState;
+  final DeliveryDataState deliveryDataState;
   final bool isFromSearch;
 
   const TripLoaded({
     required this.trip,
     required this.customerState,
     required this.timelineState,
+    required this.deliveryDataState,
     this.isFromSearch = false,
   });
 

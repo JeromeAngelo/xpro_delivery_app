@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/default_drawer.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/screen/summary_collection_screen.dart';
-import 'package:x_pro_delivery_app/src/summary_trip/presentation/screen/summary_return_screen.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/screen/summary_undeliverable_screen.dart';
 
 class SummaryTripView extends StatefulWidget {
@@ -80,7 +79,7 @@ class _SummaryTripViewState extends State<SummaryTripView>
         controller: _tabController,
         children: const [
           SummaryCollectionScreen(),
-          SummaryReturnScreen(),
+     //     SummaryReturnScreen(),
           SummaryUndeliverableScreen(),
         ],
       ),

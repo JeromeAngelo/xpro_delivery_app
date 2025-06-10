@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/entity/delivery_update_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 
@@ -29,6 +30,7 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
     super.assignedTo,
     super.image,
     super.remarks,
+    super.deliveryData,
   }) : pocketbaseId = id ?? '';
 
   factory DeliveryUpdateModel.fromJson(DataMap json) {
@@ -52,6 +54,22 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       return false;
     }
 
+    // Handle expanded data for deliveryData relation
+    final expandedData = json['expand'] as Map<String, dynamic>?;
+    DeliveryDataModel? deliveryDataModel;
+
+    if (expandedData != null && expandedData.containsKey('deliveryData')) {
+      final deliveryData = expandedData['deliveryData'];
+      if (deliveryData != null) {
+        if (deliveryData is Map) {
+          deliveryDataModel = DeliveryDataModel.fromJson(deliveryData as DataMap);
+        }
+      }
+    } else if (json['deliveryData'] != null) {
+      // If not expanded, just store the ID
+      deliveryDataModel = DeliveryDataModel(id: json['deliveryData'].toString());
+    }
+
     return DeliveryUpdateModel(
       id: json['id'],
       collectionId: json['collectionId']?.toString() ?? '',
@@ -61,11 +79,11 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       time: parseDate(json['time']),
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
-      customer: json['customer']?.toString(),
       isAssigned: parseBoolean(json['isAssigned']),
       assignedTo: json['assignedTo']?.toString(),
       remarks: json['remarks']?.toString(),
       image: json['image']?.toString(), // Added image parsing
+      deliveryData: deliveryDataModel,
     );
   }
 
@@ -79,11 +97,11 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       'time': time,
       'created': created,
       'updated': updated,
-      'customer': customer,
       'isAssigned': isAssigned,
       'assignedTo': assignedTo,
       'remarks': remarks,
       'image': image,
+      'deliveryData': deliveryData.target?.id,
     };
   }
 
@@ -98,7 +116,6 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       time: now,
       created: now,
       updated: now,
-      customer: customerId ?? '',
       isAssigned: false,
       assignedTo: null,
       image: null,
@@ -115,13 +132,13 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
     DateTime? time,
     DateTime? created,
     DateTime? updated,
-    String? customer,
     bool? isAssigned,
     String? assignedTo,
     String? image,
     String? remarks,
+    DeliveryDataModel? deliveryData,
   }) {
-    return DeliveryUpdateModel(
+    final model = DeliveryUpdateModel(
       id: id ?? this.id,
       collectionId: collectionId ?? this.collectionId,
       collectionName: collectionName ?? this.collectionName,
@@ -130,11 +147,19 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       time: time ?? this.time,
       created: created ?? this.created,
       updated: updated ?? this.updated,
-      customer: customer ?? this.customer,
       isAssigned: isAssigned ?? this.isAssigned,
       assignedTo: assignedTo ?? this.assignedTo,
       remarks: remarks ?? this.remarks,
       image: image ?? this.image,
     );
+    
+    // Handle deliveryData relation
+    if (deliveryData != null) {
+      model.deliveryData.target = deliveryData;
+    } else if (this.deliveryData.target != null) {
+      model.deliveryData.target = this.deliveryData.target;
+    }
+    
+    return model;
   }
 }

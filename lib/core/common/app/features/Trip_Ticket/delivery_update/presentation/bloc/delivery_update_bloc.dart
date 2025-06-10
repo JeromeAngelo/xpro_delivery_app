@@ -142,27 +142,34 @@ Future<void> _onGetDeliveryStatusChoices(
 }
 
 
-  Future<void> _onCompleteDelivery(
+   Future<void> _onCompleteDelivery(
     CompleteDeliveryEvent event,
     Emitter<DeliveryUpdateState> emit,
   ) async {
+    debugPrint('🔄 Starting delivery completion for delivery data: ${event.deliveryData.id}');
     emit(DeliveryUpdateLoading());
 
     final result = await _completeDelivery(
       CompleteDeliveryParams(
-        customerId: event.customerId,
-        invoices: event.invoices,
-        transactions: event.transactions,
-        returns: event.returns,
-        deliveryStatus: event.deliveryStatus,
+        deliveryData: event.deliveryData,
       ),
     );
 
     result.fold(
-      (failure) => emit(DeliveryUpdateError(failure.message)),
-      (_) => emit(DeliveryCompletionSuccess(event.customerId)),
+      (failure) {
+        debugPrint('❌ Delivery completion failed: ${failure.message}');
+        emit(DeliveryUpdateError(failure.message));
+      },
+      (_) {
+        debugPrint('✅ Delivery completion successful');
+        emit(DeliveryCompletionSuccess(
+          deliveryDataId: event.deliveryData.id ?? '',
+          tripId: event.deliveryData.trip.target?.id,
+        ));
+      },
     );
   }
+
 
   Future<void> _onCheckEndDeliveryStatus(
   CheckEndDeliveryStatusEvent event,

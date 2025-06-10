@@ -2,30 +2,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/domain/entity/customer_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer/presentation/bloc/customer_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/presentation/bloc/invoice_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/utils/confirm_btn.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/utils/invoice_list.dart';
 
 class InvoiceScreen extends StatefulWidget {
-  final CustomerEntity? selectedCustomer;
+  final DeliveryDataEntity? selectedCustomer;
 
-  const InvoiceScreen({
-    super.key,
-    this.selectedCustomer,
-  });
+  const InvoiceScreen({super.key, this.selectedCustomer});
 
   @override
   State<InvoiceScreen> createState() => _InvoiceScreenState();
 }
-class _InvoiceScreenState extends State<InvoiceScreen> with AutomaticKeepAliveClientMixin {
+
+class _InvoiceScreenState extends State<InvoiceScreen>
+    with AutomaticKeepAliveClientMixin {
   bool _isDataInitialized = false;
-  InvoiceState? _cachedState;
+  DeliveryDataState? _cachedState;
 
   @override
   void initState() {
@@ -37,34 +33,30 @@ class _InvoiceScreenState extends State<InvoiceScreen> with AutomaticKeepAliveCl
 
   void _initializeLocalData() {
     if (!_isDataInitialized && widget.selectedCustomer != null) {
-      debugPrint('📱 Loading local data for customer: ${widget.selectedCustomer!.id}');
-      
-      // Load local customer data
-      context.read<CustomerBloc>().add(
-        LoadLocalCustomerLocationEvent(widget.selectedCustomer!.id ?? '')
+      debugPrint(
+        '📱 Loading local data for delivery: ${widget.selectedCustomer!.id}',
       );
-      
-      // Load local invoices for customer
-      context.read<InvoiceBloc>().add(
-        LoadLocalInvoicesByCustomerEvent(widget.selectedCustomer!.id ?? '')
+
+      // Load local delivery data which includes invoice information
+      context.read<DeliveryDataBloc>().add(
+        GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''),
       );
-      
+
+      context.read<DeliveryDataBloc>().add(
+        GetDeliveryDataByIdEvent(widget.selectedCustomer!.id!),
+      );
+
       _isDataInitialized = true;
     }
   }
 
   Future<void> _refreshData() async {
     if (widget.selectedCustomer?.id != null) {
-      debugPrint('🔄 Refreshing customer and invoice data');
-      
-      // Refresh customer data
-      context.read<CustomerBloc>().add(
-        GetCustomerLocationEvent(widget.selectedCustomer!.id!)
-      );
-      
-      // Refresh customer invoices
-      context.read<InvoiceBloc>().add(
-        GetInvoicesByCustomerEvent(widget.selectedCustomer!.id!)
+      debugPrint('🔄 Refreshing delivery and invoice data');
+
+      // Refresh delivery data which includes invoice data
+      context.read<DeliveryDataBloc>().add(
+        GetDeliveryDataByIdEvent(widget.selectedCustomer!.id!),
       );
     }
   }
@@ -72,44 +64,31 @@ class _InvoiceScreenState extends State<InvoiceScreen> with AutomaticKeepAliveCl
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        child: MultiBlocListener(
-          listeners: [
-            BlocListener<CustomerBloc, CustomerState>(
-              listenWhen: (previous, current) => 
-                current is CustomerLocationLoaded,
-              listener: (context, state) {
-                if (state is CustomerLocationLoaded) {
-                  debugPrint('📍 Customer location loaded');
-                }
-              },
-            ),
-            BlocListener<InvoiceBloc, InvoiceState>(
-              listenWhen: (previous, current) => 
-                current is CustomerInvoicesLoaded,
-              listener: (context, state) {
-                if (state is CustomerInvoicesLoaded) {
-                  setState(() {
-                    _cachedState = state;
-                  });
-                }
-              },
-            ),
-          ],
-          child: BlocBuilder<InvoiceBloc, InvoiceState>(
-            buildWhen: (previous, current) =>
-                current is CustomerInvoicesLoaded || 
-                current is InvoiceLoading ||
-                current is InvoiceError,
+        child: BlocListener<DeliveryDataBloc, DeliveryDataState>(
+          listenWhen: (previous, current) => current is DeliveryDataLoaded,
+          listener: (context, state) {
+            if (state is DeliveryDataLoaded) {
+              setState(() {
+                _cachedState = state;
+              });
+            }
+          },
+          child: BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+            buildWhen:
+                (previous, current) =>
+                    current is DeliveryDataLoaded ||
+                    current is DeliveryDataLoading ||
+                    current is DeliveryDataError,
             builder: (context, state) {
-              if (state is InvoiceLoading && _cachedState == null) {
+              if (state is DeliveryDataLoading && _cachedState == null) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (state is InvoiceError) {
+              if (state is DeliveryDataError) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -124,17 +103,19 @@ class _InvoiceScreenState extends State<InvoiceScreen> with AutomaticKeepAliveCl
                 );
               }
 
-              final effectiveState = (state is CustomerInvoicesLoaded) 
-                  ? state 
-                  : (_cachedState as CustomerInvoicesLoaded?);
-              
-              if (effectiveState != null && widget.selectedCustomer != null) {
-                final customerInvoices = effectiveState.invoices;
+              final effectiveState =
+                  (state is DeliveryDataLoaded)
+                      ? state
+                      : (_cachedState as DeliveryDataLoaded?);
 
-                if (customerInvoices.isEmpty) {
+              if (effectiveState != null && widget.selectedCustomer != null) {
+                final deliveryData = effectiveState.deliveryData;
+                final invoice = deliveryData.invoice.target;
+
+                if (invoice == null) {
                   return const Center(
                     child: Text(
-                      'No invoices available for this customer',
+                      'Please Wait.......',
                       style: TextStyle(fontSize: 16),
                     ),
                   );
@@ -150,19 +131,23 @@ class _InvoiceScreenState extends State<InvoiceScreen> with AutomaticKeepAliveCl
                             sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
-                                  final invoice = customerInvoices[index];
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 5),
                                     child: InvoiceList(
-                                      invoice: invoice,
+                                      deliveryData: deliveryData,
                                       onTap: () {
-                                        final route = '/product-list/${invoice.id}/${invoice.invoiceNumber}';
-                                        context.push(route, extra: widget.selectedCustomer);
+                                        final route =
+                                            '/product-list/${invoice.id}/${invoice.refId ?? invoice.name}';
+                                        context.push(
+                                          route,
+                                          extra: widget.selectedCustomer,
+                                        );
                                       },
                                     ),
                                   );
                                 },
-                                childCount: customerInvoices.length,
+                                childCount:
+                                    1, // Single delivery data with its invoice
                               ),
                             ),
                           ),
@@ -172,7 +157,9 @@ class _InvoiceScreenState extends State<InvoiceScreen> with AutomaticKeepAliveCl
                     Padding(
                       padding: const EdgeInsets.all(10),
                       child: ConfirmBtn(
-                        invoices: customerInvoices,
+                        invoices: [
+                          invoice,
+                        ], // Pass the invoice from delivery data
                         customer: widget.selectedCustomer!,
                       ),
                     ),

@@ -1,8 +1,5 @@
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/entity/delivery_update_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice/data/models/invoice_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_product/data/model/return_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/transaction/data/model/transaction_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 abstract class DeliveryUpdateRepo {
   const DeliveryUpdateRepo();
@@ -13,12 +10,8 @@ abstract class DeliveryUpdateRepo {
   ResultFuture<void> updateDeliveryStatus(String customerId, String statusId);
   
   // Completion and initialization
-  ResultFuture<void> completeDelivery(String customerId, {
-    required List<InvoiceModel> invoices,
-    required List<TransactionModel> transactions,
-    required List<ReturnModel> returns,
-    required List<DeliveryUpdateModel> deliveryStatus,
-  });
+   // Completion and initialization - Updated to use delivery data
+  ResultFuture<void> completeDelivery(DeliveryDataEntity deliveryData);
   // Enhanced status check function
   ResultFuture<DataMap> checkEndDeliverStatus(String tripId);
   ResultFuture<DataMap> checkLocalEndDeliverStatus(String tripId);

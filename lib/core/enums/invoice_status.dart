@@ -1,6 +1,1 @@
-enum InvoiceStatus {
-  truck,
-  unloaded,
-  completed,
-  undelivered
-}
+enum InvoiceStatus { none, truck, unloading, unloaded, delivered, cancelled }

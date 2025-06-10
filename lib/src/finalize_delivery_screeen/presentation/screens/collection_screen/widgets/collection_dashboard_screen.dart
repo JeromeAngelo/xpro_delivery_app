@@ -1,101 +1,34 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/completed_customer/presentation/bloc/completed_customer_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/domain/entity/collection_entity.dart';
 
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
+class CollectionDashboardScreen extends StatelessWidget {
+  final List<CollectionEntity> collections;
+  final bool isOffline;
 
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
-class CollectionDashboardScreen extends StatefulWidget {
-  const CollectionDashboardScreen({super.key});
-
-  @override
-  State<CollectionDashboardScreen> createState() => _CollectionDashboardScreenState();
-}
-
-class _CollectionDashboardScreenState extends State<CollectionDashboardScreen> {
-  CompletedCustomerState? _cachedState;
-  late final AuthBloc _authBloc;
-  late final CompletedCustomerBloc _completedCustomerBloc;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    debugPrint('📊 Collection Dashboard initialized');
-    _initializeBlocs();
-    _loadInitialData();
-  }
-
-  void _initializeBlocs() {
-    _authBloc = context.read<AuthBloc>();
-    _completedCustomerBloc = context.read<CompletedCustomerBloc>();
-  }
-
-  Future<void> _loadInitialData() async {
-    if (_isInitialized) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    final storedData = prefs.getString('user_data');
-    
-    if (storedData != null) {
-      final userData = jsonDecode(storedData);
-      final tripData = userData['trip'] as Map<String, dynamic>?;
-      
-      if (tripData != null && tripData['id'] != null) {
-        debugPrint('🔄 Loading collection data for trip: ${tripData['id']}');
-        _completedCustomerBloc
-          ..add(LoadLocalCompletedCustomerEvent(tripData['id']))
-          ..add(GetCompletedCustomerEvent(tripData['id']));
-      }
-    }
-    _isInitialized = true;
-  }
+  const CollectionDashboardScreen({
+    super.key,
+    required this.collections,
+    this.isOffline = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<AuthBloc, AuthState>(
-          listener: (context, state) {
-            if (state is UserTripLoaded && state.trip.id != null) {
-              debugPrint('🎫 User trip loaded: ${state.trip.id}');
-              _completedCustomerBloc
-                ..add(LoadLocalCompletedCustomerEvent(state.trip.id!))
-                ..add(GetCompletedCustomerEvent(state.trip.id!));
-            }
-          },
-        ),
-        BlocListener<CompletedCustomerBloc, CompletedCustomerState>(
-          listener: (context, state) {
-            if (state is CompletedCustomerLoaded) {
-              debugPrint('✅ Collection data loaded and cached');
-              setState(() => _cachedState = state);
-            }
-          },
-        ),
-      ],
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 30),
-              _buildDashboardContent(),
-            ],
-          ),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          children: [
+            _buildHeader(context),
+            const SizedBox(height: 30),
+            _buildDashboardContent(context),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
         Expanded(
@@ -122,61 +55,125 @@ class _CollectionDashboardScreenState extends State<CollectionDashboardScreen> {
     );
   }
 
-  Widget _buildDashboardContent() {
-    return BlocBuilder<CompletedCustomerBloc, CompletedCustomerState>(
-      builder: (context, state) {
-        final effectiveState = _cachedState ?? state;
+  Widget _buildDashboardContent(BuildContext context) {
+    if (collections.isEmpty) {
+      return _buildEmptyState(context);
+    }
 
-        if (effectiveState is CompletedCustomerLoaded) {
-          final customers = effectiveState.customers;
-          final totalAmount = customers.fold<double>(
-            0,
-            (sum, customer) => sum + (customer.totalAmount ?? 0),
-          );
-          final totalInvoices = customers.fold<int>(
-            0,
-            (sum, customer) => sum + customer.invoices.length,
-          );
+    if (isOffline) {
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.offline_bolt, color: Colors.orange, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'Offline Data',
+                  style: TextStyle(color: Colors.orange, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildCollectionStats(context),
+        ],
+      );
+    }
 
-          return GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 3,
-            crossAxisSpacing: 5,
-            mainAxisSpacing: 22,
-            children: [
-              _buildInfoItem(
-                context,
-                Icons.attach_money,
-                '₱${NumberFormat('#,##0.00').format(totalAmount)}',
-                'Total Collections',
-              ),
-              _buildInfoItem(
-                context,
-                Icons.receipt,
-                totalInvoices.toString(),
-                'Total Invoices',
-              ),
-              _buildInfoItem(
-                context,
-                Icons.people,
-                customers.length.toString(),
-                'Completed',
-              ),
-              _buildInfoItem(
-                context,
-                Icons.calendar_month_outlined,
-                customers.isNotEmpty && customers.first.trip.target?.timeAccepted != null
-                    ? customers.first.trip.target!.timeAccepted!.toLocal().toString().split(' ')[0]
-                    : 'Today',
-                'Date Completed',
-              ),
-            ],
-          );
-        }
-        return const Center(child: CircularProgressIndicator());
+    return _buildCollectionStats(context);
+  }
+
+  Widget _buildCollectionStats(BuildContext context) {
+    debugPrint('📊 DASHBOARD: Calculating collection statistics');
+    debugPrint('📊 Total collections received: ${collections.length}');
+
+    // Calculate total amount from collection entities directly
+    final totalAmount = collections.fold<double>(
+      0,
+      (sum, collection) {
+        final collectionAmount = collection.totalAmount ?? 0.0;
+        debugPrint('💰 Collection ${collection.id}: ₱${NumberFormat('#,##0.00').format(collectionAmount)}');
+        return sum + collectionAmount;
       },
+    );
+
+    debugPrint('💰 DASHBOARD: Total amount calculated: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
+
+    // Total collections count
+    final totalCollections = collections.length;
+    debugPrint('📦 DASHBOARD: Total collections count: $totalCollections');
+    
+    // Count delivery items (invoices) from collection entities
+    final totalDeliveryItems = collections.fold<int>(
+      0,
+      (sum, collection) {
+        // Check if collection has an invoice relation
+        final hasInvoice = collection.invoice.target != null;
+        debugPrint('📄 Collection ${collection.id} has invoice: $hasInvoice');
+        return sum + (hasInvoice ? 1 : 0);
+      },
+    );
+
+    debugPrint('📄 DASHBOARD: Total delivery items (invoices): $totalDeliveryItems');
+
+    // Get completion date from trip data
+    String completionDate = 'Today';
+    if (collections.isNotEmpty && collections.first.trip.target?.timeAccepted != null) {
+      final tripDate = collections.first.trip.target!.timeAccepted!;
+      completionDate = DateFormat('MMM dd, yyyy').format(tripDate.toLocal());
+      debugPrint('📅 DASHBOARD: Completion date: $completionDate');
+    } else {
+      debugPrint('📅 DASHBOARD: Using default completion date: $completionDate');
+    }
+
+    // Debug summary
+    debugPrint('📊 DASHBOARD SUMMARY:');
+    debugPrint('   💰 Total Amount: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
+    debugPrint('   📄 Delivery Items: $totalDeliveryItems');
+    debugPrint('   📦 Collections: $totalCollections');
+    debugPrint('   📅 Date: $completionDate');
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: 3,
+      crossAxisSpacing: 5,
+      mainAxisSpacing: 22,
+      children: [
+        _buildInfoItem(
+          context,
+          Icons.attach_money,
+          '₱${NumberFormat('#,##0.00').format(totalAmount)}',
+          'Total Collections',
+        ),
+        _buildInfoItem(
+          context,
+          Icons.inventory,
+          totalDeliveryItems.toString(),
+          'Delivery Items',
+        ),
+        _buildInfoItem(
+          context,
+          Icons.collections,
+          totalCollections.toString(),
+          'Collections',
+        ),
+        _buildInfoItem(
+          context,
+          Icons.calendar_month_outlined,
+          completionDate,
+          'Date Completed',
+        ),
+      ],
     );
   }
 
@@ -190,8 +187,9 @@ class _CollectionDashboardScreenState extends State<CollectionDashboardScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.transparent,
+          color: isOffline ? Colors.orange.withOpacity(0.3) : Colors.transparent,
         ),
+        color: isOffline ? Colors.orange.withOpacity(0.05) : null,
       ),
       child: Row(
         children: [
@@ -199,7 +197,9 @@ class _CollectionDashboardScreenState extends State<CollectionDashboardScreen> {
             padding: const EdgeInsets.only(right: 5),
             child: Icon(
               icon,
-              color: Theme.of(context).colorScheme.primary,
+              color: isOffline 
+                  ? Colors.orange 
+                  : Theme.of(context).colorScheme.primary,
               size: 20,
             ),
           ),
@@ -239,9 +239,32 @@ class _CollectionDashboardScreenState extends State<CollectionDashboardScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _cachedState = null;
-    super.dispose();
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.collections_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Collections Found',
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Collections will appear here once available',
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                ),
+          ),
+        ],
+      ),
+    );
   }
 }
