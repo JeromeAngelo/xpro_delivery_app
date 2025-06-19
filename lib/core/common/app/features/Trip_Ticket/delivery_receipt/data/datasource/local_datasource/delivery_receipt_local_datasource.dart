@@ -4,7 +4,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 import 'package:pdf/pdf.dart';
-import '../../../../../../../../../src/transcation_screen/presentation/utils/delivery_orders_pdf.dart';
+import '../../../../../../../../../src/transaction_screen/presentation/utils/delivery_orders_pdf.dart';
 
 abstract class DeliveryReceiptLocalDatasource {
   /// Get all delivery receipts

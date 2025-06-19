@@ -166,9 +166,57 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
                 ],
               ),
             ),
+            // In the build method, update the TabBarView section:
             body: TabBarView(
               controller: _tabController,
-              children: const [DeliveryListScreen(), UpdateTimelineView()],
+              children: [
+                const DeliveryListScreen(),
+                // Pass the tripId to UpdateTimelineView
+                BlocBuilder<AuthBloc, AuthState>(
+                  builder: (context, state) {
+                    String? tripId;
+
+                    if (state is UserTripLoaded) {
+                      tripId = state.trip.id;
+                    } else if (state is UserByIdLoaded) {
+                      tripId = state.user.trip.target?.id;
+                    }
+
+                    if (tripId != null) {
+                      return UpdateTimelineView(tripId: tripId);
+                    } else {
+                      return const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No trip assigned',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Please contact your administrator',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
             ),
           );
         },

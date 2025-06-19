@@ -35,8 +35,9 @@ import 'package:x_pro_delivery_app/src/summary_trip/presentation/view/summary_tr
 import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/view/get_trip_ticket_view.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/widgets/accepting_trip_loading_screen.dart';
 
+import '../../src/deliveries_and_timeline/presentation/widgets/add_trip_update_screen.dart';
 import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
-import '../../src/transcation_screen/presentation/view/transaction_view.dart';
+import '../../src/transaction_screen/presentation/view/transaction_view.dart';
 import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_event.dart';
 
@@ -116,6 +117,16 @@ final router = GoRouter(
       name: 'delivery-and-timeline', // Add name for the route
       builder: (context, state) => const DeliveryAndTimeline(),
     ),
+    // Add this route after the existing routes
+GoRoute(
+  path: '/add-trip-update/:tripId',
+  name: 'add-trip-update',
+  builder: (context, state) {
+    final tripId = state.pathParameters['tripId']!;
+    return AddTripUpdateScreen(tripId: tripId);
+  },
+),
+
     GoRoute(
   path: '/delivery-and-invoice/:customerId',
   builder: (context, state) {

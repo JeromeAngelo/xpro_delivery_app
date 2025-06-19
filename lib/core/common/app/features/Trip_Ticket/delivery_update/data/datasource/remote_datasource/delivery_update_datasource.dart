@@ -8,6 +8,10 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
+import 'dart:typed_data' show Uint8List;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+
 
 abstract class DeliveryUpdateDatasource {
   Future<List<DeliveryUpdateModel>> getDeliveryStatusChoices(String customerId);
@@ -590,61 +594,174 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       );
     }
   }
+@override
+Future<void> createDeliveryStatus(
+  String customerId, {
+  required String title,
+  required String subtitle,
+  required DateTime time,
+  required bool isAssigned,
+  required String image,
+}) async {
+  try {
+    debugPrint('📝 Creating delivery status for customer: $customerId');
 
-  @override
-  Future<void> createDeliveryStatus(
-    String customerId, {
-    required String title,
-    required String subtitle,
-    required DateTime time,
-    required bool isAssigned,
-    required String image,
-  }) async {
-    try {
-      debugPrint('📝 Creating delivery status for customer: $customerId');
+    final files = <MultipartFile>[];
 
-      final files = <String, MultipartFile>{};
-
-      if (image.isNotEmpty) {
-        final imageBytes = await File(image).readAsBytes();
-        files['image'] = MultipartFile.fromBytes(
-          'image',
-          imageBytes,
-          filename: 'delivery_status_image.jpg',
-        );
+    if (image.isNotEmpty) {
+      try {
+        final imageFile = File(image);
+        if (await imageFile.exists()) {
+          debugPrint('📸 Processing delivery status image...');
+          
+          // Compress the image to very small size
+          final compressedImageBytes = await _compressImageToSmallSize(image);
+          if (compressedImageBytes != null) {
+            files.add(MultipartFile.fromBytes(
+              'image',
+              compressedImageBytes,
+              filename: 'delivery_status_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            ));
+            debugPrint('✅ Added compressed delivery status image (${compressedImageBytes.length} bytes)');
+          } else {
+            // Fallback to original if compression fails
+            final originalBytes = await imageFile.readAsBytes();
+            files.add(MultipartFile.fromBytes(
+              'image',
+              originalBytes,
+              filename: 'delivery_status_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            ));
+            debugPrint('⚠️ Using original image (compression failed): ${originalBytes.length} bytes');
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error processing delivery status image: $e');
       }
+    }
 
-      final deliveryUpdateRecord = await _pocketBaseClient
-          .collection('delivery_update')
-          .create(
-            body: {
-              'customer': customerId,
-              'title': title,
-              'subtitle': subtitle,
-              'time': time.toIso8601String(),
-              'isAssigned': true,
-            },
-            files: files.values.toList(),
-          );
+    // Calculate total file size
+    final totalSize = files.fold<int>(0, (sum, file) => sum + file.length);
+    debugPrint('📦 Total upload size: ${(totalSize / 1024 / 1024).toStringAsFixed(2)} MB');
 
-      debugPrint('✅ Created delivery status: ${deliveryUpdateRecord.id}');
+    debugPrint('📦 Creating delivery status with ${files.length} files');
+    debugPrint('⏱️ Starting optimized remote creation...');
 
-      await _pocketBaseClient
-          .collection('customers')
-          .update(
-            customerId,
-            body: {
-              'deliveryStatus+': [deliveryUpdateRecord.id],
-            },
-          );
+    final startTime = DateTime.now();
 
-      debugPrint('✅ Updated customer with new delivery status');
-    } catch (e) {
-      debugPrint('❌ Failed to create delivery status: $e');
-      throw ServerException(
-        message: 'Failed to create delivery status: $e',
-        statusCode: '500',
+    final deliveryUpdateRecord = await _pocketBaseClient
+        .collection('delivery_update')
+        .create(
+          body: {
+            'deliveryData': customerId,
+            'title': title,
+            'subtitle': subtitle,
+            'time': time.toIso8601String(),
+            'isAssigned': true,
+          },
+          files: files,
+        );
+
+    final endTime = DateTime.now();
+    final duration = endTime.difference(startTime);
+    debugPrint('⏱️ Remote creation took: ${duration.inMilliseconds}ms');
+
+    debugPrint('✅ Created delivery status: ${deliveryUpdateRecord.id}');
+
+    await _pocketBaseClient
+        .collection('deliveryData')
+        .update(
+          customerId,
+          body: {
+            'deliveryUpdates+': [deliveryUpdateRecord.id],
+          },
+        );
+
+    debugPrint('✅ Updated customer with new delivery status');
+  } catch (e) {
+    debugPrint('❌ Failed to create delivery status: $e');
+    throw ServerException(
+      message: 'Failed to create delivery status: $e',
+      statusCode: '500',
+    );
+  }
+}
+
+/// Compress image file to very small size for delivery status
+Future<Uint8List?> _compressImageToSmallSize(String imagePath) async {
+  try {
+    debugPrint('🗜️ Compressing delivery status image to very small size: $imagePath');
+    
+    // First compression pass - aggressive settings for very small file size
+    final firstPassBytes = await FlutterImageCompress.compressWithFile(
+      imagePath,
+      quality: 50, // Lower quality for smaller size
+      minWidth: 600, // Smaller max width
+      minHeight: 400, // Smaller max height
+      format: CompressFormat.jpeg,
+    );
+    
+    if (firstPassBytes == null) {
+      debugPrint('❌ First compression pass failed');
+      return null;
+    }
+    
+    // Check if we need a second pass for even smaller size
+    const maxSizeBytes = 500 * 1024; // 500KB max
+    if (firstPassBytes.length > maxSizeBytes) {
+      debugPrint('🔄 File still too large (${firstPassBytes.length} bytes), applying second compression pass...');
+      
+      // Create temporary file for second pass
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/temp_delivery_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await tempFile.writeAsBytes(firstPassBytes);
+      
+      // Second compression pass - even more aggressive
+      final secondPassBytes = await FlutterImageCompress.compressWithFile(
+        tempFile.path,
+        quality: 30, // Very low quality
+        minWidth: 400, // Even smaller dimensions
+        minHeight: 300,
+        format: CompressFormat.jpeg,
       );
+      
+      // Clean up temp file
+      try {
+        await tempFile.delete();
+      } catch (e) {
+        debugPrint('⚠️ Failed to delete temp file: $e');
+      }
+      
+      if (secondPassBytes != null) {
+        final originalSize = await File(imagePath).length();
+        debugPrint('📊 Delivery status image compressed (2 passes): ${originalSize} bytes -> ${secondPassBytes.length} bytes');
+        debugPrint('📉 Compression ratio: ${((originalSize - secondPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%');
+        return secondPassBytes;
+      } else {
+        debugPrint('⚠️ Second compression pass failed, using first pass result');
+        final originalSize = await File(imagePath).length();
+        debugPrint('📊 Delivery status image compressed (1 pass): ${originalSize} bytes -> ${firstPassBytes.length} bytes');
+        debugPrint('📉 Compression ratio: ${((originalSize - firstPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%');
+        return firstPassBytes;
+      }
+    } else {
+      final originalSize = await File(imagePath).length();
+      debugPrint('📊 Delivery status image compressed: ${originalSize} bytes -> ${firstPassBytes.length} bytes');
+      debugPrint('📉 Compression ratio: ${((originalSize - firstPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%');
+      return firstPassBytes;
+    }
+    
+  } catch (e) {
+    debugPrint('⚠️ Delivery status image compression failed: $e');
+    // Fallback to original file
+    try {
+      final originalBytes = await File(imagePath).readAsBytes();
+      debugPrint('📄 Using original image file: ${originalBytes.length} bytes');
+      return originalBytes;
+    } catch (fallbackError) {
+      debugPrint('❌ Failed to read original image file: $fallbackError');
+      return null;
     }
   }
+}
+
 }

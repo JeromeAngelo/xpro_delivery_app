@@ -18,6 +18,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/person
 import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';
 
+import '../common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart';
+
 class ObjectBoxStore {
   static ObjectBoxStore? _instance;
   final Store store;
@@ -118,5 +120,11 @@ Box<DeliveryReceiptItemsModel> get deliveryReceiptItemsBox {
   Box<CollectionModel> get deliveryCollectonBox {
     debugPrint('📦 Accessing DeliveryVehicleBox');
     return Box<CollectionModel>(store);
+  }
+
+
+  Box<ReturnItemsModel> get returnItems {
+    debugPrint('📦 Accessing DeliveryVehicleBox');
+    return Box<ReturnItemsModel>(store);
   }
 }

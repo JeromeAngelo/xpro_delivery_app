@@ -5,8 +5,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_state.dart';
 import 'package:x_pro_delivery_app/core/enums/mode_of_payment.dart';
-import 'package:x_pro_delivery_app/src/transcation_screen/presentation/utils/confirm_payment_btn.dart';
-import 'package:x_pro_delivery_app/src/transcation_screen/presentation/utils/customers_dashboard_trx.dart';
+import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/confirm_payment_btn.dart';
+import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/customers_dashboard_trx.dart';
 
 // Update the constructor to make generatedPdf optional:
 

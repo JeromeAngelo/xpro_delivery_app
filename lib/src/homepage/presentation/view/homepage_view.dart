@@ -54,6 +54,23 @@ class _HomepageViewState extends State<HomepageView>
     _authBloc = BlocProvider.of<AuthBloc>(context);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Check if we're returning to homepage from an important screen
+    _checkRouteRestoration();
+  }
+
+  Future<void> _checkRouteRestoration() async {
+    final savedRoute = await RouteUtils.getLastActiveRoute();
+    if (savedRoute == '/homepage') {
+      debugPrint('📍 Restored to homepage - refreshing data');
+      // Refresh data when restored to homepage
+      await _refreshHomeScreenOnly();
+    }
+  }
+
   void _setupDataListeners() {
     _authSubscription = _authBloc.stream.listen((state) {
       debugPrint('🔐 Auth State Update: ${state.runtimeType}');
@@ -204,178 +221,260 @@ class _HomepageViewState extends State<HomepageView>
     return null;
   }
 
-  Future<void> _refreshLocalData() async {
-    debugPrint('🔄 Starting local data refresh process');
+  // Add these methods to the _HomepageViewState class
 
-    // Get the current user ID from AuthBloc instead of UserProvider
-    final authState = _authBloc.state;
-    String? userId;
+  Future<void> _handleScreenRefresh() async {
+    debugPrint('🔄 Screen refresh initiated from AppBar');
 
-    if (authState is UserByIdLoaded) {
-      userId = authState.user.id;
-    } else if (authState is SignedIn) {
-      userId = authState.users.id;
-    } else if (authState is UserDataRefreshed) {
-      userId = authState.user.id;
-    } else {
-      // If we don't have the user ID in the current state, try to get it from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final storedData = prefs.getString('user_data');
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 16),
+            Text('Refreshing screen...'),
+          ],
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
 
-      if (storedData != null) {
-        try {
-          final userData = jsonDecode(storedData);
-          userId = userData['id'];
-        } catch (e) {
-          debugPrint('⚠️ Error parsing stored user data: $e');
-        }
-      }
-    }
+    try {
+      // Use the existing refresh method
+      await _refreshHomeScreenOnly();
 
-    if (userId == null) {
-      debugPrint(
-        '⚠️ Cannot refresh data: No user ID found in AuthBloc or local storage',
+      // Show success message
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 16),
+              Text('Screen refreshed successfully'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
       );
-
-      // Dispatch RefreshUserEvent to try to load user data
-      // _authBloc.add(const RefreshUserEvent());
-      return;
-    }
-
-    debugPrint('🔍 Found user ID: $userId - proceeding with refresh');
-
-    // First, refresh the user data to ensure we have the latest user info
-    // _authBloc.add(const RefreshUserEvent());
-
-    // Check if the user has a trip by looking at the AuthBloc state
-    bool hasTrip = false;
-    String? tripId;
-
-    if (authState is UserTripLoaded) {
-      hasTrip = authState.trip.id != null && authState.trip.id!.isNotEmpty;
-      tripId = authState.trip.id;
-      debugPrint(
-        '🔍 Trip status from current state: hasTrip=$hasTrip, tripId=$tripId',
+    } catch (e) {
+      debugPrint('❌ Screen refresh failed: $e');
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 16),
+              Expanded(child: Text('Refresh failed: ${e.toString()}')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
       );
-    } else {
-      // If we don't have trip info in the current state, check in SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final storedData = prefs.getString('user_data');
-
-      if (storedData != null) {
-        try {
-          final userData = jsonDecode(storedData);
-          final tripData = userData['trip'] as Map<String, dynamic>?;
-
-          if (tripData != null &&
-              tripData['id'] != null &&
-              tripData['id'].toString().isNotEmpty) {
-            hasTrip = true;
-            tripId = tripData['id'].toString();
-            debugPrint(
-              '🔍 Trip status from SharedPreferences: hasTrip=$hasTrip, tripId=$tripId',
-            );
-          } else {
-            debugPrint('🔍 No trip found in SharedPreferences');
-          }
-        } catch (e) {
-          debugPrint('⚠️ Error parsing trip data from SharedPreferences: $e');
-        }
-      }
-
-      // Double-check by loading trip data from the server
-      if (!hasTrip) {
-        debugPrint('🔍 No trip found locally, checking with server...');
-
-        // Create a completer to wait for the result
-        final completer = Completer<bool>();
-
-        // Subscribe to AuthBloc state changes
-        late final StreamSubscription subscription;
-        subscription = _authBloc.stream.listen((state) {
-          if (state is UserTripLoaded) {
-            hasTrip = state.trip.id != null && state.trip.id!.isNotEmpty;
-            tripId = state.trip.id;
-            debugPrint(
-              '🔍 Trip status from server: hasTrip=$hasTrip, tripId=$tripId',
-            );
-
-            if (!completer.isCompleted) {
-              completer.complete(hasTrip);
-            }
-            subscription.cancel();
-          } else if (state is AuthError) {
-            debugPrint('⚠️ Error loading trip data: ${state.message}');
-            if (!completer.isCompleted) {
-              completer.complete(false);
-            }
-            subscription.cancel();
-          }
-        });
-
-        // Dispatch event to load trip data
-        _authBloc.add(GetUserTripEvent(userId));
-
-        // Wait for the result with a timeout
-        try {
-          hasTrip = await completer.future.timeout(const Duration(seconds: 5));
-        } catch (e) {
-          debugPrint('⚠️ Timeout waiting for trip data: $e');
-          hasTrip = false;
-        }
-      }
     }
+  }
 
-    debugPrint('🔍 Final trip status: hasTrip=$hasTrip, tripId=$tripId');
+  Future<void> _handleFullSync() async {
+    debugPrint('🔄 Full sync initiated from AppBar');
 
-    if (hasTrip && tripId != null && tripId!.isNotEmpty) {
-      debugPrint('✅ User has an active trip - performing full data sync');
+    // Check if user has a trip first
+    final hasTrip = await _syncService.checkUserHasTrip(context);
 
-      // Show a loading indicator
+    if (!hasTrip) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Row(
             children: [
-              CircularProgressIndicator(strokeWidth: 2),
+              Icon(Icons.info, color: Colors.white),
               SizedBox(width: 16),
-              Text('Syncing data...'),
+              Text('No active trip found to sync'),
             ],
           ),
-          duration: Duration(
-            seconds: 30,
-          ), // Long duration as sync might take time
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              StreamBuilder<double>(
+                stream: _syncService.progressStream,
+                builder: (context, snapshot) {
+                  final progress = snapshot.data ?? 0.0;
+                  return Column(
+                    children: [
+                      CircularProgressIndicator(value: progress),
+                      const SizedBox(height: 16),
+                      Text('Syncing data... ${(progress * 100).toInt()}%'),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Please wait while we sync all your data',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      // Perform full sync
+      final success = await _syncService.syncAllData(context);
+
+      // Close progress dialog
+      if (mounted) Navigator.of(context).pop();
+
+      if (success) {
+        // Refresh the screen after successful sync
+        await _refreshHomeScreenOnly();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 16),
+                Text('Data synchronized successfully'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 16),
+                Text('Sync failed. Please try again.'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close progress dialog if still open
+      if (mounted) Navigator.of(context).pop();
+
+      debugPrint('❌ Full sync failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 16),
+              Expanded(child: Text('Sync error: ${e.toString()}')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handlePendingOperations() async {
+    debugPrint('🔄 Processing pending operations from AppBar');
+
+    // Check if there are pending operations
+    final pendingCount = _syncService.pendingSyncOperations.length;
+
+    if (pendingCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.info, color: Colors.white),
+              SizedBox(width: 16),
+              Text('No pending operations to process'),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Show processing indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 16),
+            Text('Processing $pendingCount pending operations...'),
+          ],
+        ),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+
+    try {
+      // Process pending operations
+      await _syncService.processPendingOperations();
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 16),
+              Text('Pending operations processed successfully'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
         ),
       );
 
-      // Perform the full data sync
-      //  final success = await _syncService.syncAllData(context);
-
-      // Hide the loading indicator
-      // ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      // // Show success or error message
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text(
-      //       success
-      //           ? 'Data synchronized successfully'
-      //           : 'Failed to synchronize data',
-      //     ),
-      //     backgroundColor: success ? Colors.green : Colors.red,
-      //     duration: const Duration(seconds: 3),
-      //   ),
-      // );
-    } else {
-      debugPrint('ℹ️ User does not have an active trip - skipping full sync');
-
-      // Just refresh the user data since there's no trip to sync
-      _authBloc.add(LoadLocalUserByIdEvent(userId));
-      _authBloc.add(LoadUserByIdEvent(userId));
-
+      // Refresh screen after processing
+      await _refreshHomeScreenOnly();
+    } catch (e) {
+      debugPrint('❌ Processing pending operations failed: $e');
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User data refreshed (no active trip found)'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 16),
+              Expanded(child: Text('Processing failed: ${e.toString()}')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -449,7 +548,7 @@ class _HomepageViewState extends State<HomepageView>
       automaticallyImplyLeading: false,
       actions: [
         PopupMenuButton<String>(
-          icon: const Icon(Icons.refresh),
+          icon: const Icon(Icons.sync),
           offset: const Offset(0, 45),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -457,7 +556,7 @@ class _HomepageViewState extends State<HomepageView>
           itemBuilder:
               (BuildContext context) => [
                 PopupMenuItem<String>(
-                  value: 'refresh',
+                  value: 'refresh_screen',
                   child: Row(
                     children: [
                       Icon(
@@ -465,20 +564,57 @@ class _HomepageViewState extends State<HomepageView>
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 12),
-                      const Text('Refresh Database'),
+                      const Text('Refresh Screen'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'sync_all',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.sync,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('Sync All Data'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'process_pending',
+                  child: Row(
+                    children: [
+                      Icon(Icons.cloud_upload, color: Colors.orange),
+                      const SizedBox(width: 12),
+                      const Text('Process Pending'),
                     ],
                   ),
                 ),
               ],
           onSelected: (String value) async {
-            if (value == 'refresh') {
-              _refreshLocalData();
+            // Save current route before any operation
+            await RouteUtils.saveCurrentRoute('/homepage');
+
+            switch (value) {
+              case 'refresh_screen':
+                await _handleScreenRefresh();
+                break;
+              case 'sync_all':
+                await _handleFullSync();
+                break;
+              case 'process_pending':
+                await _handlePendingOperations();
+                break;
             }
           },
         ),
         IconButton(
           icon: const Icon(Icons.supervised_user_circle),
-          onPressed: () => context.push('/delivery-team'),
+          onPressed: () async {
+            await RouteUtils.saveCurrentRoute('/homepage');
+            context.push('/delivery-team');
+          },
         ),
         const SizedBox(width: 10),
       ],

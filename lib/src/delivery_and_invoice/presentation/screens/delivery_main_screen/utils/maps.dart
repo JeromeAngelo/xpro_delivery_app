@@ -222,7 +222,7 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
 
       if (lat != null && lng != null) {
         final location = LatLng(lat, lng);
-        debugPrint('🗺️ Customer location: ${customer.storeName ?? customer.name} at $lat, $lng');
+        debugPrint('🗺️ Customer location: ${customer.name ?? customer.name} at $lat, $lng');
         return location;
       } else {
         debugPrint('⚠️ Invalid coordinates for customer: ${customer.storeName ?? customer.name}');

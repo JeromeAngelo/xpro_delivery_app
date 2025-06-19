@@ -45,6 +45,49 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
     RouteUtils.saveCurrentRoute('/checklist');
   }
 
+  @override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  
+  // Check if we need to restore to this route on app restart
+  _checkAndRestoreRoute();
+}
+
+Future<void> _checkAndRestoreRoute() async {
+  final savedRoute = await RouteUtils.getLastActiveRoute();
+  if (savedRoute == '/checklist') {
+    debugPrint('📍 Restored to important checklist screen');
+    // Ensure data is fresh when restored
+    _refreshAllData();
+  }
+}
+
+void _refreshAllData() {
+  SharedPreferences.getInstance().then((prefs) {
+    final storedData = prefs.getString('user_data');
+    if (storedData != null) {
+      final userData = jsonDecode(storedData);
+      final userId = userData['id'];
+      final tripData = userData['trip'] as Map<String, dynamic>?;
+
+      if (userId != null && tripData != null && tripData['id'] != null) {
+        // Refresh all data when restored to this important screen
+        _authBloc.add(LoadLocalUserByIdEvent(userId));
+        _authBloc.add(GetUserTripEvent(tripData['id']));
+        
+        _customerBloc
+          ..add(GetLocalDeliveryDataByTripIdEvent(tripData['id']))
+          ..add(GetDeliveryDataByTripIdEvent(tripData['id']));
+          
+        _checklistBloc
+          ..add(LoadLocalChecklistByTripIdEvent(tripData['id']))
+          ..add(LoadChecklistByTripIdEvent(tripData['id']));
+      }
+    }
+  });
+}
+
+
   void _initializeBlocs() {
     _authBloc = context.read<AuthBloc>();
     _checklistBloc = context.read<ChecklistBloc>();
@@ -416,9 +459,35 @@ Widget _buildChecklistSection() {
   }
 
   @override
-  void dispose() {
-    _cachedDeliveryDataState = null;
-    _cachedChecklistState = null;
-    super.dispose();
+void dispose() {
+  _cachedDeliveryDataState = null;
+  _cachedChecklistState = null;
+  
+  // Clear the saved route when leaving this important screen
+  // Only clear if user has completed the checklist process
+  _clearRouteIfCompleted();
+  
+  super.dispose();
+}
+
+Future<void> _clearRouteIfCompleted() async {
+  // Check if all checklist items are completed
+  if (_cachedChecklistState is ChecklistLoaded) {
+    final checklistState = _cachedChecklistState as ChecklistLoaded;
+    final allCompleted = checklistState.checklist.every(
+      (item) => item.isChecked ?? false,
+    );
+    
+    if (allCompleted) {
+      debugPrint('✅ Checklist completed, clearing saved route');
+      await RouteUtils.clearSavedRoute();
+    } else {
+      debugPrint('⚠️ Checklist not completed, keeping saved route');
+    }
   }
+}
+
+
+ 
+
 }

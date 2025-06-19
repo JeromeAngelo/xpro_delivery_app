@@ -14,8 +14,28 @@ import 'package:objectbox/internal.dart'
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
+import 'core/common/app/features/Trip_Ticket/cancelled_invoices/data/model/cancelled_invoice_model.dart';
+import 'core/common/app/features/Trip_Ticket/cancelled_invoices/domain/entity/cancelled_invoice_entity.dart';
+import 'core/common/app/features/Trip_Ticket/collection/data/model/collection_model.dart';
+import 'core/common/app/features/Trip_Ticket/collection/domain/entity/collection_entity.dart';
+import 'core/common/app/features/Trip_Ticket/customer_data/data/model/customer_data_model.dart';
+import 'core/common/app/features/Trip_Ticket/customer_data/domain/entity/customer_data_entity.dart';
+import 'core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
+import 'core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'core/common/app/features/Trip_Ticket/delivery_receipt/data/model/delivery_receipt_model.dart';
+import 'core/common/app/features/Trip_Ticket/delivery_receipt/domain/entity/delivery_receipt_entity.dart';
+import 'core/common/app/features/Trip_Ticket/delivery_receipt_items/data/model/delivery_receipt_items_model.dart';
+import 'core/common/app/features/Trip_Ticket/delivery_receipt_items/domain/entity/delivery_receipt_items_entity.dart';
 import 'core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
 import 'core/common/app/features/Trip_Ticket/delivery_update/domain/entity/delivery_update_entity.dart';
+import 'core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
+import 'core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/enitity/delivery_vehicle_entity.dart';
+import 'core/common/app/features/Trip_Ticket/invoice_data/data/model/invoice_data_model.dart';
+import 'core/common/app/features/Trip_Ticket/invoice_data/domain/entity/invoice_data_entity.dart';
+import 'core/common/app/features/Trip_Ticket/invoice_items/data/model/invoice_items_model.dart';
+import 'core/common/app/features/Trip_Ticket/invoice_items/domain/entity/invoice_items_entity.dart';
+import 'core/common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart';
+import 'core/common/app/features/Trip_Ticket/return_items/domain/entity/return_items_entity.dart';
 import 'core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
 import 'core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
@@ -36,24 +56,6 @@ import 'core/common/app/features/end_trip_otp/data/model/end_trip_model.dart';
 import 'core/common/app/features/end_trip_otp/domain/entity/end_trip_otp_entity.dart';
 import 'core/common/app/features/otp/data/models/otp_models.dart';
 import 'core/common/app/features/otp/domain/entity/otp_entity.dart';
-import 'core/common/app/features/Trip_Ticket/cancelled_invoices/data/model/cancelled_invoice_model.dart';
-import 'core/common/app/features/Trip_Ticket/cancelled_invoices/domain/entity/cancelled_invoice_entity.dart';
-import 'core/common/app/features/Trip_Ticket/collection/data/model/collection_model.dart';
-import 'core/common/app/features/Trip_Ticket/collection/domain/entity/collection_entity.dart';
-import 'core/common/app/features/Trip_Ticket/customer_data/data/model/customer_data_model.dart';
-import 'core/common/app/features/Trip_Ticket/customer_data/domain/entity/customer_data_entity.dart';
-import 'core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
-import 'core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-import 'core/common/app/features/Trip_Ticket/delivery_receipt/data/model/delivery_receipt_model.dart';
-import 'core/common/app/features/Trip_Ticket/delivery_receipt/domain/entity/delivery_receipt_entity.dart';
-import 'core/common/app/features/Trip_Ticket/delivery_receipt_items/data/model/delivery_receipt_items_model.dart';
-import 'core/common/app/features/Trip_Ticket/delivery_receipt_items/domain/entity/delivery_receipt_items_entity.dart';
-import 'core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
-import 'core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/enitity/delivery_vehicle_entity.dart';
-import 'core/common/app/features/Trip_Ticket/invoice_data/data/model/invoice_data_model.dart';
-import 'core/common/app/features/Trip_Ticket/invoice_data/domain/entity/invoice_data_entity.dart';
-import 'core/common/app/features/Trip_Ticket/invoice_items/data/model/invoice_items_model.dart';
-import 'core/common/app/features/Trip_Ticket/invoice_items/domain/entity/invoice_items_entity.dart';
 import 'src/auth/data/models/auth_models.dart';
 import 'src/auth/domain/entity/users_entity.dart';
 
@@ -1028,7 +1030,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(121, 5476341418432294988),
+        indexId: const obx_int.IdUid(123, 212432795640100884),
         relationTarget: 'TripModel',
       ),
     ],
@@ -1360,7 +1362,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(120, 4825664026656140278),
+        indexId: const obx_int.IdUid(122, 1171187708824140506),
         relationTarget: 'TripModel',
       ),
     ],
@@ -2646,6 +2648,130 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(70, 6479783549970940169),
+    name: 'ReturnItemsEntity',
+    lastPropertyId: const obx_int.IdUid(13, 7295034867755324763),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8382758819123203771),
+        name: 'dbId',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 1621906261954409005),
+        name: 'id',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 3356235032628822890),
+        name: 'collectionId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 4781598445333716715),
+        name: 'collectionName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 7954259085956512029),
+        name: 'tripId',
+        type: 11,
+        flags: 520,
+        indexId: const obx_int.IdUid(124, 8209766669906924453),
+        relationTarget: 'TripModel',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 3253875228766539923),
+        name: 'deliveryDataId',
+        type: 11,
+        flags: 520,
+        indexId: const obx_int.IdUid(125, 5472937549113458966),
+        relationTarget: 'DeliveryDataModel',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 6119117531245627649),
+        name: 'invoiceItemId',
+        type: 11,
+        flags: 520,
+        indexId: const obx_int.IdUid(126, 8417569755727327156),
+        relationTarget: 'InvoiceItemsModel',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 3005488892675054688),
+        name: 'invoiceDataId',
+        type: 11,
+        flags: 520,
+        indexId: const obx_int.IdUid(127, 4963583739483190802),
+        relationTarget: 'InvoiceDataModel',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 1216141050218175370),
+        name: 'refId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 6573874257112704081),
+        name: 'quantity',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 7707995984966269711),
+        name: 'uom',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 601389943062901165),
+        name: 'created',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 7295034867755324763),
+        name: 'updated',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(71, 1727574566052977972),
+    name: 'ReturnItemsModel',
+    lastPropertyId: const obx_int.IdUid(3, 7244768276797261303),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 6315903562355532096),
+        name: 'objectBoxId',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 1799277539243780407),
+        name: 'pocketbaseId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 7244768276797261303),
+        name: 'tripId',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -2686,8 +2812,8 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(69, 5638905333969246812),
-    lastIndexId: const obx_int.IdUid(121, 5476341418432294988),
+    lastEntityId: const obx_int.IdUid(71, 1727574566052977972),
+    lastIndexId: const obx_int.IdUid(127, 4963583739483190802),
     lastRelationId: const obx_int.IdUid(49, 8890252336964719573),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -2787,6 +2913,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
       130617342430599913,
       6693967078919351563,
       8409512806390582317,
+      4825664026656140278,
+      5476341418432294988,
     ],
     retiredPropertyUids: const [
       3346502891055187729,
@@ -6876,6 +7004,180 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    ReturnItemsEntity: obx_int.EntityDefinition<ReturnItemsEntity>(
+      model: _entities[42],
+      toOneRelations:
+          (ReturnItemsEntity object) => [
+            object.trip,
+            object.deliveryData,
+            object.invoiceItem,
+            object.invoiceData,
+          ],
+      toManyRelations: (ReturnItemsEntity object) => {},
+      getId: (ReturnItemsEntity object) => object.dbId,
+      setId: (ReturnItemsEntity object, int id) {
+        object.dbId = id;
+      },
+      objectToFB: (ReturnItemsEntity object, fb.Builder fbb) {
+        final idOffset = object.id == null ? null : fbb.writeString(object.id!);
+        final collectionIdOffset =
+            object.collectionId == null
+                ? null
+                : fbb.writeString(object.collectionId!);
+        final collectionNameOffset =
+            object.collectionName == null
+                ? null
+                : fbb.writeString(object.collectionName!);
+        final refIdOffset =
+            object.refId == null ? null : fbb.writeString(object.refId!);
+        final uomOffset =
+            object.uom == null ? null : fbb.writeString(object.uom!);
+        fbb.startTable(14);
+        fbb.addInt64(0, object.dbId);
+        fbb.addOffset(1, idOffset);
+        fbb.addOffset(2, collectionIdOffset);
+        fbb.addOffset(3, collectionNameOffset);
+        fbb.addInt64(4, object.trip.targetId);
+        fbb.addInt64(5, object.deliveryData.targetId);
+        fbb.addInt64(6, object.invoiceItem.targetId);
+        fbb.addInt64(7, object.invoiceData.targetId);
+        fbb.addOffset(8, refIdOffset);
+        fbb.addInt64(9, object.quantity);
+        fbb.addOffset(10, uomOffset);
+        fbb.addInt64(11, object.created?.millisecondsSinceEpoch);
+        fbb.addInt64(12, object.updated?.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.dbId;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final createdValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          26,
+        );
+        final updatedValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          28,
+        );
+        final dbIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final idParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 6);
+        final collectionIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 8);
+        final collectionNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 10);
+        final refIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 20);
+        final quantityParam = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          22,
+        );
+        final uomParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 24);
+        final createdParam =
+            createdValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(createdValue);
+        final updatedParam =
+            updatedValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(updatedValue);
+        final object = ReturnItemsEntity(
+          dbId: dbIdParam,
+          id: idParam,
+          collectionId: collectionIdParam,
+          collectionName: collectionNameParam,
+          refId: refIdParam,
+          quantity: quantityParam,
+          uom: uomParam,
+          created: createdParam,
+          updated: updatedParam,
+        );
+        object.trip.targetId = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          12,
+          0,
+        );
+        object.trip.attach(store);
+        object.deliveryData.targetId = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
+          0,
+        );
+        object.deliveryData.attach(store);
+        object.invoiceItem.targetId = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          16,
+          0,
+        );
+        object.invoiceItem.attach(store);
+        object.invoiceData.targetId = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          18,
+          0,
+        );
+        object.invoiceData.attach(store);
+        return object;
+      },
+    ),
+    ReturnItemsModel: obx_int.EntityDefinition<ReturnItemsModel>(
+      model: _entities[43],
+      toOneRelations: (ReturnItemsModel object) => [],
+      toManyRelations: (ReturnItemsModel object) => {},
+      getId: (ReturnItemsModel object) => object.objectBoxId,
+      setId: (ReturnItemsModel object, int id) {
+        object.objectBoxId = id;
+      },
+      objectToFB: (ReturnItemsModel object, fb.Builder fbb) {
+        final pocketbaseIdOffset = fbb.writeString(object.pocketbaseId);
+        final tripIdOffset =
+            object.tripId == null ? null : fbb.writeString(object.tripId!);
+        fbb.startTable(4);
+        fbb.addInt64(0, object.objectBoxId);
+        fbb.addOffset(1, pocketbaseIdOffset);
+        fbb.addOffset(2, tripIdOffset);
+        fbb.finish(fbb.endTable());
+        return object.objectBoxId;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final objectBoxIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final object =
+            ReturnItemsModel(objectBoxId: objectBoxIdParam)
+              ..pocketbaseId = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGet(buffer, rootOffset, 6, '')
+              ..tripId = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 8);
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -8794,4 +9096,93 @@ class DeliveryReceiptModel_ {
       obx.QueryStringVectorProperty<DeliveryReceiptModel>(
         _entities[41].properties[5],
       );
+}
+
+/// [ReturnItemsEntity] entity fields to define ObjectBox queries.
+class ReturnItemsEntity_ {
+  /// See [ReturnItemsEntity.dbId].
+  static final dbId = obx.QueryIntegerProperty<ReturnItemsEntity>(
+    _entities[42].properties[0],
+  );
+
+  /// See [ReturnItemsEntity.id].
+  static final id = obx.QueryStringProperty<ReturnItemsEntity>(
+    _entities[42].properties[1],
+  );
+
+  /// See [ReturnItemsEntity.collectionId].
+  static final collectionId = obx.QueryStringProperty<ReturnItemsEntity>(
+    _entities[42].properties[2],
+  );
+
+  /// See [ReturnItemsEntity.collectionName].
+  static final collectionName = obx.QueryStringProperty<ReturnItemsEntity>(
+    _entities[42].properties[3],
+  );
+
+  /// See [ReturnItemsEntity.trip].
+  static final trip = obx.QueryRelationToOne<ReturnItemsEntity, TripModel>(
+    _entities[42].properties[4],
+  );
+
+  /// See [ReturnItemsEntity.deliveryData].
+  static final deliveryData =
+      obx.QueryRelationToOne<ReturnItemsEntity, DeliveryDataModel>(
+        _entities[42].properties[5],
+      );
+
+  /// See [ReturnItemsEntity.invoiceItem].
+  static final invoiceItem =
+      obx.QueryRelationToOne<ReturnItemsEntity, InvoiceItemsModel>(
+        _entities[42].properties[6],
+      );
+
+  /// See [ReturnItemsEntity.invoiceData].
+  static final invoiceData =
+      obx.QueryRelationToOne<ReturnItemsEntity, InvoiceDataModel>(
+        _entities[42].properties[7],
+      );
+
+  /// See [ReturnItemsEntity.refId].
+  static final refId = obx.QueryStringProperty<ReturnItemsEntity>(
+    _entities[42].properties[8],
+  );
+
+  /// See [ReturnItemsEntity.quantity].
+  static final quantity = obx.QueryIntegerProperty<ReturnItemsEntity>(
+    _entities[42].properties[9],
+  );
+
+  /// See [ReturnItemsEntity.uom].
+  static final uom = obx.QueryStringProperty<ReturnItemsEntity>(
+    _entities[42].properties[10],
+  );
+
+  /// See [ReturnItemsEntity.created].
+  static final created = obx.QueryDateProperty<ReturnItemsEntity>(
+    _entities[42].properties[11],
+  );
+
+  /// See [ReturnItemsEntity.updated].
+  static final updated = obx.QueryDateProperty<ReturnItemsEntity>(
+    _entities[42].properties[12],
+  );
+}
+
+/// [ReturnItemsModel] entity fields to define ObjectBox queries.
+class ReturnItemsModel_ {
+  /// See [ReturnItemsModel.objectBoxId].
+  static final objectBoxId = obx.QueryIntegerProperty<ReturnItemsModel>(
+    _entities[43].properties[0],
+  );
+
+  /// See [ReturnItemsModel.pocketbaseId].
+  static final pocketbaseId = obx.QueryStringProperty<ReturnItemsModel>(
+    _entities[43].properties[1],
+  );
+
+  /// See [ReturnItemsModel.tripId].
+  static final tripId = obx.QueryStringProperty<ReturnItemsModel>(
+    _entities[43].properties[2],
+  );
 }

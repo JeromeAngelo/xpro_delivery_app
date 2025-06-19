@@ -195,4 +195,3 @@ ResultFuture<void> syncUserTripData(String userId) async {
 
 }
 
-

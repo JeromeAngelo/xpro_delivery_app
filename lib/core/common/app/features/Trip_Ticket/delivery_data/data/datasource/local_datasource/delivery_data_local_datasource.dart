@@ -41,6 +41,56 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
   DeliveryDataLocalDataSourceImpl(this._deliveryDataBox, this._store);
 
    @override
+Future<List<DeliveryDataModel>> getDeliveryDataByTripId(String tripId) async {
+  try {
+    debugPrint('📱 LOCAL: Fetching delivery data for trip ID: $tripId');
+
+    final query = _deliveryDataBox.query(DeliveryDataModel_.tripId.equals(tripId));
+    final deliveryDataList = query.build().find();
+
+    debugPrint('📊 Storage Stats:');
+    debugPrint('Total stored delivery data: ${_deliveryDataBox.count()}');
+    debugPrint('Found delivery data for trip: ${deliveryDataList.length}');
+
+    // Process each delivery data to ensure all relationships are loaded
+    final processedDeliveryData = <DeliveryDataModel>[];
+    
+    for (var deliveryData in deliveryDataList) {
+      // Check if delivery data has valid ID before processing
+      if (deliveryData.id == null || deliveryData.id!.isEmpty) {
+        debugPrint('⚠️ Skipping delivery data with null/empty ID');
+        continue;
+      }
+      
+      final processedData = await _loadCompleteDeliveryData(deliveryData);
+      processedDeliveryData.add(processedData);
+      
+      debugPrint('🔍 Delivery ${processedDeliveryData.length}:');
+      debugPrint('   📦 ID: ${processedData.id}');
+      debugPrint('   📦 ObjectBox ID: ${processedData.objectBoxId}');
+      debugPrint('   👤 Customer Target: ${processedData.customer.target != null ? "Loaded" : "null"}');
+      debugPrint('   🏪 Customer Store Name: ${processedData.customer.target?.name ?? "null"}');
+      debugPrint('   📍 Customer Address: ${processedData.customer.target?.province ?? "null"}');
+      debugPrint('   📄 Invoice Target: ${processedData.invoice.target != null ? "Loaded" : "null"}');
+      debugPrint('   💳 Payment Mode: ${processedData.paymentMode ?? "null"}');
+      debugPrint('   💰 Payment Selection: ${processedData.paymentSelection?.name ?? "null"}');
+      debugPrint('   📋 Invoice Status: ${processedData.invoiceStatus?.name ?? "null"}');
+      debugPrint('   🚚 Delivery Number: ${processedData.deliveryNumber ?? "null"}');
+      debugPrint('   ⏱️ Total Delivery Time: ${processedData.totalDeliveryTime ?? "null"}');
+      debugPrint('   🔄 Delivery Updates: ${processedData.deliveryUpdates.length}');
+      debugPrint('   📦 Invoice Items: ${processedData.invoiceItems.length}');
+    }
+
+    _cachedDeliveryData = processedDeliveryData;
+    return processedDeliveryData;
+  } catch (e) {
+    debugPrint('❌ LOCAL: Query error: ${e.toString()}');
+    throw CacheException(message: e.toString());
+  }
+}
+
+
+   @override
   Future<void> syncDeliveryDataByTripId(String tripId, List<DeliveryDataModel> deliveryData) async {
     try {
       debugPrint('💾 LOCAL: Starting delivery data sync for trip: $tripId');
@@ -133,8 +183,8 @@ Future<DeliveryDataModel> _loadCompleteDeliveryData(DeliveryDataModel deliveryDa
       debugPrint('🔄 Loading complete delivery data for: ${deliveryData.id}');
       
       // Load customer data if not already loaded
-      if (deliveryData.customer.target == null) {
-        final customerBox = _store.box<CustomerDataModel>(); // Use _store instead of _deliveryDataBox.store
+      if (deliveryData.customer.target == null && deliveryData.customer.targetId > 0) {
+        final customerBox = _store.box<CustomerDataModel>();
         final customer = customerBox.get(deliveryData.customer.targetId);
         if (customer != null) {
           deliveryData.customer.target = customer;
@@ -142,11 +192,13 @@ Future<DeliveryDataModel> _loadCompleteDeliveryData(DeliveryDataModel deliveryDa
         } else {
           debugPrint('⚠️ Customer not found in local storage: ${deliveryData.customer.targetId}');
         }
+      } else if (deliveryData.customer.targetId <= 0) {
+        debugPrint('⚠️ Invalid customer targetId: ${deliveryData.customer.targetId}');
       }
       
       // Load invoice data if not already loaded
-      if (deliveryData.invoice.target == null) {
-        final invoiceBox = _store.box<InvoiceDataModel>(); // Use _store
+      if (deliveryData.invoice.target == null && deliveryData.invoice.targetId > 0) {
+        final invoiceBox = _store.box<InvoiceDataModel>();
         final invoice = invoiceBox.get(deliveryData.invoice.targetId);
         if (invoice != null) {
           deliveryData.invoice.target = invoice;
@@ -154,11 +206,13 @@ Future<DeliveryDataModel> _loadCompleteDeliveryData(DeliveryDataModel deliveryDa
         } else {
           debugPrint('⚠️ Invoice not found in local storage: ${deliveryData.invoice.targetId}');
         }
+      } else if (deliveryData.invoice.targetId <= 0) {
+        debugPrint('⚠️ Invalid invoice targetId: ${deliveryData.invoice.targetId}');
       }
       
       // Load trip data if not already loaded
-      if (deliveryData.trip.target == null) {
-        final tripBox = _store.box<TripModel>(); // Use _store
+      if (deliveryData.trip.target == null && deliveryData.trip.targetId > 0) {
+        final tripBox = _store.box<TripModel>();
         final trip = tripBox.get(deliveryData.trip.targetId);
         if (trip != null) {
           deliveryData.trip.target = trip;
@@ -166,40 +220,57 @@ Future<DeliveryDataModel> _loadCompleteDeliveryData(DeliveryDataModel deliveryDa
         } else {
           debugPrint('⚠️ Trip not found in local storage: ${deliveryData.trip.targetId}');
         }
+      } else if (deliveryData.trip.targetId <= 0) {
+        debugPrint('⚠️ Invalid trip targetId: ${deliveryData.trip.targetId}');
       }
       
       // Load delivery updates if not already loaded
       if (deliveryData.deliveryUpdates.isEmpty) {
-        final deliveryUpdateBox = _store.box<DeliveryUpdateModel>(); // Use _store
-        final updates = deliveryUpdateBox.query(
-          DeliveryUpdateModel_.pocketbaseId.equals(deliveryData.pocketbaseId)
-        ).build().find();
+        final deliveryUpdateBox = _store.box<DeliveryUpdateModel>();
         
-        if (updates.isNotEmpty) {
-          deliveryData.deliveryUpdates.addAll(updates);
-          debugPrint('✅ Loaded ${updates.length} delivery updates');
+        // Only query if we have a valid pocketbaseId
+        if (deliveryData.pocketbaseId.isNotEmpty) {
+          final updates = deliveryUpdateBox.query(
+            DeliveryUpdateModel_.pocketbaseId.equals(deliveryData.pocketbaseId)
+          ).build().find();
+          
+          if (updates.isNotEmpty) {
+            deliveryData.deliveryUpdates.addAll(updates);
+            debugPrint('✅ Loaded ${updates.length} delivery updates');
+          }
+        } else {
+          debugPrint('⚠️ Empty pocketbaseId for delivery data: ${deliveryData.id}');
         }
       }
       
       // Load invoice items if not already loaded
       if (deliveryData.invoiceItems.isEmpty && deliveryData.invoice.target != null) {
-        final invoiceItemsBox = _store.box<InvoiceItemsModel>(); // Use _store
-        final items = invoiceItemsBox.query(
-          InvoiceItemsModel_.pocketbaseId.equals(deliveryData.invoice.target!.pocketbaseId)
-        ).build().find();
+        final invoiceItemsBox = _store.box<InvoiceItemsModel>();
         
-        if (items.isNotEmpty) {
-          deliveryData.invoiceItems.addAll(items);
-          debugPrint('✅ Loaded ${items.length} invoice items');
+        // Only query if we have a valid invoice pocketbaseId
+        if (deliveryData.invoice.target!.pocketbaseId.isNotEmpty) {
+          final items = invoiceItemsBox.query(
+            InvoiceItemsModel_.pocketbaseId.equals(deliveryData.invoice.target!.pocketbaseId)
+          ).build().find();
+          
+          if (items.isNotEmpty) {
+            deliveryData.invoiceItems.addAll(items);
+            debugPrint('✅ Loaded ${items.length} invoice items');
+          }
+        } else {
+          debugPrint('⚠️ Empty invoice pocketbaseId for delivery data: ${deliveryData.id}');
         }
       }
       
-     
-      
       // Set delivery number if missing
       if (deliveryData.deliveryNumber == null || deliveryData.deliveryNumber!.isEmpty) {
-        deliveryData.deliveryNumber = 'DEL-${deliveryData.pocketbaseId.substring(0, 8).toUpperCase()}';
-        debugPrint('✅ Generated delivery number: ${deliveryData.deliveryNumber}');
+        if (deliveryData.pocketbaseId.isNotEmpty) {
+          deliveryData.deliveryNumber = 'DEL-${deliveryData.pocketbaseId.substring(0, 8).toUpperCase()}';
+          debugPrint('✅ Generated delivery number: ${deliveryData.deliveryNumber}');
+        } else {
+          deliveryData.deliveryNumber = 'DEL-${DateTime.now().millisecondsSinceEpoch}';
+          debugPrint('✅ Generated fallback delivery number: ${deliveryData.deliveryNumber}');
+        }
       }
       
       // Set default invoice status if missing
@@ -208,15 +279,27 @@ Future<DeliveryDataModel> _loadCompleteDeliveryData(DeliveryDataModel deliveryDa
         debugPrint('✅ Set default invoice status: ${deliveryData.invoiceStatus!.name}');
       }
       
-      // Save the updated delivery data
-      _deliveryDataBox.put(deliveryData);
+      // Save the updated delivery data only if it has a valid objectBoxId
+      if (deliveryData.objectBoxId > 0) {
+        _deliveryDataBox.put(deliveryData);
+        debugPrint('✅ Updated delivery data saved to ObjectBox');
+      } else {
+        debugPrint('⚠️ Cannot save delivery data with invalid objectBoxId: ${deliveryData.objectBoxId}');
+      }
       
       debugPrint('✅ Complete delivery data loaded for: ${deliveryData.id}');
       return deliveryData;
       
     } catch (e) {
       debugPrint('❌ Failed to load complete delivery data: $e');
-      return deliveryData; // Return original data if loading fails
+      debugPrint('   - Delivery ID: ${deliveryData.id}');
+      debugPrint('   - ObjectBox ID: ${deliveryData.objectBoxId}');
+      debugPrint('   - Customer targetId: ${deliveryData.customer.targetId}');
+      debugPrint('   - Invoice targetId: ${deliveryData.invoice.targetId}');
+      debugPrint('   - Trip targetId: ${deliveryData.trip.targetId}');
+      
+      // Return original data if loading fails to prevent crashes
+      return deliveryData;
     }
   }
 
@@ -520,45 +603,5 @@ Future<DeliveryDataModel> _loadCompleteDeliveryData(DeliveryDataModel deliveryDa
     }
   }
   
- @override
-Future<List<DeliveryDataModel>> getDeliveryDataByTripId(String tripId) async {
-  try {
-    debugPrint('📱 LOCAL: Fetching delivery data for trip ID: $tripId');
-
-    final query = _deliveryDataBox.query(DeliveryDataModel_.tripId.equals(tripId));
-    final deliveryDataList = query.build().find();
-
-    debugPrint('📊 Storage Stats:');
-    debugPrint('Total stored delivery data: ${_deliveryDataBox.count()}');
-    debugPrint('Found delivery data for trip: ${deliveryDataList.length}');
-
-    // Process each delivery data to ensure all relationships are loaded
-    final processedDeliveryData = <DeliveryDataModel>[];
-    
-    for (var deliveryData in deliveryDataList) {
-      final processedData = await _loadCompleteDeliveryData(deliveryData);
-      processedDeliveryData.add(processedData);
-      
-      debugPrint('🔍 Delivery ${processedDeliveryData.length}:');
-      debugPrint('   📦 ID: ${processedData.id}');
-      debugPrint('   👤 Customer Target: ${processedData.customer.target}');
-      debugPrint('   🏪 Customer Store Name: ${processedData.customer.target?.name ?? "null"}');
-      debugPrint('   📍 Customer Address: ${processedData.customer.target?.province ?? "null"}');
-      debugPrint('   📄 Invoice Target: ${processedData.invoice.target}');
-      debugPrint('   💳 Payment Mode: ${processedData.paymentMode ?? "null"}');
-      debugPrint('   💰 Payment Selection: ${processedData.paymentSelection?.name ?? "null"}');
-      debugPrint('   📋 Invoice Status: ${processedData.invoiceStatus?.name ?? "null"}');
-      debugPrint('   🚚 Delivery Number: ${processedData.deliveryNumber ?? "null"}');
-      debugPrint('   ⏱️ Total Delivery Time: ${processedData.totalDeliveryTime ?? "null"}');
-      debugPrint('   🔄 Delivery Updates: ${processedData.deliveryUpdates.length}');
-      debugPrint('   📦 Invoice Items: ${processedData.invoiceItems.length}');
-    }
-
-    _cachedDeliveryData = processedDeliveryData;
-    return processedDeliveryData;
-  } catch (e) {
-    debugPrint('❌ LOCAL: Query error: ${e.toString()}');
-    throw CacheException(message: e.toString());
-  }
-}
+ 
 }

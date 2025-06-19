@@ -49,10 +49,253 @@ class SyncService {
   StreamSubscription? undeliverableSubscription;
   StreamSubscription? returnSubscription;
 
+
+// Add these constants
+static const String _pendingOperationsKey = 'pending_sync_operations';
+static const String _lastSyncKey = 'last_sync_time';
+
+// Add these properties
+bool _isSyncing = false;
+bool get isSyncing => _isSyncing;
+
+DateTime? _lastSyncTime;
+DateTime? get lastSyncTime => _lastSyncTime;
+
+final List<String> _pendingSyncOperations = [];
+List<String> get pendingSyncOperations => List.unmodifiable(_pendingSyncOperations);
+
   Stream<double> get progressStream {
     _progressController ??= StreamController<double>.broadcast();
     return _progressController!.stream;
   }
+
+  // Queue an operation for sync when online
+Future<void> queueOperation({
+  required String operationType,
+  required String entityType,
+  required String entityId,
+  required Map<String, dynamic> data,
+}) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final existingOperations = prefs.getStringList(_pendingOperationsKey) ?? [];
+    
+    final operation = {
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'type': operationType, // 'create', 'update', 'delete'
+      'entityType': entityType, // 'trip', 'user', 'delivery_data', etc.
+      'entityId': entityId,
+      'data': data,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    
+    existingOperations.add(jsonEncode(operation));
+    await prefs.setStringList(_pendingOperationsKey, existingOperations);
+    
+addPendingSyncOperation(operation['id']! as String);    
+    debugPrint('📝 Queued sync operation: $operationType $entityType $entityId');
+    
+    // Try to sync immediately if online
+    if (_pocketBaseClient.authStore.isValid) {
+      await processPendingOperations();
+    }
+  } catch (e) {
+    debugPrint('❌ Failed to queue operation: $e');
+  }
+}
+
+void addPendingSyncOperation(String operation) {
+  if (!_pendingSyncOperations.contains(operation)) {
+    _pendingSyncOperations.add(operation);
+    debugPrint('📝 Added pending sync operation: $operation');
+  }
+}
+
+void removePendingSyncOperation(String operation) {
+  _pendingSyncOperations.remove(operation);
+  debugPrint('✅ Completed sync operation: $operation');
+}
+
+// Process all pending operations when online
+Future<void> processPendingOperations() async {
+  if (!_pocketBaseClient.authStore.isValid) {
+    debugPrint('⚠️ Cannot sync - not authenticated');
+    return;
+  }
+
+  try {
+    _isSyncing = true;
+    
+    final prefs = await SharedPreferences.getInstance();
+    final pendingOperations = prefs.getStringList(_pendingOperationsKey) ?? [];
+    
+    if (pendingOperations.isEmpty) {
+      debugPrint('✅ No pending operations to sync');
+      _isSyncing = false;
+      return;
+    }
+
+    debugPrint('🔄 Processing ${pendingOperations.length} pending operations');
+    
+    final List<String> failedOperations = [];
+    
+    for (final operationJson in pendingOperations) {
+      try {
+        final operation = jsonDecode(operationJson) as Map<String, dynamic>;
+        
+        // Process the operation based on type
+        final success = await _processOperation(operation);
+        
+        if (success) {
+          removePendingSyncOperation(operation['id']);
+          debugPrint('✅ Synced operation: ${operation['type']} ${operation['entityType']}');
+        } else {
+          failedOperations.add(operationJson);
+          debugPrint('❌ Failed to sync operation: ${operation['type']} ${operation['entityType']}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error processing operation: $e');
+        failedOperations.add(operationJson);
+      }
+    }
+    
+    // Update pending operations with only the failed ones
+    await prefs.setStringList(_pendingOperationsKey, failedOperations);
+    
+    // Update last sync time
+    await prefs.setString(_lastSyncKey, DateTime.now().toIso8601String());
+    _lastSyncTime = DateTime.now();
+    
+    debugPrint('✅ Sync completed. ${failedOperations.length} operations failed');
+    
+  } catch (e) {
+    debugPrint('❌ Sync process failed: $e');
+  } finally {
+    _isSyncing = false;
+  }
+}
+
+Future<bool> _processOperation(Map<String, dynamic> operation) async {
+  try {
+    final operationType = operation['type'] as String;
+    final entityType = operation['entityType'] as String;
+    final entityId = operation['entityId'] as String;
+    final data = operation['data'] as Map<String, dynamic>;
+    
+    debugPrint('🔄 Processing $operationType $entityType $entityId');
+    
+    // Process based on entity type
+    switch (entityType) {
+      case 'trip':
+        return await _syncTripOperation(operationType, entityId, data);
+      case 'user':
+        return await _syncUserOperation(operationType, entityId, data);
+      case 'delivery_data':
+        return await _syncDeliveryDataOperation(operationType, entityId, data);
+      case 'delivery_update':
+        return await _syncDeliveryUpdateOperation(operationType, entityId, data);
+      default:
+        debugPrint('⚠️ Unknown entity type: $entityType');
+        return false;
+    }
+  } catch (e) {
+    debugPrint('❌ Failed to process operation: $e');
+    return false;
+  }
+}
+
+Future<bool> _syncTripOperation(String operationType, String entityId, Map<String, dynamic> data) async {
+  try {
+    switch (operationType) {
+      case 'update':
+        await _pocketBaseClient.collection('tripticket').update(entityId, body: data);
+        break;
+      case 'create':
+        await _pocketBaseClient.collection('tripticket').create(body: data);
+        break;
+      default:
+        return false;
+    }
+    return true;
+  } catch (e) {
+    debugPrint('❌ Trip sync failed: $e');
+    return false;
+  }
+}
+
+Future<bool> _syncUserOperation(String operationType, String entityId, Map<String, dynamic> data) async {
+  try {
+    switch (operationType) {
+      case 'update':
+        await _pocketBaseClient.collection('users').update(entityId, body: data);
+        break;
+      default:
+        return false;
+    }
+    return true;
+  } catch (e) {
+    debugPrint('❌ User sync failed: $e');
+    return false;
+  }
+}
+
+Future<bool> _syncDeliveryDataOperation(String operationType, String entityId, Map<String, dynamic> data) async {
+  try {
+    switch (operationType) {
+      case 'update':
+        await _pocketBaseClient.collection('deliveryData').update(entityId, body: data);
+        break;
+      case 'create':
+        await _pocketBaseClient.collection('deliveryData').create(body: data);
+        break;
+      default:
+        return false;
+    }
+    return true;
+  } catch (e) {
+    debugPrint('❌ Delivery data sync failed: $e');
+    return false;
+  }
+}
+
+Future<bool> _syncDeliveryUpdateOperation(String operationType, String entityId, Map<String, dynamic> data) async {
+  try {
+    switch (operationType) {
+      case 'update':
+        await _pocketBaseClient.collection('delivery_update').update(entityId, body: data);
+        break;
+      case 'create':
+        await _pocketBaseClient.collection('delivery_update').create(body: data);
+        break;
+      default:
+        return false;
+    }
+    return true;
+  } catch (e) {
+    debugPrint('❌ Delivery update sync failed: $e');
+    return false;
+  }
+}
+
+Future<DateTime?> getLastSyncTime() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSyncString = prefs.getString(_lastSyncKey);
+    if (lastSyncString != null) {
+      _lastSyncTime = DateTime.parse(lastSyncString);
+      return _lastSyncTime;
+    }
+  } catch (e) {
+    debugPrint('❌ Failed to get last sync time: $e');
+  }
+  return null;
+}
+
+// Call this method when internet connection is restored
+Future<void> onConnectionRestored() async {
+  debugPrint('🌐 Connection restored - starting auto sync');
+  await processPendingOperations();
+}
 
   void _updateProgress(double progress) {
     debugPrint('📈 Updating sync progress: ${(progress * 100).toInt()}%');

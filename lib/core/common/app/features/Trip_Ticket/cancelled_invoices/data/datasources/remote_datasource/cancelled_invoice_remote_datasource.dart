@@ -594,10 +594,21 @@ class CancelledInvoiceRemoteDataSourceImpl
       final deliveryTeam = deliveryTeamRecords.first;
       debugPrint('🚛 Found delivery team: ${deliveryTeam.id}');
 
-      // Get current stats
-      int currentUndelivered = deliveryTeam.data['undeliveredCustomers'] ?? 0;
-      int newUndelivered = currentUndelivered + 1;
+      final currentUndeliveredCustomers =
+          int.tryParse(
+            deliveryTeam.data['undeliveredCustomers']?.toString() ?? '0',
+          ) ??
+          0;
 
+      final currentActiveDeliveries =
+          int.tryParse(
+            deliveryTeam.data['activeDeliveries']?.toString() ?? '0',
+          ) ??
+          0;
+
+      final newUndelivered =
+          (currentUndeliveredCustomers + 1).clamp(0, double.infinity).toInt();
+      final newActiverDeliveries = currentActiveDeliveries - 1;
       // Update delivery team with new undelivered count
       await _pocketBaseClient
           .collection('delivery_team')
@@ -605,12 +616,13 @@ class CancelledInvoiceRemoteDataSourceImpl
             deliveryTeam.id,
             body: {
               'undeliveredCustomers': newUndelivered,
+              'activeDeliveries': newActiverDeliveries,
               'updated': DateTime.now().toUtc().toIso8601String(),
             },
           );
 
       debugPrint('✅ Updated delivery team stats:');
-      debugPrint('   - Previous undelivered: $currentUndelivered');
+      debugPrint('   - Previous undelivered: $currentUndeliveredCustomers');
       debugPrint('   - New undelivered: $newUndelivered');
     } catch (e) {
       debugPrint('⚠️ Failed to update delivery team stats: ${e.toString()}');

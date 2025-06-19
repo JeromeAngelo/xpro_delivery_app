@@ -12,10 +12,7 @@ import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens
 class DeliveryAndInvoiceView extends StatefulWidget {
   final DeliveryDataEntity? selectedCustomer;
 
-  const DeliveryAndInvoiceView({
-    super.key,
-    required this.selectedCustomer,
-  });
+  const DeliveryAndInvoiceView({super.key, required this.selectedCustomer});
 
   @override
   State<DeliveryAndInvoiceView> createState() => _DeliveryAndInvoiceViewState();
@@ -25,20 +22,53 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
   int _selectedIndex = 0;
   String _deliveryNumber = 'Loading...';
   DeliveryDataState? _cachedState;
+  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _loadLocalData();
+    _hasInitialized = true;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Only refresh if we've already initialized and the route is current
+    if (_hasInitialized) {
+      final route = ModalRoute.of(context);
+      if (route != null && route.isCurrent && route.isActive) {
+        debugPrint('🔄 Screen became active, refreshing data...');
+        _refreshData();
+      }
+    }
+  }
+
+  void _refreshData() {
+    if (widget.selectedCustomer != null) {
+      debugPrint(
+        '🔄 Refreshing delivery and invoice data for customer: ${widget.selectedCustomer!.id}',
+      );
+
+      final customerBloc = context.read<DeliveryDataBloc>();
+
+      // Load both local and remote data
+      customerBloc
+        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''))
+        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
+    }
   }
 
   void _loadLocalData() {
     if (widget.selectedCustomer != null) {
-      debugPrint('📱 Loading local data for customer: ${widget.selectedCustomer!.id}');
-      
+      debugPrint(
+        '📱 Loading local data for customer: ${widget.selectedCustomer!.id}',
+      );
+
       // Set initial delivery number if available
       _updateDeliveryNumber(widget.selectedCustomer!);
-      
+
       final customerBloc = context.read<DeliveryDataBloc>();
       customerBloc
         ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''))
@@ -48,11 +78,12 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
 
   void _updateDeliveryNumber(DeliveryDataEntity deliveryData) {
     setState(() {
-      _deliveryNumber = deliveryData.deliveryNumber ?? 
-                      deliveryData.customer.target?.name ?? 
-                      'Unknown Delivery';
+      _deliveryNumber =
+          deliveryData.deliveryNumber ??
+          deliveryData.customer.target?.name ??
+          'Unknown Delivery';
     });
-    
+
     debugPrint('🏷️ Delivery number updated: $_deliveryNumber');
     debugPrint('   📦 Delivery Data ID: ${deliveryData.id}');
     debugPrint('   🔢 Delivery Number: ${deliveryData.deliveryNumber}');
@@ -71,11 +102,12 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
         BlocListener<DeliveryDataBloc, DeliveryDataState>(
           listener: (context, state) {
             debugPrint('🎯 DeliveryDataBloc state changed: $state');
-            
+
             if (state is DeliveryDataLoaded) {
               setState(() => _cachedState = state);
               _updateDeliveryNumber(state.deliveryData);
-            } else if (state is AllDeliveryDataLoaded && state.deliveryData.isNotEmpty) {
+            } else if (state is AllDeliveryDataLoaded &&
+                state.deliveryData.isNotEmpty) {
               // Find the matching delivery data
               final matchingDelivery = state.deliveryData.firstWhere(
                 (delivery) => delivery.id == widget.selectedCustomer?.id,
@@ -93,25 +125,29 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
           debugPrint('🏷️ Current delivery number: $_deliveryNumber');
 
           // Use cached state if available for better UX
-          final effectiveState = (state is DeliveryDataLoaded || state is AllDeliveryDataLoaded) 
-              ? state 
-              : _cachedState;
+          final effectiveState =
+              (state is DeliveryDataLoaded || state is AllDeliveryDataLoaded)
+                  ? state
+                  : _cachedState;
 
           // Extract delivery number from current state
           String displayDeliveryNumber = _deliveryNumber;
-          
+
           if (effectiveState is DeliveryDataLoaded) {
-            displayDeliveryNumber = effectiveState.deliveryData.deliveryNumber ?? 
-                                  effectiveState.deliveryData.customer.target?.name ?? 
-                                  'Unknown Delivery';
-          } else if (effectiveState is AllDeliveryDataLoaded && effectiveState.deliveryData.isNotEmpty) {
+            displayDeliveryNumber =
+                effectiveState.deliveryData.deliveryNumber ??
+                effectiveState.deliveryData.customer.target?.name ??
+                'Unknown Delivery';
+          } else if (effectiveState is AllDeliveryDataLoaded &&
+              effectiveState.deliveryData.isNotEmpty) {
             final matchingDelivery = effectiveState.deliveryData.firstWhere(
               (delivery) => delivery.id == widget.selectedCustomer?.id,
               orElse: () => effectiveState.deliveryData.first,
             );
-            displayDeliveryNumber = matchingDelivery.deliveryNumber ?? 
-                                  matchingDelivery.customer.target?.name ?? 
-                                  'Unknown Delivery';
+            displayDeliveryNumber =
+                matchingDelivery.deliveryNumber ??
+                matchingDelivery.customer.target?.name ??
+                'Unknown Delivery';
           }
 
           return Scaffold(
@@ -139,10 +175,7 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
                 ),
               ],
             ),
-            body: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
+            body: IndexedStack(index: _selectedIndex, children: _screens),
             bottomNavigationBar: BottomNavigationBar(
               currentIndex: _selectedIndex,
               onTap: (index) => setState(() => _selectedIndex = index),

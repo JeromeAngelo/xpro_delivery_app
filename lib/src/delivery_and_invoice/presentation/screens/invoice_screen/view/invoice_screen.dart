@@ -21,6 +21,7 @@ class InvoiceScreen extends StatefulWidget {
 class _InvoiceScreenState extends State<InvoiceScreen>
     with AutomaticKeepAliveClientMixin {
   bool _isDataInitialized = false;
+  bool _hasInitialized = false; // Add this flag to track initialization
   DeliveryDataState? _cachedState;
 
   @override
@@ -28,6 +29,21 @@ class _InvoiceScreenState extends State<InvoiceScreen>
     super.initState();
     if (widget.selectedCustomer != null) {
       _initializeLocalData();
+      _hasInitialized = true; // Mark as initialized
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Only refresh if we've already initialized and the route is current
+    if (_hasInitialized && widget.selectedCustomer != null) {
+      final route = ModalRoute.of(context);
+      if (route != null && route.isCurrent && route.isActive) {
+        debugPrint('🔄 Invoice screen became active, refreshing data...');
+        _refreshData();
+      }
     }
   }
 
@@ -52,13 +68,26 @@ class _InvoiceScreenState extends State<InvoiceScreen>
 
   Future<void> _refreshData() async {
     if (widget.selectedCustomer?.id != null) {
-      debugPrint('🔄 Refreshing delivery and invoice data');
-
-      // Refresh delivery data which includes invoice data
-      context.read<DeliveryDataBloc>().add(
-        GetDeliveryDataByIdEvent(widget.selectedCustomer!.id!),
+      debugPrint(
+        '🔄 Refreshing delivery and invoice data for customer: ${widget.selectedCustomer!.id}',
       );
+
+      final deliveryDataBloc = context.read<DeliveryDataBloc>();
+
+      // Load both local and remote data for fresh information
+      deliveryDataBloc
+        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''))
+        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id!));
     }
+  }
+
+  // Add manual refresh method for pull-to-refresh
+  Future<void> _handleManualRefresh() async {
+    debugPrint('🔄 Manual refresh triggered for invoice screen');
+    await _refreshData();
+
+    // Add a small delay to ensure smooth refresh animation
+    await Future.delayed(const Duration(milliseconds: 300));
   }
 
   @override
@@ -67,7 +96,7 @@ class _InvoiceScreenState extends State<InvoiceScreen>
 
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: _refreshData,
+        onRefresh: _handleManualRefresh, // Add pull-to-refresh functionality
         child: BlocListener<DeliveryDataBloc, DeliveryDataState>(
           listenWhen: (previous, current) => current is DeliveryDataLoaded,
           listener: (context, state) {
@@ -75,6 +104,7 @@ class _InvoiceScreenState extends State<InvoiceScreen>
               setState(() {
                 _cachedState = state;
               });
+              debugPrint('✅ Invoice screen: Cached new delivery data state');
             }
           },
           child: BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
@@ -85,7 +115,16 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                     current is DeliveryDataError,
             builder: (context, state) {
               if (state is DeliveryDataLoading && _cachedState == null) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Loading invoice data...'),
+                    ],
+                  ),
+                );
               }
 
               if (state is DeliveryDataError) {
@@ -93,10 +132,32 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(state.message),
-                      ElevatedButton(
-                        onPressed: _initializeLocalData,
-                        child: const Text('Retry'),
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading invoice data',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        state.message,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          debugPrint(
+                            '🔄 Retry button pressed, refreshing data...',
+                          );
+                          _refreshData();
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
                       ),
                     ],
                   ),
@@ -114,9 +175,16 @@ class _InvoiceScreenState extends State<InvoiceScreen>
 
                 if (invoice == null) {
                   return const Center(
-                    child: Text(
-                      'Please Wait.......',
-                      style: TextStyle(fontSize: 16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text(
+                          'Please Wait.......',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ],
                     ),
                   );
                 }
@@ -125,6 +193,8 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                   children: [
                     Expanded(
                       child: CustomScrollView(
+                        physics:
+                            const AlwaysScrollableScrollPhysics(), // Enable pull-to-refresh
                         slivers: [
                           SliverPadding(
                             padding: const EdgeInsets.all(10),
@@ -138,6 +208,7 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                                       onTap: () {
                                         final route =
                                             '/product-list/${invoice.id}/${invoice.refId ?? invoice.name}';
+                                        debugPrint('🚀 Navigating to: $route');
                                         context.push(
                                           route,
                                           extra: widget.selectedCustomer,
@@ -167,10 +238,26 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                 );
               }
 
-              return const Center(
-                child: Text(
-                  'Select a customer to view invoices',
-                  style: TextStyle(fontSize: 16),
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Select a customer to view invoices',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Choose a customer from the delivery list',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
                 ),
               );
             },

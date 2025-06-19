@@ -632,12 +632,9 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
             color: Theme.of(context).colorScheme.secondary,
           ),
           const SizedBox(height: 16),
-          Text('Pl', style: Theme.of(context).textTheme.titleLarge),
+          Text('Please wait', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text(
-            'No deliveries available for this trip',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text('Loading.....', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {

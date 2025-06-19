@@ -59,7 +59,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .collection('tripticket')
           .getList(
             expand:
-                'customers,customers.deliveryStatus,customers.invoices(customer),customers.invoices.productList,personels,vehicle,checklist,invoices',
+                'customers,personels,checklist,',
           );
 
       // In the loadTrip method
@@ -137,7 +137,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .getFullList(
             filter: 'qrCode = "$qrData"',
             expand:
-                'customers,timeline,personels,vehicle,checklist,deliveryData,deliveryVehicle',
+                'timeline,personels,checklist,deliveryData,deliveryVehicle',
           );
 
       if (records.isEmpty) {
@@ -305,7 +305,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             filter:
                 'tripNumberId = "$tripNumberId" && isAccepted = false && isEndTrip = false',
             expand:
-                'customers,timeline,personels,vehicle,checklist,deliveryData,deliveryVehicle',
+                'timeline,personels,vehicle,checklist,deliveryData,deliveryVehicle',
           );
 
       if (records.isEmpty) {
@@ -703,15 +703,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             );
       }
 
-      final trackingRecord = await _pocketBaseClient
-          .collection('tracking')
-          .create(
-            body: {
-              'trip': tripRecord.id,
-              'startTime': DateTime.now().toIso8601String(),
-              'distanceTraveled': 0,
-            },
-          );
+    
 
       final otpRecord = await _pocketBaseClient
           .collection('otp')
@@ -751,7 +743,6 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             body: {
               'isAccepted': true,
               'delivery_team': deliveryTeamRecord.id,
-              'tracking': trackingRecord.id,
               'otp': otpRecord.id,
               'endTripOtp': endTripOtpRecord.id,
               'timeAccepted': DateTime.now().toIso8601String(),
@@ -804,7 +795,6 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             'isAccepted': true,
             'delivery_team': _convertRecordToJson(deliveryTeamRecord),
             'deliveryData': _mapDeliveryData(tripRecord),
-            'tracking': _convertRecordToJson(trackingRecord),
             'otp': _convertRecordToJson(otpRecord),
             'deliveryVehicle': tripRecord.data['deliveryVehicle'],
             'endTripOtp': _convertRecordToJson(endTripOtpRecord),
@@ -841,7 +831,6 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             'collectionName': tripRecord.collectionName,
             'isAccepted': true,
             'delivery_team': _convertRecordToJson(deliveryTeamRecord),
-            'tracking': _convertRecordToJson(trackingRecord),
             'otp': _convertRecordToJson(otpRecord),
             'endTripOtp': _convertRecordToJson(endTripOtpRecord),
             'timeAccepted': DateTime.now().toIso8601String(),
@@ -860,7 +849,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       await _tripLocalDatasource.autoSaveTrip(acceptedTripModel);
 
       debugPrint('✅ Trip acceptance completed');
-      return (acceptedTripModel, trackingRecord.id);
+      return (acceptedTripModel, tripRecord.id);
     } catch (e) {
       debugPrint('❌ Error in acceptTrip: $e');
       throw ServerException(

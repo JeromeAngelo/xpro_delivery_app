@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
 import 'package:x_pro_delivery_app/core/enums/mode_of_payment.dart';
-import 'package:x_pro_delivery_app/src/transcation_screen/presentation/view/confirmation_payment_view.dart';
+import 'package:x_pro_delivery_app/src/transaction_screen/presentation/view/confirmation_payment_view.dart';
 
 class ConfirmPaymentBtn extends StatelessWidget {
   final DeliveryDataEntity deliveryData;

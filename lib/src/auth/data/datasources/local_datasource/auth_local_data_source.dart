@@ -278,51 +278,52 @@ Future<TripModel> loadLocalUserTrip(String userId) async {
   }
 
     @override
-  Future<void> cacheUserTripData(TripModel trip) async {
-    try {
-      debugPrint('💾 Caching trip data locally');
-      
-      // Save to SharedPreferences with new parameters based on TripModel
-      final tripData = {
-        'id': trip.id,
-        'tripNumberId': trip.tripNumberId,
-        'isAccepted': trip.isAccepted,
-        'deliveryTeam': trip.deliveryTeam.target!.id,
-        'personels': trip.personels.map((p) => p.toJson()).toList(),
-        'deliveryVehicle': trip.deliveryVehicle.target?.toJson(), // CHANGED: Use deliveryVehicle instead of vehicle
-        'checklist': trip.checklist.map((c) => c.toJson()).toList(),
-        'deliveryData': trip.deliveryData.map((d) => d.toJson()).toList(), // ADDED: Delivery data
-        'otp': trip.otp.target?.toJson(), // ADDED: OTP data
-        'endTripOtp': trip.endTripOtp.target?.toJson(), // ADDED: End trip OTP
-        'endTripChecklist': trip.endTripChecklist.map((e) => e.toJson()).toList(), // ADDED: End trip checklist
-        'tripUpdates': trip.tripUpdates.map((u) => u.toJson()).toList(), // ADDED: Trip updates
-        'user': trip.user.target?.toJson(), // ADDED: User data
-        'totalTripDistance': trip.totalTripDistance, // ADDED: Total distance
-        'latitude': trip.latitude?.toString(), // ADDED: Latitude
-        'longitude': trip.longitude?.toString(), // ADDED: Longitude
-        'timeAccepted': trip.timeAccepted?.toIso8601String(), // ADDED: Time accepted
-        'isEndTrip': trip.isEndTrip, // ADDED: End trip status
-        'timeEndTrip': trip.timeEndTrip?.toIso8601String(), // ADDED: Time end trip
-        'created': trip.created?.toIso8601String(), // ADDED: Created timestamp
-        'updated': trip.updated?.toIso8601String(), // ADDED: Updated timestamp
-        'qrCode': trip.qrCode, // ADDED: QR code
-      };
-      
-      await _prefs.setString('user_trip_data', jsonEncode(tripData));
-      
-      debugPrint('✅ Trip cached successfully');
-      debugPrint('   🎫 Trip Number: ${trip.tripNumberId}');
-      debugPrint('   🚛 Delivery Vehicle: ${trip.deliveryVehicle.target?.plateNo ?? 'Not assigned'}');
-      debugPrint('   📦 Delivery Data: ${trip.deliveryData.length}');
-      debugPrint('   🔑 OTP: ${trip.otp.target?.id ?? 'Not set'}');
-      debugPrint('   📋 End Trip Checklist: ${trip.endTripChecklist.length}');
-      debugPrint('   📍 Trip Updates: ${trip.tripUpdates.length}');
-      
-    } catch (e) {
-      debugPrint('❌ Trip cache operation failed: ${e.toString()}');
-      throw CacheException(message: e.toString());
-    }
+Future<void> cacheUserTripData(TripModel trip) async {
+  try {
+    debugPrint('💾 Caching trip data locally');
+    
+    // Save to SharedPreferences with null-safe parameters
+    final tripData = {
+      'id': trip.id,
+      'tripNumberId': trip.tripNumberId,
+      'isAccepted': trip.isAccepted,
+      'deliveryTeam': trip.deliveryTeam.target?.id, // Add null safety
+      'personels': trip.personels.map((p) => p.toJson()).toList(),
+      'deliveryVehicle': trip.deliveryVehicle.target?.toJson(), // Add null safety
+      'checklist': trip.checklist.map((c) => c.toJson()).toList(),
+      'deliveryData': trip.deliveryData.map((d) => d.toJson()).toList(),
+      'otp': trip.otp.target?.toJson(), // Add null safety
+      'endTripOtp': trip.endTripOtp.target?.toJson(), // Add null safety
+      'endTripChecklist': trip.endTripChecklist.map((e) => e.toJson()).toList(),
+      'tripUpdates': trip.tripUpdates.map((u) => u.toJson()).toList(),
+      'user': trip.user.target?.toJson(), // Add null safety
+      'totalTripDistance': trip.totalTripDistance,
+      'latitude': trip.latitude?.toString(),
+      'longitude': trip.longitude?.toString(),
+      'timeAccepted': trip.timeAccepted?.toIso8601String(),
+      'isEndTrip': trip.isEndTrip,
+      'timeEndTrip': trip.timeEndTrip?.toIso8601String(),
+      'created': trip.created?.toIso8601String(),
+      'updated': trip.updated?.toIso8601String(),
+      'qrCode': trip.qrCode,
+    };
+    
+    await _prefs.setString('user_trip_data', jsonEncode(tripData));
+    
+    debugPrint('✅ Trip cached successfully');
+    debugPrint('   🎫 Trip Number: ${trip.tripNumberId ?? 'N/A'}');
+    debugPrint('   🚛 Delivery Vehicle: ${trip.deliveryVehicle.target?.plateNo ?? 'Not assigned'}');
+    debugPrint('   📦 Delivery Data: ${trip.deliveryData.length}');
+    debugPrint('   🔑 OTP: ${trip.otp.target?.id ?? 'Not set'}');
+    debugPrint('   📋 End Trip Checklist: ${trip.endTripChecklist.length}');
+    debugPrint('   📍 Trip Updates: ${trip.tripUpdates.length}');
+    
+  } catch (e) {
+    debugPrint('❌ Trip cache operation failed: ${e.toString()}');
+    throw CacheException(message: e.toString());
   }
+}
+
 
 
 }

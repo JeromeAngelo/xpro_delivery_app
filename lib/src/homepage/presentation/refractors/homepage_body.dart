@@ -44,10 +44,12 @@ class _HomepageBodyState extends State<HomepageBody>
         if (userId != null) {
           debugPrint('🔄 Loading local user data for ID: $userId');
           _authBloc.add(LoadLocalUserByIdEvent(userId));
+          _authBloc.add(LoadUserByIdEvent(userId));
 
           if (tripData != null && tripData['id'] != null) {
             debugPrint('🎫 Loading local trip data: ${tripData['id']}');
             _authBloc.add(LoadLocalUserTripEvent(tripData['id']));
+            _authBloc.add(GetUserTripEvent(tripData['id']));
           }
         }
       }

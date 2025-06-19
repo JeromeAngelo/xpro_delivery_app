@@ -80,7 +80,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     );
   }
 
-    Widget _buildDashboard(
+  Widget _buildDashboard(
     BuildContext context,
     DeliveryDataEntity deliveryData,
   ) {
@@ -176,10 +176,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
       childAspectRatio: 2.8,
       crossAxisSpacing: 15,
       mainAxisSpacing: 22,
-      children: List.generate(
-        6,
-        (index) => _buildShimmerInfoItem(context),
-      ),
+      children: List.generate(6, (index) => _buildShimmerInfoItem(context)),
     );
   }
 
@@ -357,7 +354,6 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     );
   }
 
-
   Widget _buildHeader(BuildContext context, dynamic customer) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -438,6 +434,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+
       childAspectRatio: 2.8,
       crossAxisSpacing: 15,
       mainAxisSpacing: 22,
@@ -510,6 +507,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // Add this
                 children: [
                   if (subtitle == "Contact Numbers")
                     ...title
@@ -524,13 +522,29 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
                                 color: Theme.of(context).primaryColor,
                                 decoration: TextDecoration.underline,
                               ),
+                              maxLines: 1, // Add this
+                              overflow: TextOverflow.ellipsis, // Add this
                             ),
                           ),
                         )
                   else
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                    Flexible(
+                      // Wrap with Flexible
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleSmall,
+                        maxLines: 4, // Allow 2 lines for long status
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true, // Enable soft wrapping
+                      ),
+                    ),
+                  const SizedBox(height: 2), // Reduce spacing
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),

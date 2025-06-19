@@ -19,7 +19,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_state.dart';
 import 'package:x_pro_delivery_app/core/enums/mode_of_payment.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
-import 'package:x_pro_delivery_app/src/transcation_screen/presentation/utils/delivery_orders_pdf.dart';
+import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/delivery_orders_pdf.dart';
 
 class ConfirmationPaymentView extends StatefulWidget {
   final DeliveryDataEntity deliveryData;

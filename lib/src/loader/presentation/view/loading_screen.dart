@@ -25,39 +25,49 @@ class _LoadingScreenState extends State<LoadingScreen> {
     _listenToProgress();
   }
 
-  void _startSync() async {
-    final hasTrip = await _syncService.checkUserHasTrip(context);
+ void _startSync() async {
+  final hasTrip = await _syncService.checkUserHasTrip(context);
 
-    if (!hasTrip) {
-      setState(() => _statusText = "No active trip found");
-      debugPrint('📱 No active trip - navigating to home');
-      if (mounted) context.go('/homepage');
-      return;
-    }
-
-    // Check if there was an active route before app was closed
-    final lastActiveRoute = await RouteUtils.getLastActiveRoute();
-
-    setState(() => _statusText = "Syncing data...");
-    debugPrint('🔄 Active trip found - starting sync');
-
-    // Start sync and set up a completion callback
-    _syncService.syncAllData(context).then((_) {
-      if (mounted) {
-        if (lastActiveRoute != null) {
-          debugPrint('🧭 Navigating to last active route: $lastActiveRoute');
-          context.go(lastActiveRoute);
-        } else {
-          debugPrint('🏠 No saved route - navigating to homepage');
-          context.go('/homepage');
-        }
-      }
-    });
-
-    setState(() => _statusText = "Syncing data...");
-    debugPrint('🔄 Active trip found - starting sync');
-    _syncService.syncAllData(context);
+  if (!hasTrip) {
+    setState(() => _statusText = "No active trip found");
+    debugPrint('📱 No active trip - navigating to home');
+    if (mounted) context.go('/homepage');
+    return;
   }
+
+  // Check if there was an active route before app was closed
+  final lastActiveRoute = await RouteUtils.getLastActiveRoute();
+  debugPrint('🔍 Last active route found: $lastActiveRoute');
+
+  setState(() => _statusText = "Syncing data...");
+  debugPrint('🔄 Active trip found - starting sync');
+
+  // Start sync with completion callback
+  _syncService.syncAllData(context).then((_) {
+    if (mounted) {
+      if (lastActiveRoute != null && lastActiveRoute.isNotEmpty) {
+        debugPrint('🧭 Navigating to last active route: $lastActiveRoute');
+        context.go(lastActiveRoute);
+      } else {
+        debugPrint('🏠 No saved route - navigating to homepage');
+        context.go('/homepage');
+      }
+    }
+  }).catchError((error) {
+    debugPrint('❌ Sync failed: $error');
+    if (mounted) {
+      // On sync failure, still try to navigate to saved route or homepage
+      if (lastActiveRoute != null && lastActiveRoute.isNotEmpty) {
+        debugPrint('⚠️ Sync failed but navigating to saved route: $lastActiveRoute');
+        context.go(lastActiveRoute);
+      } else {
+        debugPrint('⚠️ Sync failed, navigating to homepage');
+        context.go('/homepage');
+      }
+    }
+  });
+}
+
 
   void _listenToProgress() {
     debugPrint('🎯 Setting up progress listener');

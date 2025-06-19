@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart' show ReturnItemsModel;
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/local_datasource/delivery_team_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/remote_datasource/delivery_team_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
@@ -184,7 +185,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
-import 'package:x_pro_delivery_app/core/common/app/provider/delivery_timeline_status_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/core/services/objectbox.dart';
 import 'package:x_pro_delivery_app/core/services/sync_service.dart';
@@ -236,6 +236,14 @@ import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collec
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloaded.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloading.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/sync_delivery_data_by_trip_id.dart';
+import '../common/app/features/Trip_Ticket/return_items/data/datasource/local_datasource/return_items_local_datasource.dart';
+import '../common/app/features/Trip_Ticket/return_items/data/datasource/remote_datasource/return_items_remote_datasource.dart';
+import '../common/app/features/Trip_Ticket/return_items/data/repo/return_items_repo_impl.dart';
+import '../common/app/features/Trip_Ticket/return_items/domain/repo/return_items_repo.dart';
+import '../common/app/features/Trip_Ticket/return_items/domain/usecases/add_items_to_return_items_by_delivery_id.dart';
+import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_id.dart';
+import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_trip_id.dart';
+import '../common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
 
 final sl = GetIt.instance;
 final pb = PocketBase('http://172.16.0.175:8090');
@@ -322,7 +330,7 @@ Future<void> initAuth() async {
   sl.registerLazySingleton(() => RefreshUserData(sl()));
 
   // Repository
-  sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl(), sl()));
+  sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl(), sl(),));
 
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSrc>(
@@ -575,9 +583,7 @@ Future<void> initDeliveryUpdate() async {
     ),
   );
 
-  sl.registerLazySingleton(
-    () => DeliveryStatusProvider(deliveryUpdateBloc: sl()),
-  );
+  
 }
 
 Future<void> initUpdateTimeline() async {
@@ -758,7 +764,7 @@ Future<void> initDeliveryData() async {
 
   // Repository
   sl.registerLazySingleton<DeliveryDataRepo>(
-    () => DeliveryDataRepoImpl(sl(), sl()),
+    () => DeliveryDataRepoImpl(sl(), sl(),),
   );
 
   // Data sources
@@ -981,3 +987,43 @@ Future<void> initCollection() async {
     () => CollectionRemoteDataSourceImpl(pocketBaseClient: sl()),
   );
 }
+
+Future<void> initReturnItems() async {
+  final objectBoxStore = await ObjectBoxStore.create();
+
+  // BLoC
+  sl.registerFactory(
+    () => ReturnItemsBloc(
+      getReturnItemsByTripId: sl(),
+      getReturnItemById: sl(),
+      addItemsToReturnItemsByDeliveryId: sl(),
+      returnItemsRepo: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => GetReturnItemsByTripId(sl()));
+  sl.registerLazySingleton(() => GetReturnItemById(sl()));
+  sl.registerLazySingleton(() => AddItemsToReturnItemsByDeliveryId(sl()));
+
+  // Repository
+  sl.registerLazySingleton<ReturnItemsRepo>(
+    () => ReturnItemsRepoImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+    ),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<ReturnItemsRemoteDataSource>(
+    () => ReturnItemsRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<ReturnItemsLocalDataSource>(
+    () => ReturnItemsLocalDataSourceImpl(
+      objectBoxStore.store.box<ReturnItemsModel>(),
+      objectBoxStore.store,
+    ),
+  );
+}
+
