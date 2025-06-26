@@ -850,7 +850,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "123:212432795640100884",
+          "indexId": "129:2364513733229906522",
           "relationTarget": "TripModel"
         }
       ],
@@ -1134,7 +1134,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "122:1171187708824140506",
+          "indexId": "128:275404355999582526",
           "relationTarget": "TripModel"
         }
       ],
@@ -2355,10 +2355,101 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "72:7814655483863072260",
+      "lastPropertyId": "11:5991959409366285564",
+      "name": "UserPerformanceEntity",
+      "properties": [
+        {
+          "id": "1:4896337134402260046",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6567380934430192839",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:2833581766450366437",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:9019068681167742092",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:3052740929367157076",
+          "name": "userId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "130:8414763800157151842",
+          "relationTarget": "LocalUsersModel"
+        },
+        {
+          "id": "6:2837888171190632280",
+          "name": "totalDeliveries",
+          "type": 8
+        },
+        {
+          "id": "7:6893222659021521465",
+          "name": "successfulDeliveries",
+          "type": 8
+        },
+        {
+          "id": "8:8578950964490677215",
+          "name": "cancelledDeliveries",
+          "type": 8
+        },
+        {
+          "id": "9:986475168633003094",
+          "name": "deliveryAccuracy",
+          "type": 8
+        },
+        {
+          "id": "10:8375539817196726996",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "11:5991959409366285564",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "73:8797290553868215244",
+      "lastPropertyId": "3:4966134959561711191",
+      "name": "UserPerformanceModel",
+      "properties": [
+        {
+          "id": "1:4580841109716550118",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6348117852064112729",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:4966134959561711191",
+          "name": "userId",
+          "type": 9
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "71:1727574566052977972",
-  "lastIndexId": "127:4963583739483190802",
+  "lastEntityId": "73:8797290553868215244",
+  "lastIndexId": "130:8414763800157151842",
   "lastRelationId": "49:8890252336964719573",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
@@ -2461,7 +2552,9 @@
     6693967078919351563,
     8409512806390582317,
     4825664026656140278,
-    5476341418432294988
+    5476341418432294988,
+    1171187708824140506,
+    212432795640100884
   ],
   "retiredPropertyUids": [
     3346502891055187729,

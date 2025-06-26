@@ -37,6 +37,8 @@ import '../common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoic
 import '../common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_state.dart';
 import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_event.dart';
+import '../common/app/features/user_performance/presentation/bloc/user_performance_bloc.dart';
+import '../common/app/features/user_performance/presentation/bloc/user_performance_event.dart';
 
 class SyncService {
   final store = sl<ObjectBoxStore>();
@@ -557,10 +559,19 @@ Future<void> onConnectionRestored() async {
         _updateProgress(0.15);
       }
 
+
+
       // Load user data and get trip
       authBloc
         ..add(LoadLocalUserByIdEvent(userId))
         ..add(GetUserTripEvent(userId));
+
+        // User Performance (15%)
+final userPerformanceBloc = context.read<UserPerformanceBloc>();
+userPerformanceBloc
+  ..add(LoadUserPerformanceByUserIdEvent(userId))
+  ..add(LoadLocalUserPerformanceByUserIdEvent(userId));
+_updateProgress(0.15);
 
       StreamSubscription? subscription;
       subscription = authBloc.stream.listen((state) {
@@ -783,6 +794,9 @@ Future<void> onConnectionRestored() async {
     final customerDataBloc = context.read<CustomerDataBloc>();
     final invoiceDataBloc = context.read<InvoiceDataBloc>();
     final invoiceItemsBloc = context.read<InvoiceItemsBloc>();
+    // Add this in the refreshScreen method after the existing BLoC refreshes
+// User Performance refresh
+
 
     // Refresh trip data first
     tripBloc.add(const GetTripEvent());

@@ -38,6 +38,7 @@ import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/widgets/acc
 import '../../src/deliveries_and_timeline/presentation/widgets/add_trip_update_screen.dart';
 import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
 import '../../src/transaction_screen/presentation/view/transaction_view.dart';
+import '../../src/user_performance/view/user_performance_screen.dart';
 import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_event.dart';
 
@@ -86,6 +87,10 @@ final router = GoRouter(
     GoRoute(
       path: '/homepage',
       builder: (context, state) => const HomepageView(),
+    ),
+     GoRoute(
+      path: '/user-performance',
+      builder: (context, state) => const UserPerformanceScreen(),
     ),
     GoRoute(
       path: '/delivery-team',

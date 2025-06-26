@@ -56,6 +56,8 @@ import 'core/common/app/features/end_trip_otp/data/model/end_trip_model.dart';
 import 'core/common/app/features/end_trip_otp/domain/entity/end_trip_otp_entity.dart';
 import 'core/common/app/features/otp/data/models/otp_models.dart';
 import 'core/common/app/features/otp/domain/entity/otp_entity.dart';
+import 'core/common/app/features/user_performance/data/model/user_performance_model.dart';
+import 'core/common/app/features/user_performance/domain/entity/user_performance_entity.dart';
 import 'src/auth/data/models/auth_models.dart';
 import 'src/auth/domain/entity/users_entity.dart';
 
@@ -1030,7 +1032,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(123, 212432795640100884),
+        indexId: const obx_int.IdUid(129, 2364513733229906522),
         relationTarget: 'TripModel',
       ),
     ],
@@ -1362,7 +1364,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(122, 1171187708824140506),
+        indexId: const obx_int.IdUid(128, 275404355999582526),
         relationTarget: 'TripModel',
       ),
     ],
@@ -2772,6 +2774,112 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(72, 7814655483863072260),
+    name: 'UserPerformanceEntity',
+    lastPropertyId: const obx_int.IdUid(11, 5991959409366285564),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 4896337134402260046),
+        name: 'dbId',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 6567380934430192839),
+        name: 'id',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 2833581766450366437),
+        name: 'collectionId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 9019068681167742092),
+        name: 'collectionName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 3052740929367157076),
+        name: 'userId',
+        type: 11,
+        flags: 520,
+        indexId: const obx_int.IdUid(130, 8414763800157151842),
+        relationTarget: 'LocalUsersModel',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 2837888171190632280),
+        name: 'totalDeliveries',
+        type: 8,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 6893222659021521465),
+        name: 'successfulDeliveries',
+        type: 8,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 8578950964490677215),
+        name: 'cancelledDeliveries',
+        type: 8,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 986475168633003094),
+        name: 'deliveryAccuracy',
+        type: 8,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 8375539817196726996),
+        name: 'created',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 5991959409366285564),
+        name: 'updated',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(73, 8797290553868215244),
+    name: 'UserPerformanceModel',
+    lastPropertyId: const obx_int.IdUid(3, 4966134959561711191),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 4580841109716550118),
+        name: 'objectBoxId',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 6348117852064112729),
+        name: 'pocketbaseId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 4966134959561711191),
+        name: 'userId',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -2812,8 +2920,8 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(71, 1727574566052977972),
-    lastIndexId: const obx_int.IdUid(127, 4963583739483190802),
+    lastEntityId: const obx_int.IdUid(73, 8797290553868215244),
+    lastIndexId: const obx_int.IdUid(130, 8414763800157151842),
     lastRelationId: const obx_int.IdUid(49, 8890252336964719573),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -2915,6 +3023,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
       8409512806390582317,
       4825664026656140278,
       5476341418432294988,
+      1171187708824140506,
+      212432795640100884,
     ],
     retiredPropertyUids: const [
       3346502891055187729,
@@ -7178,6 +7288,148 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    UserPerformanceEntity: obx_int.EntityDefinition<UserPerformanceEntity>(
+      model: _entities[44],
+      toOneRelations: (UserPerformanceEntity object) => [object.user],
+      toManyRelations: (UserPerformanceEntity object) => {},
+      getId: (UserPerformanceEntity object) => object.dbId,
+      setId: (UserPerformanceEntity object, int id) {
+        object.dbId = id;
+      },
+      objectToFB: (UserPerformanceEntity object, fb.Builder fbb) {
+        final idOffset = object.id == null ? null : fbb.writeString(object.id!);
+        final collectionIdOffset =
+            object.collectionId == null
+                ? null
+                : fbb.writeString(object.collectionId!);
+        final collectionNameOffset =
+            object.collectionName == null
+                ? null
+                : fbb.writeString(object.collectionName!);
+        fbb.startTable(12);
+        fbb.addInt64(0, object.dbId);
+        fbb.addOffset(1, idOffset);
+        fbb.addOffset(2, collectionIdOffset);
+        fbb.addOffset(3, collectionNameOffset);
+        fbb.addInt64(4, object.user.targetId);
+        fbb.addFloat64(5, object.totalDeliveries);
+        fbb.addFloat64(6, object.successfulDeliveries);
+        fbb.addFloat64(7, object.cancelledDeliveries);
+        fbb.addFloat64(8, object.deliveryAccuracy);
+        fbb.addInt64(9, object.created?.millisecondsSinceEpoch);
+        fbb.addInt64(10, object.updated?.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.dbId;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final createdValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          22,
+        );
+        final updatedValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          24,
+        );
+        final dbIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final idParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 6);
+        final collectionIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 8);
+        final collectionNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 10);
+        final totalDeliveriesParam = const fb.Float64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          14,
+        );
+        final successfulDeliveriesParam = const fb.Float64Reader()
+            .vTableGetNullable(buffer, rootOffset, 16);
+        final cancelledDeliveriesParam = const fb.Float64Reader()
+            .vTableGetNullable(buffer, rootOffset, 18);
+        final deliveryAccuracyParam = const fb.Float64Reader()
+            .vTableGetNullable(buffer, rootOffset, 20);
+        final createdParam =
+            createdValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(createdValue);
+        final updatedParam =
+            updatedValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(updatedValue);
+        final object = UserPerformanceEntity(
+          dbId: dbIdParam,
+          id: idParam,
+          collectionId: collectionIdParam,
+          collectionName: collectionNameParam,
+          totalDeliveries: totalDeliveriesParam,
+          successfulDeliveries: successfulDeliveriesParam,
+          cancelledDeliveries: cancelledDeliveriesParam,
+          deliveryAccuracy: deliveryAccuracyParam,
+          created: createdParam,
+          updated: updatedParam,
+        );
+        object.user.targetId = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          12,
+          0,
+        );
+        object.user.attach(store);
+        return object;
+      },
+    ),
+    UserPerformanceModel: obx_int.EntityDefinition<UserPerformanceModel>(
+      model: _entities[45],
+      toOneRelations: (UserPerformanceModel object) => [],
+      toManyRelations: (UserPerformanceModel object) => {},
+      getId: (UserPerformanceModel object) => object.objectBoxId,
+      setId: (UserPerformanceModel object, int id) {
+        object.objectBoxId = id;
+      },
+      objectToFB: (UserPerformanceModel object, fb.Builder fbb) {
+        final pocketbaseIdOffset = fbb.writeString(object.pocketbaseId);
+        final userIdOffset =
+            object.userId == null ? null : fbb.writeString(object.userId!);
+        fbb.startTable(4);
+        fbb.addInt64(0, object.objectBoxId);
+        fbb.addOffset(1, pocketbaseIdOffset);
+        fbb.addOffset(2, userIdOffset);
+        fbb.finish(fbb.endTable());
+        return object.objectBoxId;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final objectBoxIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final object =
+            UserPerformanceModel(objectBoxId: objectBoxIdParam)
+              ..pocketbaseId = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGet(buffer, rootOffset, 6, '')
+              ..userId = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 8);
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -9184,5 +9436,85 @@ class ReturnItemsModel_ {
   /// See [ReturnItemsModel.tripId].
   static final tripId = obx.QueryStringProperty<ReturnItemsModel>(
     _entities[43].properties[2],
+  );
+}
+
+/// [UserPerformanceEntity] entity fields to define ObjectBox queries.
+class UserPerformanceEntity_ {
+  /// See [UserPerformanceEntity.dbId].
+  static final dbId = obx.QueryIntegerProperty<UserPerformanceEntity>(
+    _entities[44].properties[0],
+  );
+
+  /// See [UserPerformanceEntity.id].
+  static final id = obx.QueryStringProperty<UserPerformanceEntity>(
+    _entities[44].properties[1],
+  );
+
+  /// See [UserPerformanceEntity.collectionId].
+  static final collectionId = obx.QueryStringProperty<UserPerformanceEntity>(
+    _entities[44].properties[2],
+  );
+
+  /// See [UserPerformanceEntity.collectionName].
+  static final collectionName = obx.QueryStringProperty<UserPerformanceEntity>(
+    _entities[44].properties[3],
+  );
+
+  /// See [UserPerformanceEntity.user].
+  static final user =
+      obx.QueryRelationToOne<UserPerformanceEntity, LocalUsersModel>(
+        _entities[44].properties[4],
+      );
+
+  /// See [UserPerformanceEntity.totalDeliveries].
+  static final totalDeliveries = obx.QueryDoubleProperty<UserPerformanceEntity>(
+    _entities[44].properties[5],
+  );
+
+  /// See [UserPerformanceEntity.successfulDeliveries].
+  static final successfulDeliveries =
+      obx.QueryDoubleProperty<UserPerformanceEntity>(
+        _entities[44].properties[6],
+      );
+
+  /// See [UserPerformanceEntity.cancelledDeliveries].
+  static final cancelledDeliveries =
+      obx.QueryDoubleProperty<UserPerformanceEntity>(
+        _entities[44].properties[7],
+      );
+
+  /// See [UserPerformanceEntity.deliveryAccuracy].
+  static final deliveryAccuracy =
+      obx.QueryDoubleProperty<UserPerformanceEntity>(
+        _entities[44].properties[8],
+      );
+
+  /// See [UserPerformanceEntity.created].
+  static final created = obx.QueryDateProperty<UserPerformanceEntity>(
+    _entities[44].properties[9],
+  );
+
+  /// See [UserPerformanceEntity.updated].
+  static final updated = obx.QueryDateProperty<UserPerformanceEntity>(
+    _entities[44].properties[10],
+  );
+}
+
+/// [UserPerformanceModel] entity fields to define ObjectBox queries.
+class UserPerformanceModel_ {
+  /// See [UserPerformanceModel.objectBoxId].
+  static final objectBoxId = obx.QueryIntegerProperty<UserPerformanceModel>(
+    _entities[45].properties[0],
+  );
+
+  /// See [UserPerformanceModel.pocketbaseId].
+  static final pocketbaseId = obx.QueryStringProperty<UserPerformanceModel>(
+    _entities[45].properties[1],
+  );
+
+  /// See [UserPerformanceModel.userId].
+  static final userId = obx.QueryStringProperty<UserPerformanceModel>(
+    _entities[45].properties[2],
   );
 }

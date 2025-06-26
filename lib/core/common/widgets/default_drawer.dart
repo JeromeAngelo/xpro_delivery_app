@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+
 class DefaultDrawer extends StatefulWidget {
   const DefaultDrawer({super.key});
 
@@ -73,31 +74,34 @@ class _DefaultDrawerState extends State<DefaultDrawer> {
               ),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.surface,
-                child: _userAvatar != null && _userAvatar!.isNotEmpty
-                    ? ClipOval(
-                        child: Image.network(
-                          _userAvatar!,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset('assets/images/default_user.png');
-                          },
-                        ),
-                      )
-                    : Image.asset('assets/images/default_user.png'),
+                child:
+                    _userAvatar != null && _userAvatar!.isNotEmpty
+                        ? ClipOval(
+                          child: Image.network(
+                            _userAvatar!,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/default_user.png',
+                              );
+                            },
+                          ),
+                        )
+                        : Image.asset('assets/images/default_user.png'),
               ),
               accountName: Text(
                 _userName ?? 'Loading...',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.surface,
-                    ),
+                  color: Theme.of(context).colorScheme.surface,
+                ),
               ),
               accountEmail: Text(
                 _userEmail != null ? '@$_userEmail' : '',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.surface,
-                    ),
+                  color: Theme.of(context).colorScheme.surface,
+                ),
               ),
             ),
           ),
@@ -109,7 +113,9 @@ class _DefaultDrawerState extends State<DefaultDrawer> {
           ListTile(
             leading: const Icon(Icons.bar_chart),
             title: const Text('My Performance'),
-            onTap: () {},
+            onTap: () {
+              context.go('/user-performance');
+            },
           ),
           ListTile(
             leading: const Icon(Icons.history),

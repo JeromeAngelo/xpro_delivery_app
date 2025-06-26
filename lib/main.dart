@@ -22,6 +22,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/user_performance/presentation/bloc/user_performance_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
@@ -69,9 +70,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<DeliveryReceiptBloc>()),
         BlocProvider(create: (_) => sl<CancelledInvoiceBloc>()),
         BlocProvider(create: (_) => sl<CollectionsBloc>()),
-                BlocProvider(create: (_) => sl<ReturnItemsBloc>()),
-
-
+        BlocProvider(create: (_) => sl<ReturnItemsBloc>()),
+        BlocProvider(create: (_) => sl<UserPerformanceBloc>()),
       ],
       child: MultiProvider(
         providers: [

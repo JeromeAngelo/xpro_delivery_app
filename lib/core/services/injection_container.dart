@@ -2,7 +2,8 @@ import 'package:get_it/get_it.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart' show ReturnItemsModel;
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart'
+    show ReturnItemsModel;
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/local_datasource/delivery_team_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/remote_datasource/delivery_team_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
@@ -244,6 +245,14 @@ import '../common/app/features/Trip_Ticket/return_items/domain/usecases/add_item
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_trip_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
+import '../common/app/features/user_performance/data/datasources/local_datasource/user_performance_local_datasource.dart';
+import '../common/app/features/user_performance/data/datasources/remote_datasource/user_performance_remote_datasource.dart';
+import '../common/app/features/user_performance/data/model/user_performance_model.dart';
+import '../common/app/features/user_performance/data/repo/user_performance_repo_impl.dart';
+import '../common/app/features/user_performance/domain/repo/user_performance_repo.dart';
+import '../common/app/features/user_performance/domain/usecases/calculate_delivery_accuracy.dart';
+import '../common/app/features/user_performance/domain/usecases/load_user_performance_by_user_id.dart';
+import '../common/app/features/user_performance/presentation/bloc/user_performance_bloc.dart';
 
 final sl = GetIt.instance;
 final pb = PocketBase('http://172.16.0.175:8090');
@@ -256,13 +265,14 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SyncService());
 
   await initAuth();
+  await initUserPerformance();
   await initOnboarding();
   await initChecklist();
   await initGetVehicle();
   await initPersonel(); // Add this
   await initDeliveryTeam(); // Add this
   await initTrip();
- 
+
   await initDeliveryUpdate();
   await initUpdateTimeline();
   await initOtp();
@@ -330,7 +340,7 @@ Future<void> initAuth() async {
   sl.registerLazySingleton(() => RefreshUserData(sl()));
 
   // Repository
-  sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl(), sl(),));
+  sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl(), sl()));
 
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSrc>(
@@ -346,7 +356,38 @@ Future<void> initAuth() async {
   sl.registerLazySingleton(() => UserProvider());
 }
 
+Future<void> initUserPerformance() async {
+  final objectBoxStore = await ObjectBoxStore.create();
 
+  // BLoC
+  sl.registerFactory(
+    () => UserPerformanceBloc(
+      loadUserPerformanceByUserId: sl(),
+      calculateDeliveryAccuracy: sl(),
+    ),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => LoadUserPerformanceByUserId(sl()));
+  sl.registerLazySingleton(() => CalculateDeliveryAccuracy(sl()));
+
+  // Repository
+  sl.registerLazySingleton<UserPerformanceRepo>(
+    () => UserPerformanceRepoImpl(sl(), sl()),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<UserPerformanceRemoteDatasource>(
+    () => UserPerformanceRemoteDatasourceImpl(pocketBaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<UserPerformanceLocalDataSource>(
+    () => UserPerformanceLocalDataSourceImpl(
+      objectBoxStore.store.box<UserPerformanceModel>(),
+      objectBoxStore.store,
+    ),
+  );
+}
 
 Future<void> initChecklist() async {
   final objectBoxStore = await ObjectBoxStore.create();
@@ -544,10 +585,6 @@ Future<void> initTrip() async {
   );
 }
 
-
-
-
-
 Future<void> initDeliveryUpdate() async {
   final objectBoxStore = await ObjectBoxStore.create();
 
@@ -582,8 +619,6 @@ Future<void> initDeliveryUpdate() async {
       objectBoxStore.store.box<DeliveryDataModel>(),
     ),
   );
-
-  
 }
 
 Future<void> initUpdateTimeline() async {
@@ -675,7 +710,6 @@ Future<void> initEndTripOtp() async {
   );
 }
 
-
 Future<void> initEndTripChecklist() async {
   final objectBoxStore = await ObjectBoxStore.create();
 
@@ -748,7 +782,8 @@ Future<void> initDeliveryData() async {
       deleteDeliveryData: sl(),
       setInvoiceIntoUnloading: sl(),
       calculateDeliveryTime: sl(),
-      syncDeliveryDataByTripId: sl(), setInvoiceIntoUnloaded: sl(),
+      syncDeliveryDataByTripId: sl(),
+      setInvoiceIntoUnloaded: sl(),
     ),
   );
 
@@ -764,7 +799,7 @@ Future<void> initDeliveryData() async {
 
   // Repository
   sl.registerLazySingleton<DeliveryDataRepo>(
-    () => DeliveryDataRepoImpl(sl(), sl(),),
+    () => DeliveryDataRepoImpl(sl(), sl()),
   );
 
   // Data sources
@@ -774,7 +809,8 @@ Future<void> initDeliveryData() async {
 
   sl.registerLazySingleton<DeliveryDataLocalDataSource>(
     () => DeliveryDataLocalDataSourceImpl(
-      objectBoxStore.store.box<DeliveryDataModel>(), sl<Store>(),
+      objectBoxStore.store.box<DeliveryDataModel>(),
+      sl<Store>(),
     ),
   );
 }
@@ -1008,10 +1044,7 @@ Future<void> initReturnItems() async {
 
   // Repository
   sl.registerLazySingleton<ReturnItemsRepo>(
-    () => ReturnItemsRepoImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-    ),
+    () => ReturnItemsRepoImpl(remoteDataSource: sl(), localDataSource: sl()),
   );
 
   // Data sources
@@ -1026,4 +1059,3 @@ Future<void> initReturnItems() async {
     ),
   );
 }
-

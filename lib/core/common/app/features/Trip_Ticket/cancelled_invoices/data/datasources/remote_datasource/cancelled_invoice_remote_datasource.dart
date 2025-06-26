@@ -348,6 +348,79 @@ class CancelledInvoiceRemoteDataSourceImpl
         '   - Has invoice expand: ${createdRecord.expand['invoice'] != null}',
       );
 
+      // Update user performance - increment cancelled deliveries
+try {
+  debugPrint('📊 Updating user performance for cancelled delivery');
+  
+  // Get user ID from trip ticket
+  final tripTicketRecord = await _pocketBaseClient
+      .collection('tripticket')
+      .getOne(tripId);
+  
+  final userId = tripTicketRecord.data['user'];
+  if (userId != null && userId.isNotEmpty) {
+    debugPrint('👤 Found user ID from trip: $userId');
+    
+    // Find user performance record
+    final userPerformanceRecords = await _pocketBaseClient
+        .collection('user_performance')
+        .getList(filter: 'user = "$userId"');
+    
+    if (userPerformanceRecords.items.isNotEmpty) {
+      // Update existing record
+      final userPerformanceRecord = userPerformanceRecords.items.first;
+      final currentCancelledDeliveries = userPerformanceRecord.data['cancelledDeliveries'] ?? 0;
+      final newCancelledDeliveries = (currentCancelledDeliveries is String) 
+          ? (int.tryParse(currentCancelledDeliveries) ?? 0) + 1
+          : (currentCancelledDeliveries as int) + 1;
+      
+      debugPrint('📈 Incrementing cancelled deliveries: $currentCancelledDeliveries → $newCancelledDeliveries');
+      
+      // Calculate new cancellation rate
+      final totalDeliveries = userPerformanceRecord.data['totalDeliveries'] ?? 0;
+      final totalDelCount = (totalDeliveries is String) 
+          ? (int.tryParse(totalDeliveries) ?? 0)
+          : (totalDeliveries as int);
+      
+      final cancellationRate = totalDelCount > 0 
+          ? (newCancelledDeliveries / totalDelCount * 100)
+          : 0.0;
+      
+      // Recalculate success rate
+      final successfulDeliveries = userPerformanceRecord.data['successfulDeliveries'] ?? 0;
+      final successfulDelCount = (successfulDeliveries is String) 
+          ? (int.tryParse(successfulDeliveries) ?? 0)
+          : (successfulDeliveries as int);
+      
+      final successRate = totalDelCount > 0 
+          ? (successfulDelCount / totalDelCount * 100)
+          : 0.0;
+      
+      await _pocketBaseClient
+          .collection('user_performance')
+          .update(
+            userPerformanceRecord.id,
+            body: {
+              'cancelledDeliveries': newCancelledDeliveries.toString(),
+              'cancellationRate': cancellationRate.toStringAsFixed(2),
+              'successRate': successRate.toStringAsFixed(2),
+              'updated': DateTime.now().toIso8601String(),
+            },
+          );
+      
+      debugPrint('✅ User performance updated - Cancelled deliveries: $newCancelledDeliveries, Cancellation rate: ${cancellationRate.toStringAsFixed(2)}%');
+    } else {
+      debugPrint('⚠️ No user performance record found for user: $userId');
+    }
+  } else {
+    debugPrint('⚠️ No user ID found in trip ticket');
+  }
+} catch (e) {
+  debugPrint('⚠️ Failed to update user performance for cancelled delivery: $e');
+  // Don't throw error here as cancelled invoice creation should still succeed
+}
+
+
       final cancelledInvoiceModel = _processCancelledInvoiceRecord(
         createdRecord,
       );

@@ -57,10 +57,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
     try {
       final records = await _pocketBaseClient
           .collection('tripticket')
-          .getList(
-            expand:
-                'customers,personels,checklist,',
-          );
+          .getList(expand: 'customers,personels,checklist,');
 
       // In the loadTrip method
 
@@ -136,8 +133,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .collection('tripticket')
           .getFullList(
             filter: 'qrCode = "$qrData"',
-            expand:
-                'timeline,personels,checklist,deliveryData,deliveryVehicle',
+            expand: 'timeline,personels,checklist,deliveryData,deliveryVehicle',
           );
 
       if (records.isEmpty) {
@@ -698,12 +694,10 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
               customer.id,
               body: {
                 'deliveryUpdates+': [deliveryUpdateRecord.id],
-                'invoiceStatus': 'truck'
+                'invoiceStatus': 'truck',
               },
             );
       }
-
-    
 
       final otpRecord = await _pocketBaseClient
           .collection('otp')
@@ -783,6 +777,75 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       await _pocketBaseClient
           .collection('tripticket')
           .update(tripRecord.id, body: {'user': userId});
+
+      // Update user performance - increment total deliveries
+      try {
+        debugPrint('📊 Updating user performance for user: $userId');
+
+        // Get current delivery count from the trip
+        final deliveryCount =
+            (tripRecord.expand['deliveryData'] as List?)?.length ?? 0;
+        debugPrint('📦 Current trip delivery count: $deliveryCount');
+
+        if (deliveryCount > 0) {
+          // Find user performance record
+          final userPerformanceRecords = await _pocketBaseClient
+              .collection('user_performance')
+              .getList(filter: 'userId = "$userId"');
+
+          if (userPerformanceRecords.items.isNotEmpty) {
+            // Update existing record
+            final userPerformanceRecord = userPerformanceRecords.items.first;
+            final currentTotalDeliveries =
+                userPerformanceRecord.data['totalDeliveries'] ?? 0;
+            final newTotalDeliveries =
+                (currentTotalDeliveries is String)
+                    ? (int.tryParse(currentTotalDeliveries) ?? 0) +
+                        deliveryCount
+                    : (currentTotalDeliveries as int) + deliveryCount;
+
+            debugPrint(
+              '📈 Incrementing total deliveries: $currentTotalDeliveries → $newTotalDeliveries',
+            );
+
+            await _pocketBaseClient
+                .collection('user_performance')
+                .update(
+                  userPerformanceRecord.id,
+                  body: {
+                    'totalDeliveries': newTotalDeliveries.toString(),
+                    'updated': DateTime.now().toIso8601String(),
+                  },
+                );
+
+            debugPrint('✅ User performance updated successfully');
+          } else {
+            // Create new user performance record if none exists
+            debugPrint('📝 Creating new user performance record');
+
+            await _pocketBaseClient
+                .collection('user_performance')
+                .create(
+                  body: {
+                    'user': userId,
+
+                    'totalDeliveries': deliveryCount.toString(),
+                    'successfulDeliveries': '0',
+                    'cancelledDeliveries': '0',
+                    'deliveryAccuracy': '0',
+                    'performanceStatus': 'New',
+                    'created': DateTime.now().toIso8601String(),
+                    'updated': DateTime.now().toIso8601String(),
+                  },
+                );
+
+            debugPrint('✅ New user performance record created');
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Failed to update user performance: $e');
+        // Don't throw error here as trip acceptance should still succeed
+      }
 
       // Safely extract data from the record and ensure all DateTime objects are converted to strings
       Map<String, dynamic> extractData() {
@@ -1340,6 +1403,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       );
     }
   }
+
   @override
   Future<TripModel> updateTripLocation(
     String tripId,
@@ -1605,7 +1669,9 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         debugPrint('⚠️ All date parsing attempts failed for: $strValue');
         return null;
       } catch (e2) {
-        debugPrint('⚠️ Alternative date parsing failed: $e2 for value: $strValue');
+        debugPrint(
+          '⚠️ Alternative date parsing failed: $e2 for value: $strValue',
+        );
         return null;
       }
     }
@@ -1627,8 +1693,8 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       'endTime',
     ];
     return dateFields.contains(fieldName.toLowerCase()) ||
-           fieldName.toLowerCase().contains('time') ||
-           fieldName.toLowerCase().contains('date');
+        fieldName.toLowerCase().contains('time') ||
+        fieldName.toLowerCase().contains('date');
   }
 
   // Safe mapping methods
@@ -1739,14 +1805,13 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
               'longitude': longitude.toString(),
               'created': timestamp,
               'updated': timestamp,
-              
             },
           );
 
       debugPrint('✅ Trip coordinate update record created successfully');
     } catch (e) {
       debugPrint('⚠️ Error creating trip coordinate update record: $e');
-      
+
       try {
         // Attempt a simplified version
         await _pocketBaseClient
@@ -1765,5 +1830,4 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       }
     }
   }
-
 }
