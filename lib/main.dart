@@ -31,6 +31,8 @@ import 'package:x_pro_delivery_app/core/services/router.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_bloc.dart';
 
+import 'core/common/app/features/sync_data/cubit/sync_cubit.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final store = await ObjectBoxStore.create();
@@ -49,6 +51,7 @@ class MyApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => sl<SyncCubit>()),
         BlocProvider(create: (_) => sl<AuthBloc>()),
         BlocProvider(create: (_) => sl<TripBloc>()),
         BlocProvider(create: (_) => sl<DeliveryTeamBloc>()),

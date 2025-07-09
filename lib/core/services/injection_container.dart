@@ -245,6 +245,7 @@ import '../common/app/features/Trip_Ticket/return_items/domain/usecases/add_item
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_trip_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
+import '../common/app/features/sync_data/cubit/sync_cubit.dart';
 import '../common/app/features/user_performance/data/datasources/local_datasource/user_performance_local_datasource.dart';
 import '../common/app/features/user_performance/data/datasources/remote_datasource/user_performance_remote_datasource.dart';
 import '../common/app/features/user_performance/data/model/user_performance_model.dart';
@@ -255,7 +256,7 @@ import '../common/app/features/user_performance/domain/usecases/load_user_perfor
 import '../common/app/features/user_performance/presentation/bloc/user_performance_bloc.dart';
 
 final sl = GetIt.instance;
-final pb = PocketBase('http://172.16.0.175:8090');
+final pb = PocketBase('http://172.16.0.190:8090');
 
 Future<void> init() async {
   final objectBoxStore = await ObjectBoxStore.create();
@@ -264,6 +265,8 @@ Future<void> init() async {
   // Add SyncService registration
   sl.registerLazySingleton(() => SyncService());
 
+  // Add this if missing
+  await initSyncCubit();
   await initAuth();
   await initUserPerformance();
   await initOnboarding();
@@ -292,6 +295,10 @@ Future<void> init() async {
   await initCollection();
 
   sl.registerLazySingleton(() => ConnectivityProvider());
+}
+
+Future<void> initSyncCubit() async {
+  sl.registerFactory(() => SyncCubit());
 }
 
 Future<void> initOnboarding() async {

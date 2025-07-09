@@ -219,6 +219,7 @@ flutter:
     - assets/images/paymaya-qr.png
     - assets/images/trip_accepting.gif
     - assets/images/xpro-logo.png
+    - assets/images/sync-data.gif
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

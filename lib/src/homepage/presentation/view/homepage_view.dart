@@ -20,6 +20,9 @@ import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/get_trip
 import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/homepage_body.dart';
 import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/homepage_dashboard.dart';
 
+import '../../../../core/common/app/features/sync_data/cubit/sync_cubit.dart';
+import '../../../../core/common/app/features/sync_data/cubit/sync_state.dart';
+
 class HomepageView extends StatefulWidget {
   const HomepageView({super.key});
 
@@ -283,202 +286,282 @@ class _HomepageViewState extends State<HomepageView>
   }
 
   Future<void> _handleFullSync() async {
-    debugPrint('🔄 Full sync initiated from AppBar');
+  debugPrint('🔄 Full sync initiated from AppBar');
 
-    // Check if user has a trip first
-    final hasTrip = await _syncService.checkUserHasTrip(context);
+  final syncCubit = context.read<SyncCubit>();
 
-    if (!hasTrip) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.info, color: Colors.white),
-              SizedBox(width: 16),
-              Text('No active trip found to sync'),
-            ],
-          ),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
+  // Check if user has a trip first
+  final hasTrip = await _syncService.checkUserHasTrip(context);
+
+  if (!hasTrip) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.info, color: Colors.white),
+            SizedBox(width: 16),
+            Text('No active trip found to sync'),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 3),
+      ),
+    );
+    return;
+  }
+
+  // Show progress dialog with stream builder for real-time updates
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        content: BlocBuilder<SyncCubit, SyncState>(
+          builder: (context, state) {
+            double progress = 0.0;
+            String statusMessage = 'Starting sync...';
+
+            // Map sync states to progress and messages
+            switch (state.runtimeType) {
+              case SyncLoading:
+                progress = 0.1;
+                statusMessage = 'Initializing sync...';
+                break;
+              case SyncingTripData:
+                final tripState = state as SyncingTripData;
+                progress = 0.1 + (tripState.progress * 0.2);
+                statusMessage = tripState.statusMessage;
+                break;
+              case SyncingDeliveryData:
+                final deliveryState = state as SyncingDeliveryData;
+                progress = 0.3 + (deliveryState.progress * 0.3);
+                statusMessage = deliveryState.statusMessage;
+                break;
+              case SyncingDependentData:
+                final dependentState = state as SyncingDependentData;
+                progress = 0.6 + (dependentState.progress * 0.3);
+                statusMessage = dependentState.statusMessage;
+                break;
+              case ProcessingPendingOperations:
+                final pendingState = state as ProcessingPendingOperations;
+                final pendingProgress = pendingState.totalOperations > 0 
+                    ? pendingState.completedOperations / pendingState.totalOperations 
+                    : 1.0;
+                progress = 0.9 + (pendingProgress * 0.1);
+                statusMessage = 'Processing ${pendingState.completedOperations}/${pendingState.totalOperations} operations...';
+                break;
+              case SyncCompleted:
+                progress = 1.0;
+                statusMessage = 'Sync completed successfully';
+                break;
+              case SyncError:
+                final errorState = state as SyncError;
+                progress = 0.0;
+                statusMessage = 'Error: ${errorState.message}';
+                break;
+            }
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(value: progress),
+                const SizedBox(height: 16),
+                Text('Syncing data... ${(progress * 100).toInt()}%'),
+                const SizedBox(height: 8),
+                Text(
+                  statusMessage,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            );
+          },
         ),
       );
-      return;
-    }
+    },
+  );
 
-    // Show progress dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              StreamBuilder<double>(
-                stream: _syncService.progressStream,
-                builder: (context, snapshot) {
-                  final progress = snapshot.data ?? 0.0;
-                  return Column(
-                    children: [
-                      CircularProgressIndicator(value: progress),
-                      const SizedBox(height: 16),
-                      Text('Syncing data... ${(progress * 100).toInt()}%'),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Please wait while we sync all your data',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  try {
+    // Start the sync process using SyncCubit
+    await syncCubit.startSyncProcess(context);
 
-    try {
-      // Perform full sync
-      final success = await _syncService.syncAllData(context);
+    // Listen for completion or error
+    final subscription = syncCubit.stream.listen((state) {
+      if (state is SyncCompleted) {
+        // Close progress dialog
+        if (mounted) Navigator.of(context).pop();
 
-      // Close progress dialog
-      if (mounted) Navigator.of(context).pop();
-
-      if (success) {
         // Refresh the screen after successful sync
-        await _refreshHomeScreenOnly();
+        _refreshHomeScreenOnly();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
+          SnackBar(
+            content: const Row(
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 16),
                 Text('Data synchronized successfully'),
               ],
             ),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            duration: const Duration(seconds: 3),
           ),
         );
-      } else {
+      } else if (state is SyncError) {
+        // Close progress dialog
+        if (mounted) Navigator.of(context).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 16),
-                Text('Sync failed. Please try again.'),
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 16),
+                Expanded(child: Text('Sync error: ${state.message}')),
               ],
             ),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
-    } catch (e) {
-      // Close progress dialog if still open
-      if (mounted) Navigator.of(context).pop();
+    });
 
-      debugPrint('❌ Full sync failed: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error, color: Colors.white),
-              const SizedBox(width: 16),
-              Expanded(child: Text('Sync error: ${e.toString()}')),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
+    // Cancel subscription after a reasonable timeout
+    Future.delayed(const Duration(minutes: 5), () {
+      subscription.cancel();
+    });
 
-  Future<void> _handlePendingOperations() async {
-    debugPrint('🔄 Processing pending operations from AppBar');
+  } catch (e) {
+    // Close progress dialog if still open
+    if (mounted) Navigator.of(context).pop();
 
-    // Check if there are pending operations
-    final pendingCount = _syncService.pendingSyncOperations.length;
-
-    if (pendingCount == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.info, color: Colors.white),
-              SizedBox(width: 16),
-              Text('No pending operations to process'),
-            ],
-          ),
-          backgroundColor: Colors.blue,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    // Show processing indicator
+    debugPrint('❌ Full sync failed: $e');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+            const Icon(Icons.error, color: Colors.white),
             const SizedBox(width: 16),
-            Text('Processing $pendingCount pending operations...'),
+            Expanded(child: Text('Sync error: ${e.toString()}')),
           ],
         ),
-        duration: const Duration(seconds: 5),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
       ),
     );
-
-    try {
-      // Process pending operations
-      await _syncService.processPendingOperations();
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 16),
-              Text('Pending operations processed successfully'),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
-
-      // Refresh screen after processing
-      await _refreshHomeScreenOnly();
-    } catch (e) {
-      debugPrint('❌ Processing pending operations failed: $e');
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error, color: Colors.white),
-              const SizedBox(width: 16),
-              Expanded(child: Text('Processing failed: ${e.toString()}')),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
   }
+}
+
+Future<void> _handlePendingOperations() async {
+  debugPrint('🔄 Processing pending operations from AppBar');
+
+  final syncCubit = context.read<SyncCubit>();
+
+  // Check if there are pending operations
+  final pendingCount = syncCubit.getPendingOperationsCount();
+
+  if (pendingCount == 0) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.info, color: Colors.white),
+            SizedBox(width: 16),
+            Text('No pending operations to process'),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+        duration: Duration(seconds: 2),
+      ),
+    );
+    return;
+  }
+
+  // Show processing indicator
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 16),
+          Text('Processing $pendingCount pending operations...'),
+        ],
+      ),
+      duration: const Duration(seconds: 5),
+    ),
+  );
+
+  try {
+    // Process pending operations using SyncCubit
+    await syncCubit.onConnectionRestored();
+
+    // Listen for completion
+    final subscription = syncCubit.stream.listen((state) {
+      if (state is PendingOperationsCompleted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 16),
+                Text('Processed ${state.processedOperations} operations successfully'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Refresh screen after processing
+        _refreshHomeScreenOnly();
+      } else if (state is SyncError) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 16),
+                Expanded(child: Text('Processing failed: ${state.message}')),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+
+    // Cancel subscription after timeout
+    Future.delayed(const Duration(minutes: 2), () {
+      subscription.cancel();
+    });
+
+  } catch (e) {
+    debugPrint('❌ Processing pending operations failed: $e');
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 16),
+            Expanded(child: Text('Processing failed: ${e.toString()}')),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
