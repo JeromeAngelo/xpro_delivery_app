@@ -158,11 +158,23 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
               title: Text(_tripTitle),
               centerTitle: true,
               bottom: TabBar(
-                labelColor: Theme.of(context).colorScheme.surface,
+                labelColor: Theme.of(context).colorScheme.onSurface,
                 controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Deliveries', icon: Icon(Icons.local_shipping)),
-                  Tab(text: 'Updates', icon: Icon(Icons.update)),
+                tabs: [
+                  Tab(
+                    text: 'Deliveries',
+                    icon: Icon(
+                      Icons.local_shipping,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  Tab(
+                    text: 'Updates',
+                    icon: Icon(
+                      Icons.update,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
                 ],
               ),
             ),

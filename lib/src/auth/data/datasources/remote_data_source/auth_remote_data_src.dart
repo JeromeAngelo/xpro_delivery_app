@@ -54,11 +54,11 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
           .getOne(
             authData.record.id,
             expand:
-                'user_role', // Make sure this matches the field name in PocketBase
+                'userRole', // Make sure this matches the field name in PocketBase
           );
 
       // Check if user has Team Leader role
-      final userRoleData = userRecord.expand['user_role'];
+      final userRoleData = userRecord.expand['userRole'];
       bool isTeamLeader = false;
       Map<String, dynamic>? roleJson;
 
@@ -118,7 +118,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
 
         // Add role data if available
         if (roleJson != null) {
-          userData['expand'] = {'user_role': roleJson};
+          userData['expand'] = {'userRole': roleJson};
         }
 
         // Store properly formatted auth data
@@ -147,7 +147,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
 
         // Add role data if available
         if (roleJson != null) {
-          userData['expand'] = {'user_role': roleJson};
+          userData['expand'] = {'userRole': roleJson};
         }
 
         return LocalUsersModel.fromJson(userData);
@@ -265,7 +265,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
           .getOne(
             actualUserId,
             expand:
-                'checklist,updateTimeline,deliveryTeam,completedCustomer,returnList,end_trip_checklists,trips',
+                'checklist,updateTimeline,deliveryTeam,completedCustomer,returnList,endTripChecklists,trips',
           );
 
       debugPrint('   👤 User Found: ${user.id}');
@@ -285,7 +285,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
       );
       debugPrint('   ✓ Returns: ${user.expand['returnList']?.length ?? 0}');
       debugPrint(
-        '   ✓ End Trip Checklists: ${user.expand['end_trip_checklists']?.length ?? 0}',
+        '   ✓ End Trip Checklists: ${user.expand['endTripChecklists']?.length ?? 0}',
       );
       debugPrint(
         '   ✓ Trip: ${user.expand['trip'] != null ? 'Found' : 'Not Found'}',
@@ -308,8 +308,8 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
             [],
         'returnList':
             user.expand['returnList']?.map((item) => item.id).toList() ?? [],
-        'end_trip_checklists':
-            user.expand['end_trip_checklists']
+        'endTripChecklists':
+            user.expand['endTripChecklists']
                 ?.map((item) => item.id)
                 .toList() ??
             [],
@@ -367,11 +367,13 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
 
         final tripRecord = tripRecords.first;
         final mappedData = {
-          'id': tripRecord.id,
+          'id': tripRecord.id,  // This is the PocketBase record ID
           'collectionId': tripRecord.collectionId,
           'collectionName': tripRecord.collectionName,
           'tripNumberId': tripRecord.data['tripNumberId'],
           'isAccepted': tripRecord.data['isAccepted'] ?? false,
+          'isEndTrip': tripRecord.data['isEndTrip'] ?? false,
+          'qrCode': tripRecord.data['qrCode'],
           'customers': _mapExpandedRecord(tripRecord.expand['customers']),
           'deliveryTeam': _mapExpandedRecord(tripRecord.expand['deliveryTeam']),
           'personels': _mapExpandedRecord(tripRecord.expand['personels']),
@@ -381,6 +383,8 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
 
         await prefs.setString('user_trip_data', jsonEncode(mappedData));
         debugPrint('💾 Trip data cached successfully');
+        debugPrint('🆔 PocketBase Trip ID: ${tripRecord.id}');
+        debugPrint('🎫 Trip Number ID: ${tripRecord.data['tripNumberId']}');
 
         return TripModel.fromJson(mappedData);
       }
@@ -398,14 +402,24 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
   Map<String, dynamic>? _mapExpandedRecord(dynamic record) {
     if (record == null) return null;
 
-    if (record is List<RecordModel>) {
+    if (record is List) {
       if (record.isEmpty) return null;
-      return {
-        'id': record.first.id,
-        'collectionId': record.first.collectionId,
-        'collectionName': record.first.collectionName,
-        ...record.first.data,
-      };
+      
+      // Handle List<RecordModel>
+      if (record.first is RecordModel) {
+        final firstRecord = record.first as RecordModel;
+        return {
+          'id': firstRecord.id,
+          'collectionId': firstRecord.collectionId,
+          'collectionName': firstRecord.collectionName,
+          'created': _formatDateField(firstRecord.created),
+          'updated': _formatDateField(firstRecord.updated),
+          ...Map<String, dynamic>.from(firstRecord.data),
+        };
+      }
+      
+      // Handle other list types
+      return {'items': record};
     }
 
     if (record is RecordModel) {
@@ -413,8 +427,15 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         'id': record.id,
         'collectionId': record.collectionId,
         'collectionName': record.collectionName,
-        ...record.data,
+        'created': _formatDateField(record.created),
+        'updated': _formatDateField(record.updated),
+        ...Map<String, dynamic>.from(record.data),
       };
+    }
+
+    // Handle other data types
+    if (record is Map<String, dynamic>) {
+      return record;
     }
 
     return null;
@@ -430,7 +451,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
           .getOne(
             userId,
             expand:
-                'checklist,updateTimeline,deliveryTeam,completedCustomer,returnList,end_trip_checklists,trips',
+                'checklist,updateTimeline,deliveryTeam,completedCustomer,returnList,endTripChecklists,trips',
           );
 
       debugPrint('📊 Remote Sync Stats:');
@@ -464,8 +485,8 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         'returnList':
             userRecord.expand['returnList']?.map((item) => item.id).toList() ??
             [],
-        'end_trip_checklists':
-            userRecord.expand['end_trip_checklists']
+        'endTripChecklists':
+            userRecord.expand['endTripChecklists']
                 ?.map((item) => item.id)
                 .toList() ??
             [],

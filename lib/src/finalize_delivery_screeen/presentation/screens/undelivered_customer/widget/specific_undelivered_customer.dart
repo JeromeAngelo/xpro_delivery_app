@@ -241,7 +241,6 @@ class _SpecificUndeliveredCustomerScreenState
             ),
             const Divider(height: 24),
             _buildInfoRow('Store Name', customer.storeName ?? 'Unknown Store'),
-            _buildInfoRow('Owner Name', customer.ownerName ?? 'Unknown Owner'),
             _buildInfoRow('Address', customer.address ?? 'No address provided'),
             _buildInfoRow('Contact Number', customer.contactNumber ?? 'No contact'),
             if (customer.email != null && customer.email!.isNotEmpty)

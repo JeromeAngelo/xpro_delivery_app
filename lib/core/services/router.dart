@@ -37,6 +37,7 @@ import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/widgets/acc
 
 import '../../src/deliveries_and_timeline/presentation/widgets/add_trip_update_screen.dart';
 import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
+import '../../src/summary_trip/presentation/specific_screens/customers_undelivered_screen.dart';
 import '../../src/transaction_screen/presentation/view/transaction_view.dart';
 import '../../src/user_performance/view/user_performance_screen.dart';
 import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
@@ -148,7 +149,6 @@ GoRoute(
     );
   },
 ),
-  // NEW ROUTE: Specific Undelivered Customer Details
     GoRoute(
       path: '/undelivered-customer-details/:cancelledInvoiceId',
       name: 'undelivered-customer-details',
@@ -157,6 +157,19 @@ GoRoute(
         debugPrint('🔄 Navigating to undelivered customer details: $cancelledInvoiceId');
         
         return SpecificUndeliveredCustomerScreen(
+          cancelledInvoiceId: cancelledInvoiceId,
+        );
+      },
+    ),
+
+     GoRoute(
+      path: '/customer-undelivered-screen/:cancelledInvoiceId',
+      name: 'customer-undelivered-screen',
+      builder: (context, state) {
+        final cancelledInvoiceId = state.pathParameters['cancelledInvoiceId']!;
+        debugPrint('🔄 Navigating to undelivered customer details: $cancelledInvoiceId');
+        
+        return CustomersUndeliveredScreen(
           cancelledInvoiceId: cancelledInvoiceId,
         );
       },
@@ -279,6 +292,8 @@ GoRoute(
     return CustomersCollectionScreen( collectionId: customerId,);
   },
 ),
+
+
 // GoRoute(
 //   path: '/summary-return/:customerId',
 //   builder: (context, state) {

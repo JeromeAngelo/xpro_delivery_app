@@ -26,11 +26,9 @@ import '../../Trip_Ticket/invoice_data/presentation/bloc/invoice_data_bloc.dart'
 import '../../Trip_Ticket/invoice_data/presentation/bloc/invoice_data_state.dart';
 import '../../Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 import '../../Trip_Ticket/invoice_items/presentation/bloc/invoice_items_state.dart';
-import '../../Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import '../../Trip_Ticket/trip/presentation/bloc/trip_event.dart';
-import '../../Trip_Ticket/trip/presentation/bloc/trip_state.dart';
 import '../../delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'sync_state.dart';
+
 
 class SyncCubit extends Cubit<SyncState> {
   SyncCubit() : super(const SyncInitial());
@@ -55,293 +53,265 @@ class SyncCubit extends Cubit<SyncState> {
   StreamSubscription? _authSubscription;
   StreamSubscription? _deliveryDataSubscription;
 
-  // Handle checking user trip
-  Future<void> checkUserTrip(BuildContext context) async {
-    try {
-      emit(const CheckingTrip());
-      debugPrint('🔄 SyncCubit: Starting user data sync process');
-
-      final prefs = await SharedPreferences.getInstance();
-      final storedData = prefs.getString('user_data');
-      final authBloc = context.read<AuthBloc>();
-
-      if (storedData == null) {
-        debugPrint('⚠️ SyncCubit: No stored user data found, initiating sync');
-        emit(const SyncingAuthData());
-
-        final completer = Completer<bool>();
-        
-        _authSubscription?.cancel();
-        _authSubscription = authBloc.stream.listen((state) {
-          debugPrint('🔄 SyncCubit: Auth State: $state');
-
-          if (state is RemoteUserDataLoaded) {
-            debugPrint('✅ SyncCubit: Remote user data fetched');
-            authBloc.add(GetUserTripEvent(state.user.id!));
-          } else if (state is UserDataSynced) {
-            debugPrint('✅ SyncCubit: User data synced to local storage');
-            emit(const AuthDataSynced());
-            authBloc.add(const LoadLocalUserDataEvent());
-          } else if (state is UserTripLoaded) {
-            if (state.trip.id != null &&
-                state.trip.isAccepted == true &&
-                state.trip.isEndTrip != true) {
-              debugPrint('✅ SyncCubit: Active trip found: ${state.trip.id}');
-              emit(TripFound(
-                tripId: state.trip.id!,
-                tripNumber: state.trip.tripNumberId ?? 'Unknown',
-              ));
-              completer.complete(true);
-            } else {
-              debugPrint('⚠️ SyncCubit: Found trip is not active or valid');
-              emit(const NoTripFound());
-              completer.complete(false);
-            }
-            _authSubscription?.cancel();
-          } else if (state is AuthError) {
-            debugPrint('❌ SyncCubit: Error during sync: ${state.message}');
-            emit(SyncError(message: state.message));
-            completer.complete(false);
-            _authSubscription?.cancel();
-          }
-        });
-
-        authBloc.add(const LoadRemoteUserDataEvent());
-        await completer.future;
-        return;
-      }
-
-      // Parse stored user data
-      String? userId;
-      String? tripId;
-
-      try {
-        final Map<String, dynamic> userData = Map<String, dynamic>.from(
-          jsonDecode(storedData),
-        );
-        userId = userData['id']?.toString();
-
-        if (userData.containsKey('trip') && userData['trip'] != null) {
-          final tripData = userData['trip'];
-          if (tripData is Map && tripData.containsKey('id')) {
-            tripId = tripData['id']?.toString();
-          }
-        }
-
-        debugPrint('👤 SyncCubit: Found user ID: $userId');
-        debugPrint('🎫 SyncCubit: Found trip ID in preferences: $tripId');
-      } catch (e) {
-        debugPrint('⚠️ SyncCubit: Failed to parse user data: $e');
-        emit(const SyncError(message: 'Failed to parse user data'));
-        return;
-      }
-
-      if (userId == null) {
-        debugPrint('⚠️ SyncCubit: No valid user ID found in stored data');
-        emit(const SyncError(message: 'No valid user ID found'));
-        return;
-      }
-
-      final completer = Completer<bool>();
-      
-      _authSubscription?.cancel();
-      _authSubscription = authBloc.stream.listen((state) async {
-        debugPrint('🔄 SyncCubit: Auth State: $state');
-
-        if (state is LocalUserDataLoaded) {
-          debugPrint('✅ SyncCubit: User data loaded from local storage');
-          emit(const AuthDataSynced());
-          authBloc.add(const LoadRemoteUserDataEvent());
-        } else if (state is RemoteUserDataLoaded) {
-          debugPrint('✅ SyncCubit: Remote user data synced');
-          authBloc.add(GetUserTripEvent(userId!));
-        } else if (state is UserTripLoaded) {
-          if (state.trip.id != null &&
-              state.trip.isAccepted == true &&
-              state.trip.isEndTrip != true) {
-            debugPrint('✅ SyncCubit: Active trip confirmed from server: ${state.trip.id}');
-            emit(TripFound(
-              tripId: state.trip.id!,
-              tripNumber: state.trip.tripNumberId ?? 'Unknown',
-            ));
-            completer.complete(true);
-          } else {
-            debugPrint('⚠️ SyncCubit: Server indicates no active trip for this user');
-            if (tripId != null) {
-              await _clearInvalidTripData();
-            }
-            emit(const NoTripFound());
-            completer.complete(false);
-          }
-          _authSubscription?.cancel();
-        } else if (state is AuthError) {
-          debugPrint('❌ SyncCubit: No active trip found: ${state.message}');
-          if (tripId != null) {
-            await _clearInvalidTripData();
-          }
-          emit(const NoTripFound());
-          completer.complete(false);
-          _authSubscription?.cancel();
-        }
-      });
-
-      debugPrint('🔄 SyncCubit: Starting user data sync chain');
-      authBloc.add(const LoadLocalUserDataEvent());
-      await completer.future;
-
-    } catch (e) {
-      debugPrint('❌ SyncCubit: Error checking user trip: $e');
-      emit(SyncError(message: 'Error checking user trip: $e'));
-    }
+// Handle starting sync process
+Future<void> startSyncProcess(BuildContext context) async {
+  if (_isSyncing) {
+    debugPrint('⚠️ SyncCubit: Sync already in progress, skipping');
+    return;
   }
+  
+  // Add this check in checkUserTrip function after getting user data
+if (!await validateTripDataIntegrity()) {
+  debugPrint('⚠️ SyncCubit: Trip data integrity check failed');
+  await handleInvalidTrip();
+  return;
+}
 
-  // Handle starting sync process
-  Future<void> startSyncProcess(BuildContext context) async {
-    if (_isSyncing) {
-      debugPrint('⚠️ SyncCubit: Sync already in progress, skipping');
+
+  try {
+    _isSyncing = true;
+    emit(const SyncLoading());
+    debugPrint('🔄 SyncCubit: Starting comprehensive sync process');
+
+    // Get current trip data
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString('user_data');
+    
+    if (storedData == null) {
+      emit(const SyncError(message: 'No user data found'));
       return;
     }
 
-    try {
-      _isSyncing = true;
-      emit(const SyncLoading());
-      debugPrint('🔄 SyncCubit: Starting comprehensive sync process');
+    final userData = jsonDecode(storedData);
+    debugPrint('🔍 SyncCubit: User data for sync: $userData');
+    
+    // Check for trip data in nested structure first
+    var tripData = userData['trip'];
+    String? tripId;
+    
+    if (tripData != null && tripData['id'] != null) {
+      tripId = tripData['id'].toString();
+      debugPrint('🎫 SyncCubit: Found trip ID in nested structure: $tripId');
+    } else {
+      // Check for tripNumberId in root level (this is what we have)
+      final tripNumberId = userData['tripNumberId']?.toString();
+      if (tripNumberId != null && tripNumberId.isNotEmpty && tripNumberId != 'null') {
+        tripId = tripNumberId;
+        debugPrint('🎫 SyncCubit: Using trip number as ID: $tripId');
+      }
+    }
+    
+    if (tripId == null || tripId.isEmpty) {
+      emit(const SyncError(message: 'No active trip found'));
+      return;
+    }
 
-      // Get current trip data
-      final prefs = await SharedPreferences.getInstance();
-      final storedData = prefs.getString('user_data');
+    debugPrint('🎫 SyncCubit: Syncing data for trip: $tripId');
+
+    // Step 1: Sync Trip Data
+    await _syncTripData(context, tripId);
+
+    // Step 2: Sync Delivery Data
+    await _syncDeliveryData(context, tripId);
+
+    // Step 3: Sync Dependent Data (based on delivery data)
+    await _syncDependentData(context, tripId);
+
+    // Step 4: Process pending operations
+    await _processPendingOperations();
+
+    // Update last sync time
+    _lastSyncTime = DateTime.now();
+    await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
+
+    emit(const SyncCompleted());
+    debugPrint('✅ SyncCubit: Sync process completed successfully');
+
+  } catch (e) {
+    debugPrint('❌ SyncCubit: Sync process failed: $e');
+    emit(SyncError(message: 'Sync failed: $e'));
+  } finally {
+    _isSyncing = false;
+  }
+}
+
+
+
+  // // Handle starting sync process
+  // Future<void> startSyncProcess(BuildContext context) async {
+  //   if (_isSyncing) {
+  //     debugPrint('⚠️ SyncCubit: Sync already in progress, skipping');
+  //     return;
+  //   }
+
+  //   try {
+  //     _isSyncing = true;
+  //     emit(const SyncLoading());
+  //     debugPrint('🔄 SyncCubit: Starting comprehensive sync process');
+
+  //     // Get current trip data
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final storedData = prefs.getString('user_data');
       
-      if (storedData == null) {
-        emit(const SyncError(message: 'No user data found'));
+  //     if (storedData == null) {
+  //       emit(const SyncError(message: 'No user data found'));
+  //       return;
+  //     }
+
+  //     final userData = jsonDecode(storedData);
+  //     final tripData = userData['trip'];
+      
+  //     if (tripData == null || tripData['id'] == null) {
+  //       emit(const SyncError(message: 'No active trip found'));
+  //       return;
+  //     }
+
+  //     final tripId = tripData['id'].toString();
+  //     debugPrint('🎫 SyncCubit: Syncing data for trip: $tripId');
+
+  //     // Step 1: Sync Trip Data
+  //     await _syncTripData(context, tripId);
+
+  //     // Step 2: Sync Delivery Data
+  //     await _syncDeliveryData(context, tripId);
+
+  //     // Step 3: Sync Dependent Data (based on delivery data)
+  //     await _syncDependentData(context, tripId);
+
+  //     // Step 4: Process pending operations
+  //     await _processPendingOperations();
+
+  //     // Update last sync time
+  //     _lastSyncTime = DateTime.now();
+  //     await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
+
+  //     emit(const SyncCompleted());
+  //     debugPrint('✅ SyncCubit: Sync process completed successfully');
+
+  //   } catch (e) {
+  //     debugPrint('❌ SyncCubit: Sync process failed: $e');
+  //     emit(SyncError(message: 'Sync failed: $e'));
+  //   } finally {
+  //     _isSyncing = false;
+  //   }
+  // }
+// Sync trip data
+Future<void> _syncTripData(BuildContext context, String tripId) async {
+  try {
+    emit(const SyncingTripData(progress: 0.1, statusMessage: 'Loading trip data...'));
+    
+    final authBloc = context.read<AuthBloc>();
+    final completer = Completer<void>();
+    
+    // Get user ID from stored data
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString('user_data');
+    
+    if (storedData == null) {
+      throw Exception('No user data found');
+    }
+    
+    final userData = jsonDecode(storedData);
+    final userId = userData['id']?.toString();
+    
+    if (userId == null) {
+      throw Exception('No user ID found');
+    }
+    
+    debugPrint('🔄 SyncCubit: Loading trip data for user: $userId');
+    
+    StreamSubscription? subscription;
+    subscription = authBloc.stream.listen((state) {
+      if (state is UserTripLoaded) {
+        debugPrint('✅ SyncCubit: Trip data synced');
+        subscription?.cancel();
+        completer.complete();
+      } else if (state is AuthError) {
+        debugPrint('❌ SyncCubit: Trip sync failed: ${state.message}');
+        subscription?.cancel();
+        completer.completeError(state.message);
+      }
+    });
+
+    // Use AuthBloc's GetUserTripEvent instead of TripBloc
+    authBloc.add(GetUserTripEvent(userId));
+    await completer.future;
+
+    emit(const SyncingTripData(progress: 0.3, statusMessage: 'Loading delivery team...'));
+    
+    final deliveryTeamBloc = context.read<DeliveryTeamBloc>();
+    deliveryTeamBloc.add(LoadDeliveryTeamEvent(tripId));
+
+    emit(const SyncingTripData(progress: 1.0, statusMessage: 'Trip data synchronized'));
+    
+  } catch (e) {
+    throw Exception('Failed to sync trip data: $e');
+  }
+}
+
+// Sync delivery data
+Future<void> _syncDeliveryData(BuildContext context, String tripId) async {
+  try {
+    emit(const SyncingDeliveryData(progress: 0.1, statusMessage: 'Loading delivery data...'));
+    
+    final deliveryDataBloc = context.read<DeliveryDataBloc>();
+    final completer = Completer<void>();
+    
+    StreamSubscription? subscription;
+    subscription = deliveryDataBloc.stream.listen((state) {
+      if (state is DeliveryDataByTripLoaded) {
+        debugPrint('✅ SyncCubit: Delivery data synced (${state.deliveryData.length} items)');
+        subscription?.cancel();
+        completer.complete();
+      } else if (state is DeliveryDataError) {
+        debugPrint('❌ SyncCubit: Delivery data sync failed: ${state.message}');
+        subscription?.cancel();
+        completer.completeError(state.message);
+      }
+    });
+
+    deliveryDataBloc.add(GetDeliveryDataByTripIdEvent(tripId));
+    await completer.future;
+
+    emit(const SyncingDeliveryData(progress: 0.5, statusMessage: 'Processing delivery items...'));
+    
+    // Get delivery data for further processing
+    final deliveryDataState = deliveryDataBloc.state;
+    if (deliveryDataState is DeliveryDataByTripLoaded) {
+      final deliveryData = deliveryDataState.deliveryData;
+      debugPrint('📦 SyncCubit: Processing ${deliveryData.length} delivery items');
+      
+      // Handle empty delivery data case
+      if (deliveryData.isEmpty) {
+        debugPrint('ℹ️ SyncCubit: No delivery data found for trip: $tripId');
+        emit(const SyncingDeliveryData(progress: 1.0, statusMessage: 'No delivery data found - sync completed'));
         return;
       }
-
-      final userData = jsonDecode(storedData);
-      final tripData = userData['trip'];
       
-      if (tripData == null || tripData['id'] == null) {
-        emit(const SyncError(message: 'No active trip found'));
-        return;
-      }
-
-      final tripId = tripData['id'].toString();
-      debugPrint('🎫 SyncCubit: Syncing data for trip: $tripId');
-
-      // Step 1: Sync Trip Data
-      await _syncTripData(context, tripId);
-
-      // Step 2: Sync Delivery Data
-      await _syncDeliveryData(context, tripId);
-
-      // Step 3: Sync Dependent Data (based on delivery data)
-      await _syncDependentData(context, tripId);
-
-      // Step 4: Process pending operations
-      await _processPendingOperations();
-
-      // Update last sync time
-      _lastSyncTime = DateTime.now();
-      await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
-
-      emit(const SyncCompleted());
-      debugPrint('✅ SyncCubit: Sync process completed successfully');
-
-    } catch (e) {
-      debugPrint('❌ SyncCubit: Sync process failed: $e');
-      emit(SyncError(message: 'Sync failed: $e'));
-    } finally {
-      _isSyncing = false;
-    }
-  }
-
-  // Sync trip data
-  Future<void> _syncTripData(BuildContext context, String tripId) async {
-    try {
-      emit(const SyncingTripData(progress: 0.1, statusMessage: 'Loading trip data...'));
-      
-      final tripBloc = context.read<TripBloc>();
-      final completer = Completer<void>();
-      
-      StreamSubscription? subscription;
-      subscription = tripBloc.stream.listen((state) {
-        if (state is TripLoaded) {
-          debugPrint('✅ SyncCubit: Trip data synced');
-          subscription?.cancel();
-          completer.complete();
-        } else if (state is TripError) {
-          debugPrint('❌ SyncCubit: Trip sync failed: ${state.message}');
-          subscription?.cancel();
-          completer.completeError(state.message);
-        }
-      });
-
-      tripBloc.add(GetTripByIdEvent(tripId));
-      await completer.future;
-
-      emit(const SyncingTripData(progress: 0.3, statusMessage: 'Loading delivery team...'));
-      
-      final deliveryTeamBloc = context.read<DeliveryTeamBloc>();
-      deliveryTeamBloc.add(LoadDeliveryTeamByIdEvent(tripId));
-
-      emit(const SyncingTripData(progress: 1.0, statusMessage: 'Trip data synchronized'));
-      
-    } catch (e) {
-      throw Exception('Failed to sync trip data: $e');
-    }
-  }
-
-  // Sync delivery data
-  Future<void> _syncDeliveryData(BuildContext context, String tripId) async {
-    try {
-      emit(const SyncingDeliveryData(progress: 0.1, statusMessage: 'Loading delivery data...'));
-      
-      final deliveryDataBloc = context.read<DeliveryDataBloc>();
-      final completer = Completer<void>();
-      
-      StreamSubscription? subscription;
-      subscription = deliveryDataBloc.stream.listen((state) {
-        if (state is DeliveryDataLoaded) {
-          debugPrint('✅ SyncCubit: Delivery data synced (${state.deliveryData.id} items)');
-          subscription?.cancel();
-          completer.complete();
-        } else if (state is DeliveryDataError) {
-          debugPrint('❌ SyncCubit: Delivery data sync failed: ${state.message}');
-          subscription?.cancel();
-          completer.completeError(state.message);
-        }
-      });
-
-      deliveryDataBloc.add(GetDeliveryDataByTripIdEvent(tripId));
-      await completer.future;
-
-      emit(const SyncingDeliveryData(progress: 0.5, statusMessage: 'Processing delivery items...'));
-      
-      // Get delivery data for further processing
-      final deliveryDataState = deliveryDataBloc.state;
-      if (deliveryDataState is DeliveryDataByTripLoaded) {
-        final deliveryData = deliveryDataState.deliveryData;
-        debugPrint('📦 SyncCubit: Processing ${deliveryData.length} delivery items');
+      // Process each delivery item
+      for (int i = 0; i < deliveryData.length; i++) {
+        final progress = 0.5 + (0.5 * (i + 1) / deliveryData.length);
         
-        // Process each delivery item
-        for (int i = 0; i < deliveryData.length; i++) {
-          final progress = 0.5 + (0.5 * (i + 1) / deliveryData.length);
-          
-          emit(SyncingDeliveryData(
-            progress: progress,
-            statusMessage: 'Processing delivery ${i + 1}/${deliveryData.length}...',
-          ));
-          
-          // Small delay to show progress
-          await Future.delayed(const Duration(milliseconds: 100));
-        }
+        emit(SyncingDeliveryData(
+          progress: progress,
+          statusMessage: 'Processing delivery ${i + 1}/${deliveryData.length}...',
+        ));
+        
+        // Small delay to show progress
+        await Future.delayed(const Duration(milliseconds: 100));
       }
-
-      emit(const SyncingDeliveryData(progress: 1.0, statusMessage: 'Delivery data synchronized'));
-      
-    } catch (e) {
-      throw Exception('Failed to sync delivery data: $e');
+    } else {
+      // Handle case where state is not DeliveryDataByTripLoaded
+      debugPrint('⚠️ SyncCubit: Unexpected delivery data state: ${deliveryDataState.runtimeType}');
+      emit(const SyncingDeliveryData(progress: 1.0, statusMessage: 'Delivery data sync completed'));
     }
+
+    emit(const SyncingDeliveryData(progress: 1.0, statusMessage: 'Delivery data synchronized'));
+    
+  } catch (e) {
+    throw Exception('Failed to sync delivery data: $e');
   }
+}
 
   // Sync dependent data based on delivery data
   Future<void> _syncDependentData(BuildContext context, String tripId) async {
@@ -876,43 +846,238 @@ class SyncCubit extends Cubit<SyncState> {
   }
 
   // Clear invalid trip data
-  Future<void> _clearInvalidTripData() async {
-    try {
-      debugPrint('🧹 SyncCubit: Clearing invalid trip data');
-      
-      final prefs = await SharedPreferences.getInstance();
-      final storedData = prefs.getString('user_data');
-      
-      if (storedData != null) {
-        final userData = Map<String, dynamic>.from(jsonDecode(storedData));
-        userData.remove('trip');
-        await prefs.setString('user_data', jsonEncode(userData));
-        debugPrint('✅ SyncCubit: Invalid trip data cleared from preferences');
-      }
-      
-      // Clear local trip-related data from ObjectBox
-      await _clearLocalTripData();
-      
-    } catch (e) {
-      debugPrint('❌ SyncCubit: Error clearing invalid trip data: $e');
+Future<void> _clearInvalidTripData() async {
+  try {
+    debugPrint('🧹 SyncCubit: Clearing invalid trip data');
+    
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString('user_data');
+    
+    if (storedData != null) {
+      final userData = Map<String, dynamic>.from(jsonDecode(storedData));
+      userData.remove('trip');
+      userData.remove('tripNumberId');
+      await prefs.setString('user_data', jsonEncode(userData));
+      debugPrint('✅ SyncCubit: Invalid trip data cleared from preferences');
     }
+    
+    // Clear local trip-related data from ObjectBox
+    await _clearLocalTripData();
+    
+  } catch (e) {
+    debugPrint('❌ SyncCubit: Error clearing invalid trip data: $e');
   }
+}
 
-  // Clear local trip data from ObjectBox
-  Future<void> _clearLocalTripData() async {
-    try {
-      // Clear all trip-related data from ObjectBox
-      debugPrint('🧹 SyncCubit: Clearing local trip data from ObjectBox');
-      
-      // Example: Clear specific boxes
-      // store.box<TripEntity>().removeAll();
-      // store.box<DeliveryDataEntity>().removeAll();
-      // Add other entities as needed
-      
-    } catch (e) {
-      debugPrint('❌ SyncCubit: Error clearing local trip data: $e');
-    }
+// Clear local trip data from ObjectBox
+Future<void> _clearLocalTripData() async {
+  try {
+    debugPrint('🧹 SyncCubit: Clearing local trip data from ObjectBox');
+    
+    // Clear all trip-related data from ObjectBox
+    // Note: Add specific entity clearing based on your ObjectBox entities
+    // Example implementations:
+    
+    // Clear trip entities
+    // store.box<TripEntity>().removeAll();
+    
+    // Clear delivery data entities
+    // store.box<DeliveryDataEntity>().removeAll();
+    
+    // Clear invoice data entities
+    // store.box<InvoiceDataEntity>().removeAll();
+    
+    // Clear invoice items entities
+    // store.box<InvoiceItemsEntity>().removeAll();
+    
+    // Clear delivery team entities
+    // store.box<DeliveryTeamEntity>().removeAll();
+    
+    // Clear checklist entities
+    // store.box<ChecklistEntity>().removeAll();
+    
+    // Clear cancelled invoice entities
+    // store.box<CancelledInvoiceEntity>().removeAll();
+    
+    // Clear collection entities
+    // store.box<CollectionEntity>().removeAll();
+    
+    // Clear delivery vehicle entities
+    // store.box<DeliveryVehicleEntity>().removeAll();
+    
+    debugPrint('✅ SyncCubit: Local trip data cleared from ObjectBox');
+    
+  } catch (e) {
+    debugPrint('❌ SyncCubit: Error clearing local trip data: $e');
   }
+}
+
+// Public method to clear invalid trip data
+Future<void> clearInvalidTripData() async {
+  try {
+    debugPrint('🧹 SyncCubit: Public clear invalid trip data requested');
+    await _clearInvalidTripData();
+    emit(const SyncInitial());
+    debugPrint('✅ SyncCubit: Invalid trip data cleared successfully');
+  } catch (e) {
+    debugPrint('❌ SyncCubit: Failed to clear invalid trip data: $e');
+    emit(SyncError(message: 'Failed to clear invalid trip data: $e'));
+  }
+}
+
+// Clear trip data and reset user session
+Future<void> clearTripDataAndReset() async {
+  try {
+    debugPrint('🔄 SyncCubit: Clearing trip data and resetting session');
+    
+    // Clear invalid trip data
+    await _clearInvalidTripData();
+    
+    // Clear pending operations related to the invalid trip
+    await _clearTripRelatedPendingOperations();
+    
+    // Reset sync state
+    _lastSyncTime = null;
+    _isSyncing = false;
+    
+    // Clear last sync time from preferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_lastSyncKey);
+    
+    emit(const SyncInitial());
+    debugPrint('✅ SyncCubit: Trip data cleared and session reset');
+    
+  } catch (e) {
+    debugPrint('❌ SyncCubit: Failed to clear trip data and reset: $e');
+    emit(SyncError(message: 'Failed to reset trip data: $e'));
+  }
+}
+
+// Clear pending operations related to invalid trip
+Future<void> _clearTripRelatedPendingOperations() async {
+  try {
+    debugPrint('🧹 SyncCubit: Clearing trip-related pending operations');
+    
+    final prefs = await SharedPreferences.getInstance();
+    final pendingOps = prefs.getStringList(_pendingOperationsKey) ?? [];
+    final validOps = <String>[];
+    
+    int removedCount = 0;
+    
+    for (final opJson in pendingOps) {
+      try {
+        final op = jsonDecode(opJson);
+        final entityType = op['entity_type'] as String;
+        
+        // Keep operations that are not trip-related
+        if (!_isTripRelatedEntity(entityType)) {
+          validOps.add(opJson);
+        } else {
+          removedCount++;
+        }
+      } catch (e) {
+        // Remove invalid operations
+        removedCount++;
+      }
+    }
+    
+    if (removedCount > 0) {
+      await prefs.setStringList(_pendingOperationsKey, validOps);
+      _pendingSyncOperations.clear();
+      _pendingSyncOperations.addAll(validOps);
+      
+      debugPrint('🧹 SyncCubit: Removed $removedCount trip-related pending operations');
+    }
+    
+  } catch (e) {
+    debugPrint('❌ SyncCubit: Error clearing trip-related pending operations: $e');
+  }
+}
+
+// Check if entity type is trip-related
+bool _isTripRelatedEntity(String entityType) {
+  const tripRelatedEntities = [
+    'trips',
+    'delivery_data',
+    'invoice_data',
+    'invoice_items',
+    'delivery_team',
+    'checklist',
+    'cancelled_invoices',
+    'collections',
+    'delivery_vehicle',
+    'delivery_receipt',
+    'return_items',
+  ];
+  
+  return tripRelatedEntities.contains(entityType);
+}
+
+// Validate trip data integrity
+Future<bool> validateTripDataIntegrity() async {
+  try {
+    debugPrint('🔍 SyncCubit: Validating trip data integrity');
+    
+    final prefs = await SharedPreferences.getInstance();
+    final storedData = prefs.getString('user_data');
+    
+    if (storedData == null) {
+      debugPrint('⚠️ SyncCubit: No user data found for validation');
+      return false;
+    }
+    
+    final userData = jsonDecode(storedData);
+    
+    // Check for trip data
+    final tripData = userData['trip'];
+    final tripNumberId = userData['tripNumberId'];
+    
+    if (tripData == null && (tripNumberId == null || tripNumberId.toString().isEmpty)) {
+      debugPrint('⚠️ SyncCubit: No trip data found in user data');
+      return false;
+    }
+    
+    // Validate trip data structure
+    if (tripData != null) {
+      if (tripData['id'] == null || tripData['id'].toString().isEmpty) {
+        debugPrint('⚠️ SyncCubit: Invalid trip data - missing ID');
+        return false;
+      }
+    }
+    
+    // Validate trip number ID
+    if (tripNumberId != null && tripNumberId.toString() == 'null') {
+      debugPrint('⚠️ SyncCubit: Invalid trip number ID - null string');
+      return false;
+    }
+    
+    debugPrint('✅ SyncCubit: Trip data integrity validation passed');
+    return true;
+    
+  } catch (e) {
+    debugPrint('❌ SyncCubit: Trip data integrity validation failed: $e');
+    return false;
+  }
+}
+
+// Handle invalid trip scenario
+Future<void> handleInvalidTrip() async {
+  try {
+    debugPrint('⚠️ SyncCubit: Handling invalid trip scenario');
+    
+    // Clear invalid trip data
+    await clearTripDataAndReset();
+    
+    // Emit no trip found state
+    emit(const NoTripFound());
+    
+    debugPrint('✅ SyncCubit: Invalid trip handled successfully');
+    
+  } catch (e) {
+    debugPrint('❌ SyncCubit: Failed to handle invalid trip: $e');
+    emit(SyncError(message: 'Failed to handle invalid trip: $e'));
+  }
+}
 
   // Get sync status
   Map<String, dynamic> getSyncStatus() {

@@ -79,7 +79,7 @@ class _SummaryTripViewState extends State<SummaryTripView>
         controller: _tabController,
         children: const [
           SummaryCollectionScreen(),
-     //     SummaryReturnScreen(),
+          Center(child: Text('Returns - Coming Soon')), // Placeholder for returns
           SummaryUndeliverableScreen(),
         ],
       ),

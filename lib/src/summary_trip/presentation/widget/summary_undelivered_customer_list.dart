@@ -97,7 +97,7 @@ class SummaryUndeliveredCustomerList extends StatelessWidget {
           child: CommonListTiles(
             onTap: () {
               context.push(
-                '/undelivered-customer-details/${cancelledInvoice.id}',
+                '/customer-undelivered-screen/${cancelledInvoice.id}',
               );
             },
             title: storeName,

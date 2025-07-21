@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/user_performance/data/model/user_performance_model.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
+
+import '../../model/user_performance_model.dart';
 
 abstract class UserPerformanceRemoteDatasource {
   const UserPerformanceRemoteDatasource();
@@ -25,7 +26,7 @@ class UserPerformanceRemoteDatasourceImpl implements UserPerformanceRemoteDataso
 
       // Query user performance by user ID with expanded user data
       final records = await _pocketBaseClient
-          .collection('user_performance')
+          .collection('userPerformance')
           .getFullList(
             filter: 'user = "$userId"',
             expand: 'user',
@@ -104,7 +105,7 @@ class UserPerformanceRemoteDatasourceImpl implements UserPerformanceRemoteDataso
   // Helper method to update delivery accuracy in the database
   Future<void> _updateDeliveryAccuracy(String performanceId, double accuracy) async {
     try {
-      await _pocketBaseClient.collection('user_performance').update(
+      await _pocketBaseClient.collection('userPerformance').update(
         performanceId,
         body: {
           'deliveryAccuracy': accuracy,

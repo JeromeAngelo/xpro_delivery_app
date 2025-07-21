@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/data/model/end_trip_checklist_model.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
+
+import '../../model/end_trip_checklist_model.dart';
 
 abstract class EndTripChecklistRemoteDataSource {
   Future<List<EndTripChecklistModel>> generateEndTripChecklist(String tripId);
@@ -34,7 +35,7 @@ Future<List<EndTripChecklistModel>> generateEndTripChecklist(String tripId) asyn
 
     // Check for existing checklists
     final existingChecklists = await _pocketBaseClient
-        .collection('end_trip_checklist')
+        .collection('endTripChecklist')
         .getList(filter: 'trip = "$actualTripId"');
 
     if (existingChecklists.items.isNotEmpty) {
@@ -72,7 +73,7 @@ Future<List<EndTripChecklistModel>> generateEndTripChecklist(String tripId) asyn
     debugPrint('📝 Creating new checklist items');
     final createdItems = await Future.wait(checklistItems.map((item) async {
       final response = await _pocketBaseClient
-          .collection('end_trip_checklist')
+          .collection('endTripChecklist')
           .create(body: item);
       debugPrint('✅ Created item: ${response.id}');
       return response;
@@ -83,7 +84,7 @@ Future<List<EndTripChecklistModel>> generateEndTripChecklist(String tripId) asyn
     await _pocketBaseClient.collection('tripticket').update(
       actualTripId,
       body: {
-        'end_trip_checklists': checklistIds,
+        'endTripChecklists': checklistIds,
       },
     );
     debugPrint('✅ Updated tripticket with checklist IDs: $checklistIds');
@@ -103,7 +104,7 @@ Future<bool> checkEndTripChecklistItem(String id) async {
   try {
     debugPrint('🔄 Updating checklist item: $id');
 
-    await _pocketBaseClient.collection('end_trip_checklist').update(
+    await _pocketBaseClient.collection('endTripChecklist').update(
       id,
       body: {
         'isChecked': true,
@@ -135,7 +136,7 @@ Future<List<EndTripChecklistModel>> loadEndTripChecklist(String tripId) async {
     debugPrint('🎯 Using trip ID: $actualTripId');
 
     final records = await _pocketBaseClient
-        .collection('end_trip_checklist')
+        .collection('endTripChecklist')
         .getFullList(
           filter: 'trip = "$actualTripId"',
           expand: 'trip',

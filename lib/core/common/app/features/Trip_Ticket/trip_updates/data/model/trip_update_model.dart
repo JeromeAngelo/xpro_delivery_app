@@ -100,7 +100,7 @@ class TripUpdateModel extends TripUpdateEntity {
     return TripUpdateModel(
       id: '',
       collectionId: '',
-      collectionName: 'trip_updates',
+      collectionName: 'tripUpdates',
       status: TripUpdateStatus.others,
       date: DateTime.now(),
       image: null,

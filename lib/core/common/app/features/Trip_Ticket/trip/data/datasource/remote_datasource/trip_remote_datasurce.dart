@@ -76,13 +76,13 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             (record.expand['customers'] as List?)?.map((c) {
               final customerData = c as RecordModel;
               final deliveryStatus =
-                  customerData.expand['deliveryStatus'] as List? ?? [];
+                  customerData.expand['deliveryUpdates'] as List? ?? [];
               final invoices = customerData.expand['invoices'] as List? ?? [];
 
               return {
                 ...customerData.data,
                 'id': customerData.id,
-                'deliveryStatus':
+                'deliveryUpdates':
                     deliveryStatus.map((status) => status.data).toList(),
                 'invoices':
                     invoices.map((invoice) {
@@ -628,7 +628,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       final checklistIds = createdItems.map((item) => item.id).toList();
 
       final deliveryTeamRecord = await _pocketBaseClient
-          .collection('delivery_team')
+          .collection('deliveryTeam')
           .create(
             body: {
               'deliveryVehicle':
@@ -659,7 +659,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             .update(
               (personnel as RecordModel).id,
               body: {
-                'delivery_team': deliveryTeamRecord.id,
+                'deliveryTeam': deliveryTeamRecord.id,
                 'trip': actualTripId, // Add trip reference to personnel
               },
             );
@@ -669,13 +669,13 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       }
 
       final inTransitStatus = await _pocketBaseClient
-          .collection('delivery_status_choices')
+          .collection('deliveryStatusChoices')
           .getFirstListItem('title = "In Transit"');
 
       final customers = tripRecord.expand['deliveryData'] as List? ?? [];
       for (var customer in customers) {
         final deliveryUpdateRecord = await _pocketBaseClient
-            .collection('delivery_update')
+            .collection('deliveryUpdate')
             .create(
               body: {
                 'deliveryData': customer.id,
@@ -715,7 +715,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           );
 
       final endTripOtpRecord = await _pocketBaseClient
-          .collection('end_trip_otp')
+          .collection('endTripOtp')
           .create(
             body: {
               'otpCode': null,
@@ -736,7 +736,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             tripRecord.id,
             body: {
               'isAccepted': true,
-              'delivery_team': deliveryTeamRecord.id,
+              'deliveryTeam': deliveryTeamRecord.id,
               'otp': otpRecord.id,
               'endTripOtp': endTripOtpRecord.id,
               'timeAccepted': DateTime.now().toIso8601String(),
@@ -756,12 +756,12 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             },
           );
 
-      // Record trip history in users_trip_history collection
+      // Record trip history in usersTripHistory collection
       debugPrint(
         '📝 Recording trip history for user: $userId and trip: ${tripRecord.id}',
       );
       final userTripHistoryRecord = await _pocketBaseClient
-          .collection('users_trip_history')
+          .collection('usersTripHistory')
           .create(
             body: {
               'users': userId, // Single relation to users collection
@@ -790,7 +790,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         if (deliveryCount > 0) {
           // Find user performance record
           final userPerformanceRecords = await _pocketBaseClient
-              .collection('user_performance')
+              .collection('userPerformance')
               .getList(filter: 'userId = "$userId"');
 
           if (userPerformanceRecords.items.isNotEmpty) {
@@ -809,7 +809,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             );
 
             await _pocketBaseClient
-                .collection('user_performance')
+                .collection('userPerformance')
                 .update(
                   userPerformanceRecord.id,
                   body: {
@@ -824,7 +824,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             debugPrint('📝 Creating new user performance record');
 
             await _pocketBaseClient
-                .collection('user_performance')
+                .collection('userPerformance')
                 .create(
                   body: {
                     'user': userId,
@@ -856,7 +856,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             'collectionName': tripRecord.collectionName,
             ...Map<String, dynamic>.from(tripRecord.data),
             'isAccepted': true,
-            'delivery_team': _convertRecordToJson(deliveryTeamRecord),
+            'deliveryTeam': _convertRecordToJson(deliveryTeamRecord),
             'deliveryData': _mapDeliveryData(tripRecord),
             'otp': _convertRecordToJson(otpRecord),
             'deliveryVehicle': tripRecord.data['deliveryVehicle'],
@@ -893,7 +893,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             'collectionId': tripRecord.collectionId,
             'collectionName': tripRecord.collectionName,
             'isAccepted': true,
-            'delivery_team': _convertRecordToJson(deliveryTeamRecord),
+            'deliveryTeam': _convertRecordToJson(deliveryTeamRecord),
             'otp': _convertRecordToJson(otpRecord),
             'endTripOtp': _convertRecordToJson(endTripOtpRecord),
             'timeAccepted': DateTime.now().toIso8601String(),
@@ -1074,7 +1074,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         filters.add('isEndTrip = $isEndTrip');
       }
       if (deliveryTeamId != null) {
-        filters.add('delivery_team = "$deliveryTeamId"');
+        filters.add('deliveryTeam = "$deliveryTeamId"');
       }
       if (vehicleId != null) {
         filters.add('vehicle = "$vehicleId"');
@@ -1158,7 +1158,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
 
       // Get end odometer from end-trip OTP
       final endTripOtpRecords = await _pocketBaseClient
-          .collection('end_trip_otp')
+          .collection('endTripOtp')
           .getList(filter: 'trip = "$actualTripId"', sort: '-created');
 
       if (otpRecords.items.isEmpty || endTripOtpRecords.items.isEmpty) {
@@ -1204,7 +1204,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .getOne(
             id,
             expand:
-                'customers,customers.deliveryStatus,customers.invoices(customer),customers.invoices.productList,personels,vehicle,checklist,invoices,invoices.productList,delivery_team,deliveryData,deliveryVehicle',
+                'customers,customers.deliveryUpdates,customers.invoices(customer),customers.invoices.productList,personels,vehicle,checklist,invoices,invoices.productList,deliveryTeam,deliveryData,deliveryVehicle',
           );
 
       final mappedData = {
@@ -1221,7 +1221,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
               return {
                 ...customerData.data,
                 'id': customerData.id,
-                'deliveryStatus':
+                'deliveryUpdates':
                     deliveryStatus.map((status) => status.data).toList(),
               };
             }).toList() ??
@@ -1230,13 +1230,13 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             (record.expand['customers'] as List?)?.map((c) {
               final customerData = c as RecordModel;
               final deliveryStatus =
-                  customerData.expand['deliveryStatus'] as List? ?? [];
+                  customerData.expand['deliveryUpdates'] as List? ?? [];
               final invoices = customerData.expand['invoices'] as List? ?? [];
 
               return {
                 ...customerData.data,
                 'id': customerData.id,
-                'deliveryStatus':
+                'deliveryUpdates':
                     deliveryStatus.map((status) => status.data).toList(),
                 'invoices':
                     invoices.map((invoice) {
@@ -1361,7 +1361,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         final vehicleId = (tripRecord.expand['vehicle'] as List).first.id;
         await _pocketBaseClient
             .collection('vehicle')
-            .update(vehicleId, body: {'delivery_team': null, 'trip': null});
+            .update(vehicleId, body: {'deliveryTeam': null, 'trip': null});
         debugPrint('✅ Vehicle assignment cleared');
       }
 
@@ -1371,7 +1371,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             .collection('personels')
             .update(
               (personnel as RecordModel).id,
-              body: {'delivery_team': null, 'trip': null},
+              body: {'deliveryTeam': null, 'trip': null},
             );
         debugPrint('✅ Personnel assignment cleared');
       }
@@ -1445,7 +1445,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             },
           );
 
-      // Create a new record in trip_coordinates_updates collection
+      // Create a new record in tripCoordinatesUpdates collection
       await _createTripCoordinateUpdate(actualTripId, latitude, longitude);
 
       debugPrint('✅ Trip location updated successfully');
@@ -1795,9 +1795,9 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       final now = DateTime.now();
       final timestamp = now.toIso8601String();
 
-      // Create the record in trip_coordinates_updates collection
+      // Create the record in tripCoordinatesUpdates collection
       await _pocketBaseClient
-          .collection('trip_coordinates_updates')
+          .collection('tripCoordinatesUpdates')
           .create(
             body: {
               'trip': tripId,
@@ -1815,7 +1815,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       try {
         // Attempt a simplified version
         await _pocketBaseClient
-            .collection('trip_coordinates_updates')
+            .collection('tripCoordinatesUpdates')
             .create(
               body: {
                 'trip': tripId,

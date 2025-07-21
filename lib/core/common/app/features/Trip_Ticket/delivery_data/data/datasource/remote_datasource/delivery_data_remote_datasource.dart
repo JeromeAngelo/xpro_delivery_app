@@ -123,7 +123,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .getFullList(
             expand: 'customer,invoice,trip,deliveryUpdates, invoiceItems',
             filter: 'trip = "$tripId"',
-            sort: '-created',
+            sort: 'customer.name',
           );
 
       debugPrint(

@@ -1,6 +1,8 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:provider/provider.dart';
@@ -81,16 +83,30 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (_) => UserProvider()),
           ChangeNotifierProvider(create: (_) => sl<ConnectivityProvider>()),
         ],
-        child: MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          title: 'X_Pro_Delivery_App',
-          routerConfig: router,
-          theme: FlexThemeData.light(
-            scheme: FlexScheme.amber,
-            appBarStyle: FlexAppBarStyle.primary,
+        child: ScreenUtilInit(
+          designSize: const Size(375, 812), // iPhone 11 Pro size as base
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (context, child) => MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            title: 'X_Pro_Delivery_App',
+            routerConfig: router,
+            theme: FlexThemeData.light(
+              scheme: FlexScheme.amber,
+              appBarStyle: FlexAppBarStyle.primary,
+            ),
+            darkTheme: FlexThemeData.dark(scheme: FlexScheme.amber),
+            themeMode: ThemeMode.system,
+            builder: (context, child) => ResponsiveBreakpoints.builder(
+              child: child!,
+              breakpoints: [
+                const Breakpoint(start: 0, end: 450, name: MOBILE),
+                const Breakpoint(start: 451, end: 800, name: TABLET),
+                const Breakpoint(start: 801, end: 1920, name: DESKTOP),
+                const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+              ],
+            ),
           ),
-          darkTheme: FlexThemeData.dark(scheme: FlexScheme.amber),
-          themeMode: ThemeMode.system,
         ),
       ),
     );

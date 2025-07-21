@@ -82,7 +82,7 @@ class SummaryCompletedCustomerList extends StatelessWidget {
             onTap: () {
               debugPrint('🔄 Navigating to collection details: ${collection.id}');
               context.push(
-                '/collection-details/${collection.id}',
+                '/summary-collection/${collection.id}',
                 extra: {
                   'collection': collection,
                   'customer': customer,

@@ -3,13 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
 import 'package:x_pro_delivery_app/core/enums/trip_update_status.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'dart:typed_data' show Uint8List;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../../../../trip/data/models/trip_models.dart';
+import '../../model/trip_update_model.dart';
 
 
 abstract class TripUpdateRemoteDatasource {
@@ -98,7 +98,7 @@ Future<void> createTripUpdate({
 
     final startTime = DateTime.now();
 
-    final tripUpdateRecord = await _pocketBaseClient.collection('trip_updates').create(
+    final tripUpdateRecord = await _pocketBaseClient.collection('tripUpdates').create(
       body: {
         'trip': actualTripId,
         'description': description,
@@ -180,7 +180,7 @@ Future<List<TripUpdateModel>> getTripUpdates(String tripId) async {
     
     debugPrint('🎯 Using trip ID: $actualTripId');
 
-    final records = await _pocketBaseClient.collection('trip_updates').getFullList(
+    final records = await _pocketBaseClient.collection('tripUpdates').getFullList(
       filter: 'trip = "$actualTripId"',
       expand: 'trip',
       sort: '-created', // Sort by creation date, newest first

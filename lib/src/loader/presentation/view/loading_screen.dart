@@ -75,7 +75,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     final syncCubit = context.read<SyncCubit>();
     
     // Check if user has trip
-    await syncCubit.checkUserTrip(context);
+    await syncCubit.startSyncProcess(context);
   }
 
   void _handleSyncState(SyncState state) {

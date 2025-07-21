@@ -36,8 +36,8 @@ class _CompletedCustomerDetailsScreenState
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-              context.go('/summary-trip');
-            },
+            context.go('/summary-trip');
+          },
         ),
         actions: [
           IconButton(

@@ -31,6 +31,7 @@ class CancelledInvoiceBloc extends Bloc<CancelledInvoiceEvent, CancelledInvoiceS
     on<LoadLocalCancelledInvoicesByIdEvent>(_onLoadLocalCancelledInvoicesById);
     on<CreateCancelledInvoiceByDeliveryDataIdEvent>(_onCreateCancelledInvoiceByDeliveryDataId);
     on<DeleteCancelledInvoiceEvent>(_onDeleteCancelledInvoice);
+    on<RefreshCancelledInvoicesEvent>(_onRefreshCancelledInvoices);
   }
 
   Future<void> _onLoadCancelledInvoicesByTripId(
@@ -58,7 +59,11 @@ class CancelledInvoiceBloc extends Bloc<CancelledInvoiceEvent, CancelledInvoiceS
     LoadLocalCancelledInvoicesByTripIdEvent event,
     Emitter<CancelledInvoiceState> emit,
   ) async {
-    emit(const CancelledInvoiceLoading());
+    // Only emit loading state if we don't have any data
+    if (state is CancelledInvoiceInitial) {
+      emit(const CancelledInvoiceLoading());
+    }
+    
     debugPrint('📱 BLoC: Loading local cancelled invoices for trip: ${event.tripId}');
 
     final result = await _loadCancelledInvoicesByTripId.loadFromLocal(event.tripId);
@@ -66,11 +71,24 @@ class CancelledInvoiceBloc extends Bloc<CancelledInvoiceEvent, CancelledInvoiceS
     result.fold(
       (failure) {
         debugPrint('❌ BLoC: Failed to load local cancelled invoices: ${failure.message}');
-        emit(CancelledInvoiceError(failure.message));
+        // Only emit error if we don't have any existing data
+        if (state is CancelledInvoiceInitial || state is CancelledInvoiceLoading) {
+          emit(CancelledInvoiceError(failure.message));
+        }
       },
       (cancelledInvoices) {
         debugPrint('✅ BLoC: Loaded ${cancelledInvoices.length} local cancelled invoices');
-        emit(CancelledInvoicesLoaded(cancelledInvoices));
+        if (cancelledInvoices.isEmpty) {
+          // Only emit empty if we don't have existing data
+          if (state is CancelledInvoiceInitial || state is CancelledInvoiceLoading) {
+            emit(CancelledInvoicesEmpty(event.tripId));
+          }
+        } else {
+          emit(CancelledInvoicesOffline(
+            cancelledInvoices: cancelledInvoices,
+            message: 'Showing offline data',
+          ));
+        }
       },
     );
   }
@@ -167,6 +185,33 @@ class CancelledInvoiceBloc extends Bloc<CancelledInvoiceEvent, CancelledInvoiceS
         } else {
           debugPrint('❌ BLoC: Failed to delete cancelled invoice');
           emit(const CancelledInvoiceError('Failed to delete cancelled invoice'));
+        }
+      },
+    );
+  }
+
+  Future<void> _onRefreshCancelledInvoices(
+    RefreshCancelledInvoicesEvent event,
+    Emitter<CancelledInvoiceState> emit,
+  ) async {
+    debugPrint('🔄 BLoC: Refreshing cancelled invoices for trip: ${event.tripId}');
+    
+    // Don't emit loading state for refresh to avoid UI flicker
+    final result = await _loadCancelledInvoicesByTripId(event.tripId);
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ BLoC: Refresh failed: ${failure.message}');
+        // Keep current state if refresh fails
+        emit(CancelledInvoiceError(failure.message));
+      },
+      (cancelledInvoices) {
+        debugPrint('✅ BLoC: Successfully refreshed ${cancelledInvoices.length} cancelled invoices');
+        
+        if (cancelledInvoices.isEmpty) {
+          emit(CancelledInvoicesEmpty(event.tripId));
+        } else {
+          emit(CancelledInvoicesLoaded(cancelledInvoices));
         }
       },
     );

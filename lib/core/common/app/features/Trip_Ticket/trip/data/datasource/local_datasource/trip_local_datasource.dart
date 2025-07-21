@@ -3,9 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
@@ -18,6 +15,10 @@ import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
 
+import '../../../../../delivery_team/delivery_team/data/models/delivery_team_model.dart';
+import '../../../../../delivery_team/personels/data/models/personel_models.dart';
+import '../../../../../delivery_team/vehicle/data/model/vehicle_model.dart';
+import '../../../../delivery_update/data/models/delivery_update_model.dart';
 import '../../../../invoice_data/data/model/invoice_data_model.dart';
 import '../../../../../end_trip_checklist/data/model/end_trip_checklist_model.dart';
 
@@ -132,9 +133,9 @@ Future<(TripModel, String)> acceptTrip(String inputTripId) async {
 
   // Create delivery team with personnel and vehicle
   final deliveryTeamModel = DeliveryTeamModel(
-    id: 'local_delivery_team_${DateTime.now().millisecondsSinceEpoch}',
-    collectionId: 'delivery_team',
-    collectionName: 'delivery_team',
+    id: 'local_deliveryTeam_${DateTime.now().millisecondsSinceEpoch}',
+    collectionId: 'deliveryTeam',
+    collectionName: 'deliveryTeam',
     personels: [], // Will be populated from remote data
     checklist: checklistItems,
     vehicleList: [], // Will be populated from remote data

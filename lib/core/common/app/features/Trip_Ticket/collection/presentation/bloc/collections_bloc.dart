@@ -79,28 +79,39 @@ class CollectionsBloc extends Bloc<CollectionsEvent, CollectionsState> {
   ) async {
     debugPrint('📦 BLoC: Fetching local collections for trip: ${event.tripId}');
     
-    emit(const CollectionsLoading());
+    // Only emit loading state if we don't have any data
+    if (state is CollectionsInitial) {
+      emit(const CollectionsLoading());
+    }
 
     final result = await _getCollectionsByTripId.loadFromLocal(event.tripId);
 
     result.fold(
       (failure) {
         debugPrint('❌ BLoC: Failed to fetch local collections: ${failure.message}');
-        emit(CollectionsError(
-          message: 'No offline data available',
-          errorCode: failure.statusCode,
-        ));
+        // Only emit error if we don't have any existing data
+        if (state is CollectionsInitial || state is CollectionsLoading) {
+          emit(CollectionsError(
+            message: 'No offline data available',
+            errorCode: failure.statusCode,
+          ));
+        }
       },
       (collections) {
         debugPrint('✅ BLoC: Successfully loaded ${collections.length} local collections');
         
         if (collections.isEmpty) {
-          emit(CollectionsEmpty(event.tripId));
+          // Only emit empty if we don't have existing data
+          if (state is CollectionsInitial || state is CollectionsLoading) {
+            emit(CollectionsEmpty(event.tripId));
+          }
         } else {
-          emit(CollectionsOffline(
+          final newState = CollectionsOffline(
             collections: collections,
             message: 'Showing offline data',
-          ));
+          );
+          emit(newState);
+          _cachedState = newState;
         }
       },
     );

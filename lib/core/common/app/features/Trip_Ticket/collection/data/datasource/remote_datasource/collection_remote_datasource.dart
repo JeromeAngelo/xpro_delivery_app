@@ -40,10 +40,32 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
 
       debugPrint('🔄 Fetching collections for trip ID: $actualTripId');
 
+      // If actualTripId looks like a tripNumberId (starts with TRIP-), 
+      // we need to find the actual PocketBase record ID
+      String pocketBaseTripId = actualTripId;
+      
+      if (actualTripId.startsWith('TRIP-')) {
+        debugPrint('🔍 Trip ID appears to be tripNumberId, finding PocketBase record ID...');
+        try {
+          final tripResults = await _pocketBaseClient.collection('tripticket').getFullList(
+            filter: 'tripNumberId = "$actualTripId"',
+          );
+          
+          if (tripResults.isNotEmpty) {
+            pocketBaseTripId = tripResults.first.id;
+            debugPrint('✅ Found PocketBase trip ID: $pocketBaseTripId for tripNumberId: $actualTripId');
+          } else {
+            debugPrint('⚠️ No trip found with tripNumberId: $actualTripId');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Failed to resolve tripNumberId: $e');
+        }
+      }
+
       final records = await _pocketBaseClient
           .collection('deliveryCollection')
           .getFullList(
-            filter: 'trip = "$actualTripId"',
+            filter: 'trip = "$pocketBaseTripId"',
             expand: 'deliveryData,trip,customer,invoice',
             sort: '-created',
           );

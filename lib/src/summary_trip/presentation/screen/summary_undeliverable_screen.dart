@@ -102,32 +102,68 @@ class _SummaryUndeliverableScreenState extends State<SummaryUndeliverableScreen>
       return;
     }
     
-    // Fallback to SharedPreferences
+    // Try multiple sources for trip ID
     final prefs = await SharedPreferences.getInstance();
-    final storedData = prefs.getString('user_data');
-
-    if (storedData != null) {
-      final userData = jsonDecode(storedData);
-      final tripData = userData['trip'] as Map<String, dynamic>?;
-
-      if (tripData != null && tripData['id'] != null) {
-        _currentTripId = tripData['id'];
-        debugPrint('🔍 SUMMARY: Found trip ID in SharedPreferences: $_currentTripId');
-        
-        if (!_isDataInitialized) {
-          _isDataInitialized = true;
-          // Load local data first for immediate display
-          _cancelledInvoiceBloc.add(LoadLocalCancelledInvoicesByTripIdEvent(_currentTripId!));
-          // Then fetch remote data
-          _cancelledInvoiceBloc.add(LoadCancelledInvoicesByTripIdEvent(_currentTripId!));
+    
+    // 1. Check user_trip_data first
+    final tripData = prefs.getString('user_trip_data');
+    if (tripData != null) {
+      try {
+        final tripJson = jsonDecode(tripData);
+        if (tripJson['id'] != null) {
+          _currentTripId = tripJson['id'];
+          debugPrint('🔍 SUMMARY: Found trip ID in user_trip_data: $_currentTripId');
+          _loadDataWithTripId();
+          return;
         }
-      } else {
-        debugPrint('⚠️ SUMMARY: No trip ID found in SharedPreferences');
-        setState(() => _isLoading = false);
+      } catch (e) {
+        debugPrint('⚠️ SUMMARY: Error parsing user_trip_data: $e');
       }
-    } else {
-      debugPrint('⚠️ SUMMARY: No user data found in SharedPreferences');
-      setState(() => _isLoading = false);
+    }
+    
+    // 2. Check user_data for embedded trip
+    final userData = prefs.getString('user_data');
+    if (userData != null) {
+      try {
+        final userJson = jsonDecode(userData);
+        
+        // Check for trip object
+        final trip = userJson['trip'] as Map<String, dynamic>?;
+        if (trip != null && trip['id'] != null) {
+          _currentTripId = trip['id'];
+          debugPrint('🔍 SUMMARY: Found trip ID in user_data.trip: $_currentTripId');
+          _loadDataWithTripId();
+          return;
+        }
+        
+        // Check for tripNumberId and resolve it
+        final tripNumberId = userJson['tripNumberId'];
+        if (tripNumberId != null) {
+          _currentTripId = tripNumberId; // This will be resolved in the datasource
+          debugPrint('🔍 SUMMARY: Found tripNumberId in user_data: $_currentTripId');
+          _loadDataWithTripId();
+          return;
+        }
+      } catch (e) {
+        debugPrint('⚠️ SUMMARY: Error parsing user_data: $e');
+      }
+    }
+    
+    debugPrint('⚠️ SUMMARY: No trip ID found in any SharedPreferences data');
+    setState(() => _isLoading = false);
+  }
+
+  void _loadDataWithTripId() {
+    if (_currentTripId != null && !_isDataInitialized) {
+      _isDataInitialized = true;
+      debugPrint('📱 SUMMARY: Loading cancelled invoices for trip ID: $_currentTripId');
+      
+      // Load local data first for immediate display, then remote
+      _cancelledInvoiceBloc.add(LoadLocalCancelledInvoicesByTripIdEvent(_currentTripId!));
+      // After a short delay, load remote data to ensure fresh data
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _cancelledInvoiceBloc.add(LoadCancelledInvoicesByTripIdEvent(_currentTripId!));
+      });
     }
   }
 

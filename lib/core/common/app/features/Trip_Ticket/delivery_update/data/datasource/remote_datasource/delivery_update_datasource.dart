@@ -4,13 +4,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'dart:typed_data' show Uint8List;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
+
+import '../../models/delivery_update_model.dart';
 
 abstract class DeliveryUpdateDatasource {
   Future<List<DeliveryUpdateModel>> getDeliveryStatusChoices(String customerId);
@@ -82,7 +83,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       final allStatuses =
           await _pocketBaseClient
-              .collection('delivery_status_choices')
+              .collection('deliveryStatusChoices')
               .getFullList();
 
       // Log available status choices
@@ -196,7 +197,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       // Get the status record
       final statusRecord = await _pocketBaseClient
-          .collection('delivery_status_choices')
+          .collection('deliveryStatusChoices')
           .getOne(statusId);
 
       debugPrint('✅ Retrieved status: ${statusRecord.data['title']}');
@@ -204,7 +205,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       // Create delivery update with validated data
       final currentTime = DateTime.now().toIso8601String();
       final deliveryUpdateRecord = await _pocketBaseClient
-          .collection('delivery_update')
+          .collection('deliveryUpdate')
           .create(
             body: {
               // 'customer': customerId,
@@ -273,15 +274,15 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       // Step 1: Add "End Delivery" status to delivery updates
       debugPrint('📝 Adding "End Delivery" status to delivery updates');
 
-      // Get the "End Delivery" status from delivery_status_choices
+      // Get the "End Delivery" status from deliveryStatusChoices
       final endDeliveryStatus = await _pocketBaseClient
-          .collection('delivery_status_choices')
+          .collection('deliveryStatusChoices')
           .getFirstListItem('title = "End Delivery"');
 
       // Create delivery update with "End Delivery" status
       final currentTime = DateTime.now().toIso8601String();
       final deliveryUpdateRecord = await _pocketBaseClient
-          .collection('delivery_update')
+          .collection('deliveryUpdate')
           .create(
             body: {
               'deliveryData': deliveryDataId,
@@ -398,7 +399,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
           // Find user performance record
           final userPerformanceRecords = await _pocketBaseClient
-              .collection('user_performance')
+              .collection('userPerformance')
               .getList(filter: 'user = "$userId"');
 
           if (userPerformanceRecords.items.isNotEmpty) {
@@ -429,7 +430,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
                     : 0.0;
 
             await _pocketBaseClient
-                .collection('user_performance')
+                .collection('userPerformance')
                 .update(
                   userPerformanceRecord.id,
                   body: {
@@ -460,7 +461,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       // Get delivery team using trip ID
       final deliveryTeamRecords = await _pocketBaseClient
-          .collection('delivery_team')
+          .collection('deliveryTeam')
           .getList(filter: 'tripTicket = "$tripId"');
 
       if (deliveryTeamRecords.items.isEmpty) {
@@ -500,7 +501,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       // Update delivery team stats
       await _pocketBaseClient
-          .collection('delivery_team')
+          .collection('deliveryTeam')
           .update(
             deliveryTeamRecord.id,
             body: {
@@ -613,7 +614,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       debugPrint('🔄 Initializing pending status for customers');
 
       final pendingStatus = await _pocketBaseClient
-          .collection('delivery_status_choices')
+          .collection('deliveryStatusChoices')
           .getFirstListItem('title = "Pending"');
 
       for (final customerId in customerIds) {
@@ -631,7 +632,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         if (!hasPendingStatus) {
           final currentTime = DateTime.now().toIso8601String();
           final deliveryUpdateRecord = await _pocketBaseClient
-              .collection('delivery_update')
+              .collection('deliveryUpdate')
               .create(
                 body: {
                   'customer': customerId,
@@ -733,7 +734,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       final startTime = DateTime.now();
 
       final deliveryUpdateRecord = await _pocketBaseClient
-          .collection('delivery_update')
+          .collection('deliveryUpdate')
           .create(
             body: {
               'deliveryData': customerId,

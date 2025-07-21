@@ -93,10 +93,32 @@ class CancelledInvoiceRemoteDataSourceImpl
 
       debugPrint('🔄 Loading cancelled invoices for trip: $actualTripId');
 
+      // If actualTripId looks like a tripNumberId (starts with TRIP-), 
+      // we need to find the actual PocketBase record ID
+      String pocketBaseTripId = actualTripId;
+      
+      if (actualTripId.startsWith('TRIP-')) {
+        debugPrint('🔍 Trip ID appears to be tripNumberId, finding PocketBase record ID...');
+        try {
+          final tripResults = await _pocketBaseClient.collection('tripticket').getFullList(
+            filter: 'tripNumberId = "$actualTripId"',
+          );
+          
+          if (tripResults.isNotEmpty) {
+            pocketBaseTripId = tripResults.first.id;
+            debugPrint('✅ Found PocketBase trip ID: $pocketBaseTripId for tripNumberId: $actualTripId');
+          } else {
+            debugPrint('⚠️ No trip found with tripNumberId: $actualTripId');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Failed to resolve tripNumberId: $e');
+        }
+      }
+
       final records = await _pocketBaseClient
           .collection('cancelledInvoice')
           .getFullList(
-            filter: 'trip = "$actualTripId"',
+            filter: 'trip = "$pocketBaseTripId"',
             expand: 'deliveryData,trip,invoice,customer',
             sort: '-created',
           );
@@ -363,7 +385,7 @@ class CancelledInvoiceRemoteDataSourceImpl
 
           // Find user performance record
           final userPerformanceRecords = await _pocketBaseClient
-              .collection('user_performance')
+              .collection('userPerformance')
               .getList(filter: 'user = "$userId"');
 
           if (userPerformanceRecords.items.isNotEmpty) {
@@ -407,7 +429,7 @@ class CancelledInvoiceRemoteDataSourceImpl
                     : 0.0;
 
             await _pocketBaseClient
-                .collection('user_performance')
+                .collection('userPerformance')
                 .update(
                   userPerformanceRecord.id,
                   body: {
@@ -669,7 +691,7 @@ class CancelledInvoiceRemoteDataSourceImpl
 
       // Get delivery team for this trip
       final deliveryTeamRecords = await _pocketBaseClient
-          .collection('delivery_team')
+          .collection('deliveryTeam')
           .getFullList(filter: 'tripTicket = "$tripId"');
 
       if (deliveryTeamRecords.isEmpty) {
@@ -697,7 +719,7 @@ class CancelledInvoiceRemoteDataSourceImpl
       final newActiverDeliveries = currentActiveDeliveries - 1;
       // Update delivery team with new undelivered count
       await _pocketBaseClient
-          .collection('delivery_team')
+          .collection('deliveryTeam')
           .update(
             deliveryTeam.id,
             body: {
