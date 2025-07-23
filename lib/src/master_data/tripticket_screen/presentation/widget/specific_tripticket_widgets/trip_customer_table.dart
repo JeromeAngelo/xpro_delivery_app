@@ -34,8 +34,6 @@ class TripCustomersTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-   
-
     return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
       builder: (context, state) {
         List<DeliveryDataEntity> deliveries = [];
@@ -318,7 +316,7 @@ class TripCustomersTable extends StatelessWidget {
   ) {
     if (delivery.id != null) {
       // Navigate to delivery details page
-      context.go('/delivery/${delivery.id}');
+      context.go('/delivery-details/${delivery.id}');
     }
   }
 

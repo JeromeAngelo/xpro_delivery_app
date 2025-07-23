@@ -24,28 +24,64 @@ import 'package:xpro_delivery_admin_app/src/return_data/return_list_screen/prese
 import 'package:xpro_delivery_admin_app/src/return_data/undelivered_customer_data/presentation/view/undelivered_customer_list_view.dart';
 import 'package:xpro_delivery_admin_app/src/users/presentation/view/all_users_view.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
 import 'package:xpro_delivery_admin_app/src/users/presentation/view/create_user_view.dart';
 import 'package:xpro_delivery_admin_app/src/users/presentation/view/specific_user_view.dart';
 import 'package:xpro_delivery_admin_app/src/users/presentation/view/update_user_view.dart';
 
 import '../../src/master_data/delivery_data/view/specific_delivery_data_screen.dart';
-import '../../src/return_data/undelivered_customer_data/presentation/view/specific_cancelled_invoice_view.dart';
 import '../../src/master_data/tripticket_screen/presentation/view/edit_tripticket_screen_view.dart';
+import '../../src/return_data/undelivered_customer_data/presentation/view/specific_cancelled_invoice_view.dart';
+
+// Custom page transition for smooth desktop experience
+Page<T> _createSmoothTransition<T extends Object?>(
+  Widget child,
+  GoRouterState state,
+) {
+  return CustomTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 200),
+  );
+}
 
 final router = GoRouter(
   routes: [
-    GoRoute(path: '/', builder: (context, state) => AuthView()),
+    GoRoute(
+      path: '/',
+      pageBuilder:
+          (context, state) => _createSmoothTransition(AuthView(), state),
+    ),
     GoRoute(
       path: '/main-screen',
-      builder: (context, state) => MainScreenView(),
+      pageBuilder:
+          (context, state) => _createSmoothTransition(MainScreenView(), state),
     ),
     GoRoute(
       path: '/trip-overview',
-      builder: (context, state) => TripTicketOverviewScreen(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(TripTicketOverviewScreen(), state),
     ),
     GoRoute(
       path: '/tripticket',
-      builder: (context, state) => TripTicketScreenView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(TripTicketScreenView(), state),
+    ),
+    GoRoute(
+      path: '/tripticket-edit/:tripId',
+      builder: (context, state) {
+        final tripId = state.pathParameters['tripId']!;
+        // We need to get the trip entity first, but we'll handle this in the edit screen
+        return EditTripTicketScreenView(tripId: tripId);
+      },
     ),
     // Add this new route for specific trip view
     GoRoute(
@@ -60,22 +96,17 @@ final router = GoRouter(
       path: '/tripticket-create',
       builder: (context, state) => CreateTripTicketScreenView(),
     ),
-    // Add this new route for editing trip tickets
-    GoRoute(
-      path: '/tripticket-edit/:tripId',
-      builder: (context, state) {
-        final tripId = state.pathParameters['tripId']!;
-        // We need to get the trip entity first, but we'll handle this in the edit screen
-        return EditTripTicketScreenView(tripId: tripId);
-      },
-    ),
     GoRoute(
       path: '/customer-list',
-      builder: (context, state) => CustomerListScreenView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(CustomerListScreenView(), state),
     ),
     GoRoute(
       path: '/delivery-list',
-      builder: (context, state) => DeliveryDataScreen(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(DeliveryDataScreen(), state),
     ),
     GoRoute(
       path: '/delivery-details/:deliveryId',
@@ -95,11 +126,15 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/invoice-list',
-      builder: (context, state) => InvoiceScreenListView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(InvoiceScreenListView(), state),
     ),
     GoRoute(
       path: '/invoice-preset-groups',
-      builder: (context, state) => InvoicePresetGroupScreen(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(InvoicePresetGroupScreen(), state),
     ),
     GoRoute(
       path: '/invoice/:invoiceId',
@@ -113,29 +148,43 @@ final router = GoRouter(
     // Inside the GoRouter routes list, add:
     GoRoute(
       path: '/product-list',
-      builder: (context, state) => const ProductListScreenView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const ProductListScreenView(), state),
     ),
     GoRoute(
       path: '/vehicle-list',
-      builder: (context, state) => const VehicleListScreenView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const VehicleListScreenView(), state),
     ),
     GoRoute(
       path: '/personnel-list',
-      builder: (context, state) => const PersonnelListScreenView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const PersonnelListScreenView(), state),
     ),
 
     // Inside the GoRouter routes list, add:
     GoRoute(
       path: '/checklist',
-      builder: (context, state) => const ChecklistScreenView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const ChecklistScreenView(), state),
     ),
     GoRoute(
       path: '/collections-overview',
-      builder: (context, state) => const CompletedCustomerOverview(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const CompletedCustomerOverview(), state),
     ),
     GoRoute(
       path: '/collections',
-      builder: (context, state) => const TripTicketListForCollection(),
+      pageBuilder:
+          (context, state) => _createSmoothTransition(
+            const TripTicketListForCollection(),
+            state,
+          ),
     ),
     GoRoute(
       path: '/collections/:tripId',
@@ -146,7 +195,11 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/completed-customers',
-      builder: (context, state) => const CompletedCustomerListScreen(),
+      pageBuilder:
+          (context, state) => _createSmoothTransition(
+            const CompletedCustomerListScreen(),
+            state,
+          ),
     ),
     GoRoute(
       path: '/completed-collections/:collectionId',
@@ -157,17 +210,23 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/returns',
-      builder: (context, state) => const ReturnListView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const ReturnListView(), state),
     ),
 
     //GoRoute(path: '/users', builder: (context, state) => const UsersListView()),
     GoRoute(
       path: '/all-users',
-      builder: (context, state) => const AllUsersView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const AllUsersView(), state),
     ),
     GoRoute(
       path: '/create-users',
-      builder: (context, state) => const CreateUserView(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const CreateUserView(), state),
     ),
     // Add this route to your router configuration
     GoRoute(
@@ -189,7 +248,11 @@ final router = GoRouter(
 
     GoRoute(
       path: '/undeliverable-customers',
-      builder: (context, state) => const UndeliveredCustomerListView(),
+      pageBuilder:
+          (context, state) => _createSmoothTransition(
+            const UndeliveredCustomerListView(),
+            state,
+          ),
     ),
 
     GoRoute(
@@ -203,7 +266,9 @@ final router = GoRouter(
     // Add this route to your router configuration
     GoRoute(
       path: '/delivery-monitoring',
-      builder: (context, state) => const DeliveryMonitoringScreen(),
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(const DeliveryMonitoringScreen(), state),
     ),
 
     // Add this route to your router configuration

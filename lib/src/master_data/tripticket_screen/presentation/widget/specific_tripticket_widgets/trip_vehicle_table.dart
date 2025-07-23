@@ -70,10 +70,12 @@ class _TripVehicleTableState extends State<TripVehicleTable> {
           debugPrint('✅ Loaded trip data for vehicle table');
           debugPrint('   Trip ID: ${state.trip.id}');
           debugPrint('   Trip Number: ${state.trip.tripNumberId}');
-          
+
           if (vehicle != null) {
             vehicles = [vehicle];
-            debugPrint('   ✅ Vehicle found: ${vehicle.name} (${vehicle.plateNo})');
+            debugPrint(
+              '   ✅ Vehicle found: ${vehicle.name} (${vehicle.plateNo})',
+            );
             debugPrint('   Vehicle ID: ${vehicle.id}');
             debugPrint('   Vehicle Type: ${vehicle.type}');
           } else {
@@ -86,7 +88,8 @@ class _TripVehicleTableState extends State<TripVehicleTable> {
         }
 
         // Calculate total pages
-        final int totalPages = vehicles.isEmpty ? 1 : ((vehicles.length / _itemsPerPage).ceil());
+        final int totalPages =
+            vehicles.isEmpty ? 1 : ((vehicles.length / _itemsPerPage).ceil());
 
         // Create data rows from vehicles
         final List<DataRow> rows =
@@ -94,7 +97,7 @@ class _TripVehicleTableState extends State<TripVehicleTable> {
               return DataRow(
                 cells: [
                   DataCell(Text(vehicle.id ?? 'N/A')),
-                  DataCell(Text(vehicle.name ?? 'N/A')),
+                  DataCell(Text(vehicle.make ?? 'N/A')),
                   DataCell(Text(vehicle.plateNo ?? 'N/A')),
                   DataCell(Text(vehicle.type ?? 'N/A')),
                   DataCell(
