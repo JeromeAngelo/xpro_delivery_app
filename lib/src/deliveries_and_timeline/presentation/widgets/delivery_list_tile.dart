@@ -22,7 +22,8 @@ class DeliveryListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     // Get customer data from the delivery entity
     final customer = delivery.customer.target;
-    
+    final invoice = delivery.invoice.target;
+
     // ADDED: Show shimmer loading when customer is null
     if (customer == null) {
       return Card(
@@ -171,14 +172,16 @@ class DeliveryListTile extends StatelessWidget {
           // Pre-load delivery data to local storage
           if (delivery.id != null) {
             context.read<DeliveryDataBloc>().add(
-                  GetLocalDeliveryDataByIdEvent(delivery.id!),
-                );
+              GetLocalDeliveryDataByIdEvent(delivery.id!),
+            );
           }
 
           // Navigate after ensuring data is in local storage
           if (delivery.id != null) {
-            context.pushReplacement('/delivery-and-invoice/${delivery.id}',
-                extra: delivery);
+            context.pushReplacement(
+              '/delivery-and-invoice/${delivery.id}',
+              extra: delivery,
+            );
           }
         },
         child: Padding(
@@ -188,8 +191,9 @@ class DeliveryListTile extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.1),
                     child: Icon(
                       Icons.store,
                       color: Theme.of(context).colorScheme.primary,
@@ -202,10 +206,13 @@ class DeliveryListTile extends StatelessWidget {
                       children: [
                         Text(
                           customer.name ?? 'No Store Name',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          invoice!.name ?? 'No Invoice Number',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -230,14 +237,14 @@ class DeliveryListTile extends StatelessWidget {
                   Text(
                     'Status: ',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     _getDeliveryStatus(delivery),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ],
               ),
@@ -248,8 +255,8 @@ class DeliveryListTile extends StatelessWidget {
                     Text(
                       'Payment: ',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       delivery.paymentMode ?? 'Unknown',
@@ -275,7 +282,7 @@ class DeliveryListTile extends StatelessWidget {
         return lastUpdate.title!;
       }
     }
-    
+
     // Default status if no updates are available
     return 'Pending';
   }

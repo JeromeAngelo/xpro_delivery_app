@@ -347,6 +347,51 @@ class CancelledInvoiceRemoteDataSourceImpl
       // Update delivery team stats
       await _updateDeliveryTeamStats(tripId);
 
+      // Record cancelled invoice in trip ticket
+      try {
+        debugPrint('📝 Recording cancelled invoice in trip ticket: $tripId');
+        
+        // Get current trip ticket to check existing cancelled invoices
+        final tripTicketRecord = await _pocketBaseClient
+            .collection('tripticket')
+            .getOne(tripId);
+        
+        // Get existing cancelled invoices array or initialize empty array
+        List<String> existingCancelledInvoices = [];
+        if (tripTicketRecord.data['cancelledInvoice'] != null) {
+          final existing = tripTicketRecord.data['cancelledInvoice'];
+          if (existing is List) {
+            existingCancelledInvoices = existing.cast<String>();
+          } else if (existing is String && existing.isNotEmpty) {
+            existingCancelledInvoices = [existing];
+          }
+        }
+        
+        // Add new cancelled invoice ID if not already present
+        if (!existingCancelledInvoices.contains(record.id)) {
+          existingCancelledInvoices.add(record.id);
+          
+          // Update trip ticket with new cancelled invoice
+          await _pocketBaseClient
+              .collection('tripticket')
+              .update(
+                tripId,
+                body: {
+                  'cancelledInvoice': existingCancelledInvoices,
+                  'updated': DateTime.now().toUtc().toIso8601String(),
+                },
+              );
+          
+          debugPrint('✅ Successfully recorded cancelled invoice in trip ticket');
+          debugPrint('📋 Trip now has ${existingCancelledInvoices.length} cancelled invoices');
+        } else {
+          debugPrint('⚠️ Cancelled invoice already recorded in trip ticket');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Failed to record cancelled invoice in trip ticket: $e');
+        // Don't throw error as cancelled invoice creation should still succeed
+      }
+
       await _pocketBaseClient
           .collection('deliveryData')
           .create(body: {'invoiceStatus': 'cancelled'});

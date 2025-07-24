@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:timelines/timelines.dart';
+import 'package:x_pro_delivery_app/core/common/widgets/custom_timeline.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
@@ -47,83 +47,64 @@ class UpdateTimeline extends StatelessWidget {
             children: [
               const SizedBox(height: 12),
               Expanded(
-                child: Timeline.tileBuilder(
+                child: CustomTimelineTileBuilder.connected(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  theme: TimelineThemeData(
-                    nodePosition: 0.04,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    indicatorTheme: const IndicatorThemeData(
-                      position: 0.5,
-                      size: 15.0,
-                    ),
-                    connectorTheme: const ConnectorThemeData(
-                      thickness: 2.0,
-                    ),
-                  ),
-                  builder: TimelineTileBuilder.connected(
-                    connectionDirection: ConnectionDirection.before,
-                    itemCount: timelineItems.length + 1,
-                    contentsBuilder: (_, index) {
-                      if (index == timelineItems.length) {
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: TileForTimeline(
-                            deliveryData: TileForTimeline.defaultLocalTile(state.trip.id!),
-                            isLocalTile: true,
-                          ),
-                        );
-                      }
-
-                      final item = timelineItems[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: item.isCustomer
-                            ? TileForTimeline(
-                                deliveryData: item.delivery!,
-                              )
-                            : TileForTripTimeline(
-                                update: item.tripUpdate!,
-                                isFirst: index == 0,
-                                isLast: index == timelineItems.length - 1,
-                              ),
+                  nodePosition: 0.04,
+                  itemCount: timelineItems.length + 1,
+                  contentsBuilder: (_, index) {
+                    if (index == timelineItems.length) {
+                      return TileForTimeline(
+                        deliveryData: TileForTimeline.defaultLocalTile(state.trip.id!),
+                        isLocalTile: true,
                       );
-                    },
-                    indicatorBuilder: (_, index) {
-                      if (index >= timelineItems.length) {
-                        return DotIndicator(
-                          color: Theme.of(context).colorScheme.outline,
-                        );
-                      }
+                    }
 
-                      final isLatestItem = index == 0;
-                      final item = timelineItems[index];
-
-                      if (isLatestItem) {
-                        return Icon(
-                          item.isCustomer
-                              ? Icons.local_shipping_rounded
-                              : Icons.update,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 15,
-                        );
-                      }
-
-                      return DotIndicator(
+                    final item = timelineItems[index];
+                    return item.isCustomer
+                        ? TileForTimeline(
+                            deliveryData: item.delivery!,
+                          )
+                        : TileForTripTimeline(
+                            update: item.tripUpdate!,
+                            isFirst: index == 0,
+                            isLast: index == timelineItems.length - 1,
+                          );
+                  },
+                  indicatorBuilder: (_, index) {
+                    if (index >= timelineItems.length) {
+                      return CustomDotIndicator(
                         color: Theme.of(context).colorScheme.outline,
-                        size: item.isCustomer ? 12 : 10,
                       );
-                    },
-                    connectorBuilder: (_, index, type) {
-                      final isLatestItem = index == 0;
-                      return DecoratedLineConnector(
-                        decoration: BoxDecoration(
-                          color: isLatestItem
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.outline,
-                        ),
+                    }
+
+                    final isLatestItem = index == 0;
+                    final item = timelineItems[index];
+
+                    if (isLatestItem) {
+                      return Icon(
+                        item.isCustomer
+                            ? Icons.local_shipping_rounded
+                            : Icons.update,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 15,
                       );
-                    },
-                  ),
+                    }
+
+                    return CustomDotIndicator(
+                      color: Theme.of(context).colorScheme.outline,
+                      size: item.isCustomer ? 12 : 10,
+                    );
+                  },
+                  connectorBuilder: (_, index, type) {
+                    final isLatestItem = index == 0;
+                    return CustomDecoratedLineConnector(
+                      decoration: BoxDecoration(
+                        color: isLatestItem
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.outline,
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

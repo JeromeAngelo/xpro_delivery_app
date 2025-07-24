@@ -736,6 +736,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             tripRecord.id,
             body: {
               'isAccepted': true,
+              'user': userId, // Record the user who accepted the trip
               'deliveryTeam': deliveryTeamRecord.id,
               'otp': otpRecord.id,
               'endTripOtp': endTripOtpRecord.id,
@@ -743,6 +744,8 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
               'checklist': checklistIds,
             },
           );
+      
+      debugPrint('✅ Updated tripticket with user ID: $userId');
 
       await _pocketBaseClient
           .collection('users')
@@ -864,7 +867,6 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             'timeline': _mapTimeline(tripRecord),
             'personels': _mapPersonels(tripRecord),
             'checklist': _mapChecklist(tripRecord),
-            'vehicle': _mapVehicle(tripRecord),
             'timeAccepted': DateTime.now().toIso8601String(),
           };
 
@@ -975,18 +977,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
     }
   }
 
-  List<Map<String, dynamic>> _mapVehicle(RecordModel tripRecord) {
-    try {
-      final vehicle = tripRecord.expand['vehicle'] as List? ?? [];
-      return vehicle.map((item) {
-        final record = item as RecordModel;
-        return _convertRecordToJson(record);
-      }).toList();
-    } catch (e) {
-      debugPrint('⚠️ Error mapping vehicle: $e');
-      return [];
-    }
-  }
+ 
 
   Map<String, dynamic> _convertRecordToJson(RecordModel record) {
     try {
@@ -1269,7 +1260,6 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'timeline': _mapTimeline(record),
         'personels': _mapPersonels(record),
         'checklist': _mapChecklist(record),
-        'vehicle': _mapVehicle(record),
         'isAccepted': record.data['isAccepted'],
         'deliveryVehicle': record.data['deliveryVehicle'],
         'timeAccepted': record.data['timeAccepted'],
@@ -1386,7 +1376,6 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'timeline': _mapTimeline(tripRecord),
         'personels': _mapPersonels(tripRecord),
         'checklist': _mapChecklist(tripRecord),
-        'vehicle': _mapVehicle(tripRecord),
       };
 
       // Clear stored trip data
