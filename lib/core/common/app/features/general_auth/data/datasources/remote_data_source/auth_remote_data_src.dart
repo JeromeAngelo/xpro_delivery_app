@@ -670,11 +670,23 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
           if (roleName == 'Helper' || roleName == 'Driver') {
             debugPrint('🔄 Creating personnel record for $roleName user');
 
+            // Map user roles to personnel roles
+            String personnelRole;
+            if (roleName == 'Driver') {
+              personnelRole = 'team_leader';
+            } else if (roleName == 'Helper') {
+              personnelRole = 'helper';
+            } else {
+              personnelRole = 'helper'; // fallback
+            }
+
             final personnelData = {
               'name': userData['name'] ?? record.data['name'],
-              'role': roleName?.toLowerCase() ?? 'helper',
+              'role': personnelRole,
               'user': record.id,
             };
+
+            debugPrint('👥 Mapping $roleName -> $personnelRole for personnel record');
 
             await _pocketBaseClient
                 .collection('personels')
@@ -770,6 +782,99 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
           .update(user.id!, body: userData);
 
       debugPrint('✅ User updated successfully');
+
+      // Check if user has "Helper" or "Driver" role and update personnel record
+      try {
+        if (userData['userRole'] != null) {
+          debugPrint('🔄 Checking user role for personnel record update');
+
+          // Get the user role to check if it's "Helper" or "Driver"
+          final userRoleRecord = await _pocketBaseClient
+              .collection('userRoles')
+              .getOne(userData['userRole']);
+
+          final roleName = userRoleRecord.data['name']?.toString();
+          debugPrint('👤 User role for update: $roleName');
+
+          if (roleName == 'Helper' || roleName == 'Driver') {
+            debugPrint('🔄 Updating personnel record for $roleName user');
+
+            // Map user roles to personnel roles
+            String personnelRole;
+            if (roleName == 'Driver') {
+              personnelRole = 'team_leader';
+            } else if (roleName == 'Helper') {
+              personnelRole = 'helper';
+            } else {
+              personnelRole = 'helper'; // fallback
+            }
+
+            debugPrint('👥 Mapping $roleName -> $personnelRole for personnel update');
+
+            // Try to find existing personnel record for this user
+            final existingPersonnelRecords = await _pocketBaseClient
+                .collection('personels')
+                .getList(
+                  page: 1,
+                  perPage: 1,
+                  filter: 'user = "${user.id}"',
+                );
+
+            final personnelUpdateData = {
+              'name': userData['name'] ?? user.name,
+              'role': personnelRole,
+              'user': user.id,
+            };
+
+            if (existingPersonnelRecords.items.isNotEmpty) {
+              // Update existing personnel record
+              final existingPersonnelId = existingPersonnelRecords.items.first.id;
+              await _pocketBaseClient
+                  .collection('personels')
+                  .update(existingPersonnelId, body: personnelUpdateData);
+              
+              debugPrint('✅ Updated existing personnel record for $roleName user');
+            } else {
+              // Create new personnel record if it doesn't exist
+              await _pocketBaseClient
+                  .collection('personels')
+                  .create(body: personnelUpdateData);
+              
+              debugPrint('✅ Created new personnel record for $roleName user');
+            }
+          } else {
+            debugPrint('ℹ️ User role "$roleName" does not require personnel record');
+            
+            // If the user role is no longer Driver/Helper, remove any existing personnel record
+            try {
+              final existingPersonnelRecords = await _pocketBaseClient
+                  .collection('personels')
+                  .getList(
+                    page: 1,
+                    perPage: 1,
+                    filter: 'user = "${user.id}"',
+                  );
+
+              if (existingPersonnelRecords.items.isNotEmpty) {
+                final existingPersonnelId = existingPersonnelRecords.items.first.id;
+                await _pocketBaseClient
+                    .collection('personels')
+                    .delete(existingPersonnelId);
+                
+                debugPrint('🗑️ Removed personnel record - user no longer Driver/Helper');
+              }
+            } catch (deleteError) {
+              debugPrint('⚠️ Failed to remove personnel record: ${deleteError.toString()}');
+            }
+          }
+        } else {
+          debugPrint('⚠️ No user role assigned, skipping personnel record update');
+        }
+      } catch (personnelError) {
+        debugPrint('⚠️ Failed to update personnel record: ${personnelError.toString()}');
+        // Note: We don't throw here to avoid failing the entire user update
+        // The user was updated successfully, but personnel record update failed
+      }
 
       // Fetch the updated record with expanded relations
       return getUserById(user.id!);
