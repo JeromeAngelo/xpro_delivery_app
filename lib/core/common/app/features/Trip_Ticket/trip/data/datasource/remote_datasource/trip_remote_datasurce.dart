@@ -212,9 +212,11 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         debugPrint('📄 Trip Number ID: ${record.data['tripNumberId']}');
         debugPrint('📄 Time Accepted: ${record.data['timeAccepted']}');
         debugPrint('📄 Time End Trip: ${record.data['timeEndTrip']}');
-        debugPrint('📄 User: ${record.expand['user']}');
+        debugPrint('📄 Raw User field: ${record.data['user']}');
+        debugPrint('📄 Expanded User: ${record.expand['user']}');
         debugPrint('📄 Is Accepted: ${record.data['isAccepted']}');
         debugPrint('📄 Is End Trip: ${record.data['isEndTrip']}');
+        debugPrint('📄 All expand keys: ${record.expand.keys.toList()}');
         debugPrint('-----------------------------------');
       }
 
@@ -762,57 +764,49 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         }
       }
 
-      // Handle user data
-      final userData = record.expand['user'];
+      // Handle user data - Use helper function to map expanded data
+      final userJsonData = _mapExpandedItem(record.expand['user']);
       GeneralUserModel? usersModel;
 
-      if (userData != null) {
-        debugPrint('✅ Found user data type: ${userData.runtimeType}');
-
+      if (userJsonData != null) {
+        debugPrint(
+          '✅ Found user data: ${userJsonData['name']} (${userJsonData['id']})',
+        );
         try {
-          if (userData is RecordModel) {
-            // Single record case - explicitly cast to RecordModel
-            final userRecord = userData as RecordModel;
-            usersModel = GeneralUserModel.fromJson({
-              'id': userRecord.id,
-              'collectionId': userRecord.collectionId,
-              'collectionName': userRecord.collectionName,
-              ...userRecord.data,
-            });
-            debugPrint('✅ Processed single RecordModel user');
-          } else // List case
-          if (userData.isNotEmpty) {
-            var firstUser = userData[0];
-            usersModel = GeneralUserModel.fromJson({
-              'id': firstUser.id,
-              'collectionId': firstUser.collectionId,
-              'collectionName': firstUser.collectionName,
-              ...firstUser.data,
-            });
-            debugPrint('✅ Processed first user from list');
-          } else {
-            debugPrint('⚠️ User data list is empty');
-          }
-
-          debugPrint('✅ Mapped user result: ${usersModel?.name}');
+          usersModel = GeneralUserModel.fromJson(userJsonData);
+          debugPrint('✅ Successfully processed user: ${usersModel.name}');
         } catch (e) {
           debugPrint('❌ Error processing user data: $e');
-          // Continue without user data rather than failing the whole mapping
         }
       } else {
-        debugPrint('⚠️ No user data found in record');
+        // Check if we have a raw user ID that failed to expand
+        final rawUserId = record.data['user'];
+        if (rawUserId != null && rawUserId.toString().isNotEmpty) {
+          debugPrint('⚠️ Found raw user ID but expand failed: $rawUserId');
+          usersModel = GeneralUserModel(id: rawUserId.toString());
+        } else {
+          debugPrint(
+            '⚠️ No user data found in record (raw field is also null/empty)',
+          );
+        }
       }
 
       // Handle delivery vehicle - Use helper function to map expanded data
-      final vehicleJsonData = _mapExpandedItem(record.expand['deliveryVehicle']);
+      final vehicleJsonData = _mapExpandedItem(
+        record.expand['deliveryVehicle'],
+      );
       DeliveryVehicleModel? vehicleModel;
 
       if (vehicleJsonData != null) {
-        debugPrint('✅ Found vehicle data: ${vehicleJsonData['name']} - ${vehicleJsonData['plateNo']} - ${vehicleJsonData['type']}');
+        debugPrint(
+          '✅ Found vehicle data: ${vehicleJsonData['name']} - ${vehicleJsonData['plateNo']} - ${vehicleJsonData['type']}',
+        );
 
         try {
           vehicleModel = DeliveryVehicleModel.fromJson(vehicleJsonData);
-          debugPrint('✅ Successfully processed vehicle: ${vehicleModel.name} - ${vehicleModel.plateNo} - ${vehicleModel.type}');
+          debugPrint(
+            '✅ Successfully processed vehicle: ${vehicleModel.name} - ${vehicleModel.plateNo} - ${vehicleModel.type}',
+          );
         } catch (e) {
           debugPrint('❌ Error processing vehicle data: $e');
         }

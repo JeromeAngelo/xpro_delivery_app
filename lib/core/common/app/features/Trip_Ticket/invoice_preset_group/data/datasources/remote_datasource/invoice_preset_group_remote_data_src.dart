@@ -42,7 +42,9 @@ class InvoicePresetGroupRemoteDataSourceImpl
         return;
       }
 
-      debugPrint('⚠️ PocketBase client not authenticated, attempting to restore from storage');
+      debugPrint(
+        '⚠️ PocketBase client not authenticated, attempting to restore from storage',
+      );
 
       // Try to restore authentication from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
@@ -55,7 +57,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
         // Restore the auth store with token only
         // The PocketBase client will handle the record validation
         _pocketBaseClient.authStore.save(authToken, null);
-        
+
         debugPrint('✅ Authentication restored from storage');
       } else {
         debugPrint('❌ No stored authentication found');
@@ -77,13 +79,18 @@ class InvoicePresetGroupRemoteDataSourceImpl
   Future<List<InvoicePresetGroupModel>> getAllInvoicePresetGroups() async {
     try {
       debugPrint('🔄 Fetching all invoice preset groups');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 
       final result = await _pocketBaseClient
           .collection('invoicePresetGroup')
-          .getFullList(expand: 'invoices', sort: '-created');
+          .getFullList(
+            expand: 'invoices',
+            sort: '-created',
+            filter:
+                'groupStatus = "CONFIRMED" || groupStatus = "LOADING" || groupStatus = "LOADED" || groupStatus = "DISPATCH" || groupStatus = "DELIVERED"',
+          );
 
       debugPrint('✅ Retrieved ${result.length} invoice preset groups');
 
@@ -118,7 +125,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
   getAllUnassignedInvoicePresetGroups() async {
     try {
       debugPrint('🔄 Fetching all unassigned invoice preset groups');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 

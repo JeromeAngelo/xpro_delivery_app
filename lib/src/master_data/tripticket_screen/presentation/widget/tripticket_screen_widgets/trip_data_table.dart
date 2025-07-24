@@ -168,6 +168,7 @@ class _TripDataTableState extends State<TripDataTable> {
     return widget.trips.map((trip) {
       // Debug print for each trip
       debugPrint('🔍 TABLE: Processing trip: ${trip.id}');
+      debugPrint('🔍 TABLE: User data - Name: ${trip.user?.name}, ID: ${trip.user?.id}');
 
       return DataRow(
         cells: [
@@ -188,7 +189,7 @@ class _TripDataTableState extends State<TripDataTable> {
             onTap: () => _navigateToTripDetails(context, trip),
           ),
           DataCell(
-            Text(trip.user?.name ?? 'N/A'),
+            Text(trip.user?.name ?? (trip.user?.id != null ? 'User: ${trip.user!.id}' : 'N/A')),
             onTap: () => _navigateToTripDetails(context, trip),
           ),
           DataCell(

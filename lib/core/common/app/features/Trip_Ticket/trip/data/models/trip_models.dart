@@ -105,6 +105,10 @@ class TripModel extends TripEntity {
         });
       } else if (userData is Map) {
         usersModel = GeneralUserModel.fromJson(userData as DataMap);
+      } else if (userData is String) {
+        // Handle case where user data comes as just an ID string
+        usersModel = GeneralUserModel(id: userData);
+        debugPrint('⚠️ MODEL: User data is just ID string: $userData');
       }
       debugPrint('✅ MODEL: User name: ${usersModel?.name}');
     } else {
