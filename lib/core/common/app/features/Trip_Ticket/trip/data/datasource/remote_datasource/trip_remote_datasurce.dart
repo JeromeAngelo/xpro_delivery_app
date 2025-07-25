@@ -1355,15 +1355,61 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         debugPrint('✅ Vehicle assignment cleared');
       }
 
-      // Clear personnel assignments
-      for (var personnel in tripRecord.expand['personels'] as List? ?? []) {
+      // Clear personnel assignments and update isAssigned status
+      final personnelsList = tripRecord.expand['personels'] as List? ?? [];
+      debugPrint('🔄 Processing ${personnelsList.length} personnel assignments');
+      
+      for (var personnel in personnelsList) {
+        final personnelRecord = personnel as RecordModel;
         await _pocketBaseClient
             .collection('personels')
             .update(
-              (personnel as RecordModel).id,
-              body: {'deliveryTeam': null, 'trip': null},
+              personnelRecord.id,
+              body: {
+                'deliveryTeam': null, 
+                'trip': null,
+                'isAssigned': false,
+              },
             );
-        debugPrint('✅ Personnel assignment cleared');
+        debugPrint('✅ Personnel ${personnelRecord.id} assignment cleared and isAssigned set to false');
+      }
+      
+      // Additionally, process any personnel IDs directly from tripticket data if expand failed
+      final personnelsFromData = tripRecord.data['personels'];
+      if (personnelsFromData != null) {
+        List<String> personnelIds = [];
+        
+        if (personnelsFromData is List) {
+          personnelIds = personnelsFromData.cast<String>();
+        } else if (personnelsFromData is String && personnelsFromData.isNotEmpty) {
+          personnelIds = [personnelsFromData];
+        }
+        
+        debugPrint('🔄 Processing ${personnelIds.length} additional personnel IDs from data');
+        
+        for (String personnelId in personnelIds) {
+          try {
+            // Check if this personnel ID wasn't already processed in the expand
+            final alreadyProcessed = personnelsList.any((p) => (p as RecordModel).id == personnelId);
+            
+            if (!alreadyProcessed) {
+              await _pocketBaseClient
+                  .collection('personels')
+                  .update(
+                    personnelId,
+                    body: {
+                      'deliveryTeam': null,
+                      'trip': null, 
+                      'isAssigned': false,
+                    },
+                  );
+              debugPrint('✅ Additional personnel $personnelId assignment cleared and isAssigned set to false');
+            }
+          } catch (e) {
+            debugPrint('⚠️ Failed to update personnel $personnelId: $e');
+            // Continue processing other personnel even if one fails
+          }
+        }
       }
 
       final mappedData = {
