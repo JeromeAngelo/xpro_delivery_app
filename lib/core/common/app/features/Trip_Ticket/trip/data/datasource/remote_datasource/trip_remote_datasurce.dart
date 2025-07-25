@@ -539,6 +539,87 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         );
       }
     }
+
+    // After assigning trip to personnel, update personnelTripsCollection
+    await _updatePersonnelTripsCollection(personnelIds, tripId);
+  }
+
+  // Helper method to update personnelTripsCollection with assigned trips
+  Future<void> _updatePersonnelTripsCollection(
+    List<String> personnelIds,
+    String tripId,
+  ) async {
+    if (personnelIds.isEmpty) return;
+
+    debugPrint(
+      '🔄 Updating personnelTripsCollection for personnel: ${personnelIds.length} with trip: $tripId',
+    );
+
+    for (final personnelId in personnelIds) {
+      try {
+        debugPrint('🔍 Checking existing record for personnel: $personnelId');
+
+        // Check if personnel already exists in personnelTripsCollection
+        final existingRecords = await _pocketBaseClient
+            .collection('personnelTripsCollection')
+            .getList(
+              page: 1,
+              perPage: 1,
+              filter: 'personnels ~ "$personnelId"',
+            );
+
+        if (existingRecords.items.isNotEmpty) {
+          // Personnel exists, add trip to assignedTrips
+          final existingRecord = existingRecords.items.first;
+          final existingTrips = List<String>.from(
+            existingRecord.data['assignedTrips'] ?? [],
+          );
+
+          // Add new trip if not already present
+          if (!existingTrips.contains(tripId)) {
+            existingTrips.add(tripId);
+
+            await _pocketBaseClient
+                .collection('personnelTripsCollection')
+                .update(
+                  existingRecord.id,
+                  body: {'assignedTrips': existingTrips},
+                );
+
+            debugPrint(
+              '✅ Added trip $tripId to existing personnel collection record for $personnelId',
+            );
+          } else {
+            debugPrint(
+              'ℹ️ Trip $tripId already assigned to personnel $personnelId',
+            );
+          }
+        } else {
+          // Personnel doesn't exist, create new record
+          final newRecordData = {
+            'personnels': [personnelId],
+            'assignedTrips': [tripId],
+          };
+
+          await _pocketBaseClient
+              .collection('personnelTripsCollection')
+              .create(body: newRecordData);
+
+          debugPrint(
+            '✅ Created new personnelTripsCollection record for personnel $personnelId with trip $tripId',
+          );
+        }
+      } catch (e) {
+        // Log error but continue with other personnel
+        debugPrint(
+          '⚠️ Failed to update personnelTripsCollection for personnel $personnelId: ${e.toString()}',
+        );
+      }
+    }
+
+    debugPrint(
+      '✅ Completed updating personnelTripsCollection for all personnel',
+    );
   }
 
   @override

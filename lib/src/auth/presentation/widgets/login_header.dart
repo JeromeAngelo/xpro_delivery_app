@@ -8,7 +8,7 @@ class LoginHeader extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: 40),
-        Image.asset('assets/images/logo.png', height: 100, width: 100),
+        Image.asset('assets/images/app_icon.png', height: 100, width: 100),
         const SizedBox(height: 20),
         Text(
           'X-Pro Delivery Admin App',

@@ -31,6 +31,7 @@ class PersonelModel extends PersonelEntity {
 
     switch (roleData.toString().toLowerCase()) {
       case 'team_leader':
+      case 'teamleader':
         return UserRole.teamLeader;
       case 'helper':
         return UserRole.helper;

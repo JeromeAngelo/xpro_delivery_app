@@ -50,17 +50,42 @@ class PersonnelDataTable extends StatelessWidget {
         DataColumn(label: Text('ID')),
         DataColumn(label: Text('Name')),
         DataColumn(label: Text('Role')),
-        DataColumn(label: Text('Trip')),
+        DataColumn(label: Text('Status')),
         DataColumn(label: Text('Created')),
         DataColumn(label: Text('Actions')),
       ],
       rows: personnel.map((person) {
         return DataRow(
+          onSelectChanged: (selected) {
+            if (person.id != null) {
+              context.go('/personnel/${person.id}');
+            }
+          },
           cells: [
             DataCell(Text(person.id ?? 'N/A')),
             DataCell(Text(person.name ?? 'N/A')),
             DataCell(PersonnelRoleChip(role: person.role)),
-            DataCell(Text(person.trip?.tripNumberId ?? 'Unassigned')),
+            DataCell(
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (person.isAssigned == true) ? Colors.red[100] : Colors.green[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: (person.isAssigned == true) ? Colors.red : Colors.green,
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  (person.isAssigned == true) ? 'Assigned' : 'Unassigned',
+                  style: TextStyle(
+                    color: (person.isAssigned == true) ? Colors.red[800] : Colors.green[800],
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
             DataCell(Text(_formatDate(person.created))),
             DataCell(Row(
               children: [

@@ -41,6 +41,14 @@ class PersonelsByDeliveryTeamLoaded extends PersonelState {
   List<Object> get props => [personel];
 }
 
+class PersonelLoadedById extends PersonelState {
+  final PersonelEntity personel;
+  const PersonelLoadedById(this.personel);
+
+  @override
+  List<Object> get props => [personel];
+}
+
 class SetRoleState extends PersonelState {
   final UserRole role;
   const SetRoleState(this.role);

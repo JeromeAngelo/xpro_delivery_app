@@ -5,6 +5,7 @@ import 'package:xpro_delivery_admin_app/core/typedefs/typedefs.dart';
 abstract class PersonelRepo {
   // Existing functions to keep
   ResultFuture<List<PersonelEntity>> getPersonels();
+  ResultFuture<PersonelEntity> getPersonelById(String personelId);
   ResultFuture<void> setRole(String id, UserRole newRole);
   ResultFuture<List<PersonelEntity>> loadPersonelsByTripId(String tripId);
   ResultFuture<List<PersonelEntity>> loadPersonelsByDeliveryTeam(String deliveryTeamId);

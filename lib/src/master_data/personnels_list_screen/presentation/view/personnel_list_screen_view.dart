@@ -125,10 +125,10 @@ class _PersonnelListScreenViewState extends State<PersonnelListScreenView> {
             final paginatedPersonnel =
                 startIndex < personnel.length
                     ? personnel.sublist(startIndex, endIndex)
-                    : [];
+                    : <PersonelEntity>[];
 
             return PersonnelDataTable(
-              personnel: paginatedPersonnel as List<PersonelEntity>,
+              personnel: paginatedPersonnel,
               isLoading: false,
               currentPage: _currentPage,
               totalPages: _totalPages,

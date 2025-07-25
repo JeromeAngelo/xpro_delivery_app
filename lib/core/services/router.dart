@@ -14,6 +14,7 @@ import 'package:xpro_delivery_admin_app/src/master_data/invoice_screen/presentat
 import 'package:xpro_delivery_admin_app/src/master_data/invoice_screen/presentation/view/specific_invoice_screen_view.dart';
 import 'package:xpro_delivery_admin_app/src/main_screen/presentation/view/main_screen_view.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/personnels_list_screen/presentation/view/personnel_list_screen_view.dart';
+import 'package:xpro_delivery_admin_app/src/master_data/personnels_list_screen/presentation/view/specific_personnel_screen_view.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/product_list_screen/presentation/view/product_list_screen_view.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/view/create_tripticket_screen_view.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/view/trip_ticket_overview_screen.dart';
@@ -163,6 +164,13 @@ final router = GoRouter(
       pageBuilder:
           (context, state) =>
               _createSmoothTransition(const PersonnelListScreenView(), state),
+    ),
+    GoRoute(
+      path: '/personnel/:personnelId',
+      builder: (context, state) {
+        final personnelId = state.pathParameters['personnelId']!;
+        return SpecificPersonnelScreenView(personnelId: personnelId);
+      },
     ),
 
     // Inside the GoRouter routes list, add:

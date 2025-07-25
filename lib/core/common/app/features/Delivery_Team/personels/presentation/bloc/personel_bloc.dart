@@ -2,6 +2,7 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/p
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/delete_all_personels.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/delete_personels.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/get_personels.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/get_personel_by_id.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/load_personels_by_delivery_team.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/load_personels_by_trip_Id.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/set_role.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PersonelBloc extends Bloc<PersonelEvent, PersonelState> {
   final GetPersonels _getPersonels;
+  final GetPersonelById _getPersonelById;
   final SetRole _setRole;
   final LoadPersonelsByTripId _loadPersonelsByTripId;
   final LoadPersonelsByDeliveryTeam _loadPersonelsByDeliveryTeam;
@@ -23,6 +25,7 @@ class PersonelBloc extends Bloc<PersonelEvent, PersonelState> {
 
   PersonelBloc({
     required GetPersonels getPersonels,
+    required GetPersonelById getPersonelById,
     required SetRole setRole,
     required LoadPersonelsByTripId loadPersonelsByTripId,
     required LoadPersonelsByDeliveryTeam loadPersonelsByDeliveryTeam,
@@ -31,6 +34,7 @@ class PersonelBloc extends Bloc<PersonelEvent, PersonelState> {
     required DeletePersonel deletePersonel,
     required DeleteAllPersonels deleteAllPersonels,
   })  : _getPersonels = getPersonels,
+        _getPersonelById = getPersonelById,
         _setRole = setRole,
         _loadPersonelsByTripId = loadPersonelsByTripId,
         _loadPersonelsByDeliveryTeam = loadPersonelsByDeliveryTeam,
@@ -40,6 +44,7 @@ class PersonelBloc extends Bloc<PersonelEvent, PersonelState> {
         _deleteAllPersonels = deleteAllPersonels,
         super(const PersonelInitial()) {
     on<GetPersonelEvent>(_onGetPersonelsHandler);
+    on<GetPersonelByIdEvent>(_onGetPersonelByIdHandler);
     on<SetRoleEvent>(_onSetRoleHandler);
     on<LoadPersonelsByTripIdEvent>(_onLoadPersonelsByTripId);
     on<LoadPersonelsByDeliveryTeamEvent>(_onLoadPersonelsByDeliveryTeam);
@@ -65,6 +70,26 @@ class PersonelBloc extends Bloc<PersonelEvent, PersonelState> {
       (personels) {
         debugPrint('✅ Successfully retrieved ${personels.length} personnel');
         emit(PersonelLoaded(personels));
+      },
+    );
+  }
+
+  Future<void> _onGetPersonelByIdHandler(
+    GetPersonelByIdEvent event,
+    Emitter<PersonelState> emit,
+  ) async {
+    emit(const PersonelLoading());
+    debugPrint('🔄 Getting personnel by ID: ${event.personelId}');
+    
+    final result = await _getPersonelById(event.personelId);
+    result.fold(
+      (failure) {
+        debugPrint('❌ Error getting personnel by ID: ${failure.message}');
+        emit(PersonelError(failure.message));
+      },
+      (personel) {
+        debugPrint('✅ Successfully retrieved personnel: ${personel.name}');
+        emit(PersonelLoadedById(personel));
       },
     );
   }

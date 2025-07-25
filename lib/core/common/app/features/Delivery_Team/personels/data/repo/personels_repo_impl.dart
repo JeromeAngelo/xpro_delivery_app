@@ -27,6 +27,19 @@ class PersonelsRepoImpl implements PersonelRepo {
   }
 
   @override
+  ResultFuture<PersonelEntity> getPersonelById(String personelId) async {
+    try {
+      debugPrint('🔄 Getting personnel by ID: $personelId');
+      final remotePersonel = await _remoteDataSource.getPersonelById(personelId);
+      debugPrint('✅ Successfully retrieved personnel');
+      return Right(remotePersonel);
+    } on ServerException catch (e) {
+      debugPrint('❌ Server error getting personnel by ID: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    }
+  }
+
+  @override
   ResultFuture<void> setRole(String id, UserRole newRole) async {
     try {
       debugPrint('🔄 Setting role for personnel $id to ${newRole.toString()}');

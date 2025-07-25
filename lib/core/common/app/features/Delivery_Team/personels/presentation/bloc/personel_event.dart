@@ -10,6 +10,14 @@ class GetPersonelEvent extends PersonelEvent {
   List<Object> get props => [];
 }
 
+class GetPersonelByIdEvent extends PersonelEvent {
+  final String personelId;
+  const GetPersonelByIdEvent(this.personelId);
+  
+  @override
+  List<Object> get props => [personelId];
+}
+
 class SetRoleEvent extends PersonelEvent {
   final String id;
   final UserRole newRole;

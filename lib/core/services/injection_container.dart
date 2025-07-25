@@ -223,6 +223,17 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/users_roles/dat
 import 'package:xpro_delivery_admin_app/core/common/app/features/users_roles/domain/repo/user_role_repo.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/users_roles/domain/usecases/get_all_roles_usecase.dart';
 
+// Personnel Trip imports
+import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/data/datasource/remote_datasource/personnel_trip_remote_data_src.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/data/repo/personnel_trip_repo_impl.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/domain/repo/personnel_trip_repo.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/domain/usecase/get_all_personnel_trips.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/domain/usecase/get_personnel_trip_by_id.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/domain/usecase/get_personnel_trips_by_personnel_id.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/domain/usecase/get_personnel_trips_by_trip_id.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/presentation/bloc/personnel_trip_bloc.dart';
+
+import '../common/app/features/Delivery_Team/personels/domain/usecase/get_personel_by_id.dart' show GetPersonelById;
 import '../common/app/features/Trip_Ticket/cancelled_invoices/data/datasources/remote_datasource/cancelled_invoice_remote_datasource.dart';
 import '../common/app/features/Trip_Ticket/cancelled_invoices/data/repo/cancelled_invoice_repo_impl.dart';
 import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/repo/cancelled_invoice_repo.dart';
@@ -274,38 +285,10 @@ Future<void> init() async {
   await initDeliveryCollectionsData();
   await initCancelledInvoiceData();
   await initDeliveryReceipt();
+  await initPersonnelTrip();
 }
 
-// Future<void> initAuth() async {
-//   //BLoC
-//   sl.registerLazySingleton(
-//     () => AuthBloc(
-//       signInUsecase: sl(),
-//       signOutUsecase: sl(),
-//       getTokenUsecase: sl(),
-//       getAllUsersUsecase: sl(),
-//       getUserByIdUsecase: sl(),
-//     ),
-//   );
 
-//   //usecase
-//   sl.registerLazySingleton(() => SignInUsecase(sl()));
-//   sl.registerLazySingleton(() => SignOutUsecase(sl()));
-//   sl.registerLazySingleton(() => GetUserByIdUsecase(sl()));
-//   sl.registerLazySingleton(() => GetAllUsersUsecase(sl()));
-//   sl.registerLazySingleton(() => GetTokenUsecase(sl()));
-
-//   // Repository
-//   sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl()));
-
-//   // Data sources
-//   sl.registerLazySingleton<AuthRemoteDataSource>(
-//     () => AuthRemoteDataSourceImpl(pocketBaseClient: sl()),
-//   );
-
-//   // External
-//   sl.registerLazySingleton(() => pb);
-// }
 
 Future<void> initGeneralAuth() async {
   //BLoC
@@ -430,7 +413,7 @@ Future<void> initPersonels() async {
       createPersonel: sl(),
       updatePersonel: sl(),
       deletePersonel: sl(),
-      deleteAllPersonels: sl(),
+      deleteAllPersonels: sl(), getPersonelById: sl(),
     ),
   );
 
@@ -442,6 +425,7 @@ Future<void> initPersonels() async {
   sl.registerLazySingleton(() => CreatePersonel(sl()));
   sl.registerLazySingleton(() => UpdatePersonel(sl()));
   sl.registerLazySingleton(() => DeletePersonel(sl()));
+  sl.registerLazySingleton(() => GetPersonelById(sl()));
   sl.registerLazySingleton(() => DeleteAllPersonels(sl()));
 
   // Repository
@@ -990,5 +974,33 @@ Future<void> initDeliveryReceipt() async {
 
   sl.registerLazySingleton<DeliveryReceiptRemoteDatasource>(
     () => DeliveryReceiptRemoteDatasourceImpl(pocketBaseClient: sl()),
+  );
+}
+
+Future<void> initPersonnelTrip() async {
+  // BLoC
+  sl.registerLazySingleton(
+    () => PersonnelTripBloc(
+      getAllPersonnelTrips: sl(),
+      getPersonnelTripById: sl(),
+      getPersonnelTripsByPersonnelId: sl(),
+      getPersonnelTripsByTripId: sl(),
+    ),
+  );
+
+  // Usecases
+  sl.registerLazySingleton(() => GetAllPersonnelTrips(sl()));
+  sl.registerLazySingleton(() => GetPersonnelTripById(sl()));
+  sl.registerLazySingleton(() => GetPersonnelTripsByPersonnelId(sl()));
+  sl.registerLazySingleton(() => GetPersonnelTripsByTripId(sl()));
+
+  // Repository
+  sl.registerLazySingleton<PersonnelTripRepo>(
+    () => PersonnelTripRepoImpl(sl()),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<PersonnelTripRemoteDataSource>(
+    () => PersonnelTripRemoteDataSourceImpl(pocketBaseClient: sl()),
   );
 }
