@@ -11,6 +11,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
 
 import '../../../../../../src/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../../../src/auth/presentation/bloc/auth_event.dart';
@@ -124,6 +126,9 @@ if (!await validateTripDataIntegrity()) {
     _lastSyncTime = DateTime.now();
     await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
 
+    // Step 5: Start location tracking if trip is active and accepted
+    await startLocationTrackingDuringSync(context);
+
     emit(const SyncCompleted());
     debugPrint('✅ SyncCubit: Sync process completed successfully');
 
@@ -137,64 +142,6 @@ if (!await validateTripDataIntegrity()) {
 
 
 
-  // // Handle starting sync process
-  // Future<void> startSyncProcess(BuildContext context) async {
-  //   if (_isSyncing) {
-  //     debugPrint('⚠️ SyncCubit: Sync already in progress, skipping');
-  //     return;
-  //   }
-
-  //   try {
-  //     _isSyncing = true;
-  //     emit(const SyncLoading());
-  //     debugPrint('🔄 SyncCubit: Starting comprehensive sync process');
-
-  //     // Get current trip data
-  //     final prefs = await SharedPreferences.getInstance();
-  //     final storedData = prefs.getString('user_data');
-      
-  //     if (storedData == null) {
-  //       emit(const SyncError(message: 'No user data found'));
-  //       return;
-  //     }
-
-  //     final userData = jsonDecode(storedData);
-  //     final tripData = userData['trip'];
-      
-  //     if (tripData == null || tripData['id'] == null) {
-  //       emit(const SyncError(message: 'No active trip found'));
-  //       return;
-  //     }
-
-  //     final tripId = tripData['id'].toString();
-  //     debugPrint('🎫 SyncCubit: Syncing data for trip: $tripId');
-
-  //     // Step 1: Sync Trip Data
-  //     await _syncTripData(context, tripId);
-
-  //     // Step 2: Sync Delivery Data
-  //     await _syncDeliveryData(context, tripId);
-
-  //     // Step 3: Sync Dependent Data (based on delivery data)
-  //     await _syncDependentData(context, tripId);
-
-  //     // Step 4: Process pending operations
-  //     await _processPendingOperations();
-
-  //     // Update last sync time
-  //     _lastSyncTime = DateTime.now();
-  //     await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
-
-  //     emit(const SyncCompleted());
-  //     debugPrint('✅ SyncCubit: Sync process completed successfully');
-
-  //   } catch (e) {
-  //     debugPrint('❌ SyncCubit: Sync process failed: $e');
-  //     emit(SyncError(message: 'Sync failed: $e'));
-  //   } finally {
-  //     _isSyncing = false;
-  //   }
-  // }
 // Sync trip data
 Future<void> _syncTripData(BuildContext context, String tripId) async {
   try {
@@ -226,6 +173,30 @@ Future<void> _syncTripData(BuildContext context, String tripId) async {
         debugPrint('✅ SyncCubit: Trip data synced');
         subscription?.cancel();
         completer.complete();
+        
+        // Start location tracking immediately after trip data is loaded
+        Future.microtask(() async {
+          try {
+            final trip = state.trip;
+            final isAccepted = trip.isAccepted ?? false;
+            final isEndTrip = trip.isEndTrip ?? false;
+            
+            debugPrint('🎫 SyncCubit: Post-sync trip check:');
+            debugPrint('   - Trip ID: ${trip.id}');
+            debugPrint('   - Trip Number: ${trip.tripNumberId}');
+            debugPrint('   - Is Accepted: $isAccepted');
+            debugPrint('   - Is End Trip: $isEndTrip');
+            
+            if (trip.id != null && !isEndTrip) {
+              debugPrint('🎫 SyncCubit: Starting location tracking for active trip: ${trip.id} (Accepted: $isAccepted)');
+              await startLocationTracking(context, trip.id!);
+            } else if (isEndTrip) {
+              debugPrint('⚠️ SyncCubit: Trip is ended after sync, location tracking skipped');
+            }
+          } catch (e) {
+            debugPrint('❌ SyncCubit: Error starting location tracking after trip sync: $e');
+          }
+        });
       } else if (state is AuthError) {
         debugPrint('❌ SyncCubit: Trip sync failed: ${state.message}');
         subscription?.cancel();
@@ -831,6 +802,136 @@ Future<void> _syncDeliveryData(BuildContext context, String tripId) async {
     } catch (e) {
       debugPrint('❌ SyncCubit: Failed to refresh data: $e');
       emit(SyncError(message: 'Failed to refresh data: $e'));
+    }
+  }
+
+  // Start location tracking for trip
+  Future<void> startLocationTracking(BuildContext context, String tripId) async {
+    try {
+      debugPrint('🔄 SyncCubit: Starting location tracking for trip: $tripId');
+      
+      final tripBloc = context.read<TripBloc>();
+      
+      // Trigger location tracking through TripBloc
+      tripBloc.add(StartLocationTrackingEvent(tripId: tripId));
+      
+      debugPrint('✅ SyncCubit: Location tracking started for trip: $tripId');
+      
+    } catch (e) {
+      debugPrint('❌ SyncCubit: Failed to start location tracking: $e');
+      emit(SyncError(message: 'Failed to start location tracking: $e'));
+    }
+  }
+
+  // Stop location tracking for trip
+  Future<void> stopLocationTracking(BuildContext context) async {
+    try {
+      debugPrint('🔄 SyncCubit: Stopping location tracking');
+      
+      final tripBloc = context.read<TripBloc>();
+      
+      // Stop location tracking through TripBloc
+      tripBloc.add(const StopLocationTrackingEvent());
+      
+      debugPrint('✅ SyncCubit: Location tracking stopped');
+      
+    } catch (e) {
+      debugPrint('❌ SyncCubit: Failed to stop location tracking: $e');
+      emit(SyncError(message: 'Failed to stop location tracking: $e'));
+    }
+  }
+
+  // Start location tracking during sync process (if trip is active)
+  Future<void> startLocationTrackingDuringSync(BuildContext context) async {
+    try {
+      debugPrint('🔄 SyncCubit: Checking if location tracking should be started during sync');
+      
+      // First check if user has an active trip from AuthBloc state
+      final authBloc = context.read<AuthBloc>();
+      final authState = authBloc.state;
+      
+      if (authState is UserTripLoaded) {
+        final trip = authState.trip;
+        
+        if (trip.id != null) {
+          // Check if trip is accepted
+          final isAccepted = trip.isAccepted ?? false;
+          final isEndTrip = trip.isEndTrip ?? false;
+          
+          debugPrint('🎫 SyncCubit: Found synced trip: ${trip.id}');
+          debugPrint('   - Trip Number: ${trip.tripNumberId}');
+          debugPrint('   - Is Accepted: $isAccepted');
+          debugPrint('   - Is End Trip: $isEndTrip');
+          
+          if (!isEndTrip) {
+            debugPrint('🎫 SyncCubit: Starting location tracking for active trip: ${trip.id} (Accepted: $isAccepted)');
+            await startLocationTracking(context, trip.id!);
+            return;
+          } else if (isEndTrip) {
+            debugPrint('⚠️ SyncCubit: Trip is ended, skipping location tracking');
+            return;
+          }
+        }
+      }
+      
+      // Fallback: Check user data from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final storedData = prefs.getString('user_data');
+      
+      if (storedData == null) {
+        debugPrint('⚠️ SyncCubit: No user data found, skipping location tracking');
+        return;
+      }
+
+      final userData = jsonDecode(storedData);
+      debugPrint('🔍 SyncCubit: User data for location tracking: $userData');
+      
+      // Check for trip data in nested structure first
+      var tripData = userData['trip'];
+      String? tripId;
+      
+      if (tripData != null && tripData['id'] != null) {
+        tripId = tripData['id'].toString();
+        debugPrint('🎫 SyncCubit: Found trip ID in nested structure: $tripId');
+        
+        // Check if trip is accepted from user data
+        final isAccepted = tripData['isAccepted'] == true;
+        final isEndTrip = tripData['isEndTrip'] == true;
+        
+        if (!isEndTrip) {
+          debugPrint('🎫 SyncCubit: Starting location tracking for trip from user data: $tripId (Accepted: $isAccepted)');
+          await startLocationTracking(context, tripId);
+          return;
+        } else if (isEndTrip) {
+          debugPrint('⚠️ SyncCubit: Trip is ended (from user data), skipping location tracking');
+          return;
+        }
+      } else {
+        // Check for tripNumberId in root level
+        final tripNumberId = userData['tripNumberId']?.toString();
+        if (tripNumberId != null && tripNumberId.isNotEmpty && tripNumberId != 'null') {
+          tripId = tripNumberId;
+          debugPrint('🎫 SyncCubit: Found trip number ID: $tripId');
+          debugPrint('⚠️ SyncCubit: Trip number found but no detailed trip data - will check after sync completion');
+          
+          // Since we have a trip number but no detailed data yet,
+          // we'll wait for the AuthBloc to have the full trip data
+          // This usually happens during the sync process
+          if (authState is! UserTripLoaded) {
+            debugPrint('⚠️ SyncCubit: Trip data not fully synced yet, skipping location tracking for now');
+            return;
+          }
+        }
+      }
+      
+      if (tripId == null || tripId.isEmpty) {
+        debugPrint('⚠️ SyncCubit: No active trip found, skipping location tracking');
+        return;
+      }
+      
+    } catch (e) {
+      debugPrint('❌ SyncCubit: Failed to start location tracking during sync: $e');
+      // Don't emit error here as this is not critical for the sync process
     }
   }
 

@@ -9,7 +9,7 @@ class LocationService {
   static StreamController<Position>? _locationController;
 
   // Constants
-  static const int _updateIntervalMinutes = 2;
+  static const int _updateIntervalMinutes = 5;
   static const int _distanceFilterMeters = 1000;
 
   static Future<bool> enableLocationService() async {
