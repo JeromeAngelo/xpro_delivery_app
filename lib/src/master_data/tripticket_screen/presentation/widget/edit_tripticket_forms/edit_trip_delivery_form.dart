@@ -8,7 +8,7 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/del
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/customer_data/data/model/customer_data_model.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/invoice_data/data/model/invoice_data_model.dart';
-import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/widget/create_trip_ticket_forms/invoice_preset_group_dialog.dart';
+import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/widget/edit_tripticket_forms/update_preset_group_dialog.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/widget/create_trip_ticket_forms/customer_data_dialog.dart';
 
 class EditTripDeliveryForm extends StatefulWidget {
@@ -211,6 +211,36 @@ class _EditTripDeliveryFormState extends State<EditTripDeliveryForm> {
               '🔄 Loaded ${_tripDeliveries.length} trip deliveries from BLoC',
             );
           }
+        } else if (state is DeliveryDataDeleted) {
+          // Handle successful deletion
+          final deletedDelivery = _tripDeliveries.firstWhere(
+            (delivery) => delivery.id == state.id,
+            orElse: () => DeliveryDataModel(id: state.id),
+          );
+          
+          setState(() {
+            _tripDeliveries.removeWhere((delivery) => delivery.id == state.id);
+            _isLoading = false;
+          });
+          
+          // Notify parent of the updated list
+          widget.onDeliveriesChanged(_tripDeliveries);
+          
+          debugPrint('✅ Removed delivery ${state.id} from trip deliveries list');
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Delivery "${deletedDelivery.deliveryNumber ?? 'Unknown'}" successfully removed from trip',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          // Refresh trip delivery data to ensure consistency
+          _loadTripDeliveryData();
+          
         } else if (state is DeliveryDataError) {
           setState(() {
             _isLoading = false;
@@ -356,17 +386,19 @@ class _EditTripDeliveryFormState extends State<EditTripDeliveryForm> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  setState(() {
-                    _tripDeliveries.remove(delivery);
-                  });
-                  widget.onDeliveriesChanged(_tripDeliveries);
+                  // Dispatch delete event - the BlocListener will handle UI updates
+                  context.read<DeliveryDataBloc>().add(
+                    DeleteDeliveryDataEvent(delivery.id!),
+                  );
                   Navigator.of(context).pop();
-
+                  
+                  // Show processing message
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Delivery "${delivery.deliveryNumber}" removed from trip',
+                        'Removing delivery "${delivery.deliveryNumber}" from trip...',
                       ),
+                      backgroundColor: Colors.orange,
                     ),
                   );
                 },
@@ -460,11 +492,23 @@ class _EditTripDeliveryFormState extends State<EditTripDeliveryForm> {
   }
 
   void _showPicklistDialog() {
+    final tripIdToUse = widget.tripId ?? widget.currentTrip?.id;
+
+    if (tripIdToUse == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Trip ID is required to add delivery data'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder:
-          (context) => InvoicePresetGroupDialog(
-            deliveryId: null, // Will be set when delivery is created
+          (context) => UpdatePresetGroupDialog(
+            tripId: tripIdToUse,
             onPresetAdded: () {
               // Refresh delivery data after preset is added
               _loadTripDeliveryData();

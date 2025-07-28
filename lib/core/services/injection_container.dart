@@ -249,6 +249,7 @@ import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collec
 import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_trip_id.dart'
     show GetCollectionsByTripId;
 import '../common/app/features/Trip_Ticket/customer_data/domain/usecases/get_all_unassigned_customers.dart';
+import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/add_delivery_data_to_trip.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_all_delivery_data_with_trips.dart';
 import '../common/app/features/Trip_Ticket/delivery_receipt/data/repo/delivery_receipt_repo_impl.dart';
 import '../common/app/features/Trip_Ticket/delivery_receipt/domain/repo/delivery_receipt_repo.dart';
@@ -855,7 +856,7 @@ Future<void> initDeliveryData() async {
       getDeliveryDataByTripId: sl(),
       getDeliveryDataById: sl(),
       deleteDeliveryData: sl(),
-      getAllDeliveryDataWithTrips: sl(),
+      getAllDeliveryDataWithTrips: sl(), addDeliveryDataToTrip: sl(),
     ),
   );
 
@@ -864,6 +865,7 @@ Future<void> initDeliveryData() async {
   sl.registerLazySingleton(() => GetDeliveryDataByTripId(sl()));
   sl.registerLazySingleton(() => GetDeliveryDataById(sl()));
   sl.registerLazySingleton(() => DeleteDeliveryData(sl()));
+  sl.registerLazySingleton(() => AddDeliveryDataToTrip(sl()));
   sl.registerLazySingleton(() => GetAllDeliveryDataWithTrips(sl()));
 
   // Repository

@@ -86,3 +86,13 @@ class AllDeliveryDataWithTripsLoaded extends DeliveryDataState {
   List<Object?> get props => [deliveryData];
 }
 
+/// State when delivery data is successfully added to trip
+class DeliveryDataAddedToTrip extends DeliveryDataState {
+  final String tripId;
+
+  const DeliveryDataAddedToTrip(this.tripId);
+
+  @override
+  List<Object?> get props => [tripId];
+}
+

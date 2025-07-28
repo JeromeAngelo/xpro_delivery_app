@@ -25,6 +25,8 @@ abstract class DeliveryDataRemoteDataSource {
   Future<List<DeliveryDataModel>> getAllDeliveryDataWithTrips();
 
   Future<bool> deleteDeliveryData(String id);
+
+  Future<bool> addDeliveryDataToTrip(String tripId);
 }
 
 class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
@@ -292,6 +294,55 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
         statusCode: e is ServerException ? e.statusCode : '500',
       );
     }
+  }
+
+  @override
+  Future<bool> addDeliveryDataToTrip(String tripId) async {
+    return await _retryWithBackoff(() async {
+      debugPrint('🔄 Adding delivery data to trip ID: $tripId');
+      
+      // Ensure PocketBase client is authenticated
+      await _ensureAuthenticated();
+
+      try {
+        // Find delivery data records that don't have a trip assigned (hasTrip = false)
+        final availableDeliveryData = await _pocketBaseClient
+            .collection('deliveryData')
+            .getFullList(
+              filter: 'hasTrip = false',
+              sort: 'created',
+            );
+
+        if (availableDeliveryData.isEmpty) {
+          debugPrint('⚠️ No available delivery data to assign to trip');
+          throw const ServerException(
+            message: 'No available delivery data found to assign to trip',
+            statusCode: '404',
+          );
+        }
+
+        // Take the first available delivery data record
+        final deliveryDataRecord = availableDeliveryData.first;
+        
+        // Update the delivery data record to assign it to the trip
+        await _pocketBaseClient.collection('deliveryData').update(
+          deliveryDataRecord.id,
+          body: {
+            'trip': tripId,
+            'hasTrip': true,
+          },
+        );
+
+        debugPrint('✅ Successfully added delivery data ${deliveryDataRecord.id} to trip $tripId');
+        return true;
+      } catch (e) {
+        debugPrint('❌ Failed to add delivery data to trip: ${e.toString()}');
+        throw ServerException(
+          message: 'Failed to add delivery data to trip: ${e.toString()}',
+          statusCode: e is ServerException ? e.statusCode : '500',
+        );
+      }
+    }, 'addDeliveryDataToTrip');
   }
 
   // Helper method to process a delivery data record

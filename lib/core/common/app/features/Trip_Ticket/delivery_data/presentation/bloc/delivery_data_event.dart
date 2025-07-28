@@ -47,3 +47,13 @@ class GetDeliveryDataByIdEvent extends DeliveryDataEvent {
 class GetAllDeliveryDataWithTripsEvent extends DeliveryDataEvent {
   const GetAllDeliveryDataWithTripsEvent();
 }
+
+/// Event to add delivery data to existing trip
+class AddDeliveryDataToTripEvent extends DeliveryDataEvent {
+  final String tripId;
+
+  const AddDeliveryDataToTripEvent(this.tripId);
+
+  @override
+  List<Object?> get props => [tripId];
+}

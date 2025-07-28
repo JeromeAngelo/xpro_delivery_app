@@ -22,4 +22,9 @@ abstract class DeliveryDataRepo {
   ResultFuture<bool> deleteDeliveryData(String id);
 
   ResultFuture<List<DeliveryDataEntity>> getAllDeliveryDataWithTrips();
+  
+  /// Add delivery data to existing trip
+  /// 
+  /// Takes a trip ID and adds delivery data to that trip
+  ResultFuture<bool> addDeliveryDataToTrip(String tripId);
 }

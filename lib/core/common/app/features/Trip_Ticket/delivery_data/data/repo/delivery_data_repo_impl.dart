@@ -92,4 +92,20 @@ ResultFuture<List<DeliveryDataEntity>> getAllDeliveryDataWithTrips() async {
   }
 }
 
+  @override
+  ResultFuture<bool> addDeliveryDataToTrip(String tripId) async {
+    try {
+      debugPrint('🌐 Adding delivery data to trip ID: $tripId from remote');
+      final result = await _remoteDataSource.addDeliveryDataToTrip(tripId);
+      debugPrint('✅ Successfully added delivery data to trip ID: $tripId');
+      return Right(result);
+    } on ServerException catch (e) {
+      debugPrint('⚠️ API Error: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      debugPrint('⚠️ Unexpected Error: ${e.toString()}');
+      return Left(ServerFailure(message: e.toString(), statusCode: '500'));
+    }
+  }
+
 }

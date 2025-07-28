@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/add_delivery_data_to_trip.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/delete_delivery_data.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_all_delivery_data.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_all_delivery_data_with_trips.dart';
@@ -14,6 +15,7 @@ class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState> {
   final GetDeliveryDataByTripId _getDeliveryDataByTripId;
   final GetDeliveryDataById _getDeliveryDataById;
   final DeleteDeliveryData _deleteDeliveryData;
+  final AddDeliveryDataToTrip _addDeliveryDataToTrip;
 
   DeliveryDataState? _cachedState;
 
@@ -23,17 +25,20 @@ class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState> {
     required GetDeliveryDataByTripId getDeliveryDataByTripId,
     required GetDeliveryDataById getDeliveryDataById,
     required DeleteDeliveryData deleteDeliveryData,
+    required AddDeliveryDataToTrip addDeliveryDataToTrip,
   })  : _getAllDeliveryData = getAllDeliveryData,
         _getAllDeliveryDataWithTrips = getAllDeliveryDataWithTrips,
         _getDeliveryDataByTripId = getDeliveryDataByTripId,
         _getDeliveryDataById = getDeliveryDataById,
         _deleteDeliveryData = deleteDeliveryData,
+        _addDeliveryDataToTrip = addDeliveryDataToTrip,
         super(const DeliveryDataInitial()) {
     on<GetAllDeliveryDataEvent>(_onGetAllDeliveryData);
     on<GetAllDeliveryDataWithTripsEvent>(_onGetAllDeliveryDataWithTrips);
     on<GetDeliveryDataByTripIdEvent>(_onGetDeliveryDataByTripId);
     on<GetDeliveryDataByIdEvent>(_onGetDeliveryDataById);
     on<DeleteDeliveryDataEvent>(_onDeleteDeliveryData);
+    on<AddDeliveryDataToTripEvent>(_onAddDeliveryDataToTrip);
   }
 
   Future<void> _onGetAllDeliveryData(
@@ -100,6 +105,29 @@ class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState> {
         
         // Optionally refresh the list after deletion
         add(const GetAllDeliveryDataEvent());
+      },
+    );
+  }
+
+  Future<void> _onAddDeliveryDataToTrip(
+    AddDeliveryDataToTripEvent event,
+    Emitter<DeliveryDataState> emit,
+  ) async {
+    emit(const DeliveryDataLoading());
+    debugPrint('🔄 BLOC: Adding delivery data to trip ID: ${event.tripId}');
+
+    final result = await _addDeliveryDataToTrip(event.tripId);
+    result.fold(
+      (failure) {
+        debugPrint('❌ BLOC: Failed to add delivery data to trip: ${failure.message}');
+        emit(DeliveryDataError(message: failure.message, statusCode: failure.statusCode));
+      },
+      (success) {
+        debugPrint('✅ BLOC: Successfully added delivery data to trip ID: ${event.tripId}');
+        emit(DeliveryDataAddedToTrip(event.tripId));
+        
+        // Optionally refresh the list after adding
+        add(const GetAllDeliveryDataWithTripsEvent());
       },
     );
   }
