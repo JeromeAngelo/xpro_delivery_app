@@ -10,6 +10,7 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/cus
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/invoice_data/data/model/invoice_data_model.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/widget/edit_tripticket_forms/update_preset_group_dialog.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/widget/create_trip_ticket_forms/customer_data_dialog.dart';
+import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/widget/edit_tripticket_forms/add_delivery_dialog.dart';
 
 class EditTripDeliveryForm extends StatefulWidget {
   final TripEntity? currentTrip;
@@ -560,60 +561,22 @@ class _EditTripDeliveryFormState extends State<EditTripDeliveryForm> {
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Add Existing Delivery to Trip'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 400,
-              child: ListView.builder(
-                itemCount: availableToAdd.length,
-                itemBuilder: (context, index) {
-                  final delivery = availableToAdd[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(
-                        delivery.deliveryNumber ?? 'Unknown Delivery',
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (delivery.customer?.name != null)
-                            Text('Customer: ${delivery.customer!.name}'),
-                          if (delivery.invoice?.refId != null)
-                            Text('Invoice: ${delivery.invoice!.refId}'),
-                        ],
-                      ),
-                      trailing: ElevatedButton(
-                        onPressed: () => _addDelivery(delivery),
-                        child: const Text('Add'),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _addDelivery(DeliveryDataModel delivery) {
-    setState(() {
-      _tripDeliveries.add(delivery);
-    });
-    widget.onDeliveriesChanged(_tripDeliveries);
-    Navigator.of(context).pop();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Delivery "${delivery.deliveryNumber}" added to trip'),
+      builder: (context) => AddDeliveryDialog(
+        tripId: widget.tripId ?? widget.currentTrip?.id,
+        availableDeliveries: _availableDeliveries,
+        tripDeliveries: _tripDeliveries,
+        onDeliveriesAdded: (selectedDeliveries) {
+          setState(() {
+            _tripDeliveries.addAll(selectedDeliveries);
+          });
+          widget.onDeliveriesChanged(_tripDeliveries);
+          
+          // Refresh delivery data to ensure consistency
+          _loadTripDeliveryData();
+        },
       ),
     );
   }
+
+
 }
