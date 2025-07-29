@@ -71,7 +71,7 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                             subtitle: Text(status.subtitle ?? ''),
                             trailing: Text(
                               _formatDateTime(
-                                status.created ?? DateTime.now(),
+                                status.time ?? DateTime.now(),
                               ),
                               style: Theme.of(context).textTheme.bodySmall,
                             ),

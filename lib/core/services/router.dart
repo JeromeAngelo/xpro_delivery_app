@@ -8,6 +8,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
+import 'package:x_pro_delivery_app/src/app_logs/view/app_logs_screen_view.dart';
 import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/view/auth_screen_view.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/view/checklist_and_delivery_view.dart';
@@ -326,6 +327,7 @@ GoRoute(
       path: '/final-screen',
       name: '/final-screen',
       builder: (context, state) => const FinalScreenView(),
-    )
+    ),
+    GoRoute(path: '/app-logs', name: '/app-logs', builder: (context, state) => const AppLogsScreenView()),
   ],
 );

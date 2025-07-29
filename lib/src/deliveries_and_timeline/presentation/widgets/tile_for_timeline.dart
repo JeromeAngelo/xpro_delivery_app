@@ -139,7 +139,7 @@ class TileForTimeline extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _formatTime(latestStatus.created ?? DateTime.now()),
+                                _formatTime(latestStatus.time ?? DateTime.now()),
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall!
@@ -148,7 +148,7 @@ class TileForTimeline extends StatelessWidget {
                                     ),
                               ),
                               Text(
-                                _formatDate(latestStatus.created ?? DateTime.now()),
+                                _formatDate(latestStatus.time ?? DateTime.now()),
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall!

@@ -13,6 +13,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
+import 'package:x_pro_delivery_app/core/services/app_logger.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/entity/log_entry_entity.dart';
 
 import '../../../../../../src/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../../../src/auth/presentation/bloc/auth_event.dart';
@@ -55,6 +57,135 @@ class SyncCubit extends Cubit<SyncState> {
   StreamSubscription? _authSubscription;
   StreamSubscription? _deliveryDataSubscription;
 
+  // Initialize logging system
+  Future<void> initializeAppLogging() async {
+    try {
+      debugPrint('📝 SyncCubit: Initializing application logging system');
+      
+      // Add some initial demo logs to see the system working
+      AppLogger.instance.logSync(
+        'Application startup - Logging system initialized',
+        level: LogLevel.success,
+      );
+      
+      AppLogger.instance.logSync(
+        'SyncCubit initialized and ready for operations',
+        level: LogLevel.info,
+      );
+      
+      debugPrint('✅ SyncCubit: App logging system initialized');
+    } catch (e) {
+      debugPrint('❌ SyncCubit: Failed to initialize logging: $e');
+    }
+  }
+
+  // Generate demo logs for testing
+  Future<void> generateDemoLogs() async {
+    try {
+      debugPrint('🧪 SyncCubit: Generating demo logs for testing');
+      
+      // Authentication logs
+      AppLogger.instance.logAuth(
+        'User authentication attempt started',
+        level: LogLevel.info,
+        userId: 'demo_user_123',
+      );
+      
+      AppLogger.instance.logAuth(
+        'User successfully authenticated',
+        level: LogLevel.success,
+        userId: 'demo_user_123',
+        details: 'Login completed with valid credentials',
+      );
+      
+      // Trip management logs
+      AppLogger.instance.logTrip(
+        'Trip acceptance process initiated',
+        level: LogLevel.info,
+        userId: 'demo_user_123',
+        tripId: 'trip_456',
+      );
+      
+      AppLogger.instance.logTrip(
+        'QR code scanned successfully',
+        level: LogLevel.success,
+        userId: 'demo_user_123',
+        tripId: 'trip_456',
+        details: 'QR code data: TRP-2024-001',
+      );
+      
+      AppLogger.instance.logTrip(
+        'Trip accepted and assigned to delivery team',
+        level: LogLevel.success,
+        userId: 'demo_user_123',
+        tripId: 'trip_456',
+        details: 'Delivery team: Team Alpha, Vehicle: VH-001',
+      );
+      
+      // Delivery update logs
+      AppLogger.instance.logDelivery(
+        'Delivery status updated to In Transit',
+        level: LogLevel.info,
+        userId: 'demo_user_123',
+        tripId: 'trip_456',
+        deliveryId: 'delivery_789',
+      );
+      
+      AppLogger.instance.logDelivery(
+        'Package arrived at destination',
+        level: LogLevel.success,
+        userId: 'demo_user_123',
+        tripId: 'trip_456',
+        deliveryId: 'delivery_789',
+        details: 'Customer: John Doe, Address: 123 Main St',
+      );
+      
+      // Receipt logs
+      AppLogger.instance.logReceipt(
+        'Delivery receipt generated',
+        level: LogLevel.success,
+        userId: 'demo_user_123',
+        tripId: 'trip_456',
+        deliveryId: 'delivery_789',
+        details: 'Receipt ID: RCP-001, Amount: \$125.50',
+      );
+      
+      // Sync logs
+      AppLogger.instance.logSync(
+        'Data synchronization started',
+        level: LogLevel.info,
+        userId: 'demo_user_123',
+      );
+      
+      AppLogger.instance.logSync(
+        'All data synchronized successfully',
+        level: LogLevel.success,
+        userId: 'demo_user_123',
+        details: 'Synced: 15 deliveries, 3 receipts, 8 updates',
+      );
+      
+      // Warning logs
+      AppLogger.instance.logNetwork(
+        'Network connectivity is unstable',
+        level: LogLevel.warning,
+        details: 'Connection timeout detected, retrying...',
+      );
+      
+      // Error logs
+      AppLogger.instance.logAuth(
+        'Failed to refresh user session',
+        level: LogLevel.error,
+        userId: 'demo_user_123',
+        details: 'Token expired, user needs to re-authenticate',
+        stackTrace: 'AuthError: Token validation failed at line 45',
+      );
+      
+      debugPrint('✅ SyncCubit: Demo logs generated successfully');
+    } catch (e) {
+      debugPrint('❌ SyncCubit: Failed to generate demo logs: $e');
+    }
+  }
+
 // Handle starting sync process
 Future<void> startSyncProcess(BuildContext context) async {
   if (_isSyncing) {
@@ -74,6 +205,12 @@ if (!await validateTripDataIntegrity()) {
     _isSyncing = true;
     emit(const SyncLoading());
     debugPrint('🔄 SyncCubit: Starting comprehensive sync process');
+    
+    // Log sync process start
+    AppLogger.instance.logSync(
+      'Starting comprehensive data synchronization process',
+      level: LogLevel.info,
+    );
 
     // Get current trip data
     final prefs = await SharedPreferences.getInstance();
@@ -131,6 +268,13 @@ if (!await validateTripDataIntegrity()) {
 
     emit(const SyncCompleted());
     debugPrint('✅ SyncCubit: Sync process completed successfully');
+    
+    // Log successful sync completion
+    AppLogger.instance.logSync(
+      'Data synchronization completed successfully',
+      level: LogLevel.success,
+      details: 'All data synchronized and up to date',
+    );
 
   } catch (e) {
     debugPrint('❌ SyncCubit: Sync process failed: $e');

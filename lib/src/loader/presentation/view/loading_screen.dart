@@ -65,8 +65,16 @@ class _LoadingScreenState extends State<LoadingScreen>
   void _initializeSync() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final syncCubit = context.read<SyncCubit>();
-      syncCubit.initialize().then((_) {
-        _startSync();
+      
+      // Initialize logging system first
+      syncCubit.initializeAppLogging().then((_) {
+        // Generate demo logs for testing
+        syncCubit.generateDemoLogs().then((_) {
+          // Then initialize sync
+          syncCubit.initialize().then((_) {
+            _startSync();
+          });
+        });
       });
     });
   }

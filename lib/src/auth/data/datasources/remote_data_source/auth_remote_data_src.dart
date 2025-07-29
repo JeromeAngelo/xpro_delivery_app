@@ -69,7 +69,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         if (userRoleData.isNotEmpty) {
           final roleRecord = userRoleData.first;
           final roleName = roleRecord.data['name']?.toString() ?? '';
-          isTeamLeader = roleName == 'Team Leader';
+          isTeamLeader = roleName == 'Team Leader' || roleName == 'Driver';
           debugPrint('👑 User role (from list): $roleName');
 
           roleJson = {

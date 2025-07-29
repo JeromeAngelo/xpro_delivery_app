@@ -117,20 +117,36 @@ class _DefaultDrawerState extends State<DefaultDrawer> {
               context.go('/user-performance');
             },
           ),
+
+          const Divider(),
           ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('History'),
+            leading: const Icon(Icons.cloud_circle),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Server Address'),
+                Text(
+                  'https://delivery-app.pockethost.io/v1/',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
             onTap: () {},
           ),
           ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
+            leading: const Icon(Icons.app_settings_alt),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [Text('App Version'), Text('1.0.0')],
+            ),
             onTap: () {},
           ),
           ListTile(
-            leading: const Icon(Icons.app_settings_alt_sharp),
+            leading: const Icon(Icons.bug_report),
             title: const Text('App Logs'),
-            onTap: () {},
+            onTap: () {
+              context.go('/app-logs');
+            },
           ),
           const Spacer(),
           const Divider(),

@@ -100,7 +100,7 @@ class _AuthScreenViewState extends State<AuthScreenView> {
                         const SizedBox(
                           height: 20,
                         ),
-                        Text('For testing purposes only',
+                        Text('https://delivery-app.pockethost.io/v1/',
                             style: Theme.of(context).textTheme.bodySmall),
                         const SizedBox(
                           height: 20,

@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:provider/provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/app_logs/presentation/bloc/logs_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/presentation/bloc/personel_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
@@ -77,6 +78,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<CollectionsBloc>()),
         BlocProvider(create: (_) => sl<ReturnItemsBloc>()),
         BlocProvider(create: (_) => sl<UserPerformanceBloc>()),
+                BlocProvider(create: (_) => sl<LogsBloc>()),
+
       ],
       child: MultiProvider(
         providers: [

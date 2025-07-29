@@ -4,6 +4,10 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart'
     show ReturnItemsModel;
+import 'package:x_pro_delivery_app/core/common/app/features/app_logs/data/repo/logs_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/repo/logs_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/app_logs/presentation/bloc/logs_bloc.dart';
+import 'package:x_pro_delivery_app/core/services/app_logger.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/local_datasource/delivery_team_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/remote_datasource/delivery_team_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
@@ -245,6 +249,12 @@ import '../common/app/features/Trip_Ticket/return_items/domain/usecases/add_item
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_trip_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
+import '../common/app/features/app_logs/data/datasource/logs_local_datasource/logs_local_datasource.dart';
+import '../common/app/features/app_logs/domain/usecases/add_log.dart';
+import '../common/app/features/app_logs/domain/usecases/clear_logs.dart';
+import '../common/app/features/app_logs/domain/usecases/download_logs_pdf.dart';
+import '../common/app/features/app_logs/domain/usecases/get_logs.dart'
+    show GetLogs;
 import '../common/app/features/sync_data/cubit/sync_cubit.dart';
 import '../common/app/features/user_performance/data/datasources/local_datasource/user_performance_local_datasource.dart';
 import '../common/app/features/user_performance/data/datasources/remote_datasource/user_performance_remote_datasource.dart';
@@ -293,6 +303,7 @@ Future<void> init() async {
   await initDeliveryReceipt();
   await initCancelledInvoice();
   await initCollection();
+  await initAppLogs();
 
   sl.registerLazySingleton(() => ConnectivityProvider());
 }
@@ -1065,4 +1076,31 @@ Future<void> initReturnItems() async {
       objectBoxStore.store,
     ),
   );
+}
+
+Future<void> initAppLogs() async {
+  sl.registerLazySingleton(
+    () => LogsBloc(
+      getLogs: sl(),
+      clearLogs: sl(),
+      downloadLogsPdf: sl(),
+      addLog: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetLogs(sl()));
+  sl.registerLazySingleton(() => ClearLogs(sl()));
+  sl.registerLazySingleton(() => DownloadLogsPdf(sl()));
+  sl.registerLazySingleton(() => AddLog(sl()));
+
+  sl.registerLazySingleton<LogsRepo>(
+    () => LogsRepoImpl(logsLocalDatasource: sl()),
+  );
+
+  sl.registerLazySingleton<LogsLocalDatasource>(
+    () => LogsLocalDatasourceImpl(),
+  );
+
+  // Initialize AppLogger with the AddLog usecase
+  AppLogger.instance.initialize(sl<AddLog>());
 }
