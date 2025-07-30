@@ -197,7 +197,7 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
 
   LatLng _getCustomerLocation(DeliveryDataState state) {
     // Default location (Philippines)
-    const defaultLocation = LatLng(15.058583416335447, 120.77471934782055);
+    const defaultLocation = LatLng(15.0531273, 120.7067068);
 
     try {
       // Get customer from delivery data
@@ -225,6 +225,7 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
         debugPrint('🗺️ Customer location: ${customer.name ?? customer.name} at $lat, $lng');
         return location;
       } else {
+        
         debugPrint('⚠️ Invalid coordinates for customer: ${customer.storeName ?? customer.name}');
         debugPrint('   Latitude: ${customer.latitude}');
         debugPrint('   Longitude: ${customer.longitude}');
