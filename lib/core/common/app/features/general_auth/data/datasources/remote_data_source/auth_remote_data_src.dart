@@ -58,7 +58,9 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
         return;
       }
 
-      debugPrint('⚠️ PocketBase client not authenticated, attempting to restore from storage');
+      debugPrint(
+        '⚠️ PocketBase client not authenticated, attempting to restore from storage',
+      );
 
       // Try to restore authentication from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
@@ -71,7 +73,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
         // Restore the auth store with token only
         // The PocketBase client will handle the record validation
         _pocketBaseClient.authStore.save(authToken, null);
-        
+
         debugPrint('✅ Authentication restored from storage');
       } else {
         debugPrint('❌ No stored authentication found');
@@ -88,6 +90,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
       );
     }
   }
+
   @override
   Future<GeneralUserModel> signIn({
     required String email,
@@ -134,6 +137,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
       bool isCollectionAdministator = false;
       bool isReturnAdministrator = false;
       bool isOtpCodeViewer = false;
+      bool isDispatcher = false;
       Map<String, dynamic>? roleJson;
 
       if (userRoleData != null) {
@@ -145,6 +149,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
           final roleName = roleRecord.data['name']?.toString() ?? '';
           //  isTeamLeader = roleName == 'Team Leader';
           isSuperAdministrator = roleName == 'Super Administrator';
+          isDispatcher = roleName == 'Dispatcher';
           isCollectionAdministator = roleName == 'Collection Administator';
           isReturnAdministrator = roleName == 'Return Administrator';
           isOtpCodeViewer = roleName == 'OTP Code Viewer';
@@ -162,6 +167,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
 
       if (!isSuperAdministrator &&
           !isCollectionAdministator &&
+          !isDispatcher &&
           !isOtpCodeViewer &&
           !isReturnAdministrator) {
         throw const ServerException(
@@ -255,7 +261,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
   Future<List<GeneralUserModel>> getAllUsers() async {
     try {
       debugPrint('🔄 Fetching all users');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 
@@ -686,7 +692,9 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
               'user': record.id,
             };
 
-            debugPrint('👥 Mapping $roleName -> $personnelRole for personnel record');
+            debugPrint(
+              '👥 Mapping $roleName -> $personnelRole for personnel record',
+            );
 
             await _pocketBaseClient
                 .collection('personels')
@@ -720,7 +728,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
   Future<GeneralUserModel> updateUser(GeneralUserModel user) async {
     try {
       debugPrint('🔄 Updating user: ${user.id}');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 
@@ -809,16 +817,14 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
               personnelRole = 'helper'; // fallback
             }
 
-            debugPrint('👥 Mapping $roleName -> $personnelRole for personnel update');
+            debugPrint(
+              '👥 Mapping $roleName -> $personnelRole for personnel update',
+            );
 
             // Try to find existing personnel record for this user
             final existingPersonnelRecords = await _pocketBaseClient
                 .collection('personels')
-                .getList(
-                  page: 1,
-                  perPage: 1,
-                  filter: 'user = "${user.id}"',
-                );
+                .getList(page: 1, perPage: 1, filter: 'user = "${user.id}"');
 
             final personnelUpdateData = {
               'name': userData['name'] ?? user.name,
@@ -828,50 +834,60 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
 
             if (existingPersonnelRecords.items.isNotEmpty) {
               // Update existing personnel record
-              final existingPersonnelId = existingPersonnelRecords.items.first.id;
+              final existingPersonnelId =
+                  existingPersonnelRecords.items.first.id;
               await _pocketBaseClient
                   .collection('personels')
                   .update(existingPersonnelId, body: personnelUpdateData);
-              
-              debugPrint('✅ Updated existing personnel record for $roleName user');
+
+              debugPrint(
+                '✅ Updated existing personnel record for $roleName user',
+              );
             } else {
               // Create new personnel record if it doesn't exist
               await _pocketBaseClient
                   .collection('personels')
                   .create(body: personnelUpdateData);
-              
+
               debugPrint('✅ Created new personnel record for $roleName user');
             }
           } else {
-            debugPrint('ℹ️ User role "$roleName" does not require personnel record');
-            
+            debugPrint(
+              'ℹ️ User role "$roleName" does not require personnel record',
+            );
+
             // If the user role is no longer Driver/Helper, remove any existing personnel record
             try {
               final existingPersonnelRecords = await _pocketBaseClient
                   .collection('personels')
-                  .getList(
-                    page: 1,
-                    perPage: 1,
-                    filter: 'user = "${user.id}"',
-                  );
+                  .getList(page: 1, perPage: 1, filter: 'user = "${user.id}"');
 
               if (existingPersonnelRecords.items.isNotEmpty) {
-                final existingPersonnelId = existingPersonnelRecords.items.first.id;
+                final existingPersonnelId =
+                    existingPersonnelRecords.items.first.id;
                 await _pocketBaseClient
                     .collection('personels')
                     .delete(existingPersonnelId);
-                
-                debugPrint('🗑️ Removed personnel record - user no longer Driver/Helper');
+
+                debugPrint(
+                  '🗑️ Removed personnel record - user no longer Driver/Helper',
+                );
               }
             } catch (deleteError) {
-              debugPrint('⚠️ Failed to remove personnel record: ${deleteError.toString()}');
+              debugPrint(
+                '⚠️ Failed to remove personnel record: ${deleteError.toString()}',
+              );
             }
           }
         } else {
-          debugPrint('⚠️ No user role assigned, skipping personnel record update');
+          debugPrint(
+            '⚠️ No user role assigned, skipping personnel record update',
+          );
         }
       } catch (personnelError) {
-        debugPrint('⚠️ Failed to update personnel record: ${personnelError.toString()}');
+        debugPrint(
+          '⚠️ Failed to update personnel record: ${personnelError.toString()}',
+        );
         // Note: We don't throw here to avoid failing the entire user update
         // The user was updated successfully, but personnel record update failed
       }
@@ -891,7 +907,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
   Future<bool> deleteUser(String userId) async {
     try {
       debugPrint('🔄 Deleting user: $userId');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 
@@ -940,7 +956,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
   Future<GeneralUserModel> getUserById(String userId) async {
     try {
       debugPrint('🔄 Fetching user by ID: $userId');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 

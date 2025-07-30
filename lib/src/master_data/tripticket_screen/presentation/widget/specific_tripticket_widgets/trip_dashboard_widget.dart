@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shimmer/shimmer.dart';
+import 'show_print_qr_dialog.dart';
 
 class TripDashboardWidget extends StatefulWidget {
   final TripEntity? trip;
@@ -109,7 +110,7 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
                             border: Border.all(color: Colors.grey.shade300),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.2),
+                                color: Colors.grey.withValues(alpha: 0.2),
                                 spreadRadius: 1,
                                 blurRadius: 3,
                                 offset: const Offset(0, 2),
@@ -151,16 +152,7 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
                                     icon: const Icon(Icons.print),
                                     label: const Text('Print QR Code'),
                                     onPressed: () {
-                                      // Implement printing functionality
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Print functionality will be implemented soon',
-                                          ),
-                                        ),
-                                      );
+                                    showPrintQrDialog(context, widget.trip!);
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blue,
@@ -208,10 +200,7 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
                 const SizedBox(width: 8),
                 const Text(
                   'Trip Actions',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
@@ -255,9 +244,14 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
             DashboardInfoItem(
               icon: Icons.check_circle,
               value: () {
-                final deliveryCollectionLength = widget.trip?.deliveryCollection?.length;
-                debugPrint('📊 Dashboard - DeliveryCollection length: $deliveryCollectionLength');
-                debugPrint('📊 Dashboard - DeliveryCollection data: ${widget.trip?.deliveryCollection}');
+                final deliveryCollectionLength =
+                    widget.trip?.deliveryCollection?.length;
+                debugPrint(
+                  '📊 Dashboard - DeliveryCollection length: $deliveryCollectionLength',
+                );
+                debugPrint(
+                  '📊 Dashboard - DeliveryCollection data: ${widget.trip?.deliveryCollection}',
+                );
                 debugPrint('📊 Dashboard - Trip ID: ${widget.trip?.id}');
                 return deliveryCollectionLength?.toString() ?? '0';
               }(),
@@ -526,4 +520,6 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
       ),
     );
   }
+
+
 }

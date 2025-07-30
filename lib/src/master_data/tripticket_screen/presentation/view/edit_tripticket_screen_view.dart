@@ -45,6 +45,7 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
   final _formKey = GlobalKey<FormState>();
   final _tripIdController = TextEditingController();
   final _qrCodeController = TextEditingController();
+  final _tripNameController = TextEditingController();
 
   // Selected items - Updated to use new models
   List<DeliveryDataModel> _selectedDeliveries = [];
@@ -75,6 +76,7 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
   void dispose() {
     _tripIdController.dispose();
     _qrCodeController.dispose();
+    _tripNameController.dispose();
     super.dispose();
   }
 
@@ -84,6 +86,7 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
     // Pre-fill form fields with existing trip data
     _tripIdController.text = _currentTrip!.tripNumberId ?? '';
     _qrCodeController.text = _currentTrip!.qrCode ?? '';
+    _tripNameController.text = _currentTrip!.name ?? '';
 
     // Initialize with actual trip data instead of empty collections
     if (_currentTrip!.deliveryData.isNotEmpty) {
@@ -186,6 +189,7 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
     final updatedTripModel = TripModel(
       id: _currentTrip?.id, // Keep the original ID
       tripNumberId: _tripIdController.text,
+      name: _tripNameController.text.trim().isEmpty ? null : _tripNameController.text.trim(),
       qrCode: _qrCodeController.text,
       vehicleModel: _selectedVehicle,
       deliveryDataList: _selectedDeliveries,
@@ -410,6 +414,7 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
               ],
             ),
             const SizedBox(height: 16),
+            // First row: Trip ID and QR Code
             Row(
               children: [
                 Expanded(
@@ -445,6 +450,31 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
                       return null;
                     },
                   ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Second row: Trip Name
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _tripNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Trip Name (Optional)',
+                      hintText: 'Enter trip name',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.label_outline),
+                    ),
+                    validator: null, // Optional field, no validation needed
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Empty expanded to maintain layout balance
+                const Expanded(
+                  child: SizedBox(),
                 ),
               ],
             ),

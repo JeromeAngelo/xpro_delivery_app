@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TripMapWidget extends StatefulWidget {
   final String tripId;
@@ -42,6 +43,11 @@ class _TripMapWidgetState extends State<TripMapWidget>
   bool isActivityLogExpanded = false;
   final ScrollController _horizontalScrollController = ScrollController();
   bool _isSatelliteView = false; // Add this line
+  
+  // Street View functionality
+  bool _isStreetViewMode = false;
+  LatLng? _streetViewPosition;
+  bool _isDraggingStreetViewIcon = false;
 
   List<Marker> _createCoordinateMarkers() {
     final orderedCoordinates = _getOrderedCoordinates();
@@ -138,6 +144,116 @@ class _TripMapWidgetState extends State<TripMapWidget>
     }
 
     return routePoints;
+  }
+
+  // Street View functionality methods
+  /// Toggles the street view mode on/off
+  /// When enabled, users can tap anywhere on the map to open Google Street View
+  void _toggleStreetViewMode() {
+    setState(() {
+      _isStreetViewMode = !_isStreetViewMode;
+      if (!_isStreetViewMode) {
+        _streetViewPosition = null;
+        _isDraggingStreetViewIcon = false;
+      }
+    });
+  }
+
+  void _launchStreetView(LatLng position) async {
+    final url = 'https://www.google.com/maps/@?api=1&map_action=pano'
+        '&viewpoint=${position.latitude},${position.longitude}';
+    
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not launch Street View'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error launching Street View: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _onMapTap(TapPosition tapPosition, LatLng point) {
+    if (_isStreetViewMode) {
+      setState(() {
+        _streetViewPosition = point;
+      });
+      _launchStreetView(point);
+    }
+  }
+
+  Widget _buildStreetViewOverlay() {
+    if (!_isStreetViewMode) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 16,
+      right: 16,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.person_pin_circle,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Street View',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+            ),
+            const Text(
+              'Tap map',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -291,6 +407,25 @@ class _TripMapWidgetState extends State<TripMapWidget>
                 Row(
                   children: [
                     IconButton(
+                      icon: Icon(
+                        _isStreetViewMode ? Icons.visibility_off : Icons.visibility,
+                        color: _isStreetViewMode ? Colors.orange : null,
+                      ),
+                      tooltip: _isStreetViewMode ? 'Exit Street View Mode' : 'Street View Mode',
+                      onPressed: _toggleStreetViewMode,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        _isSatelliteView ? Icons.map : Icons.satellite,
+                      ),
+                      tooltip: _isSatelliteView ? 'Map View' : 'Satellite View',
+                      onPressed: () {
+                        setState(() {
+                          _isSatelliteView = !_isSatelliteView;
+                        });
+                      },
+                    ),
+                    IconButton(
                       icon: const Icon(Icons.refresh),
                       tooltip: 'Refresh Map',
                       onPressed: widget.onRefresh,
@@ -312,6 +447,33 @@ class _TripMapWidgetState extends State<TripMapWidget>
               ],
             ),
             const SizedBox(height: 8),
+
+            // Street View mode indicator
+            if (_isStreetViewMode)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.visibility, color: Colors.orange, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Street View Mode: Tap anywhere on the map to view street view at that location',
+                        style: TextStyle(
+                          color: Colors.orange[800],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             if (!hasValidCoordinates && updateMarkers.isEmpty)
               Padding(
@@ -376,20 +538,26 @@ class _TripMapWidgetState extends State<TripMapWidget>
             AnimatedBuilder(
               animation: _heightAnimation,
               builder: (context, child) {
-                return Container(
-                  height: _heightAnimation.value,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child:
-                        allMarkers.isNotEmpty && isMapReady
-                            ? _buildMap(mapCenter, allMarkers)
-                            : _buildMapPlaceholder(),
-                  ),
+                return Stack(
+                  children: [
+                    Container(
+                      height: _heightAnimation.value,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child:
+                            allMarkers.isNotEmpty && isMapReady
+                                ? _buildMap(mapCenter, allMarkers)
+                                : _buildMapPlaceholder(),
+                      ),
+                    ),
+                    // Street View overlay
+                    _buildStreetViewOverlay(),
+                  ],
                 );
               },
             ),
@@ -629,6 +797,37 @@ class _TripMapWidgetState extends State<TripMapWidget>
 
   Widget _buildMap(LatLng center, List<Marker> markers) {
     try {
+      // Add street view marker if position is set
+      final allMarkers = List<Marker>.from(markers);
+      if (_streetViewPosition != null) {
+        allMarkers.add(
+          Marker(
+            point: _streetViewPosition!,
+            width: 40,
+            height: 40,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.visibility,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        );
+      }
+
       return FlutterMap(
         mapController: mapController,
         options: MapOptions(
@@ -640,6 +839,7 @@ class _TripMapWidgetState extends State<TripMapWidget>
             flags: InteractiveFlag.all,
             pinchMoveWinGestures: 10,
           ),
+          onTap: _onMapTap,
         ),
         children: [
           TileLayer(
@@ -660,7 +860,7 @@ class _TripMapWidgetState extends State<TripMapWidget>
                 ),
               ],
             ),
-          MarkerLayer(markers: markers),
+          MarkerLayer(markers: allMarkers),
           RichAttributionWidget(
             attributions: [
               TextSourceAttribution('Drag to move map', onTap: () {}),

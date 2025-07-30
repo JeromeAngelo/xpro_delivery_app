@@ -37,7 +37,7 @@ class _DefaultDrawerState extends State<DefaultDrawer> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset('assets/images/logo.png', height: 80, width: 80),
+          Image.asset('assets/images/company-logo.png', height: 80, width: 80),
           const SizedBox(height: 10),
           Text(
             'X-Pro Delivery Admin',

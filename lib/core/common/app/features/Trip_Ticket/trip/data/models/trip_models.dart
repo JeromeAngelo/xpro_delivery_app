@@ -49,6 +49,7 @@ class TripModel extends TripEntity {
     super.isEndTrip,
     super.timeEndTrip,
     super.created,
+    super.name,
     super.updated,
     super.qrCode,
     super.isAccepted,
@@ -277,6 +278,7 @@ class TripModel extends TripEntity {
       collectionId: json['collectionId']?.toString(),
       collectionName: json['collectionName']?.toString(),
       tripNumberId: json['tripNumberId']?.toString(),
+      name: json['name']?.toString(),
       personelsList: personelsList,
       checklistItems: checklistItems,
       vehicleModel: vehicleModel, // Updated: Changed from vehicleList to vehicleModel
@@ -337,6 +339,7 @@ class TripModel extends TripEntity {
   DataMap toJson() {
     return {
       'id': id,
+      'name': name,
       'collectionId': collectionId,
       'collectionName': collectionName,
       'tripNumberId': tripNumberId,
@@ -376,6 +379,7 @@ class TripModel extends TripEntity {
       id: entity.id,
       collectionId: entity.collectionId,
       collectionName: entity.collectionName,
+      name: entity.name,
       tripNumberId: entity.tripNumberId,
       personelsList: entity.personels,
       checklistItems: entity.checklist,
@@ -408,6 +412,7 @@ class TripModel extends TripEntity {
     String? collectionId,
     String? collectionName,
     String? tripNumberId,
+    String? name,
     List<PersonelModel>? personelsList,
     List<ChecklistModel>? checklistItems,
     DeliveryVehicleModel? vehicleModel, // Updated: Changed from List<VehicleModel> to DeliveryVehicleModel
@@ -437,6 +442,7 @@ class TripModel extends TripEntity {
   }) {
     return TripModel(
       id: id ?? this.id,
+      name: name ?? this.name,
       collectionId: collectionId ?? this.collectionId,
       collectionName: collectionName ?? this.collectionName,
       tripNumberId: tripNumberId ?? this.tripNumberId,

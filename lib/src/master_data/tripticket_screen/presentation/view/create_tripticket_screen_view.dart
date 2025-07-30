@@ -52,6 +52,7 @@ class _CreateTripTicketScreenViewState
   final _formKey = GlobalKey<FormState>();
   final _tripIdController = TextEditingController();
   final _qrCodeController = TextEditingController();
+  final _tripNameController = TextEditingController();
 
   // Selected items - Updated to use new models
   List<DeliveryDataModel> _selectedDeliveries = [];
@@ -74,6 +75,7 @@ class _CreateTripTicketScreenViewState
   void dispose() {
     _tripIdController.dispose();
     _qrCodeController.dispose();
+    _tripNameController.dispose();
     super.dispose();
   }
 
@@ -136,6 +138,7 @@ class _CreateTripTicketScreenViewState
     // Create trip model with the selected data
     final tripModel = TripModel(
       tripNumberId: _tripIdController.text,
+      name: _tripNameController.text.trim().isEmpty ? null : _tripNameController.text.trim(),
       qrCode: _qrCodeController.text,
       vehicleModel: _selectedVehicle,
       deliveryDataList: _selectedDeliveries,
@@ -315,6 +318,7 @@ class _CreateTripTicketScreenViewState
     return TripDetailsForm(
       tripIdController: _tripIdController,
       qrCodeController: _qrCodeController,
+      tripNameController: _tripNameController,
       selectedCustomers: const [], // Not used anymore
       selectedInvoices: const [], // Not used anymore
       onCustomersChanged: (_) {}, // Not used anymore

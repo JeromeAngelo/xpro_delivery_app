@@ -131,7 +131,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .getFullList(
             filter: filterString,
             expand:
-                'customers,deliveryTeam,personels,vehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
+                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
             sort: '-created',
           );
 
@@ -162,7 +162,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .getFullList(
             filter: filterString,
             expand:
-                'customers,deliveryTeam,personels,vehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
+                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
             sort: '-created',
           );
 
@@ -200,7 +200,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .collection('tripticket')
           .getFullList(
             expand:
-                'customers,deliveryTeam,personels,vehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
+                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
             sort: '-created',
           );
 
@@ -671,7 +671,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .getFullList(
             filter: filterString.isNotEmpty ? filterString : null,
             expand:
-                'customers,deliveryTeam,personels,vehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection',
+                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
           );
 
       debugPrint('✅ Found ${records.length} matching trip tickets');
@@ -1040,6 +1040,15 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       debugPrint(
         '✅ Final mapping - Using ${cancelledInvoiceModels.length} cancelled invoice models',
       );
+      
+      // Debug vehicle mapping
+      if (vehicleModel != null) {
+        debugPrint(
+          '🚗 Vehicle data mapped for TripModel: ${vehicleModel.name} (${vehicleModel.plateNo})',
+        );
+      } else {
+        debugPrint('⚠️ No vehicle data available for TripModel mapping');
+      }
 
       final mappedData = {
         'id': record.id,
@@ -1049,8 +1058,9 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'customers': _mapExpandedList(record.expand['customers']),
         'deliveryTeam': _mapExpandedItem(record.expand['deliveryTeam']),
         'personels': _mapExpandedList(record.expand['personels']),
-        'vehicle':
-            vehicleModel?.toJson(), // Updated: Changed to single vehicle model
+        'deliveryVehicle': vehicleModel?.toJson(),
+
+        // Updated: Changed to single vehicle model
         'deliveryData':
             deliveryDataModels
                 .map((model) => model.toJson())
@@ -1067,6 +1077,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'updated': record.updated,
         'timeAccepted': timeAccepted?.toIso8601String(),
         'timeEndTrip': timeEndTrip?.toIso8601String(),
+        'name': record.data['name'],
         'longitude': record.data['longitude'],
         'latitude': record.data['latitude'],
         'volumeRate': record.data['volumeRate'],

@@ -53,14 +53,18 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
 
         // Comprehensive state checking
         if (state is UserAuthenticated) {
-          userName = state.user.name ?? state.user.email?.split('@')[0] ?? 'User';
+          userName =
+              state.user.name ?? state.user.email?.split('@')[0] ?? 'User';
           userEmail = state.user.email;
           userAvatar = state.user.profilePic;
           userRole = state.user.role?.name;
           isAuthenticated = true;
-          debugPrint('🔐 Desktop AppBar: User authenticated - ${state.user.email}');
+          debugPrint(
+            '🔐 Desktop AppBar: User authenticated - ${state.user.email}',
+          );
         } else if (state is GeneralUserLoaded) {
-          userName = state.user.name ?? state.user.email?.split('@')[0] ?? 'User';
+          userName =
+              state.user.name ?? state.user.email?.split('@')[0] ?? 'User';
           userEmail = state.user.email;
           userAvatar = state.user.profilePic;
           userRole = state.user.role?.name;
@@ -75,7 +79,8 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
           errorMessage = state.message;
           userName = 'Error';
           debugPrint('❌ Desktop AppBar: User error - ${state.message}');
-        } else if (state is UserUnauthenticated || state is GeneralUserInitial) {
+        } else if (state is UserUnauthenticated ||
+            state is GeneralUserInitial) {
           userName = 'Guest';
           isAuthenticated = false;
           debugPrint('🚫 Desktop AppBar: User not authenticated');
@@ -97,20 +102,23 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             children: [
               // App Logo
-              Padding(
-                padding: const EdgeInsets.only(right: 24),
-                child: Image.asset(
-                  'assets/images/app_icon.png',
-                  height: 40,
-                  // If you don't have a logo yet, use a placeholder
-                  errorBuilder:
-                      (context, error, stackTrace) => const Text(
-                        'X-Pro Delivery',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+              InkWell(
+                onTap: () => context.go('/main-screen'),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 24),
+                  child: Image.asset(
+                    'assets/images/company-logo.png',
+                    height: 40,
+                    // If you don't have a logo yet, use a placeholder
+                    errorBuilder:
+                        (context, error, stackTrace) => const Text(
+                          'X-Pro Delivery',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
-                      ),
+                  ),
                 ),
               ),
 
@@ -260,7 +268,9 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
                       userRole,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surface.withOpacity(0.8),
                       ),
                       overflow: TextOverflow.ellipsis,
                     )
@@ -277,7 +287,9 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
                       'Not Signed In',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surface.withOpacity(0.7),
                       ),
                     ),
                 ],
@@ -594,7 +606,7 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
       },
       itemBuilder: (context) {
         List<PopupMenuEntry<String>> items = [];
-        
+
         // Header
         items.add(
           PopupMenuItem<String>(
@@ -617,7 +629,9 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
                       userRole,
                       style: TextStyle(
                         fontSize: 10,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                 ],
@@ -625,9 +639,9 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
         );
-        
+
         items.add(const PopupMenuDivider());
-        
+
         if (isAuthenticated) {
           // Authenticated user options
           items.addAll([
@@ -672,10 +686,7 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text(
                   errorMessage ?? 'Authentication Error',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.red,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.red),
                 ),
               ),
             ),
@@ -686,7 +697,10 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
                 children: [
                   Icon(Icons.refresh, size: 18, color: Colors.blue),
                   const SizedBox(width: 12),
-                  Text('Retry Authentication', style: TextStyle(color: Colors.blue)),
+                  Text(
+                    'Retry Authentication',
+                    style: TextStyle(color: Colors.blue),
+                  ),
                 ],
               ),
             ),
@@ -700,13 +714,15 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
                 'Please sign in to access your account',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ),
           );
         }
-        
+
         return items;
       },
     );
@@ -716,24 +732,25 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
   void _handleLogout(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Logout'),
+            content: const Text('Are you sure you want to logout?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  context.read<GeneralUserBloc>().add(const UserSignOutEvent());
+                  context.go('/login');
+                },
+                child: const Text('Logout'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.read<GeneralUserBloc>().add(const UserSignOutEvent());
-              context.go('/login');
-            },
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
     );
   }
 

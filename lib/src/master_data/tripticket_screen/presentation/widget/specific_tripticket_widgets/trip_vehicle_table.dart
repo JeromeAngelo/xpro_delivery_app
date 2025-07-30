@@ -95,11 +95,11 @@ class _TripVehicleTableState extends State<TripVehicleTable> {
         final List<DataRow> rows =
             vehicles.map((vehicle) {
               return DataRow(
-                cells: [
-                  DataCell(Text(vehicle.id ?? 'N/A')),
-                  DataCell(Text(vehicle.make ?? 'N/A')),
-                  DataCell(Text(vehicle.plateNo ?? 'N/A')),
-                  DataCell(Text(vehicle.type ?? 'N/A')),
+              cells: [
+              DataCell(Text(vehicle.id ?? 'N/A')),
+              DataCell(Text(vehicle.make ?? 'N/A')),
+              DataCell(Text(vehicle.name ?? 'N/A')),
+              DataCell(Text(vehicle.type ?? 'N/A')),
                   DataCell(
                     Row(
                       children: [

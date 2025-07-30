@@ -70,6 +70,8 @@ class _TripDataTableState extends State<TripDataTable> {
       columns: [
         DataColumn(label: Text('ID', style: headerStyle)),
         DataColumn(label: Text('Trip Number', style: headerStyle)),
+                DataColumn(label: Text('Name', style: headerStyle)),
+
         DataColumn(label: Text('Start Date', style: headerStyle)),
         DataColumn(label: Text('End Date', style: headerStyle)),
         DataColumn(label: Text('User', style: headerStyle)),
@@ -97,6 +99,8 @@ class _TripDataTableState extends State<TripDataTable> {
           DataCell(_buildShimmerCell(60)),
           // Trip Number cell
           DataCell(_buildShimmerCell(100)),
+            // Trip Name
+          DataCell(_buildShimmerCell(120)),
           // Start Date cell
           DataCell(_buildShimmerCell(120)),
           // End Date cell
@@ -178,6 +182,10 @@ class _TripDataTableState extends State<TripDataTable> {
           ),
           DataCell(
             Text(trip.tripNumberId ?? 'N/A'),
+            onTap: () => _navigateToTripDetails(context, trip),
+          ),
+          DataCell(
+            Text(trip.name ?? 'N/A'),
             onTap: () => _navigateToTripDetails(context, trip),
           ),
           DataCell(

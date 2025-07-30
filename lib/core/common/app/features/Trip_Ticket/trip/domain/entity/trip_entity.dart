@@ -21,6 +21,7 @@ class TripEntity extends Equatable {
   String? collectionId;
   String? collectionName;
   String? tripNumberId;
+  String? name;
   final DeliveryTeamModel? deliveryTeam;
   final List<PersonelModel> personels;
   final List<ChecklistModel> checklist;
@@ -59,6 +60,7 @@ class TripEntity extends Equatable {
     this.collectionName,
     this.tripNumberId,
     this.deliveryTeam,
+    this.name,
     List<PersonelModel>? personels,
     List<ChecklistModel>? checklist,
     List<TripUpdateModel>? tripUpdates,
@@ -99,6 +101,7 @@ class TripEntity extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    name,
     tripNumberId,
     deliveryTeam?.id,
     user?.id,

@@ -17,6 +17,7 @@ import 'customer_data_dialog.dart';
 class TripDetailsForm extends StatefulWidget {
   final TextEditingController tripIdController;
   final TextEditingController qrCodeController;
+  final TextEditingController tripNameController;
   final List<CustomerDataModel> selectedCustomers;
   final List<InvoiceDataModel> selectedInvoices;
   final List<DeliveryDataModel> selectedDeliveries;
@@ -28,6 +29,7 @@ class TripDetailsForm extends StatefulWidget {
     super.key,
     required this.tripIdController,
     required this.qrCodeController,
+    required this.tripNameController,
     required this.selectedCustomers,
     required this.selectedInvoices,
     this.selectedDeliveries = const [],
@@ -103,13 +105,26 @@ class _TripDetailsFormState extends State<TripDetailsForm> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Trip ID field
+            // Left column: Trip ID and Trip Name
             Expanded(
               flex: 2,
-              child: AppTextField(
-                label: 'Trip ID',
-                controller: widget.tripIdController,
-                readOnly: true, // Auto-generated, so read-only
+              child: Column(
+                children: [
+                  // Trip ID field
+                  AppTextField(
+                    label: 'Trip ID',
+                    controller: widget.tripIdController,
+                    readOnly: true, // Auto-generated, so read-only
+                  ),
+                  
+                  // Trip Name field
+                  AppTextField(
+                    label: 'Trip Name',
+                    controller: widget.tripNameController,
+                    hintText: 'Enter trip name (optional)',
+                    required: false,
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 24),
