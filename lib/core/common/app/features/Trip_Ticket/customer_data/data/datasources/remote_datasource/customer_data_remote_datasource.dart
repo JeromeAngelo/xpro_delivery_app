@@ -420,34 +420,120 @@ class CustomerDataRemoteDataSourceImpl implements CustomerDataRemoteDataSource {
     try {
       debugPrint('🔄 Adding customer $customerId to delivery $deliveryId');
 
-      // Update the existing deliveryData record with the customer relation
+      // Fetch customer data to enrich delivery data
+      debugPrint('🔍 Fetching customer data for enrichment: $customerId');
+      RecordModel? customerRecord;
+      try {
+        customerRecord = await _pocketBaseClient
+            .collection('customerData')
+            .getOne(customerId);
+        debugPrint('✅ Found customer: ${customerRecord.data['name']}');
+      } catch (e) {
+        debugPrint('⚠️ Could not fetch customer data for ID $customerId: $e');
+        debugPrint('   Proceeding with delivery update without enriched customer data');
+      }
+
+      // Prepare update body with customer relation and enriched data
+      final updateBody = <String, dynamic>{
+        'customer': customerId, // Set the relation to the customerData
+      };
+
+      // Add enriched customer data fields (only if customer record was fetched successfully)
+      if (customerRecord != null) {
+        updateBody['storeName'] = customerRecord.data['name'] ?? '';
+        updateBody['refID'] = customerRecord.data['refId'] ?? '';
+        updateBody['province'] = customerRecord.data['province'] ?? '';
+        updateBody['municipality'] = customerRecord.data['municipality'] ?? '';
+        updateBody['barangay'] = customerRecord.data['barangay'] ?? '';
+        updateBody['paymentMode'] = customerRecord.data['paymentMode'] ?? '';
+        updateBody['ownerName'] = customerRecord.data['ownerName'] ?? '';
+        updateBody['contactNumber'] = customerRecord.data['contactNumber'] ?? '';
+
+        debugPrint('🏪 Enriching delivery data with customer info:');
+        debugPrint('   Store Name: ${updateBody['storeName']}');
+        debugPrint('   Ref ID: ${updateBody['refID']}');
+        debugPrint('   Location: ${updateBody['province']}, ${updateBody['municipality']}, ${updateBody['barangay']}');
+        debugPrint('   Payment Mode: ${updateBody['paymentMode']}');
+        debugPrint('   Owner: ${updateBody['ownerName']}');
+        debugPrint('   Contact: ${updateBody['contactNumber']}');
+      } else {
+        // Set empty values for customer fields if customer data could not be fetched
+        updateBody['storeName'] = '';
+        updateBody['refID'] = '';
+        updateBody['province'] = '';
+        updateBody['municipality'] = '';
+        updateBody['barangay'] = '';
+        updateBody['paymentMode'] = '';
+        updateBody['ownerName'] = '';
+        updateBody['contactNumber'] = '';
+        
+        debugPrint('⚠️ Using empty values for customer fields due to fetch failure');
+      }
+
+      // Update the existing deliveryData record with the customer relation and enriched data
       await _pocketBaseClient
           .collection('deliveryData')
-          .update(
-            deliveryId,
-            body: {
-              'customer': customerId, // Set the relation to the customerData
-            },
-          );
+          .update(deliveryId, body: updateBody);
 
-      debugPrint('✅ Updated deliveryData with customer relation');
+      debugPrint('✅ Updated deliveryData with customer relation and enriched data');
       return true;
     } catch (e) {
       // If the deliveryData record doesn't exist yet, create it
       if (e.toString().contains('404') || e.toString().contains('not found')) {
         try {
+          debugPrint('📝 DeliveryData record not found, creating new one');
+
+          // Fetch customer data for the new record creation
+          debugPrint('🔍 Fetching customer data for new delivery: $customerId');
+          RecordModel? customerRecord;
+          try {
+            customerRecord = await _pocketBaseClient
+                .collection('customerData')
+                .getOne(customerId);
+            debugPrint('✅ Found customer for new delivery: ${customerRecord.data['name']}');
+          } catch (e) {
+            debugPrint('⚠️ Could not fetch customer data for new delivery: $e');
+          }
+
+          // Prepare creation body
+          final createBody = <String, dynamic>{
+            'customer': customerId, // Set the relation to the customerData
+            'status': 'pending',
+            'created': DateTime.now().toIso8601String(),
+            'updated': DateTime.now().toIso8601String(),
+          };
+
+          // Add enriched customer data fields for new record
+          if (customerRecord != null) {
+            createBody['storeName'] = customerRecord.data['name'] ?? '';
+            createBody['refID'] = customerRecord.data['refId'] ?? '';
+            createBody['province'] = customerRecord.data['province'] ?? '';
+            createBody['municipality'] = customerRecord.data['municipality'] ?? '';
+            createBody['barangay'] = customerRecord.data['barangay'] ?? '';
+            createBody['paymentMode'] = customerRecord.data['paymentMode'] ?? '';
+            createBody['ownerName'] = customerRecord.data['ownerName'] ?? '';
+            createBody['contactNumber'] = customerRecord.data['contactNumber'] ?? '';
+
+            debugPrint('🏪 Creating new delivery with enriched customer data');
+          } else {
+            // Set empty values for customer fields
+            createBody['storeName'] = '';
+            createBody['refID'] = '';
+            createBody['province'] = '';
+            createBody['municipality'] = '';
+            createBody['barangay'] = '';
+            createBody['paymentMode'] = '';
+            createBody['ownerName'] = '';
+            createBody['contactNumber'] = '';
+            
+            debugPrint('⚠️ Creating new delivery with empty customer fields');
+          }
+
           await _pocketBaseClient
               .collection('deliveryData')
-              .create(
-                body: {
-                  'id':
-                      deliveryId, // If you want to use a specific ID (this might not work depending on PocketBase config)
-                  'customer':
-                      customerId, // Set the relation to the customerData
-                },
-              );
+              .create(body: createBody);
 
-          debugPrint('✅ Created new deliveryData with customer relation');
+          debugPrint('✅ Created new deliveryData with customer relation and enriched data');
           return true;
         } catch (createError) {
           debugPrint(

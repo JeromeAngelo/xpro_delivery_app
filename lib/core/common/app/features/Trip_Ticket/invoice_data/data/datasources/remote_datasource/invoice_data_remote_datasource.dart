@@ -166,6 +166,18 @@ class InvoiceDataRemoteDataSourceImpl implements InvoiceDataRemoteDataSource {
     try {
       debugPrint('🔄 Fetching invoice data for delivery: $deliveryId');
 
+      // Validate deliveryId parameter
+      if (deliveryId.isEmpty) {
+        debugPrint('❌ Invalid deliveryId: deliveryId is empty');
+        throw const ServerException(
+          message: 'Delivery ID cannot be empty',
+          statusCode: '400',
+        );
+      }
+
+      // Ensure PocketBase client is authenticated
+      await _ensureAuthenticated();
+
       // First, get the delivery data to find the invoices
       final deliveryData = await _pocketBaseClient
           .collection('deliveryData')

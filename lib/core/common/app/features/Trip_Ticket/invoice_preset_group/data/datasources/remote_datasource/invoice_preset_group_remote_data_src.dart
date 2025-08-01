@@ -296,10 +296,23 @@ class InvoicePresetGroupRemoteDataSourceImpl
         final invoiceItemIds =
             invoiceItemsRecords.map((item) => item.id).toList();
 
-        // 2.2. Create a new delivery data entry for this invoice
+        // 2.2. Fetch customer data to enrich delivery data
+        debugPrint('🔍 Fetching customer data for ID: $customerId');
+        RecordModel? customerRecord;
+        try {
+          customerRecord = await _pocketBaseClient
+              .collection('customerData')
+              .getOne(customerId);
+          debugPrint('✅ Found customer: ${customerRecord.data['name']}');
+        } catch (e) {
+          debugPrint('⚠️ Could not fetch customer data for ID $customerId: $e');
+          debugPrint('   Proceeding with delivery creation without enriched customer data');
+        }
 
+        // 2.3. Create a new delivery data entry for this invoice
         final deliveryNumber = _generateDeliveryNumber();
         debugPrint('🔢 Generated delivery number: $deliveryNumber');
+        
         // Use the base delivery data template
         final newDeliveryData = Map<String, dynamic>.from(baseDeliveryData);
 
@@ -307,8 +320,39 @@ class InvoicePresetGroupRemoteDataSourceImpl
         newDeliveryData['invoice'] = [invoiceId]; // Single invoice per delivery
         newDeliveryData['customer'] = customerId;
         newDeliveryData['invoiceItems'] = invoiceItemIds; // Add invoice items
-        newDeliveryData['deliveryNumber'] =
-            deliveryNumber; // Add auto-generated delivery number
+        newDeliveryData['deliveryNumber'] = deliveryNumber; // Add auto-generated delivery number
+
+        // Add enriched customer data fields (only if customer record was fetched successfully)
+        if (customerRecord != null) {
+          newDeliveryData['storeName'] = customerRecord.data['name'] ?? '';
+          newDeliveryData['refID'] = customerRecord.data['refID'] ?? '';
+          newDeliveryData['province'] = customerRecord.data['province'] ?? '';
+          newDeliveryData['municipality'] = customerRecord.data['municipality'] ?? '';
+          newDeliveryData['barangay'] = customerRecord.data['barangay'] ?? '';
+          newDeliveryData['paymentMode'] = customerRecord.data['paymentMode'] ?? '';
+          newDeliveryData['ownerName'] = customerRecord.data['ownerName'] ?? '';
+          newDeliveryData['contactNumber'] = customerRecord.data['contactNumber'] ?? '';
+
+          debugPrint('🏪 Enriched delivery data with customer info:');
+          debugPrint('   Store Name: ${newDeliveryData['storeName']}');
+          debugPrint('   Ref ID: ${newDeliveryData['refID']}');
+          debugPrint('   Location: ${newDeliveryData['province']}, ${newDeliveryData['municipality']}, ${newDeliveryData['barangay']}');
+          debugPrint('   Payment Mode: ${newDeliveryData['paymentMode']}');
+          debugPrint('   Owner: ${newDeliveryData['ownerName']}');
+          debugPrint('   Contact: ${newDeliveryData['contactNumber']}');
+        } else {
+          // Set empty values for customer fields if customer data could not be fetched
+          newDeliveryData['storeName'] = '';
+          newDeliveryData['refID'] = '';
+          newDeliveryData['province'] = '';
+          newDeliveryData['municipality'] = '';
+          newDeliveryData['barangay'] = '';
+          newDeliveryData['paymentMode'] = '';
+          newDeliveryData['ownerName'] = '';
+          newDeliveryData['contactNumber'] = '';
+          
+          debugPrint('⚠️ Using empty values for customer fields due to fetch failure');
+        }
 
         // Create the new delivery data record
         final newDeliveryRecord = await _pocketBaseClient
@@ -319,7 +363,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
           '✅ Created new delivery ${newDeliveryRecord.id} with delivery number $deliveryNumber for invoice $invoiceId with ${invoiceItemIds.length} invoice items',
         );
 
-        // 2.3. Update the invoice to associate it with the new delivery
+        // 2.4. Update the invoice to associate it with the new delivery
         await _pocketBaseClient
             .collection('invoiceData')
             .update(
@@ -331,7 +375,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
               },
             );
 
-        // 2.4. Update each invoice item to link to the delivery data
+        // 2.5. Update each invoice item to link to the delivery data
         for (final itemId in invoiceItemIds) {
           await _pocketBaseClient
               .collection('invoiceItems')
