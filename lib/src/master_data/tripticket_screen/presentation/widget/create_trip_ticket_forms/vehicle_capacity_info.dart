@@ -155,7 +155,7 @@ class VehicleCapacityInfo extends StatelessWidget {
                           title: 'Weight',
                           current: capacityData['totalWeight'],
                           max: vehicleData.weightCapacity ?? 0,
-                          unit: 'kg',
+                          unit: 'tn',
                           percentage: capacityData['weightPercentage'],
                           isOverloaded: capacityData['isWeightOverloaded'],
                           icon: Icons.scale_sharp,
