@@ -31,6 +31,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
          invoice: invoice,
          trip: trip,
          deliveryUpdates: deliveryUpdates ?? [],
+         invoiceItems: invoiceItems,
        );
 
   factory DeliveryDataModel.fromJson(DataMap json) {

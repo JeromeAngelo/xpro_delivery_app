@@ -244,6 +244,9 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
 
       // Set basic fields
       tripData['tripNumberId'] = tripNumberId;
+      if (trip.name != null && trip.name!.isNotEmpty) {
+        tripData['name'] = trip.name;
+      }
       tripData['created'] = DateTime.now().toIso8601String();
       tripData['updated'] = DateTime.now().toIso8601String();
       tripData['isAccepted'] = false;

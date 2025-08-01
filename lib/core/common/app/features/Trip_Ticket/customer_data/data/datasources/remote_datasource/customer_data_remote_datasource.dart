@@ -245,10 +245,10 @@ class CustomerDataRemoteDataSourceImpl implements CustomerDataRemoteDataSource {
         'collectionId': record.collectionId,
         'collectionName': record.collectionName,
         'name': record.data['name'],
+        'refId': record.data['refID'],
         'ownerName': record.data['ownerName'],
         'paymentMode': record.data['paymentMode'],
         'contactNumber': record.data['contactNumber'],
-        'refId': record.data['refID'],
         'province': record.data['province'],
         'municipality': record.data['municipality'],
         'barangay': record.data['barangay'],
@@ -441,7 +441,7 @@ class CustomerDataRemoteDataSourceImpl implements CustomerDataRemoteDataSource {
       // Add enriched customer data fields (only if customer record was fetched successfully)
       if (customerRecord != null) {
         updateBody['storeName'] = customerRecord.data['name'] ?? '';
-        updateBody['refID'] = customerRecord.data['refId'] ?? '';
+        updateBody['refID'] = customerRecord.data['refID'] ?? '';
         updateBody['province'] = customerRecord.data['province'] ?? '';
         updateBody['municipality'] = customerRecord.data['municipality'] ?? '';
         updateBody['barangay'] = customerRecord.data['barangay'] ?? '';
@@ -506,7 +506,7 @@ class CustomerDataRemoteDataSourceImpl implements CustomerDataRemoteDataSource {
           // Add enriched customer data fields for new record
           if (customerRecord != null) {
             createBody['storeName'] = customerRecord.data['name'] ?? '';
-            createBody['refID'] = customerRecord.data['refId'] ?? '';
+            createBody['refID'] = customerRecord.data['refID'] ?? '';
             createBody['province'] = customerRecord.data['province'] ?? '';
             createBody['municipality'] = customerRecord.data['municipality'] ?? '';
             createBody['barangay'] = customerRecord.data['barangay'] ?? '';

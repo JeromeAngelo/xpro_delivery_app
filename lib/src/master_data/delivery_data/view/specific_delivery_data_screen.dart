@@ -225,7 +225,7 @@ class _SpecificDeliveryDataScreenState
   void _handleViewInvoice(String? invoiceId) {
     if (invoiceId != null) {
       // Navigate to invoice details screen
-      context.go('/invoice-details/$invoiceId');
+      context.go('/invoice/$invoiceId');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

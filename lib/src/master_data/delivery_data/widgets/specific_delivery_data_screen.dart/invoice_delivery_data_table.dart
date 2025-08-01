@@ -49,7 +49,6 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
         DataColumn(label: Text('Items Count', style: headerStyle)),
         DataColumn(label: Text('Customer', style: headerStyle)),
         DataColumn(label: Text('Delivery Number', style: headerStyle)),
-        DataColumn(label: Text('Trip Status', style: headerStyle)),
         DataColumn(label: Text('Created Date', style: headerStyle)),
         DataColumn(label: Text('Actions', style: headerStyle)),
       ],
@@ -76,7 +75,6 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
           DataCell(_buildShimmerCell(80)),
           DataCell(_buildShimmerCell(100)),
           DataCell(_buildShimmerCell(120)),
-          DataCell(_buildShimmerCell(100)),
           DataCell(_buildShimmerCell(120)),
           DataCell(
             Row(
@@ -133,7 +131,6 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
             const DataCell(Text('N/A')),
             const DataCell(Text('N/A')),
             const DataCell(Text('N/A')),
-            const DataCell(Text('N/A')),
             DataCell(
               Row(
                 children: [
@@ -157,7 +154,6 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
     }
 
     final invoice = widget.deliveryData!.invoice!;
-    final itemCount = widget.deliveryData!.invoiceItems?.length ?? 0;
 
     return [
       DataRow(
@@ -189,7 +185,7 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
             onTap: () => _navigateToInvoiceDetails(context, invoice),
           ),
           DataCell(
-            _buildItemsCountChip(itemCount),
+            _buildItemsCountChip(),
             onTap: () => _navigateToInvoiceDetails(context, invoice),
           ),
           DataCell(
@@ -200,10 +196,7 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
             Text(widget.deliveryData!.deliveryNumber ?? 'N/A'),
             onTap: () => _navigateToInvoiceDetails(context, invoice),
           ),
-          DataCell(
-            _buildTripStatusChip(),
-            onTap: () => _navigateToInvoiceDetails(context, invoice),
-          ),
+          
           DataCell(
             Text(_formatDate(widget.deliveryData!.created)),
             onTap: () => _navigateToInvoiceDetails(context, invoice),
@@ -221,7 +214,7 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
                   tooltip: 'Edit Invoice',
                   onPressed: widget.onInvoiceEdit,
                 ),
-                if (itemCount > 0)
+                if ((widget.deliveryData?.invoiceItems?.length ?? 0) > 0)
                   IconButton(
                     icon: const Icon(Icons.list, color: Colors.green),
                     tooltip: 'View Items',
@@ -235,7 +228,9 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
     ];
   }
 
-  Widget _buildItemsCountChip(int itemCount) {
+  Widget _buildItemsCountChip() {
+    final itemCount = widget.deliveryData?.invoiceItems?.length ?? 0;
+    
     Color color;
     if (itemCount > 0) {
       color = Colors.blue;
@@ -254,31 +249,7 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
     );
   }
 
-  Widget _buildTripStatusChip() {
-    final hasTrip = widget.deliveryData!.hasTrip == true;
-    final tripNumber = widget.deliveryData!.trip?.tripNumberId;
-
-    Color color;
-    String status;
-
-    if (hasTrip && tripNumber != null) {
-      color = Colors.green;
-      status = 'Assigned';
-    } else {
-      color = Colors.orange;
-      status = 'No Trip';
-    }
-
-    return Chip(
-      label: Text(
-        status,
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      ),
-      backgroundColor: color,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      visualDensity: VisualDensity.compact,
-    );
-  }
+  
 
   Color _getAmountBackgroundColor(dynamic totalAmount) {
     return totalAmount != null ? Colors.green[50]! : Colors.grey[50]!;

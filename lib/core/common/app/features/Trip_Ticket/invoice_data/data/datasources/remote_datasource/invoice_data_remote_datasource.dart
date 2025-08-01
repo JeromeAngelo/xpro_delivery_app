@@ -129,6 +129,9 @@ class InvoiceDataRemoteDataSourceImpl implements InvoiceDataRemoteDataSource {
     try {
       debugPrint('🔄 Fetching invoice data by ID: $id');
 
+      // Ensure PocketBase client is authenticated
+      await _ensureAuthenticated();
+
       final record = await _pocketBaseClient
           .collection('invoiceData')
           .getOne(id, expand: 'customer');
@@ -139,7 +142,7 @@ class InvoiceDataRemoteDataSourceImpl implements InvoiceDataRemoteDataSource {
         'id': record.id,
         'collectionId': record.collectionId,
         'collectionName': record.collectionName,
-        'refId': record.data['refId'] ?? '',
+        'refId': record.data['refID'] ?? '',
         'name': record.data['name'] ?? '',
         'documentDate': record.data['documentDate'],
         'totalAmount': record.data['totalAmount'],
@@ -191,18 +194,23 @@ class InvoiceDataRemoteDataSourceImpl implements InvoiceDataRemoteDataSource {
 
         for (var invoiceRecord in invoicesData) {
           if (invoiceRecord is RecordModel) {
-            final mappedData = {
-              'id': invoiceRecord.id,
-              'collectionId': invoiceRecord.collectionId,
-              'collectionName': invoiceRecord.collectionName,
-              'refId': invoiceRecord.data['refId'] ?? '',
-              'name': invoiceRecord.data['name'] ?? '',
-              'documentDate': invoiceRecord.data['documentDate'],
-              'totalAmount': invoiceRecord.data['totalAmount'],
-              'volume': invoiceRecord.data['volume'],
-              'weight': invoiceRecord.data['weight'],
+            // Get the full invoice record with customer expansion to ensure we have customer data
+            final fullInvoiceRecord = await _pocketBaseClient
+                .collection('invoiceData')
+                .getOne(invoiceRecord.id, expand: 'customer');
 
-              'expand': {'customer': deliveryData.expand['customer']},
+            final mappedData = {
+              'id': fullInvoiceRecord.id,
+              'collectionId': fullInvoiceRecord.collectionId,
+              'collectionName': fullInvoiceRecord.collectionName,
+              'refId': fullInvoiceRecord.data['refID'] ?? '',
+              'name': fullInvoiceRecord.data['name'] ?? '',
+              'documentDate': fullInvoiceRecord.data['documentDate'],
+              'totalAmount': fullInvoiceRecord.data['totalAmount'],
+              'volume': fullInvoiceRecord.data['volume'],
+              'weight': fullInvoiceRecord.data['weight'],
+
+              'expand': {'customer': fullInvoiceRecord.expand['customer']},
             };
 
             invoicesList.add(InvoiceDataModel.fromJson(mappedData));

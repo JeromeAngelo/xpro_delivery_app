@@ -178,7 +178,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .collection('deliveryData')
           .getFullList(
             filter: 'hasTrip = false',
-            expand: 'customer,invoice,trip,deliveryUpdates',
+            expand: 'customer,invoice,trip,deliveryUpdates,invoiceItems',
             sort: '-created',
           );
 
@@ -443,7 +443,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
                 'collectionName': item.collectionName,
                 'name': item.data['name'],
                 'brand': item.data['brand'],
-                'refId': item.data['refId'],
+                'refId': item.data['refID'],
                 'uom': item.data['uom'],
                 'quantity': item.data['quantity'],
                 'totalBaseQuantity': item.data['totalBaseQuantity'],
