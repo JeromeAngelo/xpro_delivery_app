@@ -20,11 +20,11 @@ enum LogCategory {
 
 class LogEntryEntity extends Equatable {
   const LogEntryEntity({
-    required this.id,
-    required this.message,
-    required this.level,
-    required this.category,
-    required this.timestamp,
+    this.id,
+    this.message,
+    this.level,
+    this.category,
+    this.timestamp,
     this.details,
     this.userId,
     this.tripId,
@@ -32,11 +32,11 @@ class LogEntryEntity extends Equatable {
     this.stackTrace,
   });
 
-  final String id;
-  final String message;
-  final LogLevel level;
-  final LogCategory category;
-  final DateTime timestamp;
+  final String? id;
+  final String? message;
+  final LogLevel? level;
+  final LogCategory? category;
+  final DateTime? timestamp;
   final String? details;
   final String? userId;
   final String? tripId;

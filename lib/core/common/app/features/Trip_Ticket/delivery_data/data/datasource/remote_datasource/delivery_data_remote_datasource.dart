@@ -607,7 +607,18 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       invoice: invoiceModel,
       trip: tripModel,
       deliveryUpdates: deliveryUpdatesList,
-      //paymentMode: record.data['']
+      paymentMode: record.data['paymentMode']?.toString(),
+      storeName: record.data['storeName']?.toString(),
+      ownerName: record.data['ownerName']?.toString(),
+      contactNumber: record.data['contactNumber']?.toString(),
+      barangay: record.data['barangay']?.toString(),
+      municipality: record.data['municipality']?.toString(),
+      province: record.data['province']?.toString(),
+      refID: record.data['refID']?.toString(),
+      totalDeliveryTime: record.data['totalDeliveryTime']?.toString(),
+      hasTrip: record.data['hasTrip'] as bool? ?? false,
+      created: _parseDate(record.data['created']),
+      updated: _parseDate(record.data['updated']),
     );
   }
 
@@ -639,6 +650,17 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           '⚠️ Unknown invoice status: "$statusString", defaulting to none',
         );
         return InvoiceStatus.none;
+    }
+  }
+
+  // ADDED: Helper method to parse date strings
+  DateTime? _parseDate(dynamic value) {
+    if (value == null || value.toString().isEmpty) return null;
+    try {
+      return DateTime.parse(value.toString());
+    } catch (e) {
+      debugPrint('⚠️ Failed to parse date "$value": $e');
+      return null;
     }
   }
 }

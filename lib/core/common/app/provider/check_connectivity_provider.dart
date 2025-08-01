@@ -69,11 +69,34 @@ class ConnectivityProvider extends ChangeNotifier {
   void _triggerAutoSync() {
     if (_isSyncing || !_isOnline) return;
     
+    debugPrint('🔄 Auto-sync triggered after connectivity restoration');
     _isSyncing = true;
     notifyListeners();
     
-    // This will be called by the repository to trigger sync
-    // We'll implement this in the repository layer
+    // Process any pending sync operations when connection is restored
+    Future.delayed(const Duration(seconds: 2), () {
+      if (_isOnline && _pendingSyncOperations.isNotEmpty) {
+        debugPrint('📋 Processing ${_pendingSyncOperations.length} pending operations');
+        // Signal that pending operations should be processed
+        _processPendingOperations();
+      }
+      _isSyncing = false;
+      notifyListeners();
+    });
+  }
+
+  void _processPendingOperations() {
+    // Create a copy of pending operations
+    final operationsToProcess = List<String>.from(_pendingSyncOperations);
+    
+    // Clear the pending list
+    _pendingSyncOperations.clear();
+    
+    debugPrint('📤 Processing ${operationsToProcess.length} pending sync operations');
+    
+    // Here you can emit an event or call a callback to process operations
+    // This will be handled by the sync service
+    notifyListeners();
   }
 
   void setSyncStatus(bool syncing) {

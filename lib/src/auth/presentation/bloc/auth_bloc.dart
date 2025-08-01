@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
+import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
 import 'package:x_pro_delivery_app/src/auth/domain/usecases/get_user_by_id.dart';
 import 'package:x_pro_delivery_app/src/auth/domain/usecases/get_user_trip.dart';
 import 'package:x_pro_delivery_app/src/auth/domain/usecases/load_user.dart';
@@ -14,7 +16,7 @@ import 'package:x_pro_delivery_app/src/auth/domain/usecases/sync_user_data.dart'
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
 
-class AuthBloc extends Bloc<AuthEvent, AuthState> {
+class AuthBloc extends Bloc<AuthEvent, AuthState> with OfflineFirstMixin<AuthEvent, AuthState> {
   AuthBloc({
     required SignIn signIn,
     required RefreshUserData refreshUserData,
@@ -23,6 +25,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required GetUserTrip getUserTrip,
     required SyncUserData syncUserData,
     required SyncUserTripData syncUserTripData,
+    required ConnectivityProvider connectivity,
   }) : _signIn = signIn,
        _refreshUserData = refreshUserData,
        _getUserById = getUserById,
@@ -30,6 +33,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _getUserTrip = getUserTrip,
        _syncUserData = syncUserData,
        _syncUserTripData = syncUserTripData,
+       _connectivity = connectivity,
        super(const AuthInitial()) {
     on<SignInEvent>(_signInHandler);
     on<RefreshUserDataEvent>(_refreshUserDataHandler);
@@ -51,13 +55,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final GetUserTrip _getUserTrip;
   final SyncUserData _syncUserData;
   final SyncUserTripData _syncUserTripData;
+  final ConnectivityProvider _connectivity;
 
-  // Add this method to the AuthBloc class:
   Future<void> _onRefreshUser(
     RefreshUserEvent event,
     Emitter<AuthState> emit,
   ) async {
-    emit(AuthLoading());
+    emit(const AuthLoading());
 
     // Get current user ID
     final prefs = await SharedPreferences.getInstance();
@@ -69,40 +73,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final userId = userData['id'];
 
         if (userId != null) {
-          debugPrint('🔄 Refreshing user data for ID: $userId');
+          debugPrint('🔄 OFFLINE-FIRST: Refreshing user data for ID: $userId');
 
-          // First load from local to ensure we have some data to display
-          final localResult = await _getUserById.loadFromLocal(userId);
-
-          await localResult.fold(
-            (failure) async {
-              debugPrint(
-                '⚠️ Failed to load user from local: ${failure.message}',
+          await executeOfflineFirst(
+            localOperation: () async {
+              final result = await _getUserById.loadFromLocal(userId);
+              result.fold(
+                (failure) => throw Exception(failure.message),
+                (user) => emit(UserByIdLoaded(user)),
               );
             },
-            (user) async {
-              // Emit the local user data first for immediate UI update
-              emit(UserByIdLoaded(user));
-
-              // Then try to get fresh data from remote
-              final remoteResult = await _getUserById(userId);
-
-              remoteResult.fold(
-                (failure) {
-                  debugPrint(
-                    '⚠️ Failed to refresh user from remote: ${failure.message}',
-                  );
-                  // We already emitted the local data, so no need to emit an error
-                },
-                (freshUser) {
-                  debugPrint('✅ Successfully refreshed user data from remote');
-                  emit(UserByIdLoaded(freshUser));
-
+            remoteOperation: () async {
+              final result = await _getUserById(userId);
+              result.fold(
+                (failure) => throw Exception(failure.message),
+                (user) {
+                  emit(UserByIdLoaded(user));
                   // Also refresh the user's trip data
                   add(GetUserTripEvent(userId));
                 },
               );
             },
+            onLocalSuccess: (data) {
+              debugPrint('✅ User data loaded from cache for refresh');
+            },
+            onRemoteSuccess: (data) {
+              debugPrint('✅ User data refreshed from remote');
+            },
+            onError: (error) => emit(AuthError(error)),
+            connectivity: _connectivity,
+            forceRemote: true, // Force remote refresh for this operation
           );
         } else {
           emit(const AuthError('User ID not found in stored data'));
@@ -119,21 +119,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LoadUserByIdEvent event,
     Emitter<AuthState> emit,
   ) async {
-    debugPrint('🔍 Loading user by ID: ${event.userId}');
+    debugPrint('🔍 OFFLINE-FIRST: Loading user by ID: ${event.userId}');
     emit(const AuthLoading());
 
-    final result = await _getUserById(event.userId);
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) => emit(UserByIdLoaded(user)),
+    await executeOfflineFirst(
+      localOperation: () async {
+        final result = await _getUserById.loadFromLocal(event.userId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (user) => emit(UserByIdLoaded(user)),
+        );
+      },
+      remoteOperation: () async {
+        final result = await _getUserById(event.userId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (user) => emit(UserByIdLoaded(user)),
+        );
+      },
+      onLocalSuccess: (data) {
+        debugPrint('✅ User loaded from local cache');
+      },
+      onRemoteSuccess: (data) {
+        debugPrint('✅ User synced from remote');
+      },
+      onError: (error) => emit(AuthError(error)),
+      connectivity: _connectivity,
     );
   }
 
+  /// Legacy method - use LoadUserByIdEvent with offline-first pattern instead
   Future<void> _onLoadLocalUserById(
     LoadLocalUserByIdEvent event,
     Emitter<AuthState> emit,
   ) async {
-    debugPrint('📱 Loading user by ID: ${event.userId}');
+    debugPrint('📱 LEGACY: Loading local user by ID: ${event.userId}');
     emit(const AuthLoading());
 
     final result = await _getUserById.loadFromLocal(event.userId);
@@ -143,10 +163,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthError(failure.message));
       },
       (user) {
-        debugPrint('✅ User loaded successfully');
-        debugPrint('   👤 Name: ${user.name}');
-        debugPrint('   📧 Email: ${user.email}');
-        debugPrint('   🎫 Trip Number: ${user.tripNumberId}');
+        debugPrint('✅ User loaded successfully from local');
         emit(UserByIdLoaded(user));
       },
     );
@@ -236,21 +253,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     GetUserTripEvent event,
     Emitter<AuthState> emit,
   ) async {
-    debugPrint('🔍 Loading user trip for ID: ${event.userId}');
+    debugPrint('🔍 OFFLINE-FIRST: Loading user trip for ID: ${event.userId}');
     emit(const UserTripLoading());
 
-    final result = await _getUserTrip(event.userId);
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (trip) => emit(UserTripLoaded(trip)),
+    await executeOfflineFirst(
+      localOperation: () async {
+        final result = await _getUserTrip.loadFromLocal(event.userId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (trip) => emit(UserTripLoaded(trip, isFromLocal: true)),
+        );
+      },
+      remoteOperation: () async {
+        final result = await _getUserTrip(event.userId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (trip) => emit(UserTripLoaded(trip)),
+        );
+      },
+      onLocalSuccess: (data) {
+        debugPrint('✅ Trip loaded from local cache');
+      },
+      onRemoteSuccess: (data) {
+        debugPrint('✅ Trip synced from remote');
+      },
+      onError: (error) => emit(AuthError(error)),
+      connectivity: _connectivity,
     );
   }
 
+  /// Legacy method - use GetUserTripEvent with offline-first pattern instead
   Future<void> _onLoadLocalUserTrip(
     LoadLocalUserTripEvent event,
     Emitter<AuthState> emit,
   ) async {
-    debugPrint('📱 Loading local user trip data for ID: ${event.userId}');
+    debugPrint('📱 LEGACY: Loading local user trip data for ID: ${event.userId}');
     emit(const UserTripLoading());
 
     final localResult = await _getUserTrip.loadFromLocal(event.userId);
@@ -267,15 +304,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           },
           (trip) {
             debugPrint('✅ Successfully fetched trip from remote');
-            debugPrint('   🎫 Trip ID: ${trip.id}');
-            debugPrint('   📅 Created: ${trip.created}');
             emit(UserTripLoaded(trip));
           },
         );
       },
       (trip) {
         debugPrint('✅ Successfully loaded trip from local storage');
-        debugPrint('   🎫 Trip ID: ${trip.id}');
         emit(UserTripLoaded(trip, isFromLocal: true));
       },
     );

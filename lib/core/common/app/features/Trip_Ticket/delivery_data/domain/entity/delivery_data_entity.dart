@@ -32,6 +32,15 @@ class DeliveryDataEntity extends Equatable {
  String? totalDeliveryTime;
  InvoiceStatus? invoiceStatus;
 
+  // New additional fields
+  final String? storeName;
+  final String? ownerName;
+  final String? contactNumber;
+  final String? barangay;
+  final String? municipality;
+  final String? province;
+  final String? refID;
+
   // Standard fields
   final DateTime? created;
   final DateTime? updated;
@@ -55,6 +64,13 @@ class DeliveryDataEntity extends Equatable {
     this.totalDeliveryTime,
     this.paymentMode,
     this.invoiceStatus,
+    this.storeName,
+    this.ownerName,
+    this.contactNumber,
+    this.barangay,
+    this.municipality,
+    this.province,
+    this.refID,
     this.created,
     this.updated,
     this.hasTrip,
@@ -85,6 +101,13 @@ class DeliveryDataEntity extends Equatable {
     deliveryUpdates,
     invoiceItems,
     paymentMode,
+    storeName,
+    ownerName,
+    contactNumber,
+    barangay,
+    municipality,
+    province,
+    refID,
     hasTrip,
     created,
     updated,

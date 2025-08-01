@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
+import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/calculate_delivery_time_by_delivery_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/delete_delivery_data.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_all_delivery_data.dart';
@@ -13,36 +15,38 @@ import '../../domain/usecases/set_invoice_into_unloading.dart';
 import '../../domain/usecases/sync_delivery_data_by_trip_id.dart';
 
 
-class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState> {
+class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState> with OfflineFirstMixin<DeliveryDataEvent, DeliveryDataState> {
   final GetAllDeliveryData _getAllDeliveryData;
   final GetDeliveryDataByTripId _getDeliveryDataByTripId;
   final GetDeliveryDataById _getDeliveryDataById;
   final DeleteDeliveryData _deleteDeliveryData;
-  final CalculateDeliveryTimeByDeliveryId _calculateDeliveryTime; // Add this
+  final CalculateDeliveryTimeByDeliveryId _calculateDeliveryTime;
   final SyncDeliveryDataByTripId _syncDeliveryDataByTripId;
   final SetInvoiceIntoUnloading _setInvoiceIntoUnloading;
-    final SetInvoiceIntoUnloaded _setInvoiceIntoUnloaded;
-
+  final SetInvoiceIntoUnloaded _setInvoiceIntoUnloaded;
+  final ConnectivityProvider _connectivity;
 
   DeliveryDataState? _cachedState;
 
   DeliveryDataBloc({
     required GetAllDeliveryData getAllDeliveryData,
-      required SyncDeliveryDataByTripId syncDeliveryDataByTripId,
+    required SyncDeliveryDataByTripId syncDeliveryDataByTripId,
     required GetDeliveryDataByTripId getDeliveryDataByTripId,
     required GetDeliveryDataById getDeliveryDataById,
     required SetInvoiceIntoUnloaded setInvoiceIntoUnloaded,
     required DeleteDeliveryData deleteDeliveryData,
-    required CalculateDeliveryTimeByDeliveryId calculateDeliveryTime, // Add this
-      required SetInvoiceIntoUnloading setInvoiceIntoUnloading,
+    required CalculateDeliveryTimeByDeliveryId calculateDeliveryTime,
+    required SetInvoiceIntoUnloading setInvoiceIntoUnloading,
+    required ConnectivityProvider connectivity,
   })  : _getAllDeliveryData = getAllDeliveryData,
         _getDeliveryDataByTripId = getDeliveryDataByTripId,
         _getDeliveryDataById = getDeliveryDataById,
         _deleteDeliveryData = deleteDeliveryData,
-        _calculateDeliveryTime = calculateDeliveryTime, // Add this
-          _syncDeliveryDataByTripId = syncDeliveryDataByTripId, // Add this
-             _setInvoiceIntoUnloading = setInvoiceIntoUnloading,
-              _setInvoiceIntoUnloaded = setInvoiceIntoUnloaded,
+        _calculateDeliveryTime = calculateDeliveryTime,
+        _syncDeliveryDataByTripId = syncDeliveryDataByTripId,
+        _setInvoiceIntoUnloading = setInvoiceIntoUnloading,
+        _setInvoiceIntoUnloaded = setInvoiceIntoUnloaded,
+        _connectivity = connectivity,
         super(const DeliveryDataInitial()) {
     on<GetAllDeliveryDataEvent>(_onGetAllDeliveryData);
     on<GetDeliveryDataByTripIdEvent>(_onGetDeliveryDataByTripId);
@@ -96,6 +100,7 @@ class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState> {
     );
   }
 
+  /// Legacy method - use GetDeliveryDataByTripIdEvent with offline-first pattern instead
   Future<void> _onGetLocalDeliveryDataByTripId(
   GetLocalDeliveryDataByTripIdEvent event,
   Emitter<DeliveryDataState> emit,
@@ -175,27 +180,49 @@ Future<void> _onGetDeliveryDataByTripId(
   GetDeliveryDataByTripIdEvent event,
   Emitter<DeliveryDataState> emit,
 ) async {
+  debugPrint('🔍 OFFLINE-FIRST: Getting delivery data for trip ID: ${event.tripId}');
   emit(const DeliveryDataLoading());
-  debugPrint('🔄 BLOC: Getting delivery data for trip ID: ${event.tripId}');
 
-  final result = await _getDeliveryDataByTripId(event.tripId);
-  result.fold(
-    (failure) {
-      debugPrint('❌ BLOC: Failed to get delivery data by trip ID: ${failure.message}');
-      emit(DeliveryDataError(
-        message: failure.message, 
-        statusCode: failure.statusCode.toString(), // Convert int to String
-      ));
-    },
-    (deliveryData) {
-      debugPrint('✅ BLOC: Successfully retrieved ${deliveryData.length} delivery data records for trip ID: ${event.tripId}');
-      final newState = DeliveryDataByTripLoaded(
-        deliveryData: deliveryData,
-        tripId: event.tripId,
+  await executeOfflineFirst(
+    localOperation: () async {
+      final result = await _getDeliveryDataByTripId.loadFromLocal(event.tripId);
+      result.fold(
+        (failure) => throw Exception(failure.message),
+        (deliveryData) {
+          final newState = DeliveryDataByTripLoaded(
+            deliveryData: deliveryData,
+            tripId: event.tripId,
+          );
+          _cachedState = newState;
+          emit(newState);
+        },
       );
-      _cachedState = newState;
-      emit(newState);
     },
+    remoteOperation: () async {
+      final result = await _getDeliveryDataByTripId(event.tripId);
+      result.fold(
+        (failure) => throw Exception(failure.message),
+        (deliveryData) {
+          final newState = DeliveryDataByTripLoaded(
+            deliveryData: deliveryData,
+            tripId: event.tripId,
+          );
+          _cachedState = newState;
+          emit(newState);
+        },
+      );
+    },
+    onLocalSuccess: (data) {
+      debugPrint('✅ Delivery data loaded from local cache');
+    },
+    onRemoteSuccess: (data) {
+      debugPrint('✅ Delivery data synced from remote');
+    },
+    onError: (error) => emit(DeliveryDataError(
+      message: error,
+      statusCode: '0',
+    )),
+    connectivity: _connectivity,
   );
 }
 

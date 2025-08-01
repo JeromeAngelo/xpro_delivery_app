@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_state.dart';
@@ -85,32 +87,71 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
   }
 
   Future<void> _loadInitialData() async {
+    debugPrint('🚀 DELIVERY: Attempting immediate data load');
+    
+    // 🔄 Try to get trip ID from SharedPreferences first
     final prefs = await SharedPreferences.getInstance();
     final storedData = prefs.getString('user_data');
+    String? tripId;
 
     if (storedData != null) {
       final userData = jsonDecode(storedData);
       final userId = userData['id'];
+      
+      // Check for trip data in user data
+      if (userData['trip'] != null && userData['trip']['id'] != null) {
+        tripId = userData['trip']['id'];
+        debugPrint('🎫 Found trip ID in stored data: $tripId');
+      } else if (userData['tripNumberId'] != null) {
+        tripId = userData['tripNumberId'];
+        debugPrint('🎫 Using trip number as ID: $tripId');
+      }
 
       if (userId != null) {
         debugPrint('🔄 Loading user trip data for ID: $userId');
-        _authBloc
-          ..add(LoadLocalUserTripEvent(userId))
-          ..add(GetUserTripEvent(userId));
+        // 📱 OFFLINE-FIRST: Load local data immediately
+        _authBloc.add(LoadLocalUserTripEvent(userId));
+        
+        // 🌐 Then attempt remote if online
+        if (mounted) {
+          final connectivity = Provider.of<ConnectivityProvider>(context, listen: false);
+          if (connectivity.isOnline) {
+            debugPrint('🌐 Online: Syncing fresh trip data');
+            _authBloc.add(GetUserTripEvent(userId));
+          } else {
+            debugPrint('📱 Offline: Using cached trip data only');
+          }
+        }
       }
+    } else {
+      debugPrint('⚠️ DELIVERY: No trip ID found in SharedPreferences');
+    }
+
+    // If we have a trip ID from storage, load its data immediately
+    if (tripId != null) {
+      debugPrint('📦 Loading cached delivery data for trip: $tripId');
+      _loadDataForTrip(tripId);
     }
   }
 
   void _loadDataForTrip(String tripId) {
     debugPrint('📱 Loading data for trip: $tripId');
 
-    // Load customer data
+    // 📱 OFFLINE-FIRST: Load local data immediately
     _customerBloc.add(GetLocalDeliveryDataByTripIdEvent(tripId));
+    _tripUpdatesBloc.add(LoadLocalTripUpdatesEvent(tripId));
 
-    // Load timeline updates
-    _tripUpdatesBloc
-      ..add(LoadLocalTripUpdatesEvent(tripId))
-      ..add(GetTripUpdatesEvent(tripId));
+    // 🌐 Then sync remote data if online
+    if (mounted) {
+      final connectivity = Provider.of<ConnectivityProvider>(context, listen: false);
+      if (connectivity.isOnline) {
+        debugPrint('🌐 Online: Syncing fresh delivery and timeline data');
+        _customerBloc.add(GetDeliveryDataByTripIdEvent(tripId));
+        _tripUpdatesBloc.add(GetTripUpdatesEvent(tripId));
+      } else {
+        debugPrint('📱 Offline: Using cached delivery and timeline data only');
+      }
+    }
   }
 
   @override

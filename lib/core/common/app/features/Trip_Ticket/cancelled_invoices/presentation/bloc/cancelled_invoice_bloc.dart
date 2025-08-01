@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
+import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/create_cancelled_invoice_by_delivery_data_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/delete_cancelled_invoice.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_id.dart' show LoadCancelledInvoiceById;
@@ -8,21 +10,24 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelle
 
 import '../../domain/usecases/load_cancelled_invoice_by_trip_id.dart';
 
-class CancelledInvoiceBloc extends Bloc<CancelledInvoiceEvent, CancelledInvoiceState> {
+class CancelledInvoiceBloc extends Bloc<CancelledInvoiceEvent, CancelledInvoiceState> with OfflineFirstMixin<CancelledInvoiceEvent, CancelledInvoiceState> {
   final LoadCancelledInvoicesByTripId _loadCancelledInvoicesByTripId;
   final LoadCancelledInvoiceById _loadCancelledInvoicesById;
   final CreateCancelledInvoiceByDeliveryDataId _createCancelledInvoiceByDeliveryDataId;
   final DeleteCancelledInvoice _deleteCancelledInvoice;
+  final ConnectivityProvider _connectivity;
 
   CancelledInvoiceBloc({
     required LoadCancelledInvoicesByTripId loadCancelledInvoicesByTripId,
     required LoadCancelledInvoiceById loadCancelledInvoicesById,
     required CreateCancelledInvoiceByDeliveryDataId createCancelledInvoiceByDeliveryDataId,
     required DeleteCancelledInvoice deleteCancelledInvoice,
+    required ConnectivityProvider connectivity,
   }) : _loadCancelledInvoicesByTripId = loadCancelledInvoicesByTripId,
        _loadCancelledInvoicesById = loadCancelledInvoicesById,
        _createCancelledInvoiceByDeliveryDataId = createCancelledInvoiceByDeliveryDataId,
        _deleteCancelledInvoice = deleteCancelledInvoice,
+       _connectivity = connectivity,
        super(const CancelledInvoiceInitial()) {
     
     on<LoadCancelledInvoicesByTripIdEvent>(_onLoadCancelledInvoicesByTripId);
@@ -38,23 +43,47 @@ class CancelledInvoiceBloc extends Bloc<CancelledInvoiceEvent, CancelledInvoiceS
     LoadCancelledInvoicesByTripIdEvent event,
     Emitter<CancelledInvoiceState> emit,
   ) async {
+    debugPrint('🔍 OFFLINE-FIRST: Loading cancelled invoices for trip: ${event.tripId}');
     emit(const CancelledInvoiceLoading());
-    debugPrint('🔄 BLoC: Loading cancelled invoices for trip: ${event.tripId}');
 
-    final result = await _loadCancelledInvoicesByTripId(event.tripId);
-    
-    result.fold(
-      (failure) {
-        debugPrint('❌ BLoC: Failed to load cancelled invoices: ${failure.message}');
-        emit(CancelledInvoiceError(failure.message));
+    await executeOfflineFirst(
+      localOperation: () async {
+        final result = await _loadCancelledInvoicesByTripId.loadFromLocal(event.tripId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (cancelledInvoices) {
+            if (cancelledInvoices.isEmpty) {
+              emit(CancelledInvoicesEmpty(event.tripId));
+            } else {
+              emit(CancelledInvoicesOffline(
+                cancelledInvoices: cancelledInvoices,
+                message: 'Showing offline data',
+              ));
+            }
+          },
+        );
       },
-      (cancelledInvoices) {
-        debugPrint('✅ BLoC: Loaded ${cancelledInvoices.length} cancelled invoices');
-        emit(CancelledInvoicesLoaded(cancelledInvoices));
+      remoteOperation: () async {
+        final result = await _loadCancelledInvoicesByTripId(event.tripId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (cancelledInvoices) {
+            emit(CancelledInvoicesLoaded(cancelledInvoices));
+          },
+        );
       },
+      onLocalSuccess: (data) {
+        debugPrint('✅ Cancelled invoices loaded from local cache');
+      },
+      onRemoteSuccess: (data) {
+        debugPrint('✅ Cancelled invoices synced from remote');
+      },
+      onError: (error) => emit(CancelledInvoiceError(error)),
+      connectivity: _connectivity,
     );
   }
 
+  /// Legacy method - use LoadCancelledInvoicesByTripIdEvent with offline-first pattern instead
   Future<void> _onLoadLocalCancelledInvoicesByTripId(
     LoadLocalCancelledInvoicesByTripIdEvent event,
     Emitter<CancelledInvoiceState> emit,

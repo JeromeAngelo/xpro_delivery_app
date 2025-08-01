@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
+import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/domain/usecases/delete_collection.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_event.dart';
@@ -7,10 +9,11 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collecti
 
 import '../../domain/usecases/get_collection_by_trip_id.dart';
 
-class CollectionsBloc extends Bloc<CollectionsEvent, CollectionsState> {
+class CollectionsBloc extends Bloc<CollectionsEvent, CollectionsState> with OfflineFirstMixin<CollectionsEvent, CollectionsState> {
   final GetCollectionsByTripId _getCollectionsByTripId;
   final GetCollectionById _getCollectionById;
   final DeleteCollection _deleteCollection;
+  final ConnectivityProvider _connectivity;
 
   CollectionsState? _cachedState;
 
@@ -18,9 +21,11 @@ class CollectionsBloc extends Bloc<CollectionsEvent, CollectionsState> {
     required GetCollectionsByTripId getCollectionsByTripId,
     required GetCollectionById getCollectionById,
     required DeleteCollection deleteCollection,
+    required ConnectivityProvider connectivity,
   })  : _getCollectionsByTripId = getCollectionsByTripId,
         _getCollectionById = getCollectionById,
         _deleteCollection = deleteCollection,
+        _connectivity = connectivity,
         super(const CollectionsInitial()) {
     on<GetCollectionsByTripIdEvent>(_onGetCollectionsByTripId);
     on<GetLocalCollectionsByTripIdEvent>(_onGetLocalCollectionsByTripId);
@@ -34,45 +39,61 @@ class CollectionsBloc extends Bloc<CollectionsEvent, CollectionsState> {
     GetCollectionsByTripIdEvent event,
     Emitter<CollectionsState> emit,
   ) async {
-    debugPrint('🔄 BLoC: Fetching collections for trip: ${event.tripId}');
-    
+    debugPrint('🔍 OFFLINE-FIRST: Fetching collections for trip: ${event.tripId}');
     emit(const CollectionsLoading());
 
-    final result = await _getCollectionsByTripId(event.tripId);
-
-    result.fold(
-      (failure) {
-        debugPrint('❌ BLoC: Failed to fetch collections: ${failure.message}');
-        
-        if (failure.message.contains('cache') || failure.message.contains('offline')) {
-          emit(CollectionsError(
-            message: 'Unable to load collections. Please check your connection.',
-            errorCode: failure.statusCode,
-          ));
-        } else {
-          emit(CollectionsError(
-            message: failure.message,
-            errorCode: failure.statusCode,
-          ));
-        }
+    await executeOfflineFirst(
+      localOperation: () async {
+        final result = await _getCollectionsByTripId.loadFromLocal(event.tripId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (collections) {
+            if (collections.isEmpty) {
+              emit(CollectionsEmpty(event.tripId));
+            } else {
+              final newState = CollectionsOffline(
+                collections: collections,
+                message: 'Showing offline data',
+              );
+              emit(newState);
+              _cachedState = newState;
+            }
+          },
+        );
       },
-      (collections) {
-        debugPrint('✅ BLoC: Successfully loaded ${collections.length} collections');
-        
-        if (collections.isEmpty) {
-          emit(CollectionsEmpty(event.tripId));
-        } else {
-          final newState = CollectionsLoaded(
-            collections: collections,
-            isFromCache: false,
-          );
-          emit(newState);
-          _cachedState = newState;
-        }
+      remoteOperation: () async {
+        final result = await _getCollectionsByTripId(event.tripId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (collections) {
+            if (collections.isEmpty) {
+              emit(CollectionsEmpty(event.tripId));
+            } else {
+              final newState = CollectionsLoaded(
+                collections: collections,
+                isFromCache: false,
+              );
+              emit(newState);
+              _cachedState = newState;
+            }
+          },
+        );
       },
+      onLocalSuccess: (data) {
+        debugPrint('✅ Collections loaded from local cache');
+      },
+      onRemoteSuccess: (data) {
+        debugPrint('✅ Collections synced from remote');
+      },
+      onError: (error) => emit(CollectionsError(
+        message: error,
+        errorCode: '0',
+      )),
+      connectivity: _connectivity,
     );
   }
 
+  /// Legacy method - use GetCollectionsByTripIdEvent with offline-first pattern instead
   Future<void> _onGetLocalCollectionsByTripId(
     GetLocalCollectionsByTripIdEvent event,
     Emitter<CollectionsState> emit,

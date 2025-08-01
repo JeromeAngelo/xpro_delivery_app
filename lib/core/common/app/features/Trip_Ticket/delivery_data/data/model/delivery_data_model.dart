@@ -23,6 +23,8 @@ class DeliveryDataModel extends DeliveryDataEntity {
   @Property()
   String? tripId;
 
+ 
+
   DeliveryDataModel({
     super.dbId = 0,
     super.id,
@@ -39,6 +41,13 @@ class DeliveryDataModel extends DeliveryDataEntity {
     super.totalDeliveryTime,
     super.paymentSelection, // Add the enum parameter
     super.invoiceStatus,
+    super.storeName,
+    super.ownerName,
+    super.contactNumber,
+    super.barangay,
+    super.municipality,
+    super.province,
+    super.refID,
     super.created,
     super.updated,
     this.objectBoxId = 0,
@@ -230,6 +239,13 @@ class DeliveryDataModel extends DeliveryDataEntity {
       totalDeliveryTime: json['totalDeliveryTime'],
       deliveryUpdates: deliveryUpdatesList,
       invoiceItems: invoiceItemsList,
+      storeName: json['storeName']?.toString(),
+      ownerName: json['ownerName']?.toString(),
+      contactNumber: json['contactNumber']?.toString(),
+      barangay: json['barangay']?.toString(),
+      municipality: json['municipality']?.toString(),
+      province: json['province']?.toString(),
+      refID: json['refID']?.toString(),
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
     );
@@ -270,6 +286,13 @@ class DeliveryDataModel extends DeliveryDataEntity {
       'deliveryUpdates': deliveryUpdates.map((update) => update.id).toList(),
       'invoiceItems': invoiceItems.map((item) => item.id).toList(),
       'invoiceStatus': invoiceStatus,
+      'storeName': storeName,
+      'ownerName': ownerName,
+      'contactNumber': contactNumber,
+      'barangay': barangay,
+      'municipality': municipality,
+      'province': province,
+      'refID': refID,
       'created': created?.toIso8601String(),
       'updated': updated?.toIso8601String(),
     };
@@ -290,6 +313,13 @@ class DeliveryDataModel extends DeliveryDataEntity {
     bool? hasTrip,
     String? totalDeliveryTime,
     ModeOfPayment? paymentSelection, // Add enum to copyWith
+    String? storeName,
+    String? ownerName,
+    String? contactNumber,
+    String? barangay,
+    String? municipality,
+    String? province,
+    String? refID,
     DateTime? created,
     DateTime? updated,
   }) {
@@ -305,6 +335,13 @@ class DeliveryDataModel extends DeliveryDataEntity {
       totalDeliveryTime: totalDeliveryTime ?? this.totalDeliveryTime,
       deliveryNumber: deliveryNumber ?? this.deliveryNumber,
       paymentSelection: paymentSelection ?? this.paymentSelection, // Add enum to copyWith
+      storeName: storeName ?? this.storeName,
+      ownerName: ownerName ?? this.ownerName,
+      contactNumber: contactNumber ?? this.contactNumber,
+      barangay: barangay ?? this.barangay,
+      municipality: municipality ?? this.municipality,
+      province: province ?? this.province,
+      refID: refID ?? this.refID,
       objectBoxId: objectBoxId,
     );
     
@@ -357,6 +394,6 @@ class DeliveryDataModel extends DeliveryDataEntity {
 
   @override
   String toString() {
-    return 'DeliveryDataModel(id: $id, customer: ${customer.target?.id}, invoice: ${invoice.target?.id}, trip: ${trip.target?.id}, deliveryUpdates: ${deliveryUpdates.length}, invoiceItems: ${invoiceItems.length}, paymentMode: $paymentMode, paymentSelection: $paymentSelection, deliveryNumber: $deliveryNumber)';
+    return 'DeliveryDataModel(id: $id, customer: ${customer.target?.id}, invoice: ${invoice.target?.id}, trip: ${trip.target?.id}, deliveryUpdates: ${deliveryUpdates.length}, invoiceItems: ${invoiceItems.length}, paymentMode: $paymentMode, paymentSelection: $paymentSelection, deliveryNumber: $deliveryNumber, storeName: $storeName, ownerName: $ownerName, contactNumber: $contactNumber, barangay: $barangay, municipality: $municipality, province: $province, refID: $refID)';
   }
 }

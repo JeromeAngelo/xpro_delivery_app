@@ -20,12 +20,13 @@ class DeliveryListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get customer data from the delivery entity
-    final customer = delivery.customer.target;
+    // Use direct fields from DeliveryDataEntity instead of target
+    final storeName = delivery.storeName;
+    final municipality = delivery.municipality;
     final invoice = delivery.invoice.target;
 
-    // ADDED: Show shimmer loading when customer is null
-    if (customer == null) {
+    // ADDED: Show shimmer loading when customer data is null
+    if (storeName == null && municipality == null) {
       return Card(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -205,18 +206,18 @@ class DeliveryListTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          customer.name ?? 'No Store Name',
+                          storeName ?? 'No Store Name',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          invoice!.name ?? 'No Invoice Number',
+                          invoice?.name ?? 'No Invoice Number',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          customer.municipality ?? 'No Address',
+                          municipality ?? 'No Address',
                           style: Theme.of(context).textTheme.bodyMedium,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

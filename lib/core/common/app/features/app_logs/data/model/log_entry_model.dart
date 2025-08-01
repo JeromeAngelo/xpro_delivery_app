@@ -8,40 +8,28 @@ class LogEntryModel extends LogEntryEntity {
   int objectBoxId = 0;
 
   @Property()
-  String pocketbaseId;
+  String? pocketbaseId;
 
   @Property()
-  int levelIndex;
+  int? levelIndex;
 
   @Property()
-  int categoryIndex;
+  int? categoryIndex;
 
   LogEntryModel({
-    required String id,
-    required String message,
-    required LogLevel level,
-    required LogCategory category,
-    required DateTime timestamp,
-    String? details,
-    String? userId,
-    String? tripId,
-    String? deliveryId,
-    String? stackTrace,
+    super.id,
+    super.message,
+    super.level,
+    super.category,
+    super.timestamp,
+    super.details,
+    super.userId,
+    super.tripId,
+    super.deliveryId,
+    super.stackTrace,
   }) : pocketbaseId = id,
-       levelIndex = level.index,
-       categoryIndex = category.index,
-       super(
-         id: id,
-         message: message,
-         level: level,
-         category: category,
-         timestamp: timestamp,
-         details: details,
-         userId: userId,
-         tripId: tripId,
-         deliveryId: deliveryId,
-         stackTrace: stackTrace,
-       );
+       levelIndex = level?.index,
+       categoryIndex = category?.index;
 
   factory LogEntryModel.fromJson(DataMap json) {
     return LogEntryModel(
@@ -86,9 +74,9 @@ class LogEntryModel extends LogEntryEntity {
     return {
       'id': pocketbaseId,
       'message': message,
-      'level': level.name,
-      'category': category.name,
-      'timestamp': timestamp.toIso8601String(),
+      'level': level?.name,
+      'category': category?.name,
+      'timestamp': timestamp?.toIso8601String(),
       'details': details,
       'userId': userId,
       'tripId': tripId,

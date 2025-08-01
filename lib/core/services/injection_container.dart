@@ -344,6 +344,7 @@ Future<void> initAuth() async {
       getUserTrip: sl(),
       syncUserData: sl(),
       syncUserTripData: sl(),
+      connectivity: sl(),
     ),
   );
 
@@ -510,6 +511,7 @@ Future<void> initDeliveryTeam() async {
       checklistBloc: sl(),
       deliveryVehicleBloc: sl(),
       assignDeliveryTeamToTrip: sl(),
+      connectivity: sl(),
     ),
   );
 
@@ -560,6 +562,7 @@ Future<void> initTrip() async {
       endTrip: sl(),
       updateTripLocation: sl(),
       deliveryDataBloc: sl(),
+      connectivity: sl(),
     ),
   );
 
@@ -802,6 +805,7 @@ Future<void> initDeliveryData() async {
       calculateDeliveryTime: sl(),
       syncDeliveryDataByTripId: sl(),
       setInvoiceIntoUnloaded: sl(),
+      connectivity: sl()
     ),
   );
 
@@ -988,6 +992,7 @@ Future<void> initCancelledInvoice() async {
       loadCancelledInvoicesByTripId: sl(),
       loadCancelledInvoicesById: sl(),
       createCancelledInvoiceByDeliveryDataId: sl(),
+      connectivity: sl(),
     ),
   );
 
@@ -1023,6 +1028,7 @@ Future<void> initCollection() async {
       getCollectionsByTripId: sl(),
       getCollectionById: sl(),
       deleteCollection: sl(),
+      connectivity: sl(),
     ),
   );
 

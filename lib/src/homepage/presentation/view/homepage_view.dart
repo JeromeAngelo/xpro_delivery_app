@@ -3,12 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/default_drawer.dart';
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
 import 'package:x_pro_delivery_app/core/services/sync_service.dart';
@@ -38,6 +36,7 @@ class _HomepageViewState extends State<HomepageView>
   DeliveryTeamState? _cachedDeliveryTeamState;
   StreamSubscription? _authSubscription;
   StreamSubscription? _deliveryTeamSubscription;
+  DateTime? _lastDeliveryTeamLoad;
 
   @override
   void initState() {
@@ -74,25 +73,49 @@ class _HomepageViewState extends State<HomepageView>
   void _setupDataListeners() {
     _authSubscription = _authBloc.stream.listen((state) {
       debugPrint('🔐 Auth State Update: ${state.runtimeType}');
-      if (state is UserByIdLoaded && !_isDataInitialized) {
-        _loadInitialData(state.user.id!);
-        _isDataInitialized = true;
+      
+      // Only cache successful data states, not loading states
+      if (state is UserByIdLoaded || state is UserTripLoaded || state is UserDataRefreshed) {
+        if (mounted) {
+          setState(() => _cachedState = state);
+        }
+        
+        // Load initial data only once when we first get user data
+        if (state is UserByIdLoaded && !_isDataInitialized) {
+          _loadInitialData(state.user.id!);
+          _isDataInitialized = true;
+        }
       }
-      if (mounted) {
-        setState(() => _cachedState = state);
+      
+      // Don't cache loading or error states - keep showing cached data
+      if (state is AuthLoading || state is AuthError) {
+        debugPrint('⚠️ Ignoring ${state.runtimeType} - keeping cached data visible');
       }
     });
 
     _deliveryTeamSubscription = _deliveryTeamBloc.stream.listen((state) {
       debugPrint('👥 Delivery Team State Update: ${state.runtimeType}');
-      if (mounted) {
+      
+      // Only cache successful states, not loading states
+      if (state is DeliveryTeamLoaded && mounted) {
         setState(() => _cachedDeliveryTeamState = state);
+      }
+      
+      // Don't cache loading or error states - keep showing cached data
+      if (state is DeliveryTeamLoading || state is DeliveryTeamError) {
+        debugPrint('⚠️ Ignoring ${state.runtimeType} - keeping cached delivery team data visible');
       }
     });
   }
 
   Future<void> _loadInitialData(String userId) async {
-    debugPrint('📱 Loading initial data for user: $userId');
+    debugPrint('📱 OFFLINE-FIRST: Loading initial data for user: $userId');
+    
+    // 🔄 Use offline-first AuthBloc methods (they handle local-first, then remote)
+    _authBloc.add(LoadUserByIdEvent(userId));
+    _authBloc.add(GetUserTripEvent(userId));
+    
+    // Load delivery team data based on stored trip info
     final prefs = await SharedPreferences.getInstance();
     final storedData = prefs.getString('user_data');
 
@@ -102,15 +125,9 @@ class _HomepageViewState extends State<HomepageView>
 
       if (tripData != null && tripData['id'] != null) {
         debugPrint('🎫 Loading delivery team for trip: ${tripData['id']}');
-        _deliveryTeamBloc
-          ..add(LoadLocalDeliveryTeamEvent(tripData['id']))
-          ..add(LoadDeliveryTeamEvent(tripData['id']));
+        _loadDeliveryTeamWithRateLimit(tripData['id']);
       }
     }
-
-    _authBloc
-      ..add(LoadLocalUserByIdEvent(userId))
-      ..add(LoadUserByIdEvent(userId));
   }
 
   Future<void> _refreshHomeScreenOnly() async {
@@ -152,24 +169,19 @@ class _HomepageViewState extends State<HomepageView>
       return;
     }
 
-    debugPrint('🔄 Refreshing data for user: $userId');
+    debugPrint('🔄 OFFLINE-FIRST: Refreshing data for user: $userId');
 
-    // Refresh user data
-    _authBloc.add(LoadUserByIdEvent(userId));
-
-    // Check if user has a trip
+    // Use offline-first refresh - this forces remote sync while keeping cached data visible
+    _authBloc.add(RefreshUserEvent());
+    
+    // Check if user has a trip and refresh delivery team data
     final tripId = await _getUserTripId();
 
     if (tripId != null) {
-      debugPrint('🎫 Found trip ID: $tripId - refreshing trip data');
-
-      // Refresh trip data
-      _authBloc.add(GetUserTripEvent(userId));
-
-      // Refresh delivery team data
-      _deliveryTeamBloc.add(LoadDeliveryTeamEvent(tripId));
+      debugPrint('🎫 Found trip ID: $tripId - refreshing delivery team data');
+      _loadDeliveryTeamWithRateLimit(tripId);
     } else {
-      debugPrint('ℹ️ No trip found for user - skipping trip data refresh');
+      debugPrint('ℹ️ No trip found for user - skipping delivery team refresh');
     }
 
     // Wait a moment to allow the UI to update
@@ -219,6 +231,25 @@ class _HomepageViewState extends State<HomepageView>
     }
 
     return null;
+  }
+
+  // Rate limiting method to prevent excessive API calls
+  void _loadDeliveryTeamWithRateLimit(String tripId) {
+    final now = DateTime.now();
+    
+    // Only load if we haven't loaded in the last 10 seconds
+    if (_lastDeliveryTeamLoad == null || 
+        now.difference(_lastDeliveryTeamLoad!).inSeconds >= 10) {
+      debugPrint('🔄 Loading delivery team with rate limit for trip: $tripId');
+      _lastDeliveryTeamLoad = now;
+      
+      // Load local first, then remote
+      _deliveryTeamBloc.add(LoadLocalDeliveryTeamEvent(tripId));
+      _deliveryTeamBloc.add(LoadDeliveryTeamEvent(tripId));
+    } else {
+      final remaining = 10 - now.difference(_lastDeliveryTeamLoad!).inSeconds;
+      debugPrint('⏳ Rate limited - skipping delivery team load. Try again in ${remaining}s');
+    }
   }
 
   // Add these methods to the _HomepageViewState class
@@ -483,7 +514,6 @@ class _HomepageViewState extends State<HomepageView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final connectivity = Provider.of<ConnectivityProvider>(context);
 
     return MultiBlocProvider(
       providers: [
@@ -494,43 +524,23 @@ class _HomepageViewState extends State<HomepageView>
         key: _scaffoldKey,
         drawer: const DefaultDrawer(),
         appBar: _buildAppBar(),
-        body: Column(
-          children: [
-            if (!connectivity.isOnline)
-              Container(
-                color: Theme.of(context).colorScheme.error,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Center(
-                  child: Text(
-                    'You\'re in offline mode',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onError,
-                    ),
-                  ),
-                ),
-              ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _refreshHomeScreenOnly,
-                child: const CustomScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          HomepageDashboard(),
-                          SizedBox(height: 12),
-
-                          HomepageBody(),
-                          SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
+        body: RefreshIndicator(
+          onRefresh: _refreshHomeScreenOnly,
+          child: const CustomScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    HomepageDashboard(),
+                    SizedBox(height: 12),
+                    HomepageBody(),
+                    SizedBox(height: 20),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         floatingActionButton: _buildFloatingActionButton(),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -624,30 +634,77 @@ class _HomepageViewState extends State<HomepageView>
   Widget _buildFloatingActionButton() {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        debugPrint('🎯 FAB Auth State: $state');
+        debugPrint('🎯 FAB Auth State: ${state.runtimeType}');
 
-        if (state is UserByIdLoaded) {
-          final tripNumberId = state.user.tripNumberId;
-          debugPrint('🎫 Trip Number ID: $tripNumberId');
-
-          if (tripNumberId != null && tripNumberId.isNotEmpty) {
-            debugPrint('✅ Trip Found - Hiding FAB');
-            return const SizedBox.shrink();
-          }
+        // Check current state first
+        bool hasTrip = _checkCurrentStateForTrip(state);
+        
+        // If current state doesn't show trip, check cached states
+        if (!hasTrip) {
+          hasTrip = _checkCachedStatesForTrip();
         }
 
-        if (state is UserTripLoaded) {
-          debugPrint('✅ User Trip Loaded - Hiding FAB');
+        if (hasTrip) {
+          debugPrint('✅ Trip Found - Hiding FAB');
           return const SizedBox.shrink();
         }
 
-        debugPrint('➕ No Trip - Showing FAB');
+        debugPrint('➕ No Trip Found - Showing Get Trip Ticket Button');
         return const Padding(
           padding: EdgeInsets.all(16.0),
           child: GetTripTicketBtn(),
         );
       },
     );
+  }
+
+  bool _checkCurrentStateForTrip(AuthState state) {
+    if (state is UserByIdLoaded) {
+      final tripNumberId = state.user.tripNumberId;
+      debugPrint('🎫 Current Trip Number ID: $tripNumberId');
+      return tripNumberId != null && tripNumberId.isNotEmpty;
+    }
+
+    if (state is UserTripLoaded) {
+      debugPrint('✅ Current User Trip Loaded - Trip ID: ${state.trip.id}');
+      return state.trip.id != null && state.trip.id!.isNotEmpty;
+    }
+
+    if (state is UserDataRefreshed) {
+      final tripNumberId = state.user.tripNumberId;
+      debugPrint('🔄 User Data Refreshed - Trip Number ID: $tripNumberId');
+      return tripNumberId != null && tripNumberId.isNotEmpty;
+    }
+
+    return false;
+  }
+
+  bool _checkCachedStatesForTrip() {
+    // Check cached auth state
+    if (_cachedState is UserByIdLoaded) {
+      final cachedUser = (_cachedState as UserByIdLoaded).user;
+      final cachedTripId = cachedUser.tripNumberId;
+      debugPrint('🔄 Checking cached Trip Number ID: $cachedTripId');
+      if (cachedTripId != null && cachedTripId.isNotEmpty) {
+        return true;
+      }
+    }
+
+    if (_cachedState is UserTripLoaded) {
+      final tripId = (_cachedState as UserTripLoaded).trip.id;
+      debugPrint('🔄 Checking cached User Trip: $tripId');
+      if (tripId != null && tripId.isNotEmpty) {
+        return true;
+      }
+    }
+
+    // Check cached delivery team state
+    if (_cachedDeliveryTeamState is DeliveryTeamLoaded) {
+      debugPrint('🔄 Cached delivery team state found - indicating active trip');
+      return true;
+    }
+
+    return false;
   }
 
   @override

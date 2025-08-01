@@ -45,7 +45,8 @@ class TileForTimeline extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is UserTripLoaded) {
-          final customer = deliveryData.customer.target;
+          // Use direct fields from DeliveryDataEntity instead of target
+          final storeName = deliveryData.storeName;
           final latestStatus = _getLatestDeliveryStatus();
 
           return Padding(
@@ -66,7 +67,7 @@ class TileForTimeline extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            customer?.name ?? 'No Customer Name',
+                            storeName ?? 'No Customer Name',
                             style: Theme.of(context).textTheme.titleMedium!.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -85,7 +86,7 @@ class TileForTimeline extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            _buildAddressString(customer),
+                            _buildAddressString(),
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
@@ -182,19 +183,17 @@ class TileForTimeline extends StatelessWidget {
     return deliveryUpdates.isNotEmpty ? deliveryUpdates.last : null;
   }
 
-  String _buildAddressString(dynamic customer) {
-    if (customer == null) return 'No address available';
-    
+  String _buildAddressString() {
     final addressParts = <String>[];
     
-    if (customer.barangay != null && customer.barangay!.isNotEmpty) {
-      addressParts.add(customer.barangay!);
+    if (deliveryData.barangay != null && deliveryData.barangay!.isNotEmpty) {
+      addressParts.add(deliveryData.barangay!);
     }
-    if (customer.municipality != null && customer.municipality!.isNotEmpty) {
-      addressParts.add(customer.municipality!);
+    if (deliveryData.municipality != null && deliveryData.municipality!.isNotEmpty) {
+      addressParts.add(deliveryData.municipality!);
     }
-    if (customer.province != null && customer.province!.isNotEmpty) {
-      addressParts.add(customer.province!);
+    if (deliveryData.province != null && deliveryData.province!.isNotEmpty) {
+      addressParts.add(deliveryData.province!);
     }
     
     return addressParts.isNotEmpty 

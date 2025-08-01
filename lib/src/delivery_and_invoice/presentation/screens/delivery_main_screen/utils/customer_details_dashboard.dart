@@ -84,11 +84,14 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     BuildContext context,
     DeliveryDataEntity deliveryData,
   ) {
-    final customer = deliveryData.customer.target;
+    // Use direct fields from DeliveryDataEntity instead of target
+    final storeName = deliveryData.storeName;
+    final ownerName = deliveryData.ownerName;
+    final contactNumber = deliveryData.contactNumber;
     final invoice = deliveryData.invoice.target;
 
-    // ADDED: Show shimmer loading when customer is null
-    if (customer == null) {
+    // ADDED: Show shimmer loading when customer data is null
+    if (storeName == null && ownerName == null && contactNumber == null) {
       return Card(
         elevation: 0,
         color: Theme.of(context).colorScheme.surface,
@@ -114,9 +117,9 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(context, customer),
+            _buildHeader(context, storeName),
             const SizedBox(height: 30),
-            _buildInfoGrid(context, deliveryData, customer, invoice),
+            _buildInfoGrid(context, deliveryData, ownerName, contactNumber, invoice),
           ],
         ),
       ),
@@ -354,7 +357,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, dynamic customer) {
+  Widget _buildHeader(BuildContext context, String? storeName) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -363,7 +366,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                customer?.name ?? 'Unknown Customer',
+                storeName ?? 'Unknown Customer',
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(
                   context,
@@ -373,7 +376,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
               GestureDetector(
                 onTap: widget.onTap,
                 child: Text(
-                  _buildAddressString(customer),
+                  _buildAddressString(),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
@@ -385,19 +388,17 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     );
   }
 
-  String _buildAddressString(dynamic customer) {
-    if (customer == null) return 'No address available';
-
+  String _buildAddressString() {
     final addressParts = <String>[];
 
-    if (customer.barangay != null && customer.barangay!.isNotEmpty) {
-      addressParts.add(customer.barangay!);
+    if (widget.deliveryData.barangay != null && widget.deliveryData.barangay!.isNotEmpty) {
+      addressParts.add(widget.deliveryData.barangay!);
     }
-    if (customer.municipality != null && customer.municipality!.isNotEmpty) {
-      addressParts.add(customer.municipality!);
+    if (widget.deliveryData.municipality != null && widget.deliveryData.municipality!.isNotEmpty) {
+      addressParts.add(widget.deliveryData.municipality!);
     }
-    if (customer.province != null && customer.province!.isNotEmpty) {
-      addressParts.add(customer.province!);
+    if (widget.deliveryData.province != null && widget.deliveryData.province!.isNotEmpty) {
+      addressParts.add(widget.deliveryData.province!);
     }
 
     return addressParts.isNotEmpty
@@ -408,7 +409,8 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
   Widget _buildInfoGrid(
     BuildContext context,
     DeliveryDataEntity deliveryData,
-    dynamic customer,
+    String? ownerName,
+    String? contactNumber,
     dynamic invoice,
   ) {
     // Get delivery status from delivery updates
@@ -425,7 +427,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     //  final contactNumbers = <String>['No contact available'];
 
     debugPrint('📊 Building dashboard with:');
-    debugPrint('   🏪 Customer: ${customer?.name}');
+    debugPrint('   🏪 Store Name: $ownerName');
     debugPrint('   🧾 Invoice: ${invoice?.name}');
     debugPrint('   💰 Total amount: $totalAmount');
     debugPrint('   📦 Delivery status: $latestStatus');
@@ -442,7 +444,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         _buildInfoItem(
           context,
           Icons.person,
-          customer?.ownerName ?? "No User Available",
+          ownerName ?? "No User Available",
           "Contact Person",
         ),
         _buildInfoItem(
@@ -462,7 +464,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         _buildInfoItem(
           context,
           Icons.contact_phone,
-          customer?.contactNumber ?? "",
+          contactNumber ?? "",
           "Contact Number",
         ),
 
@@ -475,7 +477,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         _buildInfoItem(
           context,
           Icons.payment,
-          customer?.paymentMode ?? "Not specified",
+          deliveryData.paymentMode ?? "Not specified",
           "Payment Mode",
         ),
       ],

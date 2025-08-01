@@ -11,23 +11,23 @@ class LogEntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CommonListTiles(
-      title: log.message,
-      subtitle: log.details ?? 'Category: ${log.category.name}',
+      title: log.message ?? 'No message',
+      subtitle: log.details ?? 'Category: ${log.category?.name ?? 'unknown'}',
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: _getLogLevelColor(log.level).withOpacity(0.1),
+          color: _getLogLevelColor(log.level ?? LogLevel.debug).withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: _getLogLevelColor(log.level)),
+          border: Border.all(color: _getLogLevelColor(log.level ?? LogLevel.debug)),
         ),
         child: Icon(
-          _getLogLevelIcon(log.level),
-          color: _getLogLevelColor(log.level),
+          _getLogLevelIcon(log.level ?? LogLevel.debug),
+          color: _getLogLevelColor(log.level ?? LogLevel.debug),
           size: 20,
         ),
       ),
       trailing: Text(
-        _formatTimestamp(log.timestamp),
+        _formatTimestamp(log.timestamp ?? DateTime.now()),
         style: TextStyle(
           color: Colors.grey[600],
           fontSize: 12,
@@ -81,15 +81,15 @@ class LogEntryTile extends StatelessWidget {
         title: Row(
           children: [
             Icon(
-              _getLogLevelIcon(log.level),
-              color: _getLogLevelColor(log.level),
+              _getLogLevelIcon(log.level ?? LogLevel.debug),
+              color: _getLogLevelColor(log.level ?? LogLevel.debug),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'Log Details',
                 style: TextStyle(
-                  color: _getLogLevelColor(log.level),
+                  color: _getLogLevelColor(log.level ?? LogLevel.debug),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -101,16 +101,16 @@ class LogEntryTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow('Level', log.level.name.toUpperCase()),
-              _buildDetailRow('Category', log.category.name),
-              _buildDetailRow('Time', _formatTimestamp(log.timestamp)),
+              _buildDetailRow('Level', log.level?.name.toUpperCase() ?? 'DEBUG'),
+              _buildDetailRow('Category', log.category?.name ?? 'general'),
+              _buildDetailRow('Time', _formatTimestamp(log.timestamp ?? DateTime.now())),
               const Divider(),
               const Text(
                 'Message:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              Text(log.message),
+              Text(log.message ?? 'No message'),
               if (log.details != null) ...[
                 const SizedBox(height: 12),
                 const Text(

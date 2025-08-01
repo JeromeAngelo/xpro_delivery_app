@@ -35,7 +35,7 @@ class LogsLocalDatasourceImpl implements LogsLocalDatasource {
   Future<void> addLog(LogEntryModel logEntry) async {
     try {
       _logs.add(logEntry);
-      debugPrint('✅ Log added: [${logEntry.level.name.toUpperCase()}] ${logEntry.message}');
+      debugPrint('✅ Log added: [${logEntry.level?.name.toUpperCase() ?? 'DEBUG'}] ${logEntry.message ?? 'No message'}');
     } catch (e) {
       debugPrint('❌ Failed to add log: $e');
     }
@@ -46,7 +46,11 @@ class LogsLocalDatasourceImpl implements LogsLocalDatasource {
     try {
       // Sort logs by timestamp (newest first)
       final sortedLogs = List<LogEntryModel>.from(_logs)
-        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        ..sort((a, b) {
+          final aTime = a.timestamp ?? DateTime(1970);
+          final bTime = b.timestamp ?? DateTime(1970);
+          return bTime.compareTo(aTime);
+        });
       
       debugPrint('📋 Retrieved ${sortedLogs.length} logs');
       return sortedLogs;
@@ -141,7 +145,7 @@ class LogsLocalDatasourceImpl implements LogsLocalDatasource {
                           pw.SizedBox(height: 5),
                           pw.Text('Generated: ${DateTime.now().toString()}'),
                           pw.Text('Total Logs: ${logs.length}'),
-                          pw.Text('Date Range: ${logs.isNotEmpty ? logs.last.timestamp.toString().split(' ')[0] : 'N/A'} to ${logs.isNotEmpty ? logs.first.timestamp.toString().split(' ')[0] : 'N/A'}'),
+                          pw.Text('Date Range: ${logs.isNotEmpty ? (logs.last.timestamp?.toString().split(' ')[0] ?? 'N/A') : 'N/A'} to ${logs.isNotEmpty ? (logs.first.timestamp?.toString().split(' ')[0] ?? 'N/A') : 'N/A'}'),
                         ],
                       ),
                     ),
@@ -201,36 +205,38 @@ class LogsLocalDatasourceImpl implements LogsLocalDatasource {
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(5),
                               child: pw.Text(
-                                '${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}',
+                                log.timestamp != null 
+                                    ? '${log.timestamp!.hour.toString().padLeft(2, '0')}:${log.timestamp!.minute.toString().padLeft(2, '0')}'
+                                    : '--:--',
                                 style: const pw.TextStyle(fontSize: 10),
                               ),
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(5),
                               child: pw.Text(
-                                log.level.name.toUpperCase(),
+                                log.level?.name.toUpperCase() ?? 'DEBUG',
                                 style: pw.TextStyle(
                                   fontSize: 10,
-                                  color: _getLogLevelColor(log.level),
+                                  color: _getLogLevelColor(log.level ?? LogLevel.debug),
                                 ),
                               ),
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(5),
                               child: pw.Text(
-                                log.category.name,
+                                log.category?.name ?? 'general',
                                 style: const pw.TextStyle(fontSize: 10),
                               ),
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(5),
                               child: pw.Text(
-                                log.message,
+                                log.message ?? 'No message',
                                 style: const pw.TextStyle(fontSize: 10),
                               ),
                             ),
                           ],
-                        )).toList(),
+                        )),
                       ],
                     ),
                   ),

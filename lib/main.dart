@@ -33,6 +33,7 @@ import 'package:x_pro_delivery_app/core/services/objectbox.dart';
 import 'package:x_pro_delivery_app/core/services/router.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/widgets/network_status_indicator.dart';
 
 import 'core/common/app/features/sync_data/cubit/sync_cubit.dart';
 
@@ -101,7 +102,12 @@ class MyApp extends StatelessWidget {
             darkTheme: FlexThemeData.dark(scheme: FlexScheme.amber),
             themeMode: ThemeMode.system,
             builder: (context, child) => ResponsiveBreakpoints.builder(
-              child: child!,
+              child: Column(
+                children: [
+                  const OfflineBanner(),
+                  Expanded(child: child!),
+                ],
+              ),
               breakpoints: [
                 const Breakpoint(start: 0, end: 450, name: MOBILE),
                 const Breakpoint(start: 451, end: 800, name: TABLET),

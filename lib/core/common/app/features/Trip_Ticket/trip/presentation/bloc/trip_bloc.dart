@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
+import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/accept_trip.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/calculate_total_distance.dart';
@@ -24,7 +26,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/services/location_services.dart';
 
-class TripBloc extends Bloc<TripEvent, TripState> {
+class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEvent, TripState> {
   TripState? _cachedState;
   final GetTrip _getTrip;
   final GetTripById _getTripById;
@@ -33,8 +35,8 @@ class TripBloc extends Bloc<TripEvent, TripState> {
   final DeliveryDataBloc _deliveryDataBloc;
   final CheckEndTripStatus _checkEndTripStatus;
   final TripUpdatesBloc _updateTimelineBloc;
-  // Add new field for location update use case
   final UpdateTripLocation _updateTripLocation;
+  final ConnectivityProvider _connectivity;
 
   final SearchTrips _searchTrips;
   final GetTripsByDateRange _getTripsByDateRange;
@@ -62,6 +64,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
     required ScanQRUsecase scanQRUsecase,
     required UpdateTripLocation updateTripLocation,
     required EndTrip endTrip,
+    required ConnectivityProvider connectivity,
   }) : _getTrip = getTrip,
        _getTripById = getTripById,
        _searchTrip = searchTrip,
@@ -75,6 +78,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
        _scanQRUsecase = scanQRUsecase,
        _updateTripLocation = updateTripLocation,
        _endTrip = endTrip,
+       _connectivity = connectivity,
 
        super(TripInitial()) {
     on<CalculateTripDistanceEvent>(_onCalculateTripDistance);
@@ -95,22 +99,40 @@ class TripBloc extends Bloc<TripEvent, TripState> {
     on<StopLocationTrackingEvent>(_onStopLocationTracking);
   }
 
-  // Add new event handlers
   Future<void> _onGetTripById(
     GetTripByIdEvent event,
     Emitter<TripState> emit,
   ) async {
+    debugPrint('🔍 OFFLINE-FIRST: Loading trip by ID: ${event.tripId}');
     emit(TripLoading());
-    debugPrint('🔄 Loading trip by ID: ${event.tripId}');
 
-    final result = await _getTripById(event.tripId);
-
-    result.fold(
-      (failure) => emit(TripError(failure.message)),
-      (trip) => emit(TripByIdLoaded(trip)),
+    await executeOfflineFirst(
+      localOperation: () async {
+        final result = await _getTripById.loadFromLocal(event.tripId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (trip) => emit(TripByIdLoaded(trip, isFromLocal: true)),
+        );
+      },
+      remoteOperation: () async {
+        final result = await _getTripById(event.tripId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (trip) => emit(TripByIdLoaded(trip)),
+        );
+      },
+      onLocalSuccess: (data) {
+        debugPrint('✅ Trip loaded from local cache');
+      },
+      onRemoteSuccess: (data) {
+        debugPrint('✅ Trip synced from remote');
+      },
+      onError: (error) => emit(TripError(error)),
+      connectivity: _connectivity,
     );
   }
 
+  /// Legacy method - use GetTripByIdEvent with offline-first pattern instead
   Future<void> _onLoadLocalTripById(
     LoadLocalTripByIdEvent event,
     Emitter<TripState> emit,

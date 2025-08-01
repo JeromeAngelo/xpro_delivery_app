@@ -85,11 +85,13 @@ class DeliveryList extends StatelessWidget {
   }
 
   Widget _buildCustomerInfo(BuildContext context, DeliveryDataEntity delivery) {
-    // Check if customer data is available
-    final customerData = delivery.customer.target;
+    // Use direct fields from DeliveryDataEntity instead of target
+    final storeName = delivery.storeName;
+    final refId = delivery.refID;
+    final municipality = delivery.municipality;
     final invoiceData = delivery.invoice.target;
 
-    if (customerData == null) {
+    if (storeName == null && refId == null && municipality == null) {
       // Show loading or placeholder if data is still being fetched
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +126,7 @@ class DeliveryList extends StatelessWidget {
         _buildInfoRow(
           context,
           Icons.store,
-          customerData.name ?? 'No Store Name',
+          storeName ?? 'No Store Name',
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
@@ -134,14 +136,14 @@ class DeliveryList extends StatelessWidget {
         _buildInfoRow(
           context,
           Icons.receipt_sharp,
-          customerData.refId ?? 'No Ref ID',
+          refId ?? 'No Ref ID',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
         _buildInfoRow(
           context,
           Icons.location_on,
-          customerData.municipality ?? "Unknown",
+          municipality ?? "Unknown",
         ),
         const SizedBox(height: 8),
         if (invoiceData != null)

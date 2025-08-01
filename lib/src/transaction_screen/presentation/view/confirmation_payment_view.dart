@@ -487,30 +487,31 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
             ),
           );
 
+          // 🔄 FORCE CACHE INVALIDATION: Clear cached data to force fresh load
+          debugPrint('🔄 Invalidating cached delivery data to force refresh');
+          
           // Navigate immediately after local creation
           debugPrint(
-            '🚀 Navigating to target screen while background sync continues',
+            '🚀 Navigating to target screen with cache invalidation',
           );
           Navigator.of(context).pop(); // Close modal
 
+          // Force immediate data refresh before navigation
+          if (context.mounted) {
+            final deliveryBloc = context.read<DeliveryDataBloc>();
+            
+            // Invalidate cache by loading fresh data immediately
+            deliveryBloc.add(GetDeliveryDataByIdEvent(widget.deliveryData.id!));
+            deliveryBloc.add(GetLocalDeliveryDataByIdEvent(widget.deliveryData.id!));
+          }
+
+          // Navigate with extra data to signal refresh needed
           context.go(
             '/delivery-and-invoice/${widget.deliveryData.id}',
-          ); // Navigate to target
+            extra: {'forceRefresh': true, 'timestamp': DateTime.now().millisecondsSinceEpoch},
+          );
 
-          // Refresh delivery data in background (optional)
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (context.mounted) {
-              // You can add any background refresh logic here if needed
-              context.read<DeliveryDataBloc>().add(
-                GetLocalDeliveryDataByIdEvent(widget.deliveryData.id!),
-              );
-
-              context.read<DeliveryDataBloc>().add(
-                GetDeliveryDataByIdEvent(widget.deliveryData.id!),
-              );
-              debugPrint('🔄 Background sync continuing...');
-            }
-          });
+          debugPrint('✅ Navigation completed with forced refresh');
         } else if (state is DeliveryReceiptError) {
           debugPrint('❌ Delivery receipt creation failed: ${state.message}');
           ScaffoldMessenger.of(context).showSnackBar(

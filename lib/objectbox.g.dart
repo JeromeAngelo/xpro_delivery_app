@@ -42,6 +42,7 @@ import 'core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update
 import 'core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
 import 'core/common/app/features/Trip_Ticket/update_timeline/data/models/update_timeline_models.dart';
 import 'core/common/app/features/Trip_Ticket/update_timeline/domain/entity/update_timeline_entity.dart';
+import 'core/common/app/features/app_logs/data/model/log_entry_model.dart';
 import 'core/common/app/features/checklist/data/model/checklist_model.dart';
 import 'core/common/app/features/checklist/domain/entity/checklist_entity.dart';
 import 'core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
@@ -1032,7 +1033,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(129, 2364513733229906522),
+        indexId: const obx_int.IdUid(136, 8572364359171147937),
         relationTarget: 'TripModel',
       ),
     ],
@@ -1364,7 +1365,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(128, 275404355999582526),
+        indexId: const obx_int.IdUid(135, 1056979858007497304),
         relationTarget: 'TripModel',
       ),
     ],
@@ -1646,7 +1647,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(54, 9218130673980506226),
     name: 'DeliveryDataEntity',
-    lastPropertyId: const obx_int.IdUid(13, 6673957372490714795),
+    lastPropertyId: const obx_int.IdUid(20, 5474888939982950439),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -1730,6 +1731,48 @@ final _entities = <obx_int.ModelEntity>[
       obx_int.ModelProperty(
         id: const obx_int.IdUid(13, 6673957372490714795),
         name: 'totalDeliveryTime',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 5754081539352014631),
+        name: 'storeName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 155553564337782442),
+        name: 'ownerName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 6644212675777977107),
+        name: 'contactNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 9159910432773523906),
+        name: 'barangay',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(18, 1691785403663000118),
+        name: 'municipality',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(19, 8252414638358267993),
+        name: 'province',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(20, 5474888939982950439),
+        name: 'refID',
         type: 9,
         flags: 0,
       ),
@@ -2880,6 +2923,40 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(74, 566513554873847289),
+    name: 'LogEntryModel',
+    lastPropertyId: const obx_int.IdUid(4, 6895538169006859796),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 7036898187121490860),
+        name: 'objectBoxId',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 280938438911162155),
+        name: 'pocketbaseId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 5177933412878263584),
+        name: 'levelIndex',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 6895538169006859796),
+        name: 'categoryIndex',
+        type: 6,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -2920,8 +2997,8 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(73, 8797290553868215244),
-    lastIndexId: const obx_int.IdUid(130, 8414763800157151842),
+    lastEntityId: const obx_int.IdUid(74, 566513554873847289),
+    lastIndexId: const obx_int.IdUid(136, 8572364359171147937),
     lastRelationId: const obx_int.IdUid(49, 8890252336964719573),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -3025,6 +3102,12 @@ obx_int.ModelDefinition getObjectBoxModel() {
       5476341418432294988,
       1171187708824140506,
       212432795640100884,
+      275404355999582526,
+      2364513733229906522,
+      4882525221675082522,
+      4202647451836453134,
+      4559760120099527645,
+      5992119699418627524,
     ],
     retiredPropertyUids: const [
       3346502891055187729,
@@ -5698,7 +5781,29 @@ obx_int.ModelDefinition getObjectBoxModel() {
             object.totalDeliveryTime == null
                 ? null
                 : fbb.writeString(object.totalDeliveryTime!);
-        fbb.startTable(14);
+        final storeNameOffset =
+            object.storeName == null
+                ? null
+                : fbb.writeString(object.storeName!);
+        final ownerNameOffset =
+            object.ownerName == null
+                ? null
+                : fbb.writeString(object.ownerName!);
+        final contactNumberOffset =
+            object.contactNumber == null
+                ? null
+                : fbb.writeString(object.contactNumber!);
+        final barangayOffset =
+            object.barangay == null ? null : fbb.writeString(object.barangay!);
+        final municipalityOffset =
+            object.municipality == null
+                ? null
+                : fbb.writeString(object.municipality!);
+        final provinceOffset =
+            object.province == null ? null : fbb.writeString(object.province!);
+        final refIDOffset =
+            object.refID == null ? null : fbb.writeString(object.refID!);
+        fbb.startTable(21);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, collectionIdOffset);
@@ -5712,6 +5817,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(10, paymentModeOffset);
         fbb.addOffset(11, deliveryNumberOffset);
         fbb.addOffset(12, totalDeliveryTimeOffset);
+        fbb.addOffset(13, storeNameOffset);
+        fbb.addOffset(14, ownerNameOffset);
+        fbb.addOffset(15, contactNumberOffset);
+        fbb.addOffset(16, barangayOffset);
+        fbb.addOffset(17, municipalityOffset);
+        fbb.addOffset(18, provinceOffset);
+        fbb.addOffset(19, refIDOffset);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -5752,6 +5864,27 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final paymentModeParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 24);
+        final storeNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 30);
+        final ownerNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 32);
+        final contactNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 34);
+        final barangayParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 36);
+        final municipalityParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 38);
+        final provinceParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 40);
+        final refIDParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 42);
         final createdParam =
             createdValue == null
                 ? null
@@ -5773,6 +5906,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
           deliveryNumber: deliveryNumberParam,
           totalDeliveryTime: totalDeliveryTimeParam,
           paymentMode: paymentModeParam,
+          storeName: storeNameParam,
+          ownerName: ownerNameParam,
+          contactNumber: contactNumberParam,
+          barangay: barangayParam,
+          municipality: municipalityParam,
+          province: provinceParam,
+          refID: refIDParam,
           created: createdParam,
           updated: updatedParam,
           hasTrip: hasTripParam,
@@ -7430,6 +7570,56 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    LogEntryModel: obx_int.EntityDefinition<LogEntryModel>(
+      model: _entities[46],
+      toOneRelations: (LogEntryModel object) => [],
+      toManyRelations: (LogEntryModel object) => {},
+      getId: (LogEntryModel object) => object.objectBoxId,
+      setId: (LogEntryModel object, int id) {
+        object.objectBoxId = id;
+      },
+      objectToFB: (LogEntryModel object, fb.Builder fbb) {
+        final pocketbaseIdOffset =
+            object.pocketbaseId == null
+                ? null
+                : fbb.writeString(object.pocketbaseId!);
+        fbb.startTable(5);
+        fbb.addInt64(0, object.objectBoxId);
+        fbb.addOffset(1, pocketbaseIdOffset);
+        fbb.addInt64(2, object.levelIndex);
+        fbb.addInt64(3, object.categoryIndex);
+        fbb.finish(fbb.endTable());
+        return object.objectBoxId;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+
+        final object =
+            LogEntryModel()
+              ..objectBoxId = const fb.Int64Reader().vTableGet(
+                buffer,
+                rootOffset,
+                4,
+                0,
+              )
+              ..pocketbaseId = const fb.StringReader(
+                asciiOptimization: true,
+              ).vTableGetNullable(buffer, rootOffset, 6)
+              ..levelIndex = const fb.Int64Reader().vTableGetNullable(
+                buffer,
+                rootOffset,
+                8,
+              )
+              ..categoryIndex = const fb.Int64Reader().vTableGetNullable(
+                buffer,
+                rootOffset,
+                10,
+              );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
@@ -8664,6 +8854,41 @@ class DeliveryDataEntity_ {
     _entities[26].properties[12],
   );
 
+  /// See [DeliveryDataEntity.storeName].
+  static final storeName = obx.QueryStringProperty<DeliveryDataEntity>(
+    _entities[26].properties[13],
+  );
+
+  /// See [DeliveryDataEntity.ownerName].
+  static final ownerName = obx.QueryStringProperty<DeliveryDataEntity>(
+    _entities[26].properties[14],
+  );
+
+  /// See [DeliveryDataEntity.contactNumber].
+  static final contactNumber = obx.QueryStringProperty<DeliveryDataEntity>(
+    _entities[26].properties[15],
+  );
+
+  /// See [DeliveryDataEntity.barangay].
+  static final barangay = obx.QueryStringProperty<DeliveryDataEntity>(
+    _entities[26].properties[16],
+  );
+
+  /// See [DeliveryDataEntity.municipality].
+  static final municipality = obx.QueryStringProperty<DeliveryDataEntity>(
+    _entities[26].properties[17],
+  );
+
+  /// See [DeliveryDataEntity.province].
+  static final province = obx.QueryStringProperty<DeliveryDataEntity>(
+    _entities[26].properties[18],
+  );
+
+  /// See [DeliveryDataEntity.refID].
+  static final refID = obx.QueryStringProperty<DeliveryDataEntity>(
+    _entities[26].properties[19],
+  );
+
   /// see [DeliveryDataEntity.deliveryUpdates]
   static final deliveryUpdates =
       obx.QueryRelationToMany<DeliveryDataEntity, DeliveryUpdateEntity>(
@@ -9516,5 +9741,28 @@ class UserPerformanceModel_ {
   /// See [UserPerformanceModel.userId].
   static final userId = obx.QueryStringProperty<UserPerformanceModel>(
     _entities[45].properties[2],
+  );
+}
+
+/// [LogEntryModel] entity fields to define ObjectBox queries.
+class LogEntryModel_ {
+  /// See [LogEntryModel.objectBoxId].
+  static final objectBoxId = obx.QueryIntegerProperty<LogEntryModel>(
+    _entities[46].properties[0],
+  );
+
+  /// See [LogEntryModel.pocketbaseId].
+  static final pocketbaseId = obx.QueryStringProperty<LogEntryModel>(
+    _entities[46].properties[1],
+  );
+
+  /// See [LogEntryModel.levelIndex].
+  static final levelIndex = obx.QueryIntegerProperty<LogEntryModel>(
+    _entities[46].properties[2],
+  );
+
+  /// See [LogEntryModel.categoryIndex].
+  static final categoryIndex = obx.QueryIntegerProperty<LogEntryModel>(
+    _entities[46].properties[3],
   );
 }
