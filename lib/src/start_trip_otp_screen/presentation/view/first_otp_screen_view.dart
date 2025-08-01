@@ -19,6 +19,7 @@ import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widget
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/otp_instructions.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/otp_input.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/confirm_button.dart';
+import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/trip_details_dialog.dart';
 
 class FirstOtpScreenView extends StatefulWidget {
   const FirstOtpScreenView({super.key});
@@ -181,6 +182,33 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                         ),
                         const SizedBox(height: 20),
                         const OTPInstructions(),
+                        
+                        // Trip Details Button
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => const TripDetailsDialog(),
+                              );
+                            },
+                            icon: Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            label: Text(
+                              'View Trip Details',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        
                         const DigitalClocks(),
                         OTPInput(
                           onOtpChanged: (otp) {

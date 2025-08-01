@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
-import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
+import 'package:x_pro_delivery_app/core/mixins/offline_first_mixin.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/accept_trip.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/calculate_total_distance.dart';

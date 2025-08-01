@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
-import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
+import 'package:x_pro_delivery_app/core/mixins/offline_first_mixin.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/domain/usecases/delete_collection.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_event.dart';

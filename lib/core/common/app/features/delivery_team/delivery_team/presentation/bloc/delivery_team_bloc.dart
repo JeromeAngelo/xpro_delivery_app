@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
-import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
+import 'package:x_pro_delivery_app/core/mixins/offline_first_mixin.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/assign_delivery_team_to_trip.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/load_delivery_team.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/load_delivery_team_by_id.dart';

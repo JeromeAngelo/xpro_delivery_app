@@ -4,7 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
-import 'package:x_pro_delivery_app/core/common/mixins/offline_first_mixin.dart';
+import 'package:x_pro_delivery_app/core/mixins/offline_first_mixin.dart';
 import 'package:x_pro_delivery_app/src/auth/domain/usecases/get_user_by_id.dart';
 import 'package:x_pro_delivery_app/src/auth/domain/usecases/get_user_trip.dart';
 import 'package:x_pro_delivery_app/src/auth/domain/usecases/load_user.dart';
