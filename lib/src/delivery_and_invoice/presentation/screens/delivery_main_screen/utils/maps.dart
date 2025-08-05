@@ -226,7 +226,7 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
         return location;
       } else {
         
-        debugPrint('⚠️ Invalid coordinates for customer: ${customer.storeName ?? customer.name}');
+        debugPrint('⚠️ Invalid coordinates for customer: ${customer.ownerName ?? customer.name}');
         debugPrint('   Latitude: ${customer.latitude}');
         debugPrint('   Longitude: ${customer.longitude}');
         return defaultLocation;

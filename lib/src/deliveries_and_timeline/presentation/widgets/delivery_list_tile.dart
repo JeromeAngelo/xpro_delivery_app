@@ -249,23 +249,7 @@ class DeliveryListTile extends StatelessWidget {
                   ),
                 ],
               ),
-              if (delivery.paymentMode != null) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      'Payment: ',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      delivery.paymentMode ?? 'Unknown',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ],
+             
             ],
           ),
         ),

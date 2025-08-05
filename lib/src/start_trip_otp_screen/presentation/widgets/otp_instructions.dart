@@ -8,28 +8,21 @@ class OTPInstructions extends StatelessWidget {
     return Column(
       children: [
         Text(
-          "Guard instructions......",
+          " Input current vehicle odometer reading.",
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 20,
-              ),
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 20,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
         Text(
-          "Enter the OTP code sent to your phone",
+          "Hand the device to the guard so they can enter the OTP code.",
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 20,
-              ),
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 20,
+          ),
           textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Input current vehicle odometer reading',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
         ),
       ],
     );

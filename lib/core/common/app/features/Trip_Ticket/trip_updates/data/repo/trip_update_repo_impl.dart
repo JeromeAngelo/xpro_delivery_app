@@ -49,8 +49,10 @@ ResultFuture<void> createTripUpdate({
   required TripUpdateStatus status,
 }) async {
   try {
-debugPrint('💾 Starting trip update creation process');
-    debugPrint('📦 Local storage step initiated');    
+    debugPrint('💾 REPO: Creating trip update locally first');
+    debugPrint('📦 REPO: Trip ID: $tripId');
+    debugPrint('📝 REPO: Description: $description');
+    
     // Create in local storage first
     await _localDataSource.createTripUpdate(
       tripId: tripId,
@@ -60,12 +62,11 @@ debugPrint('💾 Starting trip update creation process');
       longitude: longitude,
       status: status,
     );
-     debugPrint('✅ Successfully stored in local database');
-
-    debugPrint('🌐 Syncing trip update to remote');
     
-    // Then sync with remote
-    await _remoteDataSource.createTripUpdate(
+    debugPrint('✅ REPO: Successfully stored trip update in local database');
+    
+    // Start background sync without waiting for it to complete
+    _syncToRemoteInBackground(
       tripId: tripId,
       description: description,
       image: image,
@@ -73,16 +74,51 @@ debugPrint('💾 Starting trip update creation process');
       longitude: longitude,
       status: status,
     );
-
-    debugPrint('✅ Trip update created successfully');
+    
+    // Return immediately with success for instant UI response
     return const Right(null);
+    
   } on CacheException catch (e) {
-    debugPrint('❌ Local storage error: ${e.message}');
+    debugPrint('❌ REPO: Local storage error: ${e.message}');
     return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
-  } on ServerException catch (e) {
-    debugPrint('⚠️ Remote creation failed, but local creation succeeded');
-    return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+  } catch (e) {
+    debugPrint('❌ REPO: Unexpected error during trip update creation: ${e.toString()}');
+    return Left(ServerFailure(message: e.toString(), statusCode: '500'));
   }
+}
+
+/// Background sync to remote - fire and forget
+void _syncToRemoteInBackground({
+  required String tripId,
+  required String description,
+  required String image,
+  required String latitude,
+  required String longitude,
+  required TripUpdateStatus status,
+}) {
+  // Use Future.microtask to ensure this runs asynchronously
+  Future.microtask(() async {
+    try {
+      debugPrint('🌐 REPO: Starting background sync of trip update to remote');
+      
+      // Sync with remote
+      await _remoteDataSource.createTripUpdate(
+        tripId: tripId,
+        description: description,
+        image: image,
+        latitude: latitude,
+        longitude: longitude,
+        status: status,
+      );
+      
+      debugPrint('✅ REPO: Successfully synced trip update to remote');
+    } on ServerException catch (e) {
+      debugPrint('⚠️ REPO: Background sync failed: ${e.message}');
+      // Could emit a sync failure event here if needed
+    } catch (e) {
+      debugPrint('❌ REPO: Background sync error: ${e.toString()}');
+    }
+  });
 }
 
   

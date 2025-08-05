@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data' show Uint8List;
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
@@ -11,7 +12,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/data/model/invoice_data_model.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'dart:typed_data';
-import 'package:image/image.dart' as img;
 
 import '../../../../../../../../enums/undeliverable_reason.dart';
 
@@ -248,72 +248,43 @@ class CancelledInvoiceRemoteDataSourceImpl
 
       debugPrint('📋 Cancelled invoice body data: $body');
 
-      // Prepare optimized files if image is provided
+      // Prepare efficiently compressed files if image is provided
       final files = <MultipartFile>[];
       if (cancelledInvoice.image != null &&
           cancelledInvoice.image!.isNotEmpty) {
-        debugPrint('📷 Optimizing and adding image to cancelled invoice');
+        debugPrint('📷 Processing cancelled invoice image (using native compression)');
 
         try {
-          // Read and compress the image
-          final originalFile = File(cancelledInvoice.image!);
-          final originalBytes = await originalFile.readAsBytes();
-
-          debugPrint(
-            '📊 Original image size: ${(originalBytes.length / 1024).toStringAsFixed(2)} KB',
-          );
-
-          // Compress image if it's larger than 500KB
-          Uint8List compressedBytes = originalBytes;
-          if (originalBytes.length > 500 * 1024) {
-            debugPrint('🗜️ Compressing image for faster upload');
-
-            // Decode and resize image
-            final image = img.decodeImage(originalBytes);
-            if (image != null) {
-              // Resize to max 1024px width while maintaining aspect ratio
-              final resized = img.copyResize(
-                image,
-                width: image.width > 1024 ? 1024 : image.width,
-                interpolation: img.Interpolation.linear,
-              );
-
-              // Compress as JPEG with 70% quality
-              compressedBytes = Uint8List.fromList(
-                img.encodeJpg(resized, quality: 70),
-              );
-
-              debugPrint(
-                '📊 Compressed image size: ${(compressedBytes.length / 1024).toStringAsFixed(2)} KB',
-              );
-              debugPrint(
-                '📉 Size reduction: ${((1 - compressedBytes.length / originalBytes.length) * 100).toStringAsFixed(1)}%',
-              );
-            }
-          }
-
-          files.add(
-            MultipartFile.fromBytes(
+          // Use the same efficient compression as trip updates
+          final compressedImageBytes = await _compressImage(cancelledInvoice.image!);
+          if (compressedImageBytes != null) {
+            files.add(MultipartFile.fromBytes(
               'image',
-              compressedBytes,
-              filename:
-                  'cancelled_invoice_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            ),
-          );
-
-          debugPrint('✅ Image prepared for upload');
+              compressedImageBytes,
+              filename: 'cancelled_invoice_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            ));
+            debugPrint('✅ Added compressed cancelled invoice image (${(compressedImageBytes.length / 1024).toStringAsFixed(2)} KB)');
+          } else {
+            // Fallback to original if compression fails
+            final originalBytes = await File(cancelledInvoice.image!).readAsBytes();
+            files.add(MultipartFile.fromBytes(
+              'image',
+              originalBytes,
+              filename: 'cancelled_invoice_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            ));
+            debugPrint('⚠️ Using original image (compression failed): ${(originalBytes.length / 1024).toStringAsFixed(2)} KB');
+          }
         } catch (imageError) {
           debugPrint(
             '⚠️ Image processing failed, uploading original: $imageError',
           );
-          // Fallback to original file if compression fails
+          // Fallback to original file if any processing fails
           final imageBytes = await File(cancelledInvoice.image!).readAsBytes();
           files.add(
             MultipartFile.fromBytes(
               'image',
               imageBytes,
-              filename:
-                  'cancelled_invoice_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              filename: 'cancelled_invoice_${DateTime.now().millisecondsSinceEpoch}.jpg',
             ),
           );
         }
@@ -727,6 +698,38 @@ class CancelledInvoiceRemoteDataSourceImpl
     );
 
     return cancelledInvoice;
+  }
+
+  /// Compress image file to reduce size (same as trip updates)
+  Future<Uint8List?> _compressImage(String imagePath) async {
+    try {
+      debugPrint('🗜️ Compressing cancelled invoice image: $imagePath');
+      
+      final compressedBytes = await FlutterImageCompress.compressWithFile(
+        imagePath,
+        quality: 70, // 70% quality
+        minWidth: 800, // Max width 800px
+        minHeight: 600, // Max height 600px
+        format: CompressFormat.jpeg,
+      );
+      
+      if (compressedBytes != null) {
+        final originalSize = await File(imagePath).length();
+        debugPrint('📊 Cancelled invoice image compressed: $originalSize bytes -> ${compressedBytes.length} bytes');
+        debugPrint('📉 Compression ratio: ${((originalSize - compressedBytes.length) / originalSize * 100).toStringAsFixed(1)}%');
+      }
+      
+      return compressedBytes;
+    } catch (e) {
+      debugPrint('⚠️ Cancelled invoice image compression failed: $e');
+      // Fallback to original file
+      try {
+        return await File(imagePath).readAsBytes();
+      } catch (fallbackError) {
+        debugPrint('❌ Failed to read original image file: $fallbackError');
+        return null;
+      }
+    }
   }
 
   // Helper method to update delivery team stats

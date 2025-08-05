@@ -88,27 +88,12 @@ class CancelledInvoiceRepoImpl implements CancelledInvoiceRepo {
       
       debugPrint('✅ REPO: Successfully created cancelled invoice in local storage');
       
-      try {
-        debugPrint('🌐 REPO: Syncing cancelled invoice to remote');
-        
-        // Sync with remote - use the local model, not the original entity
-        final remoteCancelledInvoice = await _remoteDataSource.createCancelledInvoice(
-          localCancelledInvoice,
-          deliveryDataId,
-        );
-        
-        debugPrint('📥 REPO: Updating local storage with remote data');
-        // For update, we need to find the trip ID from the remote response
-       // final tripId = remoteCancelledInvoice.tripId ?? deliveryDataId;
-        await _localDataSource.updateCancelledInvoice(remoteCancelledInvoice);
-        
-        debugPrint('✅ REPO: Successfully created and synced cancelled invoice');
-        return Right(remoteCancelledInvoice);
-      } on ServerException catch (e) {
-        debugPrint('⚠️ REPO: Remote sync failed, but local creation succeeded: ${e.message}');
-        // Return local version if remote fails
-        return Right(localCancelledInvoice);
-      }
+      // Start background sync without waiting for it to complete
+      _syncToRemoteInBackground(localCancelledInvoice, deliveryDataId);
+      
+      // Return immediately with local data for instant UI response
+      return Right(localCancelledInvoice);
+      
     } on CacheException catch (e) {
       debugPrint('❌ REPO: Local creation failed: ${e.message}');
       return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
@@ -116,6 +101,38 @@ class CancelledInvoiceRepoImpl implements CancelledInvoiceRepo {
       debugPrint('❌ REPO: Unexpected error during creation: ${e.toString()}');
       return Left(ServerFailure(message: e.toString(), statusCode: '500'));
     }
+  }
+
+  /// Background sync to remote - fire and forget
+  void _syncToRemoteInBackground(
+    CancelledInvoiceEntity localCancelledInvoice,
+    String deliveryDataId,
+  ) {
+    // Use Future.microtask to ensure this runs asynchronously
+    Future.microtask(() async {
+      try {
+        debugPrint('🌐 REPO: Starting background sync to remote');
+        
+        // Convert to model for remote sync
+        final modelForSync = CancelledInvoiceModel.fromEntity(localCancelledInvoice);
+        
+        // Sync with remote
+        final remoteCancelledInvoice = await _remoteDataSource.createCancelledInvoice(
+          modelForSync,
+          deliveryDataId,
+        );
+        
+        debugPrint('📥 REPO: Updating local storage with remote data');
+        await _localDataSource.updateCancelledInvoice(remoteCancelledInvoice);
+        
+        debugPrint('✅ REPO: Successfully synced cancelled invoice to remote');
+      } on ServerException catch (e) {
+        debugPrint('⚠️ REPO: Background sync failed: ${e.message}');
+        // Could emit a sync failure event here if needed
+      } catch (e) {
+        debugPrint('❌ REPO: Background sync error: ${e.toString()}');
+      }
+    });
   }
 
 

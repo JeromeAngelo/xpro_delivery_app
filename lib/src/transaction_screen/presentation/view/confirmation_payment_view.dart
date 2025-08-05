@@ -505,10 +505,11 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
             deliveryBloc.add(GetLocalDeliveryDataByIdEvent(widget.deliveryData.id!));
           }
 
-          // Navigate with extra data to signal refresh needed
+          // Navigate to delivery and invoice view with customer ID
+          debugPrint('🔄 Navigating to delivery and invoice view for customer: ${widget.deliveryData.id}');
           context.go(
             '/delivery-and-invoice/${widget.deliveryData.id}',
-            extra: {'forceRefresh': true, 'timestamp': DateTime.now().millisecondsSinceEpoch},
+            extra: widget.deliveryData,
           );
 
           debugPrint('✅ Navigation completed with forced refresh');

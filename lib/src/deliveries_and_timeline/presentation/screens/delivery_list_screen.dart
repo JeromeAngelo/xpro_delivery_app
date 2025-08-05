@@ -29,7 +29,7 @@ class DeliveryListScreen extends StatefulWidget {
 }
 
 class _DeliveryListScreenState extends State<DeliveryListScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   DeliveryDataState? _cachedState;
   DeliveryUpdateState? _cachedDeliveryState;
   late final AuthBloc _authBloc;
@@ -52,12 +52,29 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
     _initializeBlocs();
     _setupDataListeners();
 
+    // Add app lifecycle observer to detect when screen becomes visible
+    WidgetsBinding.instance.addObserver(this);
+
     // 📱 OFFLINE-FIRST: Load cached data immediately to avoid empty state flash
     _loadCachedDataSynchronously();
 
     // Then load fresh data asynchronously
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDataImmediately();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // This is called when the route becomes active
+    // Refresh end delivery status to ensure button state is current
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        debugPrint('📱 ROUTE: Dependencies changed, refreshing end delivery status');
+        _refreshEndDeliveryStatus();
+      }
     });
   }
 
@@ -158,6 +175,9 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
           _deliveryDataBloc.add(
             GetLocalDeliveryDataByTripIdEvent(_currentTripId!),
           );
+          if (mounted) {
+            context.read<DeliveryUpdateBloc>().add(CheckEndDeliveryStatusEvent(_currentTripId!));
+          }
           _deliveryDataBloc.add(GetDeliveryDataByTripIdEvent(_currentTripId!));
         }
       } else {
@@ -181,6 +201,10 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
         _deliveryDataBloc.add(
           GetLocalDeliveryDataByTripIdEvent(_currentTripId!),
         );
+        if (mounted) {
+          context.read<DeliveryUpdateBloc>().add(CheckEndDeliveryStatusEvent(_currentTripId!));
+        }
+
         //  _deliveryDataBloc.add(GetDeliveryDataByTripIdEvent(_currentTripId!));
       }
     }
@@ -495,8 +519,9 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
     // Debug the delivery data
     _debugDeliveryData(deliveries);
 
-    // Determine if the End Trip button should be visible
-    bool showEndTripButton = false;
+    // Determine if the End Trip button should be enabled
+    bool isEndTripButtonEnabled = false;
+    String endTripButtonTooltip = 'Complete all deliveries to end trip';
 
     if (_cachedDeliveryState is EndDeliveryStatusChecked) {
       final stats = (_cachedDeliveryState as EndDeliveryStatusChecked).stats;
@@ -507,8 +532,19 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
       debugPrint(
         '📊 Delivery Status: Total=$total, Completed=$completed, Pending=$pending',
       );
-      showEndTripButton = total > 0 && pending == 0;
-      debugPrint('🔘 End Trip Button visible: $showEndTripButton');
+      isEndTripButtonEnabled = total > 0 && pending == 0;
+
+      if (total == 0) {
+        endTripButtonTooltip = 'No deliveries assigned to this trip';
+      } else if (pending > 0) {
+        endTripButtonTooltip =
+            '$pending deliveries still pending. Complete all to end trip.';
+      } else {
+        endTripButtonTooltip = 'All deliveries completed. Ready to end trip.';
+      }
+
+      debugPrint('🔘 End Trip Button enabled: $isEndTripButtonEnabled');
+      debugPrint('💬 Tooltip: $endTripButtonTooltip');
     }
 
     return Column(
@@ -571,7 +607,11 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
             ],
           ),
         ),
-        if (showEndTripButton) EndTripButton(),
+        // Always show EndTripButton but control its enabled state
+        EndTripButton(
+          isEnabled: isEndTripButtonEnabled,
+          tooltip: endTripButtonTooltip,
+        ),
       ],
     );
   }
@@ -830,7 +870,33 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // When app comes back to foreground, refresh end delivery status
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('📱 LIFECYCLE: App resumed, refreshing end delivery status');
+      _refreshEndDeliveryStatus();
+    }
+  }
+
+  /// Refresh end delivery status when screen becomes visible
+  void _refreshEndDeliveryStatus() {
+    if (_currentTripId != null && mounted) {
+      debugPrint('🔄 REFRESH: Checking end delivery status for trip: $_currentTripId');
+      
+      // Check local first for immediate update
+      _deliveryUpdateBloc.add(CheckLocalEndDeliveryStatusEvent(_currentTripId!));
+      
+      // Then check remote for latest data
+      _deliveryUpdateBloc.add(CheckEndDeliveryStatusEvent(_currentTripId!));
+    }
+  }
+
+  @override
   void dispose() {
+    debugPrint('🧹 Disposing DeliveryListScreen');
+    WidgetsBinding.instance.removeObserver(this);
     _authSubscription?.cancel();
     _deliveryDataSubscription?.cancel();
     _deliverySubscription?.cancel();

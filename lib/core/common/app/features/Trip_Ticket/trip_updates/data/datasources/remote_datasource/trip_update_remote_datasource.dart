@@ -308,21 +308,23 @@ TripUpdateModel _processTripUpdateRecord(RecordModel record, String tripId) {
 /// Parse TripUpdateStatus from string
 TripUpdateStatus _parseTripUpdateStatus(String statusString) {
   final normalizedStatus = statusString.toLowerCase().trim();
+  debugPrint('🎯 TRIP STATUS: Parsing "$statusString" → normalized: "$normalizedStatus"');
 
   switch (normalizedStatus) {
-    case 'generalUpdate':
+    case 'generalupdate':
       return TripUpdateStatus.generalUpdate;
     case 'refuelling':
       return TripUpdateStatus.refuelling;
-    case 'roadClosure':
+    case 'roadclosure':
       return TripUpdateStatus.roadClosure;
-    case 'vehicleBreakdown':
+    case 'vehiclebreakdown':
       return TripUpdateStatus.vehicleBreakdown;
     case 'none':
       return TripUpdateStatus.none;
    
     case 'others':
     default:
+      debugPrint('⚠️ TRIP STATUS: Unmatched status "$normalizedStatus", defaulting to others');
       return TripUpdateStatus.others;
   }
 }

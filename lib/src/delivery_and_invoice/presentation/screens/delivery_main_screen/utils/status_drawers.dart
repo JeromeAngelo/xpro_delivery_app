@@ -287,3 +287,4 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
       ..add(LoadLocalDeliveryStatusChoicesEvent(widget.customerId));
   }
 }
+

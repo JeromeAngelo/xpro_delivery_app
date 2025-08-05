@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
@@ -181,57 +183,211 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
         .join(' ');
   }
 
+  void _saveUndeliveredInvoice() {
+    debugPrint('📝 Creating cancelled invoice (offline-first)');
+    debugPrint(
+      '🏪 Customer: ${widget.customer.customer.target?.name}',
+    );
+    debugPrint(
+      '📋 Reason: ${_selectedReason.toString().split('.').last}',
+    );
+    debugPrint('📷 Images: ${_images.length}');
+
+    final deliveryDataId = widget.customer.id;
+
+    if (deliveryDataId != null) {
+      // Check network status to provide appropriate feedback
+      final connectivity = context.read<ConnectivityProvider>();
+      final isOnline = connectivity.isOnline;
+      
+      // Show immediate feedback that save is starting
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                isOnline 
+                  ? 'Saving locally, syncing to remote...'
+                  : 'Saving locally, will sync when online...',
+                style: TextStyle(color: Colors.white),
+              ),
+              if (!isOnline) ...[
+                const SizedBox(width: 8),
+                const Icon(Icons.wifi_off, color: Colors.white, size: 16),
+              ],
+            ],
+          ),
+          duration: Duration(seconds: 2),
+          backgroundColor: isOnline ? Colors.orange : Colors.blue.shade600,
+        ),
+      );
+
+      debugPrint('📶 Network status: ${isOnline ? "Online" : "Offline"}');
+
+      // Create cancelled invoice (offline-first via repository)
+      context.read<CancelledInvoiceBloc>().add(
+        CreateCancelledInvoiceByDeliveryDataIdEvent(
+          deliveryDataId: deliveryDataId,
+          reason: _selectedReason,
+          image: _images.isNotEmpty ? _images.first.path : null,
+        ),
+      );
+    } else {
+      debugPrint('⚠️ No delivery data ID available');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Unable to save: Missing delivery data'),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  /// Navigate immediately to delivery and invoice view
+  void _navigateToDeliveryView() {
+    debugPrint('🚀 NAVIGATING: Moving to delivery and invoice view');
+    context.go(
+      '/delivery-and-invoice/${widget.customer.id}',
+      extra: widget.customer,
+    );
+  }
+
+  /// Show success message indicating local save and background sync
+  void _showLocalSaveSuccessMessage() {
+    final connectivity = context.read<ConnectivityProvider>();
+    final isOnline = connectivity.isOnline;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isOnline 
+                  ? 'Saved locally! Syncing to server in background...'
+                  : 'Saved locally! Will sync when connection is restored...',
+              ),
+            ),
+            if (!isOnline) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.wifi_off, color: Colors.white, size: 16),
+            ],
+          ],
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        duration: Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Update delivery status in background
+  void _updateDeliveryStatusInBackground() {
+    debugPrint('🔄 BACKGROUND: Updating delivery status');
+    context.read<DeliveryUpdateBloc>().add(
+      UpdateDeliveryStatusEvent(
+        customerId: widget.customer.id ?? '',
+        statusId: widget.statusId,
+      ),
+    );
+  }
+
+  /// Schedule background data refresh to update UI
+  void _scheduleBackgroundDataRefresh() {
+    debugPrint('⏰ SCHEDULING: Background data refresh in 500ms');
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (context.mounted) {
+        debugPrint('🔄 BACKGROUND: Refreshing delivery data');
+        final deliveryDataBloc = context.read<DeliveryDataBloc>();
+        
+        final connectivity = context.read<ConnectivityProvider>();
+        if (connectivity.isOnline) {
+          // If online, prioritize remote data for fresh status
+          deliveryDataBloc.add(GetDeliveryDataByIdEvent(widget.customer.id ?? ''));
+          deliveryDataBloc.add(GetLocalDeliveryDataByIdEvent(widget.customer.id ?? ''));
+        } else {
+          // If offline, just load local data
+          deliveryDataBloc.add(GetLocalDeliveryDataByIdEvent(widget.customer.id ?? ''));
+        }
+      }
+    });
+  }
+
+  /// Show error message with retry option
+  void _showErrorMessage(String errorMessage) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text('Failed to mark as undelivered: $errorMessage'),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Retry',
+          textColor: Colors.white,
+          onPressed: () {
+            if (_isFormValid()) {
+              _saveUndeliveredInvoice();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
         BlocListener<CancelledInvoiceBloc, CancelledInvoiceState>(
           listener: (context, state) {
+            debugPrint('🔍 BLoC State Changed: ${state.runtimeType}');
+            
             if (state is CancelledInvoiceCreated) {
-              debugPrint('🔄 Processing cancelled invoice creation success');
+              debugPrint('✅ LOCAL SAVE SUCCESS: Cancelled invoice created locally with ID: ${state.cancelledInvoice.id}');
+              debugPrint('🚀 IMMEDIATE NAVIGATION: Moving to target screen while remote sync continues');
 
-              // Navigate immediately after local creation
-              debugPrint(
-                '🚀 Navigating to target screen while background sync continues',
-              );
-              // Navigate immediately - don't wait for delivery data refresh
-              context.go(
-                '/delivery-and-invoice/${widget.customer.id}',
-                extra: widget.customer,
-              );
+              // Immediately navigate to delivery and invoice view
+              _navigateToDeliveryView();
 
-              // Update delivery status
-              context.read<DeliveryUpdateBloc>().add(
-                UpdateDeliveryStatusEvent(
-                  customerId: widget.customer.id ?? '',
-                  statusId: widget.statusId,
-                ),
-              );
+              // Show success feedback with background sync info
+              _showLocalSaveSuccessMessage();
 
-              // Refresh delivery data in background (optional)
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (context.mounted) {
-                  final deliveryDataBloc = context.read<DeliveryDataBloc>();
-                  deliveryDataBloc.add(
-                    GetLocalDeliveryDataByIdEvent(widget.customer.id ?? ''),
-                  );
-                  deliveryDataBloc.add(
-                    GetDeliveryDataByIdEvent(widget.customer.id ?? ''),
-                  );
-                }
-              });
+              // Update delivery status in background
+              _updateDeliveryStatusInBackground();
+
+              // Schedule background data refresh
+              _scheduleBackgroundDataRefresh();
+              
             } else if (state is CancelledInvoiceError) {
-              debugPrint(
-                '❌ Cancelled invoice creation failed: ${state.message}',
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Failed to create cancelled invoice: ${state.message}',
-                  ),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              debugPrint('❌ SAVE FAILED: ${state.message}');
+              _showErrorMessage(state.message);
+            } else if (state is CancelledInvoiceLoading) {
+              debugPrint('⏳ BLoC: Loading state - operation in progress');
             }
           },
         ),
@@ -240,6 +396,35 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
         appBar: AppBar(
           title: const Text('Mark as Undelivered'),
           centerTitle: true,
+          actions: [
+            // Network status indicator
+            Consumer<ConnectivityProvider>(
+              builder: (context, connectivity, child) {
+                if (!connectivity.isOnline) {
+                  return Container(
+                    margin: const EdgeInsets.only(right: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Offline',
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -275,66 +460,7 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
                       return ElevatedButton(
                         onPressed:
                             _isFormValid() && !isLoading
-                                ? () {
-                                  debugPrint('📝 Creating cancelled invoice');
-                                  debugPrint(
-                                    '🏪 Customer: ${widget.customer.customer.target?.name}',
-                                  );
-                                  debugPrint(
-                                    '📋 Reason: ${_selectedReason.toString().split('.').last}',
-                                  );
-                                  debugPrint('📷 Images: ${_images.length}');
-
-                                  final deliveryDataId = widget.customer.id;
-
-                                  if (deliveryDataId != null) {
-                                    // Show immediate feedback
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Row(
-                                          children: [
-                                            SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text('Saving cancelled invoice...'),
-                                          ],
-                                        ),
-                                        duration: Duration(seconds: 2),
-                                        backgroundColor: Colors.orange,
-                                      ),
-                                    );
-
-                                    // Create cancelled invoice
-                                    context.read<CancelledInvoiceBloc>().add(
-                                      CreateCancelledInvoiceByDeliveryDataIdEvent(
-                                        deliveryDataId: deliveryDataId,
-                                        reason: _selectedReason,
-                                        image:
-                                            _images.isNotEmpty
-                                                ? _images.first.path
-                                                : null,
-                                      ),
-                                    );
-                                  } else {
-                                    debugPrint(
-                                      '⚠️ No delivery data ID available',
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Unable to create cancelled invoice: Missing delivery data',
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                }
+                                ? _saveUndeliveredInvoice
                                 : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:

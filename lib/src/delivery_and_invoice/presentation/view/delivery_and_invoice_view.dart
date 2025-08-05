@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
@@ -20,37 +18,17 @@ class DeliveryAndInvoiceView extends StatefulWidget {
   State<DeliveryAndInvoiceView> createState() => _DeliveryAndInvoiceViewState();
 }
 
-class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> 
-    with WidgetsBindingObserver {
+class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
   int _selectedIndex = 0;
   String _deliveryNumber = 'Loading...';
   DeliveryDataState? _cachedState;
   bool _hasInitialized = false;
-  DateTime? _lastRefreshTime;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _loadLocalData();
     _hasInitialized = true;
-    _lastRefreshTime = DateTime.now();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      // App came back to foreground - refresh data
-      debugPrint('📱 App resumed - refreshing delivery data');
-      _forceRefreshData();
-    }
   }
 
   @override
@@ -75,39 +53,10 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView>
 
       final customerBloc = context.read<DeliveryDataBloc>();
 
-      // 📱 OFFLINE-FIRST: Load local data immediately
-      customerBloc.add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
-
-      // 🌐 Then sync remote data if online
-      final connectivity = context.read<ConnectivityProvider>();
-      if (connectivity.isOnline) {
-        debugPrint('🌐 Online: Syncing fresh delivery and invoice data');
-        customerBloc.add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
-      } else {
-        debugPrint('📱 Offline: Using cached delivery and invoice data only');
-      }
-    }
-  }
-
-  void _forceRefreshData() {
-    if (widget.selectedCustomer != null) {
-      debugPrint(
-        '🔄 Force refreshing delivery and invoice data for customer: ${widget.selectedCustomer!.id}',
-      );
-
-      final customerBloc = context.read<DeliveryDataBloc>();
-      final connectivity = context.read<ConnectivityProvider>();
-
-      // Force refresh from remote if online, otherwise use local
-      if (connectivity.isOnline) {
-        debugPrint('🌐 Force refresh: Loading fresh data from remote');
-        customerBloc.add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
-      } else {
-        debugPrint('📱 Force refresh: Offline, loading latest cached data');
-        customerBloc.add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
-      }
-
-      _lastRefreshTime = DateTime.now();
+      // Load both local and remote data
+      customerBloc
+        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''))
+        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
     }
   }
 
@@ -121,18 +70,9 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView>
       _updateDeliveryNumber(widget.selectedCustomer!);
 
       final customerBloc = context.read<DeliveryDataBloc>();
-      
-      // 📱 OFFLINE-FIRST: Load local data immediately for instant UI
-      customerBloc.add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
-      
-      // 🌐 Then sync remote data if online
-      final connectivity = context.read<ConnectivityProvider>();
-      if (connectivity.isOnline) {
-        debugPrint('🌐 Online: Loading fresh delivery and invoice data');
-        customerBloc.add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
-      } else {
-        debugPrint('📱 Offline: Using cached data only');
-      }
+      customerBloc
+        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''))
+        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
     }
   }
 

@@ -182,10 +182,10 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                         ),
                         const SizedBox(height: 20),
                         const OTPInstructions(),
-                        
+
                         // Trip Details Button
                         Align(
-                          alignment: Alignment.centerRight,
+                          alignment: Alignment.center,
                           child: TextButton.icon(
                             onPressed: () {
                               showDialog(
@@ -208,7 +208,7 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        
+
                         const DigitalClocks(),
                         OTPInput(
                           onOtpChanged: (otp) {

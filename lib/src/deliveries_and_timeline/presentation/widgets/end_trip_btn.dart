@@ -11,7 +11,14 @@ import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
 
 class EndTripButton extends StatelessWidget {
-  const EndTripButton({super.key});
+  final bool isEnabled;
+  final String tooltip;
+  
+  const EndTripButton({
+    super.key,
+    this.isEnabled = true,
+    this.tooltip = 'End Trip',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,22 +28,25 @@ class EndTripButton extends StatelessWidget {
           builder: (context, state) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              child: RoundedButton(
-                label: 'End Trip',
-                onPressed: () {
-                  if (authState is UserTripLoaded &&
-                      authState.trip.id != null) {
-                    debugPrint(
-                      '🎫 Generating checklist for trip: ${authState.trip.id}',
-                    );
-                   
-                    context.read<EndTripChecklistBloc>().add(
-                      GenerateEndTripChecklistEvent(authState.trip.id!),
-                    );
-                    // Navigate only when button is clicked
-                    context.go('/finalize-deliveries');
-                  }
-                },
+              child: Tooltip(
+                message: tooltip,
+                child: RoundedButton(
+                  label: 'End Trip',
+                  onPressed: isEnabled ? () {
+                    if (authState is UserTripLoaded &&
+                        authState.trip.id != null) {
+                      debugPrint(
+                        '🎫 Generating checklist for trip: ${authState.trip.id}',
+                      );
+                     
+                      context.read<EndTripChecklistBloc>().add(
+                        GenerateEndTripChecklistEvent(authState.trip.id!),
+                      );
+                      // Navigate only when button is clicked
+                      context.go('/finalize-deliveries');
+                    }
+                  } : null, // Disabled when isEnabled is false
+                ),
               ),
             );
           },

@@ -47,7 +47,7 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                 const SizedBox(height: 12),
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 1.0,
+                    maxHeight: MediaQuery.of(context).size.height * .9,
                     minHeight: 100,
                   ),
                   child: CustomTimelineTileBuilder.connected(
@@ -70,7 +70,9 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                             title: Text(status.title ?? ''),
                             subtitle: Text(status.subtitle ?? ''),
                             trailing: Text(
-                              _formatDateTime(status.time ?? DateTime.now()),
+                              _formatDateTime(
+                                status.time ?? DateTime.now(),
+                              ),
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ),
@@ -111,3 +113,4 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
     return '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $amPm';
   }
 }
+

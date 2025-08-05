@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
+import 'package:x_pro_delivery_app/core/enums/trip_update_status.dart';
 
 import 'package:x_pro_delivery_app/core/common/widgets/trip_update_icons.dart';
 import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
@@ -25,8 +26,34 @@ class TileForTripTimeline extends StatelessWidget {
     }
 
     debugPrint('🔤 Formatting status: $status');
-    final words = status.split(RegExp(r'(?=[A-Z])'));
-    return words.map((word) => word.capitalize()).join(' ');
+    
+    // Try to parse the status using TripUpdateStatus enum
+    try {
+      final tripStatus = TripUpdateStatus.values.firstWhere(
+        (e) => e.name.toLowerCase() == status.toLowerCase(),
+        orElse: () => TripUpdateStatus.none,
+      );
+      
+      switch (tripStatus) {
+        case TripUpdateStatus.none:
+          return 'Trip Update';
+        case TripUpdateStatus.generalUpdate:
+          return 'General Update';
+        case TripUpdateStatus.vehicleBreakdown:
+          return 'Vehicle Breakdown';
+        case TripUpdateStatus.refuelling:
+          return 'Refuelling';
+        case TripUpdateStatus.roadClosure:
+          return 'Road Closure';
+        case TripUpdateStatus.others:
+          return 'Others';
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to parse status enum: $e');
+      // Fallback to previous formatting method
+      final words = status.split(RegExp(r'(?=[A-Z])'));
+      return words.map((word) => word.capitalize()).join(' ');
+    }
   }
 
   String _formatTime(DateTime dateTime) {
@@ -47,6 +74,10 @@ class TileForTripTimeline extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is UserTripLoaded) {
+          // Debug: Show time conversion
+          final utcTime = update.date ?? DateTime.now();
+          final localTime = utcTime.toLocal();
+          debugPrint('🕐 TRIP TIME: UTC: $utcTime → Local: $localTime');
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             child: Card(
@@ -133,13 +164,13 @@ class TileForTripTimeline extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _formatTime(update.date ?? DateTime.now()),
+                              _formatTime((update.date ?? DateTime.now()).toLocal()),
                               style: Theme.of(context).textTheme.bodySmall!.copyWith(
                                 color: Theme.of(context).colorScheme.outline,
                               ),
                             ),
                             Text(
-                              _formatDate(update.date ?? DateTime.now()),
+                              _formatDate((update.date ?? DateTime.now()).toLocal()),
                               style: Theme.of(context).textTheme.bodySmall!.copyWith(
                                 color: Theme.of(context).colorScheme.outline,
                               ),

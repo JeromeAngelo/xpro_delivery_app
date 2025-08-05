@@ -228,15 +228,17 @@ Future<DeliveryDataModel> _loadCompleteDeliveryData(DeliveryDataModel deliveryDa
       if (deliveryData.deliveryUpdates.isEmpty) {
         final deliveryUpdateBox = _store.box<DeliveryUpdateModel>();
         
-        // Only query if we have a valid pocketbaseId
+        // Query delivery updates by customer field (which should match delivery data pocketbaseId)
         if (deliveryData.pocketbaseId.isNotEmpty) {
           final updates = deliveryUpdateBox.query(
-            DeliveryUpdateModel_.pocketbaseId.equals(deliveryData.pocketbaseId)
+            DeliveryUpdateModel_.customer.equals(deliveryData.pocketbaseId)
           ).build().find();
           
           if (updates.isNotEmpty) {
             deliveryData.deliveryUpdates.addAll(updates);
-            debugPrint('✅ Loaded ${updates.length} delivery updates');
+            debugPrint('✅ Loaded ${updates.length} delivery updates for customer: ${deliveryData.pocketbaseId}');
+          } else {
+            debugPrint('⚠️ No delivery updates found for customer: ${deliveryData.pocketbaseId}');
           }
         } else {
           debugPrint('⚠️ Empty pocketbaseId for delivery data: ${deliveryData.id}');
@@ -320,7 +322,12 @@ Future<DeliveryDataModel> _loadCompleteDeliveryData(DeliveryDataModel deliveryDa
 
       if (deliveryData != null) {
         debugPrint('✅ LOCAL: Found delivery data in local storage');
-        return deliveryData;
+        
+        // Load complete delivery data with all relationships
+        final completeDeliveryData = await _loadCompleteDeliveryData(deliveryData);
+        debugPrint('✅ LOCAL: Loaded complete delivery data with relationships');
+        
+        return completeDeliveryData;
       }
 
       throw const CacheException(

@@ -55,7 +55,7 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
       debugPrint('📦 DELIVERY: Data state update: ${state.runtimeType}');
       if (!mounted) return;
 
-      // 📱 OFFLINE-FIRST: Only cache successful states
+      // 📱 OFFLINE-FIRST: Only cache successful states, preserve cached data during loading
       if (state is DeliveryDataLoaded || state is DeliveryDataByTripLoaded) {
         setState(() => _cachedState = state);
         debugPrint('✅ DELIVERY: Data cached: ${state.runtimeType}');
@@ -88,6 +88,15 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
           state is DeliveryStatusCreated) {
         setState(() => _cachedUpdateState = state);
         debugPrint('✅ DELIVERY: Update state cached: ${state.runtimeType}');
+        
+        // 📱 OFFLINE-FIRST: Don't auto-refresh on status updates
+        // Data will be updated through the cached state mechanism
+        if (state is DeliveryStatusUpdateSuccess || 
+            state is DeliveryCompletionSuccess ||
+            state is DeliveryStatusCreated) {
+          debugPrint('✅ DELIVERY: Status update succeeded - data will update through cache');
+          // Removed automatic refresh to prevent loading loops
+        }
       }
       
       // Handle errors gracefully - keep cached data visible
@@ -109,7 +118,7 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
 
   void _initializeLocalData() {
     if (!_isDataInitialized && widget.selectedCustomer != null) {
-      debugPrint('📱 DELIVERY: Loading initial data for delivery: ${widget.selectedCustomer!.id}');
+      debugPrint('📱 DELIVERY: OFFLINE-FIRST - Loading initial data for delivery: ${widget.selectedCustomer!.id}');
       debugPrint('📊 DELIVERY: Current cached states - Data: ${_cachedState?.runtimeType ?? 'null'}, Update: ${_cachedUpdateState?.runtimeType ?? 'null'}');
       
       // Load delivery data - local first, then remote
@@ -128,18 +137,19 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
 
   Future<void> _refreshData() async {
     if (widget.selectedCustomer?.id != null) {
-      debugPrint('🔄 DELIVERY: Refreshing data for delivery: ${widget.selectedCustomer!.id}');
+      debugPrint('🔄 DELIVERY: Manual refreshing data for delivery: ${widget.selectedCustomer!.id}');
       
-      // Always try remote first on manual refresh
-      _deliveryDataBloc
-        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id!))
-        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id!));
+      // 📱 OFFLINE-FIRST: Don't clear cache on manual refresh - just trigger data fetch
+      // This ensures immediate response with cached data, then updates when new data arrives
       
-      _deliveryUpdateBloc.add(
-        LoadLocalDeliveryStatusChoicesEvent(widget.selectedCustomer!.id!),
-      );
+      // Trigger fresh data fetch - will update cache when successful
+      _deliveryDataBloc.add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id!));
+      _deliveryUpdateBloc.add(LoadLocalDeliveryStatusChoicesEvent(widget.selectedCustomer!.id!));
+      
+      debugPrint('🔄 DELIVERY: Manual refresh triggered - cache preserved for instant response');
     }
   }
+
 
   double? parseCoordinate(String? value) {
     if (value == null) return null;
@@ -154,130 +164,136 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<DeliveryDataBloc, DeliveryDataState>(
-          listener: (context, state) {
-            // 📱 OFFLINE-FIRST: Handle state changes but prioritize cached data in UI
-            if (state is DeliveryDataLoaded || state is DeliveryDataByTripLoaded) {
-              setState(() => _cachedState = state);
-              debugPrint('📦 DELIVERY: Data listener - cached state updated: ${state.runtimeType}');
-            } else if (state is DeliveryDataError) {
-              debugPrint('⚠️ DELIVERY: Data network error, keeping cached data: ${state.message}');
-              // Only fallback if we have no cached data at all
-              if (_cachedState == null && widget.selectedCustomer?.id != null) {
-                debugPrint('🔄 No cached data, falling back to local delivery data');
-                _deliveryDataBloc.add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id!));
-              }
-            }
-          },
-        ),
-        BlocListener<DeliveryUpdateBloc, DeliveryUpdateState>(
-          listener: (context, state) {
-            // 📱 OFFLINE-FIRST: Handle state changes but prioritize cached data in UI
-            if (state is DeliveryStatusChoicesLoaded || 
-                state is DeliveryStatusUpdateSuccess || 
-                state is DeliveryCompletionSuccess ||
-                state is DeliveryStatusCreated) {
-              setState(() => _cachedUpdateState = state);
-              debugPrint('📝 DELIVERY: Update listener - cached state updated: ${state.runtimeType}');
-            } else if (state is DeliveryUpdateError) {
-              debugPrint('⚠️ DELIVERY: Update network error, keeping cached data: ${state.message}');
-              // Only fallback if we have no cached data at all
-              if (_cachedUpdateState == null && widget.selectedCustomer?.id != null) {
-                debugPrint('🔄 No cached update data, falling back to local update data');
-                _deliveryUpdateBloc.add(LoadLocalDeliveryStatusChoicesEvent(widget.selectedCustomer!.id!));
-              }
-            }
-          },
-        ),
-      ],
-      child: BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
-        buildWhen: (previous, current) =>
-            current is DeliveryDataLoaded ||
-            current is DeliveryDataError ||
-            _cachedState == null,
+    return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+        buildWhen: (previous, current) {
+          debugPrint('🏠 MAIN SCREEN: BuildWhen - Previous: ${previous.runtimeType}, Current: ${current.runtimeType}');
+          
+          // 📱 OFFLINE-FIRST: Only rebuild for loaded states, not loading states
+          if (current is DeliveryDataLoaded || 
+              current is DeliveryDataByTripLoaded || 
+              current is InvoiceSetToUnloading ||
+              current is InvoiceSetToUnloaded) {
+            debugPrint('🏠 MAIN SCREEN: Rebuilding for loaded/update state: ${current.runtimeType}');
+            return true;
+          }
+          
+          // If we have cached data, don't rebuild for loading/error states
+          if (_cachedState != null && (current is DeliveryDataLoading || current is DeliveryDataError)) {
+            debugPrint('🏠 MAIN SCREEN: Skipping rebuild - using cached data while ${current.runtimeType}');
+            return false;
+          }
+          
+          // Initial build or no cached data
+          return true;
+        },
         builder: (context, state) {
-          // 📱 OFFLINE-FIRST: Always prioritize cached data, ignore loading states
-          DeliveryDataState? effectiveState;
+          debugPrint('📱 DELIVERY: Building with current state: ${state.runtimeType}');
+          
+          // 📱 OFFLINE-FIRST: Prioritize cached data, then current state, then fallback
+          DeliveryDataEntity? deliveryData;
           bool showOfflineIndicator = false;
           
-          // Use cached data if available, regardless of current state
-          if (_cachedState != null) {
-            effectiveState = _cachedState;
-            debugPrint('📱 DELIVERY: Using cached state: ${_cachedState.runtimeType}');
-            
-            // Show offline indicator if current state is error (network issue)
-            if (state is DeliveryDataError) {
-              showOfflineIndicator = true;
-              debugPrint('🔴 Network error detected - showing offline indicator');
+          if (state is DeliveryDataLoaded) {
+            deliveryData = state.deliveryData;
+            debugPrint('📱 MAIN SCREEN: Using fresh loaded data');
+          } else if (state is DeliveryDataByTripLoaded) {
+            // Find the current delivery from trip data
+            final deliveries = state.deliveryData.where((d) => d.id == widget.selectedCustomer?.id).toList();
+            if (deliveries.isNotEmpty) {
+              deliveryData = deliveries.first;
+            } else if (widget.selectedCustomer != null) {
+              deliveryData = widget.selectedCustomer;
             }
-          }
-          // Only use current state if we have no cache
-          else {
-            effectiveState = state;
-            debugPrint('📱 DELIVERY: Using current state: ${state.runtimeType}');
+            debugPrint('📱 MAIN SCREEN: Using data from trip loaded state');
+          } else if (state is InvoiceSetToUnloading || state is InvoiceSetToUnloaded) {
+            // Handle invoice state updates - extract delivery data
+            if (state is InvoiceSetToUnloading) {
+              deliveryData = state.deliveryData;
+            } else if (state is InvoiceSetToUnloaded) {
+              deliveryData = state.deliveryData;
+            }
+            debugPrint('📱 MAIN SCREEN: Using data from invoice state update: ${state.runtimeType}');
+          } else if (_cachedState is DeliveryDataLoaded) {
+            deliveryData = (_cachedState as DeliveryDataLoaded).deliveryData;
+            showOfflineIndicator = state is DeliveryDataError;
+            debugPrint('📱 MAIN SCREEN: Using cached data while state is ${state.runtimeType}');
+          } else if (_cachedState is DeliveryDataByTripLoaded) {
+            final cachedTripState = _cachedState as DeliveryDataByTripLoaded;
+            final deliveries = cachedTripState.deliveryData.where((d) => d.id == widget.selectedCustomer?.id).toList();
+            if (deliveries.isNotEmpty) {
+              deliveryData = deliveries.first;
+            } else if (widget.selectedCustomer != null) {
+              deliveryData = widget.selectedCustomer;
+            }
+            showOfflineIndicator = state is DeliveryDataError;
+            debugPrint('📱 MAIN SCREEN: Using cached trip data while state is ${state.runtimeType}');
+          } else if (widget.selectedCustomer != null) {
+            deliveryData = widget.selectedCustomer;
+            showOfflineIndicator = state is DeliveryDataError;
+            debugPrint('📱 MAIN SCREEN: Using fallback widget data');
           }
 
-          // Only show loading if we have no cached data at all
-          if (effectiveState is DeliveryDataLoading && _cachedState == null) {
+          // Only show pure loading if we have no data at all
+          if (deliveryData == null) {
+            if (state is DeliveryDataLoading) {
+              return const Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Loading delivery data...'),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            if (state is DeliveryDataError && _cachedState == null) {
+              return Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading delivery data',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        state.message,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: _refreshData,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
             return const Scaffold(
               body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading delivery data...'),
-                  ],
-                ),
+                child: Text('No delivery data available'),
               ),
             );
           }
 
-          // Only show error if we have no cached data to fall back to
-          if (effectiveState is DeliveryDataError && _cachedState == null) {
-            return Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error loading delivery data',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      effectiveState.message,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _refreshData,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          if (effectiveState is DeliveryDataLoaded) {
-            return _buildSelectedCustomerView(effectiveState.deliveryData, showOfflineIndicator);
-          }
-
-          return const SizedBox.shrink();
+          return _buildSelectedCustomerView(deliveryData, showOfflineIndicator);
         },
-      ),
-    );
+      );
   }
 
   Widget _buildSelectedCustomerView(DeliveryDataEntity deliveryData, bool showOfflineIndicator) {
