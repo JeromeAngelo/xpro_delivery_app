@@ -21,6 +21,8 @@ import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_tri
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_odo_input.dart';
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_otp_input.dart';
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_otp_instructions.dart';
+
+import '../../../start_trip_otp_screen/presentation/widgets/trip_details_dialog.dart';
 class EndTripOtpScreen extends StatefulWidget {
   const EndTripOtpScreen({super.key});
 
@@ -152,6 +154,30 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
                         ),
                         const SizedBox(height: 20),
                         const EndTripOtpInstructions(),
+                        Align(
+                          alignment: Alignment.center,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => const TripDetailsDialog(),
+                              );
+                            },
+                            icon: Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            label: Text(
+                              'View Trip Details',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
                         const EndTripDigitalClock(),
                         EndTripOtpInput(
                           onOtpChanged: (otp) {
