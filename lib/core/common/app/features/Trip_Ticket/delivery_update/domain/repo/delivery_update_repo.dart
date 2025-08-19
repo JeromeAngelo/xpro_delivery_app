@@ -32,6 +32,9 @@ abstract class DeliveryUpdateRepo {
     String customerId, 
     String queueCount,
   );
+
+  // Pin arrived location function
+  ResultFuture<void> pinArrivedLocation(String deliveryId);
 }
 
 

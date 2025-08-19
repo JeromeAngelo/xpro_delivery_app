@@ -5,6 +5,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_state.dart';
+import 'package:x_pro_delivery_app/core/services/app_debug_logger.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/utils/confirm_button_products.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/utils/product_list.dart';
 
@@ -32,6 +33,10 @@ class _ProductListScreenState extends State<ProductListScreen>
   @override
   void initState() {
     super.initState();
+    AppDebugLogger.instance.logInfo(
+      '📦 ProductListScreen initialized for invoice: ${widget.invoiceNumber}',
+      details: 'Invoice ID: ${widget.invoiceId}, Customer: ${widget.customer.storeName}',
+    );
     _loadData();
   }
 
@@ -217,6 +222,7 @@ class _ProductListScreenState extends State<ProductListScreen>
                       right: 0,
                       bottom: 0,
                       child: ConfirmButtonProducts(
+                        invoiceId: widget.invoiceId,
                         deliveryDataId: widget.customer.id ?? '',
                         invoiceNumber: widget.invoiceNumber,
                       ),

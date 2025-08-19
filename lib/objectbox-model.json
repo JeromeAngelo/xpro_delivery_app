@@ -850,7 +850,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "136:8572364359171147937",
+          "indexId": "141:8976760665311177153",
           "relationTarget": "TripModel"
         }
       ],
@@ -1134,7 +1134,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "135:1056979858007497304",
+          "indexId": "139:1498077514876797370",
           "relationTarget": "TripModel"
         }
       ],
@@ -1498,6 +1498,11 @@
           "id": "49:8890252336964719573",
           "name": "invoiceItems",
           "targetId": "61:2520708785790055940"
+        },
+        {
+          "id": "52:2804511821638289007",
+          "name": "invoices",
+          "targetId": "59:6569961212987627256"
         }
       ]
     },
@@ -1904,7 +1909,13 @@
           "relationTarget": "InvoiceDataModel"
         }
       ],
-      "relations": []
+      "relations": [
+        {
+          "id": "50:7248760973464895799",
+          "name": "invoices",
+          "targetId": "59:6569961212987627256"
+        }
+      ]
     },
     {
       "id": "63:8492922918573989072",
@@ -2019,7 +2030,13 @@
           "relationTarget": "InvoiceDataModel"
         }
       ],
-      "relations": []
+      "relations": [
+        {
+          "id": "51:1183977227842710033",
+          "name": "invoices",
+          "targetId": "59:6569961212987627256"
+        }
+      ]
     },
     {
       "id": "65:4826906273048525394",
@@ -2510,11 +2527,77 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "75:7140982549523238352",
+      "lastPropertyId": "7:3361716387080211145",
+      "name": "InvoiceStatusEntity",
+      "properties": [
+        {
+          "id": "1:9077987873615865762",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:562331865642410087",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:4121449269182848589",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:5602327719757752823",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:2931820423468839887",
+          "name": "invoiceDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "140:8085853412025881100",
+          "relationTarget": "InvoiceDataModel"
+        },
+        {
+          "id": "6:8758771299941472412",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "7:3361716387080211145",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "76:3546031072707572946",
+      "lastPropertyId": "2:692970277932223833",
+      "name": "InvoiceStatusModel",
+      "properties": [
+        {
+          "id": "1:5201683130247104026",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:692970277932223833",
+          "name": "pocketbaseId",
+          "type": 9
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "74:566513554873847289",
-  "lastIndexId": "136:8572364359171147937",
-  "lastRelationId": "49:8890252336964719573",
+  "lastEntityId": "76:3546031072707572946",
+  "lastIndexId": "141:8976760665311177153",
+  "lastRelationId": "52:2804511821638289007",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
@@ -2624,7 +2707,11 @@
     4882525221675082522,
     4202647451836453134,
     4559760120099527645,
-    5992119699418627524
+    5992119699418627524,
+    1056979858007497304,
+    8572364359171147937,
+    7247713234655754338,
+    7036718240826879657
   ],
   "retiredPropertyUids": [
     3346502891055187729,

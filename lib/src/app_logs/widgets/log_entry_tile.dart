@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/entity/log_entry_entity.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/list_tiles.dart';
 
+import '../../../core/enums/log_level.dart';
+
 class LogEntryTile extends StatelessWidget {
   final LogEntryEntity log;
 

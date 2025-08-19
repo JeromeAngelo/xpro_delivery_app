@@ -2,6 +2,8 @@ import 'package:objectbox/objectbox.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/entity/log_entry_entity.dart';
 
+import '../../../../../../enums/log_level.dart';
+
 @Entity()
 class LogEntryModel extends LogEntryEntity {
   @Id()

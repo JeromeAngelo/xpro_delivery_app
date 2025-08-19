@@ -4,7 +4,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/data/model/log_entry_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/entity/log_entry_entity.dart';
+
+import '../../../../../../../../enums/log_level.dart';
 
 abstract class LogsLocalDatasource {
   /// Add a new log entry
@@ -18,6 +19,12 @@ abstract class LogsLocalDatasource {
 
   /// Generate PDF of all logs and return file path
   Future<String> generateLogsPdf();
+
+  /// Get logs that haven't been synced to remote
+  Future<List<LogEntryModel>> getUnsyncedLogs();
+
+  /// Mark logs as synced after successful remote upload
+  Future<void> markLogsAsSynced(List<String> logIds);
 }
 
 class LogsLocalDatasourceImpl implements LogsLocalDatasource {
@@ -26,6 +33,7 @@ class LogsLocalDatasourceImpl implements LogsLocalDatasource {
   }
 
   final List<LogEntryModel> _logs = [];
+  final Set<String> _syncedLogIds = {}; // Track which logs have been synced
 
   void _initializeStorage() {
     debugPrint('📝 Initializing logs local storage');
@@ -274,6 +282,34 @@ class LogsLocalDatasourceImpl implements LogsLocalDatasource {
         return PdfColors.blue;
       case LogLevel.debug:
         return PdfColors.grey;
+    }
+  }
+
+  @override
+  Future<List<LogEntryModel>> getUnsyncedLogs() async {
+    try {
+      // Get logs that haven't been synced yet
+      final unsyncedLogs = _logs.where((log) {
+        return log.id != null && !_syncedLogIds.contains(log.id!);
+      }).toList();
+      
+      debugPrint('📊 Found ${unsyncedLogs.length} unsynced logs out of ${_logs.length} total');
+      return unsyncedLogs;
+    } catch (e) {
+      debugPrint('❌ Failed to get unsynced logs: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<void> markLogsAsSynced(List<String> logIds) async {
+    try {
+      // Add log IDs to synced set
+      _syncedLogIds.addAll(logIds);
+      debugPrint('✅ Marked ${logIds.length} logs as synced');
+      debugPrint('📊 Total synced logs: ${_syncedLogIds.length}');
+    } catch (e) {
+      debugPrint('❌ Failed to mark logs as synced: $e');
     }
   }
 }

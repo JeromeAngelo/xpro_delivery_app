@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 
@@ -28,16 +27,9 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
   @override
   void initState() {
     super.initState();
-    _loadLocalDeliveryData();
-  }
-
-  void _loadLocalDeliveryData() {
-    if (widget.deliveryData.id != null) {
-      debugPrint('📱 Loading local delivery data: ${widget.deliveryData.id}');
-      context.read<DeliveryDataBloc>().add(
-        GetLocalDeliveryDataByIdEvent(widget.deliveryData.id!),
-      );
-    }
+    // Data loading is handled by the parent screen/router
+    // No need to load data again here to prevent multiple loading states
+    debugPrint('📱 CustomerDetailsDashboard: Initialized with delivery data: ${widget.deliveryData.id}');
   }
 
   @override
@@ -45,32 +37,49 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     return BlocConsumer<DeliveryDataBloc, DeliveryDataState>(
       listenWhen:
           (previous, current) =>
-              current is DeliveryDataLoaded || current is DeliveryDataError,
+              current is DeliveryDataLoaded || 
+              current is DeliveryDataError ||
+              current is InvoiceSetToUnloading ||
+              current is InvoiceSetToUnloaded,
       listener: (context, state) {
-        setState(() {
-          _cachedState = state;
-        });
+        if (mounted) {
+          setState(() {
+            _cachedState = state;
+          });
+        }
       },
       buildWhen:
           (previous, current) =>
+              // Always build for data changes, but prioritize cached data
               current is DeliveryDataLoaded ||
-              current is DeliveryDataLoading ||
               current is DeliveryDataError ||
-              _cachedState == null,
+              current is InvoiceSetToUnloading ||
+              current is InvoiceSetToUnloaded ||
+              // Only show loading if we have no cached data at all
+              (current is DeliveryDataLoading && _cachedState == null),
       builder: (context, state) {
+        debugPrint('📱 Dashboard: Building with state: ${state.runtimeType}');
+        
+        // Prioritize cached data for offline-first approach
         final effectiveState = _cachedState ?? state;
 
-        // Show skeleton loading UI when in loading state and no cached data
-        if ((state is DeliveryDataLoading || state is DeliveryDataInitial) &&
-            _cachedState == null) {
+        // Show skeleton loading UI only when no cached data and we're actually loading
+        if (_cachedState == null && 
+            (state is DeliveryDataLoading || state is DeliveryDataInitial)) {
+          debugPrint('📱 Dashboard: Showing loading skeleton');
           return _buildLoadingDashboard(context);
         }
 
-        // Use the current delivery data or the loaded one
-        final deliveryData =
-            (effectiveState is DeliveryDataLoaded)
-                ? effectiveState.deliveryData
-                : widget.deliveryData;
+        // Use the delivery data from the effective state or fallback to widget data
+        DeliveryDataEntity deliveryData = widget.deliveryData;
+        
+        if (effectiveState is DeliveryDataLoaded && 
+            effectiveState.deliveryData.id != null) {
+          deliveryData = effectiveState.deliveryData;
+          debugPrint('📱 Dashboard: Using fresh loaded data');
+        } else {
+          debugPrint('📱 Dashboard: Using widget delivery data');
+        }
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
@@ -88,7 +97,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     final storeName = deliveryData.storeName;
     final ownerName = deliveryData.ownerName;
     final contactNumber = deliveryData.contactNumber;
-    final invoice = deliveryData.invoice.target;
+    final invoices = deliveryData.invoices;
 
     // ADDED: Show shimmer loading when customer data is null
     if (storeName == null && ownerName == null && contactNumber == null) {
@@ -119,7 +128,13 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
           children: [
             _buildHeader(context, storeName),
             const SizedBox(height: 30),
-            _buildInfoGrid(context, deliveryData, ownerName, contactNumber, invoice),
+            _buildInfoGrid(
+              context,
+              deliveryData,
+              ownerName,
+              contactNumber,
+              invoices,
+            ),
           ],
         ),
       ),
@@ -391,13 +406,16 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
   String _buildAddressString() {
     final addressParts = <String>[];
 
-    if (widget.deliveryData.barangay != null && widget.deliveryData.barangay!.isNotEmpty) {
+    if (widget.deliveryData.barangay != null &&
+        widget.deliveryData.barangay!.isNotEmpty) {
       addressParts.add(widget.deliveryData.barangay!);
     }
-    if (widget.deliveryData.municipality != null && widget.deliveryData.municipality!.isNotEmpty) {
+    if (widget.deliveryData.municipality != null &&
+        widget.deliveryData.municipality!.isNotEmpty) {
       addressParts.add(widget.deliveryData.municipality!);
     }
-    if (widget.deliveryData.province != null && widget.deliveryData.province!.isNotEmpty) {
+    if (widget.deliveryData.province != null &&
+        widget.deliveryData.province!.isNotEmpty) {
       addressParts.add(widget.deliveryData.province!);
     }
 
@@ -411,7 +429,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     DeliveryDataEntity deliveryData,
     String? ownerName,
     String? contactNumber,
-    dynamic invoice,
+    dynamic invoices,
   ) {
     // Get delivery status from delivery updates
     final deliveryUpdates = deliveryData.deliveryUpdates.toList();
@@ -420,16 +438,18 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
             ? deliveryUpdates.last.title ?? "Pending"
             : "Pending";
 
-    // Calculate total amount from invoice
-    final totalAmount = invoice?.totalAmount ?? 0.0;
-
-    // Since CustomerDataEntity doesn't have contact numbers, we'll use placeholder
-    //  final contactNumbers = <String>['No contact available'];
+    // Calculate total amount from all invoices
+    double totalAmount = 0.0;
+    if (invoices != null && invoices.length > 0) {
+      for (var invoice in invoices) {
+        totalAmount += invoice.totalAmount ?? 0.0;
+      }
+    }
 
     debugPrint('📊 Building dashboard with:');
     debugPrint('   🏪 Store Name: $ownerName');
-    debugPrint('   🧾 Invoice: ${invoice?.name}');
-    debugPrint('   💰 Total amount: $totalAmount');
+    debugPrint('   🧾 Invoices Count: ${invoices?.length ?? 0}');
+    debugPrint('   💰 Total amount from all invoices: $totalAmount');
     debugPrint('   📦 Delivery status: $latestStatus');
 
     return GridView.count(
@@ -457,9 +477,9 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         // _buildContactNumbers(context, contactNumbers),
         _buildInfoItem(
           context,
-          Icons.receipt,
-          invoice?.refId ?? invoice?.name ?? "No Invoice",
-          "Invoice Number",
+          Icons.receipt_long,
+          "${invoices?.length ?? 0} ${(invoices?.length ?? 0) == 1 ? 'Invoice' : 'Invoices'}",
+          "Invoices Count",
         ),
         _buildInfoItem(
           context,
@@ -563,4 +583,3 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     }
   }
 }
-

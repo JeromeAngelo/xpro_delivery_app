@@ -221,5 +221,27 @@ ResultFuture<void> updateQueueRemarks(
   }
 }
 
+@override
+ResultFuture<void> pinArrivedLocation(String deliveryId) async {
+  try {
+    debugPrint('📍 Pinning arrived location for delivery: $deliveryId');
+    
+    // Pin location to remote
+    await _remoteDataSource.pinArrivedLocation(deliveryId);
+    
+    debugPrint('✅ Successfully pinned arrived location');
+    return const Right(null);
+  } on ServerException catch (e) {
+    debugPrint('❌ Failed to pin arrived location: ${e.message}');
+    return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+  } catch (e) {
+    debugPrint('❌ Unexpected error pinning location: ${e.toString()}');
+    return Left(ServerFailure(
+      message: 'Failed to pin arrived location: ${e.toString()}',
+      statusCode: '500',
+    ));
+  }
+}
+
 
 }

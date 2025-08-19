@@ -5,6 +5,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_state.dart';
 import 'package:x_pro_delivery_app/core/enums/mode_of_payment.dart';
+import 'package:x_pro_delivery_app/core/services/app_debug_logger.dart';
 import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/confirm_payment_btn.dart';
 import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/customers_dashboard_trx.dart';
 
@@ -49,6 +50,10 @@ class _TransactionViewState extends State<TransactionView> {
   @override
   void initState() {
     super.initState();
+    AppDebugLogger.instance.logInfo(
+      '💰 Transaction screen initialized for customer: ${widget.deliveryData.storeName ?? 'Unknown'}',
+      details: 'Delivery ID: ${widget.deliveryData.id}',
+    );
     _initializeFields();
     // _loadExistingReceipt();
   }
@@ -72,10 +77,24 @@ class _TransactionViewState extends State<TransactionView> {
       _showChequeNumberField = _selectedPaymentMode == 'Cheque';
     }
 
-    // Initialize amount from invoice total
-    final invoice = widget.deliveryData.invoice.target;
-    if (invoice?.totalAmount != null) {
-      _amountController.text = invoice!.totalAmount!.toStringAsFixed(2);
+    // Initialize amount from total of all invoices
+    final invoices = widget.deliveryData.invoices;
+    double totalAmount = 0.0;
+
+    if (invoices.isNotEmpty) {
+      for (var invoice in invoices) {
+        totalAmount += invoice.totalAmount ?? 0.0;
+      }
+      _amountController.text = totalAmount.toStringAsFixed(2);
+
+      debugPrint('💰 Transaction amount initialized:');
+      debugPrint('   📊 Number of invoices: ${invoices.length}');
+      debugPrint(
+        '   💵 Total amount from all invoices: ₱${totalAmount.toStringAsFixed(2)}',
+      );
+    } else {
+      debugPrint('⚠️ No invoices found in delivery data');
+      _amountController.text = '0.00';
     }
   }
 
@@ -142,6 +161,11 @@ class _TransactionViewState extends State<TransactionView> {
   // }
 
   void _handlePaymentModeChange(String? newValue) async {
+    AppDebugLogger.instance.logInfo(
+      '💳 Payment mode selected: ${newValue ?? 'None'}',
+      details: 'Customer: ${widget.deliveryData.storeName}',
+    );
+    
     setState(() {
       _isLoading = true;
       _selectedPaymentMode = newValue;

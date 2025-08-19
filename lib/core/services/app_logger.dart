@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/entity/log_entry_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/usecases/add_log.dart';
 
+import '../enums/log_level.dart';
+
 class AppLogger {
   static AppLogger? _instance;
   static AppLogger get instance => _instance ??= AppLogger._internal();

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_bloc.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_event.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_state.dart';
@@ -16,75 +18,247 @@ class OnBoardingView extends StatefulWidget {
 }
 
 class _OnBoardingViewState extends State<OnBoardingView> {
+  bool _permissionsChecked = false;
+  
   @override
   void initState() {
     super.initState();
-    _checkAndRequestPermissions();
+    _debugStoredData();
+    _checkAndRequestAllPermissions();
     context.read<OnboardingBloc>().add(const CheckIfUserIsFirstTimerEvent());
   }
 
-  Future<void> _checkAndRequestPermissions() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  void _debugStoredData() async {
+    final prefs = await SharedPreferences.getInstance();
+    debugPrint('🔍 OnBoarding: Checking stored data...');
+    debugPrint('   🔑 Has auth_token: ${prefs.containsKey('auth_token')}');
+    debugPrint('   👤 Has user_data: ${prefs.containsKey('user_data')}');
+    debugPrint('   🆕 Is first timer: ${prefs.getBool('isFirstTimer') ?? 'NOT_SET'}');
+    debugPrint('   📱 All keys: ${prefs.getKeys()}');
+    
+    // If we find unexpected auth data on onboarding, clear it
+    if (prefs.containsKey('auth_token')) {
+      debugPrint('⚠️ Found auth token on onboarding screen, clearing it');
+      await prefs.remove('auth_token');
+      await prefs.remove('user_data');
+    }
+  }
 
+  Future<void> _checkAndRequestAllPermissions() async {
+    if (_permissionsChecked) return;
+    
+    print('Starting permission check...');
+    // Check if location service is enabled
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Location Required'),
-            content: const Text(
-              'This app requires location services to be enabled for delivery tracking.',
-            ),
-            actions: [
-              TextButton(
-                child: const Text('Open Settings'),
-                onPressed: () async {
-                  await Geolocator.openLocationSettings();
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  _checkAndRequestPermissions();
-                },
-              ),
-            ],
-          );
-        },
-      );
+      if (mounted) {
+        await _showLocationServiceDialog();
+      }
       return;
     }
 
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+    // Step 1: Request basic permissions first
+    await _requestBasicPermissions();
+    
+    // Step 2: Request location "when in use" first
+    await _requestLocationPermissions();
+    
+    _permissionsChecked = true;
+    print('Permission check completed.');
+  }
+
+  Future<void> _requestBasicPermissions() async {
+    // Define basic required permissions (excluding location)
+    List<Permission> basicPermissions = [
+      Permission.camera,
+      Permission.photos,
+    ];
+
+    // Request basic permissions
+    Map<Permission, PermissionStatus> statuses = await basicPermissions.request();
+    
+    // Handle denied basic permissions
+    List<Permission> deniedPermissions = [];
+    List<Permission> permanentlyDeniedPermissions = [];
+    
+    statuses.forEach((permission, status) {
+      if (status.isDenied) {
+        deniedPermissions.add(permission);
+      } else if (status.isPermanentlyDenied) {
+        permanentlyDeniedPermissions.add(permission);
+      }
+    });
+
+    // Show dialog for permanently denied permissions
+    if (permanentlyDeniedPermissions.isNotEmpty && mounted) {
+      await _showPermissionDialog(
+        'Permissions Required',
+        'The following permissions are required for the app to function properly:\n\n${permanentlyDeniedPermissions.map((p) => _getPermissionName(p)).join('\n• ')}\n\nPlease enable them in app settings.',
+        'Open Settings',
+        _handleOpenSettings,
+      );
+      return;
+    }
+    
+    // Show dialog for denied permissions
+    if (deniedPermissions.isNotEmpty && mounted) {
+      await _showPermissionDialog(
+        'Permissions Needed',
+        'The app needs the following permissions to work properly:\n\n• ${deniedPermissions.map((p) => _getPermissionName(p)).join('\n• ')}',
+        'Grant Permissions',
+        () => _handleRequestPermissions(deniedPermissions),
+      );
+      return;
+    }
+  }
+
+  Future<void> _requestLocationPermissions() async {
+    // First request "when in use" location permission
+    PermissionStatus whenInUseStatus = await Permission.locationWhenInUse.request();
+    print('Location When In Use Status: $whenInUseStatus');
+    
+    if (whenInUseStatus.isDenied) {
+      if (mounted) {
+        await _showPermissionDialog(
+          'Location Permission Required',
+          'Location access is required for delivery tracking functionality.',
+          'Grant Permission',
+          () async {
+            if (mounted) Navigator.of(context).pop();
+            await Permission.locationWhenInUse.request();
+            // Don't recursively call - let user try again manually
+          },
+        );
+      }
+      return;
+    }
+    
+    if (whenInUseStatus.isPermanentlyDenied) {
+      if (mounted) {
+        await _showPermissionDialog(
+          'Location Permission Required',
+          'Location permission is permanently denied. Please enable it in app settings for delivery tracking functionality.',
+          'Open Settings',
+          _handleOpenSettings,
+        );
+      }
+      return;
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Location Permission Required'),
-            content: const Text(
-              'Location permission is required for delivery tracking. Please enable it in settings.',
-            ),
-            actions: [
-              TextButton(
-                child: const Text('Open Settings'),
-                onPressed: () async {
-                  await Geolocator.openAppSettings();
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  _checkAndRequestPermissions();
-                },
-              ),
-            ],
-          );
-        },
-      );
+    // If "when in use" is granted, request "always" permission
+    if (whenInUseStatus.isGranted) {
+      PermissionStatus alwaysStatus = await Permission.locationAlways.request();
+      print('Location Always Status: $alwaysStatus');
+      
+      if (alwaysStatus.isDenied && mounted) {
+        await _showPermissionDialog(
+          'Always Location Access',
+          'For the best delivery tracking experience, please allow location access "All the time" instead of "Only while using the app".',
+          'Grant Always Access',
+          () async {
+            if (mounted) Navigator.of(context).pop();
+            await Permission.locationAlways.request();
+          },
+        );
+      }
+      
+      if (alwaysStatus.isPermanentlyDenied && mounted) {
+        await _showPermissionDialog(
+          'Always Location Access',
+          'Always location permission is permanently denied. Please enable "Allow all the time" in app settings for optimal delivery tracking.',
+          'Open Settings',
+          _handleOpenSettings,
+        );
+      }
     }
+  }
+
+  String _getPermissionName(Permission permission) {
+    switch (permission) {
+      case Permission.camera:
+        return 'Camera Access';
+      case Permission.photos:
+        return 'Photos Access';
+      case Permission.locationWhenInUse:
+        return 'Location Access';
+      case Permission.locationAlways:
+        return 'Always Location Access';
+      default:
+        return 'Required Permission';
+    }
+  }
+
+  void _handleOpenSettings() async {
+    await openAppSettings();
+    if (mounted) {
+      Navigator.of(context).pop();
+      // Reset flag to allow re-checking after settings change
+      _permissionsChecked = false;
+      _checkAndRequestAllPermissions();
+    }
+  }
+
+  void _handleRequestPermissions(List<Permission> permissions) async {
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+    await permissions.request();
+    // Don't recursively call permission check here
+  }
+
+  void _handleLocationSettings() async {
+    await Geolocator.openLocationSettings();
+    if (mounted) {
+      Navigator.of(context).pop();
+      // Reset flag to allow re-checking after settings change
+      _permissionsChecked = false;
+      _checkAndRequestAllPermissions();
+    }
+  }
+
+  Future<void> _showLocationServiceDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Location Service Required'),
+          content: const Text(
+            'This app requires location services to be enabled for delivery tracking. Please enable location services.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: _handleLocationSettings,
+              child: const Text('Open Settings'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showPermissionDialog(
+    String title,
+    String content,
+    String buttonText,
+    VoidCallback onPressed,
+  ) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: onPressed,
+              child: Text(buttonText),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

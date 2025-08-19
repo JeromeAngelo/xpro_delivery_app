@@ -33,8 +33,8 @@ import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/sc
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/view/finalize_deliveries_view.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/specific_screens/customers_collection_screen.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/view/summary_trip_view.dart';
-import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/view/get_trip_ticket_view.dart';
-import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/widgets/accepting_trip_loading_screen.dart';
+import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/view/get_trip_ticket_view.dart';
+import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/accepting_trip_loading_screen.dart';
 
 import '../../src/deliveries_and_timeline/presentation/widgets/add_trip_update_screen.dart';
 import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
@@ -49,8 +49,23 @@ final router = GoRouter(
   redirect: (context, state) async {
   final prefs = await SharedPreferences.getInstance();
   final hasToken = prefs.containsKey('auth_token');
+  final isFirstTimer = prefs.getBool('isFirstTimer') ?? true; // Default to true for fresh installs
 
-  if (hasToken && state.uri.path == '/') {
+  debugPrint('🔄 Router redirect check:');
+  debugPrint('   🔑 Has auth token: $hasToken');
+  debugPrint('   👤 Is first timer: $isFirstTimer');
+  debugPrint('   🛣️ Current path: ${state.uri.path}');
+
+  // If user is first timer, only redirect to onboarding from deep links or protected routes
+  // Allow normal onboarding flow: / → /sign-in
+  final protectedRoutes = ['/homepage', '/loading', '/delivery-and-timeline'];
+  if (isFirstTimer && protectedRoutes.contains(state.uri.path)) {
+    debugPrint('🆕 First timer accessing protected route, redirecting to onboarding');
+    return '/';
+  }
+
+  // If not first timer and has valid token, proceed to loading
+  if (!isFirstTimer && hasToken && state.uri.path == '/') {
     final userData = prefs.getString('user_data');
     if (userData != null) {
       try {
@@ -67,12 +82,25 @@ final router = GoRouter(
         }
         
         context.read<UserProvider>().initUser(LocalUsersModel.fromJson(userMap));
+        debugPrint('✅ Auto-signin successful, redirecting to loading');
+        return '/loading';
       } catch (e) {
-        debugPrint('📝 Data parsing handled: $e');
+        debugPrint('❌ Data parsing error: $e');
+        // If parsing fails, clear the corrupted data and show sign-in
+        await prefs.remove('auth_token');
+        await prefs.remove('user_data');
+        return '/sign-in';
       }
     }
-    return '/loading';
   }
+
+  // If has token but is first timer, clear token and show onboarding
+  if (hasToken && isFirstTimer) {
+    debugPrint('⚠️ Found token but user is first timer, clearing token');
+    await prefs.remove('auth_token');
+    await prefs.remove('user_data');
+  }
+
   return null;
 },
 
@@ -137,16 +165,20 @@ GoRoute(
     GoRoute(
   path: '/delivery-and-invoice/:customerId',
   builder: (context, state) {
-    // Load local data immediately
-    context.read<DeliveryDataBloc>()
-      ..add(GetLocalDeliveryDataByIdEvent(state.pathParameters['customerId']!))
-      ..add(GetDeliveryDataByIdEvent(state.pathParameters['customerId']!));
-
+    final customerId = state.pathParameters['customerId']!;
+    debugPrint('🔄 Router: Navigating to delivery-and-invoice for customer: $customerId');
+    
     // Use the customer from extra data if available, otherwise use a placeholder
     final customer = state.extra as DeliveryDataEntity?;
+    
+    // Always load fresh data to ensure we have complete information
+    debugPrint('📡 Router: Loading fresh data for customer: $customerId');
+    context.read<DeliveryDataBloc>()
+      ..add(GetLocalDeliveryDataByIdEvent(customerId))
+      ..add(GetDeliveryDataByIdEvent(customerId));
 
     return DeliveryAndInvoiceView(
-      selectedCustomer: customer, // This can now be null and handled in the view
+      selectedCustomer: customer,
     );
   },
 ),
@@ -238,16 +270,25 @@ GoRoute(
 
 
     GoRoute(
-  path: '/confirm-order/:deliveryDataId',
+  path: '/confirm-order/:invoiceId/:deliveryDataId',
   name: 'confirm-order',
   builder: (context, state) {
+    final invoiceId = state.pathParameters['invoiceId']!;
     final deliveryDataId = state.pathParameters['deliveryDataId']!;
     final extra = state.extra as Map<String, dynamic>?;
     final invoiceNumber = extra?['invoiceNumber'] ?? 'Unknown';
     
+    debugPrint('🔄 Navigating to confirm order with invoiceId: $invoiceId, deliveryDataId: $deliveryDataId');
+    
+    // Load invoice items for this confirmation screen
+    context.read<InvoiceItemsBloc>().add(
+      GetInvoiceItemsByInvoiceDataIdEvent(invoiceId)
+    );
+    
     return ConfirmOrderProductScreen(
-      deliveryDataId: deliveryDataId,
+      invoiceId: invoiceId,
       invoiceNumber: invoiceNumber,
+      deliveryDataId: deliveryDataId,
     );
   },
 ),

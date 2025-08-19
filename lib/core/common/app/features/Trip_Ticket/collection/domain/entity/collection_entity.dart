@@ -19,6 +19,7 @@ class CollectionEntity extends Equatable {
   final ToOne<TripModel> trip = ToOne<TripModel>();
   final ToOne<CustomerDataModel> customer = ToOne<CustomerDataModel>();
   final ToOne<InvoiceDataModel> invoice = ToOne<InvoiceDataModel>();
+  final ToMany<InvoiceDataModel> invoices = ToMany<InvoiceDataModel>();
 
   final double? totalAmount;
 
@@ -35,6 +36,7 @@ class CollectionEntity extends Equatable {
     TripModel? tripData,
     CustomerDataModel? customerData,
     InvoiceDataModel? invoiceData,
+    List<InvoiceDataModel>? invoicesList,
     this.totalAmount,
     this.created,
     this.updated,
@@ -43,6 +45,7 @@ class CollectionEntity extends Equatable {
     if (tripData != null) trip.target = tripData;
     if (customerData != null) customer.target = customerData;
     if (invoiceData != null) invoice.target = invoiceData;
+    if (invoicesList != null) invoices.addAll(invoicesList);
   }
 
   @override
@@ -54,6 +57,7 @@ class CollectionEntity extends Equatable {
     trip.target?.id,
     customer.target?.id,
     invoice.target?.id,
+    invoices,
     totalAmount,
     created,
     updated,

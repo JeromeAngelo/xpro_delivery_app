@@ -95,6 +95,17 @@ class QueueRemarksUpdated extends DeliveryUpdateState {
   List<Object> get props => [customerId, queueCount];
 }
 
+class PinArrivedLocationSuccess extends DeliveryUpdateState {
+  final String deliveryId;
+
+  const PinArrivedLocationSuccess({
+    required this.deliveryId,
+  });
+
+  @override
+  List<Object> get props => [deliveryId];
+}
+
 
 
 

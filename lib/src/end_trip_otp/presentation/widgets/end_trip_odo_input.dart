@@ -63,7 +63,7 @@ class _EndTripOdoInputState extends State<EndTripOdoInput> {
               return 'Odometer reading is required';
             }
             if (value.length < 6) {
-              return 'Please enter a complete 6-digit reading';
+              return 'Please enter a complete odometer reading';
             }
             return null;
           },
@@ -76,7 +76,7 @@ class _EndTripOdoInputState extends State<EndTripOdoInput> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Please enter the final odometer reading (6 digits)',
+          'Please enter the final odometer reading ',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),

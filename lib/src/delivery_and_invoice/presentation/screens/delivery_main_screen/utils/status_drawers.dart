@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_event.dart';
@@ -62,10 +63,12 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
         BlocListener<DeliveryUpdateBloc, DeliveryUpdateState>(
           listener: (context, state) {
             if (state is DeliveryStatusUpdateSuccess) {
-              context.read<DeliveryDataBloc>()
-                ..add(GetLocalDeliveryDataByIdEvent(widget.customerId))
-                ..add(GetDeliveryDataByIdEvent(widget.customerId));
-              Navigator.pop(context);
+              debugPrint('✅ Status update success, closing drawer');
+              // Close drawer immediately without refreshing data
+              // Data will be updated through the existing cache mechanism
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
             }
           },
         ),
@@ -223,46 +226,18 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
     final currentTime = DateTime.now();
     debugPrint('📝 Updating status at: ${currentTime.toIso8601String()}');
 
-    if (statusTitle.toLowerCase() == 'mark as undelivered') {
-      Navigator.pop(context); // Close the modal bottom sheet first
-
-      final customerState = context.read<DeliveryDataBloc>().state;
-      if (customerState is DeliveryDataLoaded) {
-        context.push(
-          '/undeliverable/${widget.customerId}',
-          extra: {'customer': customerState.deliveryData, 'statusId': statusId},
-        );
-      }
-      return;
-    }
-
-    // Add this new condition for "end delivery"
-    if (statusTitle.toLowerCase() == 'end delivery') {
+    if (statusTitle.toLowerCase() == 'arrived') {
+      debugPrint(
+        '📍 Processing arrived status - updating location and status',
+      );
       final deliveryDataBloc = context.read<DeliveryDataBloc>();
       final customerState = deliveryDataBloc.state;
 
       if (customerState is DeliveryDataLoaded) {
-        final deliveryData = customerState.deliveryData;
-
-        // Calculate total time
-        deliveryDataBloc.add(CalculateDeliveryTimeEvent(widget.customerId));
-
-        // Complete delivery
-        context.read<DeliveryUpdateBloc>().add(
-          CompleteDeliveryEvent(deliveryData: deliveryData),
-        );
-
-        Navigator.pop(context); // Close the modal bottom sheet first
-
-        // Show summary dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder:
-              (context) => CustomerSummaryDialog(deliveryData: deliveryData),
-        );
+        // Handle location update and status update - this will return early
+        _getCurrentLocationAndUpdate(deliveryDataBloc, statusId);
+        return; // Important: return here to prevent double status update
       }
-      return;
     }
 
     if (statusTitle.toLowerCase() == 'unloading') {
@@ -271,20 +246,168 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
 
       if (customerState is DeliveryDataLoaded) {
         final deliveryData = customerState.deliveryData;
+        debugPrint('📦 Setting invoice to unloading for: ${deliveryData.id}');
+        
         context.read<DeliveryDataBloc>().add(
           SetInvoiceIntoUnloadingEvent(deliveryData.id ?? ''),
         );
+        
+        // Also update the delivery status
+        context.read<DeliveryUpdateBloc>().add(
+          UpdateDeliveryStatusEvent(
+            customerId: widget.customerId,
+            statusId: statusId,
+          ),
+        );
+        return; // Important: return here to prevent double status update
       }
     }
 
-    context.read<DeliveryUpdateBloc>()
-      ..add(
-        UpdateDeliveryStatusEvent(
-          customerId: widget.customerId,
-          statusId: statusId,
-        ),
-      )
-      ..add(LoadLocalDeliveryStatusChoicesEvent(widget.customerId));
+    if (statusTitle.toLowerCase() == 'mark as undelivered') {
+      // Close the modal bottom sheet first and navigate
+      if (mounted) {
+        Navigator.of(context).pop();
+        
+        final customerState = context.read<DeliveryDataBloc>().state;
+        if (customerState is DeliveryDataLoaded) {
+          // Use a small delay to ensure navigation state is clean
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) {
+              context.push(
+                '/undeliverable/${widget.customerId}',
+                extra: {'customer': customerState.deliveryData, 'statusId': statusId},
+              );
+            }
+          });
+        }
+      }
+      return;
+    }
+
+    // Add this new condition for "end delivery"
+    if (statusTitle.toLowerCase() == 'end delivery') {
+      if (mounted) {
+        final deliveryDataBloc = context.read<DeliveryDataBloc>();
+        final customerState = deliveryDataBloc.state;
+
+        if (customerState is DeliveryDataLoaded) {
+          final deliveryData = customerState.deliveryData;
+          
+          // Close the modal bottom sheet first
+          Navigator.of(context).pop();
+
+          // Calculate total time
+          deliveryDataBloc.add(CalculateDeliveryTimeEvent(widget.customerId));
+
+          // Complete delivery
+          context.read<DeliveryUpdateBloc>().add(
+            CompleteDeliveryEvent(deliveryData: deliveryData),
+          );
+
+          // Use a small delay to ensure navigation state is clean
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) {
+              // Show summary dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder:
+                    (context) => CustomerSummaryDialog(deliveryData: deliveryData),
+              );
+            }
+          });
+        }
+      }
+      return;
+    }
+
+  
+
+    // Update delivery status - this will trigger the BlocListener above to close the drawer
+    debugPrint('📝 Firing status update event for: $statusTitle');
+    context.read<DeliveryUpdateBloc>().add(
+      UpdateDeliveryStatusEvent(
+        customerId: widget.customerId,
+        statusId: statusId,
+      ),
+    );
+  }
+
+  /// Get current location and update delivery location, then proceed with status update
+  Future<void> _getCurrentLocationAndUpdate(
+    DeliveryDataBloc deliveryDataBloc,
+    String statusId,
+  ) async {
+    try {
+      debugPrint('📍 Getting current location for arrived status...');
+
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('⚠️ Location services are disabled');
+        _proceedWithStatusUpdate(statusId);
+        return;
+      }
+
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          debugPrint('⚠️ Location permissions are denied');
+          _proceedWithStatusUpdate(statusId);
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint('⚠️ Location permissions are permanently denied');
+        _proceedWithStatusUpdate(statusId);
+        return;
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      debugPrint(
+        '✅ Current location obtained: ${position.latitude}, ${position.longitude}',
+      );
+
+      // Update delivery location with current coordinates
+      if (mounted) {
+        deliveryDataBloc.add(
+          UpdateDeliveryLocationEvent(
+            id: widget.customerId,
+            latitude: position.latitude,
+            longitude: position.longitude,
+          ),
+        );
+      }
+
+      // Proceed with status update
+      _proceedWithStatusUpdate(statusId);
+    } catch (e) {
+      debugPrint('❌ Error getting location: ${e.toString()}');
+      // Proceed with status update even if location fails
+      _proceedWithStatusUpdate(statusId);
+    }
+  }
+
+  // Proceed with the arrived status update after location is handled
+  void _proceedWithStatusUpdate(String statusId) {
+    if (!mounted) return;
+
+    // Update the delivery status - this will trigger the BlocListener to close the drawer
+    context.read<DeliveryUpdateBloc>().add(
+      UpdateDeliveryStatusEvent(
+        customerId: widget.customerId,
+        statusId: statusId,
+      ),
+    );
+
+    debugPrint('✅ Status update event fired');
   }
 }
-

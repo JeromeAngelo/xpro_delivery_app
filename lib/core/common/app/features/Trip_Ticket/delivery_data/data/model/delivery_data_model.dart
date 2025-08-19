@@ -32,6 +32,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
     super.collectionName,
     CustomerDataModel? customer,
     InvoiceDataModel? invoice,
+    List<InvoiceDataModel>? invoices,
     TripModel? trip,
     List<DeliveryUpdateModel>? deliveryUpdates,
     List<InvoiceItemsModel>? invoiceItems,
@@ -56,6 +57,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
     super(
       customerData: customer,
       invoiceData: invoice,
+      invoicesList: invoices,
       tripData: trip,
       deliveryUpdatesList: deliveryUpdates,
       invoiceItemsList: invoiceItems,
@@ -141,6 +143,34 @@ class DeliveryDataModel extends DeliveryDataEntity {
     } else if (json['invoice'] != null) {
       // If not expanded, just store the ID
       invoiceModel = InvoiceDataModel(id: json['invoice'].toString());
+    }
+    
+    // Process invoices relation (multiple)
+    List<InvoiceDataModel> invoicesList = [];
+    if (expandedData != null && expandedData.containsKey('invoices')) {
+      final invoicesData = expandedData['invoices'];
+      if (invoicesData != null && invoicesData is List) {
+        invoicesList = invoicesData.map((invoice) {
+          if (invoice is RecordModel) {
+            return InvoiceDataModel.fromJson({
+              'id': invoice.id,
+              'collectionId': invoice.collectionId,
+              'collectionName': invoice.collectionName,
+              ...invoice.data,
+              'expand': invoice.expand,
+            });
+          } else if (invoice is Map) {
+            return InvoiceDataModel.fromJson(invoice as DataMap);
+          }
+          // If it's just an ID string, create a minimal model
+          return InvoiceDataModel(id: invoice.toString());
+        }).toList();
+      }
+    } else if (json['invoices'] != null && json['invoices'] is List) {
+      // If not expanded, just store the IDs
+      invoicesList = (json['invoices'] as List)
+          .map((id) => InvoiceDataModel(id: id.toString()))
+          .toList();
     }
     
     // Process trip relation
@@ -235,6 +265,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
         orElse: () => InvoiceStatus.none,
       ),
       invoice: invoiceModel,
+      invoices: invoicesList,
       trip: tripModel,
       totalDeliveryTime: json['totalDeliveryTime'],
       deliveryUpdates: deliveryUpdatesList,
@@ -281,6 +312,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
       'paymentSelection': paymentSelectionString, // Add enum to JSON
       'customer': customer.target?.id,
       'invoice': invoice.target?.id,
+      'invoices': invoices.map((invoice) => invoice.id).toList(),
       'trip': trip.target?.id,
       'totalDeliveryTime': totalDeliveryTime,
       'deliveryUpdates': deliveryUpdates.map((update) => update.id).toList(),
@@ -304,6 +336,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
     String? collectionName,
     CustomerDataModel? customer,
     InvoiceDataModel? invoice,
+    List<InvoiceDataModel>? invoices,
     TripModel? trip,
     List<DeliveryUpdateModel>? deliveryUpdates,
     List<InvoiceItemsModel>? invoiceItems,
@@ -358,6 +391,14 @@ class DeliveryDataModel extends DeliveryDataEntity {
       model.invoice.target = this.invoice.target;
     }
     
+    if (invoices != null) {
+      model.invoices.clear();
+      model.invoices.addAll(invoices);
+    } else if (this.invoices.isNotEmpty) {
+      model.invoices.clear();
+      model.invoices.addAll(this.invoices);
+    }
+    
     if (trip != null) {
       model.trip.target = trip;
     } else if (this.trip.target != null) {
@@ -394,6 +435,6 @@ class DeliveryDataModel extends DeliveryDataEntity {
 
   @override
   String toString() {
-    return 'DeliveryDataModel(id: $id, customer: ${customer.target?.id}, invoice: ${invoice.target?.id}, trip: ${trip.target?.id}, deliveryUpdates: ${deliveryUpdates.length}, invoiceItems: ${invoiceItems.length}, paymentMode: $paymentMode, paymentSelection: $paymentSelection, deliveryNumber: $deliveryNumber, storeName: $storeName, ownerName: $ownerName, contactNumber: $contactNumber, barangay: $barangay, municipality: $municipality, province: $province, refID: $refID)';
+    return 'DeliveryDataModel(id: $id, customer: ${customer.target?.id}, invoice: ${invoice.target?.id}, invoices: ${invoices.length}, trip: ${trip.target?.id}, deliveryUpdates: ${deliveryUpdates.length}, invoiceItems: ${invoiceItems.length}, paymentMode: $paymentMode, paymentSelection: $paymentSelection, deliveryNumber: $deliveryNumber, storeName: $storeName, ownerName: $ownerName, contactNumber: $contactNumber, barangay: $barangay, municipality: $municipality, province: $province, refID: $refID)';
   }
 }

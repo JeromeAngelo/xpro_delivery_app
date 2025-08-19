@@ -20,6 +20,7 @@ class CancelledInvoiceEntity extends Equatable {
   final ToOne<TripModel> trip = ToOne<TripModel>();
   final ToOne<CustomerDataModel> customer = ToOne<CustomerDataModel>();
   final ToOne<InvoiceDataModel> invoice = ToOne<InvoiceDataModel>();
+  final ToMany<InvoiceDataModel> invoices = ToMany<InvoiceDataModel>();
 
   UndeliverableReason? reason;
   String? image;
@@ -37,6 +38,7 @@ class CancelledInvoiceEntity extends Equatable {
     TripModel? tripData,
     CustomerDataModel? customerData,
     InvoiceDataModel? invoiceData,
+    List<InvoiceDataModel>? invoicesList,
     this.reason,
     this.image,
     this.created,
@@ -46,6 +48,7 @@ class CancelledInvoiceEntity extends Equatable {
     if (tripData != null) trip.target = tripData;
     if (customerData != null) customer.target = customerData;
     if (invoiceData != null) invoice.target = invoiceData;
+    if (invoicesList != null) invoices.addAll(invoicesList);
   }
 
   @override
@@ -57,6 +60,7 @@ class CancelledInvoiceEntity extends Equatable {
     trip.target?.id,
     customer.target?.id,
     invoice.target?.id,
+    invoices,
     reason,
     image,
     created,

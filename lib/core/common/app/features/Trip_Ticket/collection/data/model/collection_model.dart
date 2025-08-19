@@ -37,6 +37,7 @@ class CollectionModel extends CollectionEntity {
     TripModel? trip,
     CustomerDataModel? customer,
     InvoiceDataModel? invoice,
+    List<InvoiceDataModel>? invoices,
     super.totalAmount,
     super.created,
     super.updated,
@@ -52,6 +53,7 @@ class CollectionModel extends CollectionEntity {
       tripData: trip,
       customerData: customer,
       invoiceData: invoice,
+      invoicesList: invoices,
     );
 
   factory CollectionModel.fromJson(DataMap json) {
@@ -175,6 +177,34 @@ class CollectionModel extends CollectionEntity {
       invoiceModel = InvoiceDataModel(id: json['invoice'].toString());
     }
 
+    // Process invoices relation (multiple)
+    List<InvoiceDataModel> invoicesList = [];
+    if (expandedData != null && expandedData.containsKey('invoices')) {
+      final invoicesData = expandedData['invoices'];
+      if (invoicesData != null && invoicesData is List) {
+        invoicesList = invoicesData.map((invoice) {
+          if (invoice is RecordModel) {
+            return InvoiceDataModel.fromJson({
+              'id': invoice.id,
+              'collectionId': invoice.collectionId,
+              'collectionName': invoice.collectionName,
+              ...invoice.data,
+              'expand': invoice.expand,
+            });
+          } else if (invoice is Map) {
+            return InvoiceDataModel.fromJson(invoice as DataMap);
+          }
+          // If it's just an ID string, create a minimal model
+          return InvoiceDataModel(id: invoice.toString());
+        }).toList();
+      }
+    } else if (json['invoices'] != null && json['invoices'] is List) {
+      // If not expanded, just store the IDs
+      invoicesList = (json['invoices'] as List)
+          .map((id) => InvoiceDataModel(id: id.toString()))
+          .toList();
+    }
+
     // Parse totalAmount with fallback to invoice totalAmount
     double? totalAmount = parseDouble(json['totalAmount']);
     if ((totalAmount == null || totalAmount == 0) && invoiceModel?.totalAmount != null) {
@@ -198,6 +228,7 @@ class CollectionModel extends CollectionEntity {
       trip: tripModel,
       customer: customerModel,
       invoice: invoiceModel,
+      invoices: invoicesList,
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
     );
@@ -213,6 +244,7 @@ class CollectionModel extends CollectionEntity {
       'trip': trip.target?.id,
       'customer': customer.target?.id,
       'invoice': invoice.target?.id,
+      'invoices': invoices.map((invoice) => invoice.id).toList(),
       'created': created?.toIso8601String(),
       'updated': updated?.toIso8601String(),
     };
@@ -226,6 +258,7 @@ class CollectionModel extends CollectionEntity {
     TripModel? trip,
     CustomerDataModel? customer,
     InvoiceDataModel? invoice,
+    List<InvoiceDataModel>? invoices,
     double? totalAmount,
     DateTime? created,
     DateTime? updated,
@@ -267,6 +300,15 @@ class CollectionModel extends CollectionEntity {
     } else if (this.invoice.target != null) {
       model.invoice.target = this.invoice.target;
     }
+
+    // Handle invoices relation
+    if (invoices != null) {
+      model.invoices.clear();
+      model.invoices.addAll(invoices);
+    } else if (this.invoices.isNotEmpty) {
+      model.invoices.clear();
+      model.invoices.addAll(this.invoices);
+    }
     
     return model;
   }
@@ -282,6 +324,6 @@ class CollectionModel extends CollectionEntity {
 
   @override
   String toString() {
-    return 'CollectionModel(id: $id, deliveryData: ${deliveryData.target?.id}, trip: ${trip.target?.id}, customer: ${customer.target?.id}, invoice: ${invoice.target?.id}, totalAmount: $totalAmount)';
+    return 'CollectionModel(id: $id, deliveryData: ${deliveryData.target?.id}, trip: ${trip.target?.id}, customer: ${customer.target?.id}, invoice: ${invoice.target?.id}, invoices: ${invoices.length}, totalAmount: $totalAmount)';
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/view/delivery_main_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/dialog_instruction.dart';
@@ -35,44 +34,25 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Only refresh if we've already initialized and the route is current
-    if (_hasInitialized) {
-      final route = ModalRoute.of(context);
-      if (route != null && route.isCurrent && route.isActive) {
-        debugPrint('🔄 Screen became active, refreshing data...');
-        _refreshData();
-      }
-    }
+    // Disable auto-refresh to prevent interference with child screen refresh logic
+    // Child components (dashboard, timeline) will handle their own data refresh
+    debugPrint('📋 DeliveryAndInvoiceView: didChangeDependencies called, but auto-refresh disabled');
   }
 
-  void _refreshData() {
-    if (widget.selectedCustomer != null) {
-      debugPrint(
-        '🔄 Refreshing delivery and invoice data for customer: ${widget.selectedCustomer!.id}',
-      );
 
-      final customerBloc = context.read<DeliveryDataBloc>();
-
-      // Load both local and remote data
-      customerBloc
-        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''))
-        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
-    }
-  }
 
   void _loadLocalData() {
     if (widget.selectedCustomer != null) {
       debugPrint(
-        '📱 Loading local data for customer: ${widget.selectedCustomer!.id}',
+        '📱 DeliveryAndInvoiceView: Customer data received: ${widget.selectedCustomer!.id}',
       );
 
       // Set initial delivery number if available
       _updateDeliveryNumber(widget.selectedCustomer!);
-
-      final customerBloc = context.read<DeliveryDataBloc>();
-      customerBloc
-        ..add(GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''))
-        ..add(GetDeliveryDataByIdEvent(widget.selectedCustomer!.id ?? ''));
+      
+      // Data loading is already handled by the navigation flow
+      // No need to load data again here to prevent multiple loading states
+      debugPrint('📱 DeliveryAndInvoiceView: Using customer data from navigation');
     }
   }
 

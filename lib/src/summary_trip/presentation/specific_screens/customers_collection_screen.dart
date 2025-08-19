@@ -95,15 +95,21 @@ class _CompletedCustomerDetailsScreenState
 
   Widget _buildCollectionDetails(BuildContext context, collection) {
     final customer = collection.customer.target;
-    final invoice = collection.invoice.target;
+    final invoices = collection.invoices;
     final deliveryData = collection.deliveryData.target;
     final trip = collection.trip.target;
 
     debugPrint('🎯 Collection Details:');
     debugPrint('   📦 Collection ID: ${collection.id}');
     debugPrint('   👤 Customer: ${customer?.name ?? 'Unknown'}');
-    debugPrint('   💰 Total Amount: ${collection.totalAmount}');
-    debugPrint('   📄 Invoice: ${invoice?.name ?? 'No invoice'}');
+    debugPrint('   💰 Collection Total Amount: ${collection.totalAmount}');
+    debugPrint('   📄 Number of invoices: ${invoices.length}');
+    
+    // Log individual invoice details
+    for (int i = 0; i < invoices.length; i++) {
+      final invoice = invoices[i];
+      debugPrint('   📋 Invoice ${i + 1}: ${invoice.refId ?? invoice.name} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}');
+    }
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -133,9 +139,9 @@ class _CompletedCustomerDetailsScreenState
               const SizedBox(height: 16),
             ],
 
-            // Invoice Information Card
-            if (invoice != null) ...[
-              _buildInvoiceInfoCard(context, invoice, collection),
+            // Invoices Information Card
+            if (invoices.isNotEmpty) ...[
+              _buildInvoicesInfoCard(context, invoices, collection),
               const SizedBox(height: 16),
             ],
 
@@ -153,6 +159,17 @@ class _CompletedCustomerDetailsScreenState
     customer,
     deliveryData,
   ) {
+    // Calculate total amount from all invoices
+    final invoices = collection.invoices;
+    double totalInvoicesAmount = 0.0;
+    if (invoices.isNotEmpty) {
+      for (final invoice in invoices) {
+        totalInvoicesAmount += invoice.totalAmount ?? 0.0;
+      }
+    }
+    
+    // Use invoices total or fallback to collection total
+    final displayAmount = totalInvoicesAmount > 0.0 ? totalInvoicesAmount : (collection.totalAmount ?? 0.0);
     return Card(
       elevation: 4,
       child: Padding(
@@ -184,7 +201,7 @@ class _CompletedCustomerDetailsScreenState
 
             _buildInfoRow(
               'Total Amount',
-              '₱${collection.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+              '₱${displayAmount.toStringAsFixed(2)}',
               isHighlighted: true,
             ),
             _buildInfoRow(
@@ -241,7 +258,15 @@ class _CompletedCustomerDetailsScreenState
     );
   }
 
-  Widget _buildInvoiceInfoCard(BuildContext context, invoice, collection) {
+  Widget _buildInvoicesInfoCard(BuildContext context, invoices, collection) {
+    // Calculate total amount from all invoices
+    double totalInvoicesAmount = 0.0;
+    if (invoices.isNotEmpty) {
+      for (final invoice in invoices) {
+        totalInvoicesAmount += invoice.totalAmount ?? 0.0;
+      }
+    }
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -252,13 +277,13 @@ class _CompletedCustomerDetailsScreenState
             Row(
               children: [
                 Icon(
-                  Icons.description,
+                  Icons.receipt_long,
                   color: Theme.of(context).colorScheme.tertiary,
                   size: 24,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Invoice Information',
+                  'Invoices Information',
                   style: Theme.of(context).textTheme.titleMedium!.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -267,12 +292,27 @@ class _CompletedCustomerDetailsScreenState
             ),
             const Divider(height: 24),
             _buildInfoRow(
-              'Invoice Number',
-              invoice.refId ?? invoice.name ?? 'Unknown',
+              'Number of Invoices',
+              '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'}',
             ),
+            
+            // Show individual invoice details
+            ...invoices.asMap().entries.map((entry) {
+              final index = entry.key;
+              final invoice = entry.value;
+              return Column(
+                children: [
+                  _buildInfoRow(
+                    'Invoice ${index + 1}',
+                    '${invoice.refId ?? invoice.name ?? 'Unknown'} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+                  ),
+                ],
+              );
+            }),
+            
             _buildInfoRow(
-              'Invoice Amount',
-              '₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+              'Total Invoices Amount',
+              '₱${totalInvoicesAmount.toStringAsFixed(2)}',
               isHighlighted: true,
             ),
             _buildInfoRow(

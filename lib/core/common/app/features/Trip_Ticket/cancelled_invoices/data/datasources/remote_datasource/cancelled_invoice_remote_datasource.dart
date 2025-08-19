@@ -52,7 +52,7 @@ class CancelledInvoiceRemoteDataSourceImpl
       final records = await _pocketBaseClient
           .collection('cancelledInvoice')
           .getFullList(
-            expand: 'deliveryData,trip,invoice,customer',
+            expand: 'deliveryData,trip,invoice,invoices,invoices.products,invoices.customer,customer',
             sort: '-created',
           );
 
@@ -119,7 +119,7 @@ class CancelledInvoiceRemoteDataSourceImpl
           .collection('cancelledInvoice')
           .getFullList(
             filter: 'trip = "$pocketBaseTripId"',
-            expand: 'deliveryData,trip,invoice,customer',
+            expand: 'deliveryData,trip,invoice,invoices,invoices.products,invoices.customer,customer',
             sort: '-created',
           );
 
@@ -153,7 +153,7 @@ class CancelledInvoiceRemoteDataSourceImpl
 
       final record = await _pocketBaseClient
           .collection('cancelledInvoice')
-          .getOne(id, expand: 'deliveryData,trip,invoice,customer');
+          .getOne(id, expand: 'deliveryData,trip,invoice,invoices,invoices.products,invoices.customer,customer');
 
       debugPrint('✅ Retrieved cancelled invoice from API: ${record.id}');
 
@@ -180,10 +180,10 @@ class CancelledInvoiceRemoteDataSourceImpl
         '📝 Reason: ${cancelledInvoice.reason.toString().split('.').last}',
       );
 
-      // First, get the delivery data to extract trip, customer, and invoice information
+      // First, get the delivery data to extract trip, customer, and invoices information
       final deliveryDataRecord = await _pocketBaseClient
           .collection('deliveryData')
-          .getOne(deliveryDataId, expand: 'trip,customer,invoice');
+          .getOne(deliveryDataId, expand: 'trip,customer,invoice,invoices,invoices.products,invoices.customer');
 
       final tripId = deliveryDataRecord.data['trip'];
       if (tripId == null) {
@@ -208,18 +208,36 @@ class CancelledInvoiceRemoteDataSourceImpl
 
       debugPrint('👤 Found customer ID: $customerId');
 
-      // Extract invoice ID from delivery data
-      String? invoiceId;
+      // Extract invoices IDs from delivery data
+      List<String> invoiceIds = [];
+      if (deliveryDataRecord.expand['invoices'] != null) {
+        final invoicesData = deliveryDataRecord.expand['invoices'];
+        if (invoicesData is List) {
+          invoiceIds = invoicesData!.map((invoice) => invoice.id).toList();
+        }
+      } else if (deliveryDataRecord.data['invoices'] != null && deliveryDataRecord.data['invoices'] is List) {
+        invoiceIds = (deliveryDataRecord.data['invoices'] as List)
+            .map((id) => id.toString())
+            .toList();
+      }
+
+      // Also include single invoice if present (for backward compatibility)
       if (deliveryDataRecord.expand['invoice'] != null) {
         final invoiceData = deliveryDataRecord.expand['invoice'];
         if (invoiceData is List && invoiceData!.isNotEmpty) {
-          invoiceId = invoiceData[0].id;
+          final singleInvoiceId = invoiceData[0].id;
+          if (!invoiceIds.contains(singleInvoiceId)) {
+            invoiceIds.add(singleInvoiceId);
+          }
         }
       } else if (deliveryDataRecord.data['invoice'] != null) {
-        invoiceId = deliveryDataRecord.data['invoice'].toString();
+        final singleInvoiceId = deliveryDataRecord.data['invoice'].toString();
+        if (!invoiceIds.contains(singleInvoiceId)) {
+          invoiceIds.add(singleInvoiceId);
+        }
       }
 
-      debugPrint('📄 Found invoice ID: $invoiceId');
+      debugPrint('📄 Found invoice IDs: $invoiceIds');
 
       // Prepare the body data with customer and invoice fields
       final body = {
@@ -238,12 +256,16 @@ class CancelledInvoiceRemoteDataSourceImpl
         debugPrint('⚠️ No customer found in delivery data');
       }
 
-      // Add invoice field if found
-      if (invoiceId != null && invoiceId.isNotEmpty) {
-        body['invoice'] = invoiceId;
-        debugPrint('✅ Added invoice to cancelled invoice: $invoiceId');
+      // Add invoices field if found
+      if (invoiceIds.isNotEmpty) {
+        body['invoices'] = invoiceIds;
+        debugPrint('✅ Added invoices to cancelled invoice: $invoiceIds');
+        
+        // Also add the first invoice as single invoice for backward compatibility
+        body['invoice'] = invoiceIds.first;
+        debugPrint('✅ Added primary invoice to cancelled invoice: ${invoiceIds.first}');
       } else {
-        debugPrint('⚠️ No invoice found in delivery data');
+        debugPrint('⚠️ No invoices found in delivery data');
       }
 
       debugPrint('📋 Cancelled invoice body data: $body');
@@ -601,6 +623,29 @@ class CancelledInvoiceRemoteDataSourceImpl
       debugPrint('📋 Using invoice ID reference: ${invoiceModel.id}');
     }
 
+    // Process invoices data (multiple)
+    List<InvoiceDataModel> invoicesList = [];
+    if (record.expand['invoices'] != null) {
+      final invoicesData = record.expand['invoices'];
+      if (invoicesData is List) {
+        invoicesList = invoicesData!.map((invoice) {
+          return InvoiceDataModel.fromJson({
+            'id': invoice.id,
+            'collectionId': invoice.collectionId,
+            'collectionName': invoice.collectionName,
+            ...invoice.data,
+            'expand': invoice.expand,
+          });
+        }).toList();
+        debugPrint('✅ Processed ${invoicesList.length} invoices');
+      }
+    } else if (record.data['invoices'] != null && record.data['invoices'] is List) {
+      invoicesList = (record.data['invoices'] as List)
+          .map((id) => InvoiceDataModel(id: id.toString()))
+          .toList();
+      debugPrint('📋 Using ${invoicesList.length} invoice ID references');
+    }
+
     // Process customer data
     CustomerDataModel? customerModel;
     if (record.expand['customer'] != null) {
@@ -670,6 +715,7 @@ class CancelledInvoiceRemoteDataSourceImpl
       deliveryData: deliveryDataModel,
       trip: tripModel,
       invoice: invoiceModel,
+      invoices: invoicesList,
       customer: customerModel,
       created: parseDate(record.created),
       updated: parseDate(record.updated),

@@ -23,7 +23,7 @@ class DeliveryListTile extends StatelessWidget {
     // Use direct fields from DeliveryDataEntity instead of target
     final storeName = delivery.storeName;
     final municipality = delivery.municipality;
-    final invoice = delivery.invoice.target;
+    final invoices = delivery.invoices;
 
     // ADDED: Show shimmer loading when customer data is null
     if (storeName == null && municipality == null) {
@@ -211,9 +211,11 @@ class DeliveryListTile extends StatelessWidget {
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          invoice?.name ?? 'No Invoice Number',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(

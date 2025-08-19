@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 
 class CustomerListTile extends StatelessWidget {
@@ -80,7 +81,6 @@ class CustomerListTile extends StatelessWidget {
     final refId = customer.refID;
     final municipality = customer.municipality;
     final province = customer.province;
-    final invoiceTarget = customer.invoice.target;
 
     if (storeName == null && refId == null && municipality == null) {
       // Show loading or placeholder if data is still being fetched
@@ -127,7 +127,7 @@ class CustomerListTile extends StatelessWidget {
         _buildInfoRow(
           context,
           Icons.receipt_sharp,
-          refId ?? 'No Ref ID',
+          _getInvoiceCountText(customer),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
@@ -140,9 +140,7 @@ class CustomerListTile extends StatelessWidget {
         _buildInfoRow(
           context,
           Icons.payments_rounded,
-          invoiceTarget?.totalAmount != null 
-              ? '₱${invoiceTarget!.totalAmount!.toStringAsFixed(2)}'
-              : '₱0.00',
+          _calculateTotalAmount(customer),
         ),
         // Other fields can be added here
       ],
@@ -200,6 +198,63 @@ class CustomerListTile extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _getInvoiceCountText(DeliveryDataEntity customer) {
+    final invoiceCount = customer.invoices.length;
+    
+    if (invoiceCount == 0) {
+      return "No Invoices Available";
+    } else if (invoiceCount == 1) {
+      return "1 Invoice";
+    } else {
+      return "$invoiceCount Invoices";
+    }
+  }
+
+  String _calculateTotalAmount(DeliveryDataEntity deliveryData) {
+    debugPrint('💰 Calculating total amount for delivery: ${deliveryData.id}');
+
+    double total = 0.0;
+
+    // Use invoices relation for total amount calculation
+    if (deliveryData.invoices.isNotEmpty) {
+      for (var invoice in deliveryData.invoices) {
+        final invoiceTotal = invoice.totalAmount ?? 0.0;
+        total += invoiceTotal;
+        debugPrint(
+          '   📄 Invoice: ${invoice.id} - Amount: ₱${invoiceTotal.toStringAsFixed(2)}',
+        );
+      }
+      debugPrint('💵 Total from invoices: ₱${total.toStringAsFixed(2)}');
+    } else {
+      // Fallback to single invoice relation if invoices collection is empty
+      final invoice = deliveryData.invoice.target;
+      if (invoice != null && invoice.totalAmount != null) {
+        total = invoice.totalAmount!;
+        debugPrint(
+          '   📄 Using single invoice total: ₱${total.toStringAsFixed(2)}',
+        );
+      } else {
+        // Last fallback to invoice items if both invoice relations are unavailable
+        final invoiceItems = deliveryData.invoiceItems;
+        if (invoiceItems.isNotEmpty) {
+          for (var item in invoiceItems) {
+            final itemTotal = item.totalAmount ?? 0.0;
+            total += itemTotal;
+            debugPrint(
+              '   📦 Item: ${item.name} - Amount: ₱${itemTotal.toStringAsFixed(2)}',
+            );
+          }
+          debugPrint(
+            '💵 Total from invoice items: ₱${total.toStringAsFixed(2)}',
+          );
+        }
+      }
+    }
+
+    debugPrint('💵 Final total amount: ₱${total.toStringAsFixed(2)}');
+    return '₱${NumberFormat('#,##0.00').format(total)}';
   }
 
   Widget _buildInfoRow(

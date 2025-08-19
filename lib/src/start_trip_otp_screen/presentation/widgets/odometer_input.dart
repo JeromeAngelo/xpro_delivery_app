@@ -63,7 +63,7 @@ class _OdometerInputState extends State<OdometerInput> {
               return 'Odometer reading is required';
             }
             if (value.length < 6) {
-              return 'Please enter a complete 6-digit reading';
+              return 'Please enter a complete odometer reading';
             }
             return null;
           },
@@ -76,7 +76,7 @@ class _OdometerInputState extends State<OdometerInput> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Please enter the current odometer reading (6 digits)',
+          'Please enter the current odometer reading ',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),

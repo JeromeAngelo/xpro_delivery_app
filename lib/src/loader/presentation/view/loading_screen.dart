@@ -63,18 +63,20 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   void _initializeSync() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      debugPrint('🔄 Loading screen: Starting sync process');
+      
       final syncCubit = context.read<SyncCubit>();
       
       // Initialize logging system first
       syncCubit.initializeAppLogging().then((_) {
         // Generate demo logs for testing
-        syncCubit.generateDemoLogs().then((_) {
-          // Then initialize sync
-          syncCubit.initialize().then((_) {
+        // syncCubit.generateDemoLogs().then((_) {
+        //   // Then initialize sync
+        //   syncCubit.initialize().then((_) {
             _startSync();
-          });
-        });
+        //   });
+        // });
       });
     });
   }

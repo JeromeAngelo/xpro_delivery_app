@@ -7,6 +7,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_customer_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_delivery_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/set_invoice_unloaded.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_state.dart';
 
@@ -17,6 +18,7 @@ class InvoiceDataBloc extends Bloc<InvoiceDataEvent, InvoiceDataState> {
   final GetInvoiceDataByCustomerId _getInvoiceDataByCustomerId;
   final AddInvoiceDataToDelivery _addInvoiceDataToDelivery;
   final AddInvoiceDataToInvoiceStatus _addInvoiceDataToInvoiceStatus;
+  final SetInvoiceUnloaded _setInvoiceUnloaded;
 
   InvoiceDataState? _cachedState;
 
@@ -27,12 +29,14 @@ class InvoiceDataBloc extends Bloc<InvoiceDataEvent, InvoiceDataState> {
     required GetInvoiceDataByCustomerId getInvoiceDataByCustomerId,
     required AddInvoiceDataToDelivery addInvoiceDataToDelivery,
     required AddInvoiceDataToInvoiceStatus addInvoiceDataToInvoiceStatus,
+    required SetInvoiceUnloaded setInvoiceUnloaded,
   })  : _getAllInvoiceData = getAllInvoiceData,
         _getInvoiceDataById = getInvoiceDataById,
         _getInvoiceDataByDeliveryId = getInvoiceDataByDeliveryId,
         _getInvoiceDataByCustomerId = getInvoiceDataByCustomerId,
         _addInvoiceDataToDelivery = addInvoiceDataToDelivery,
         _addInvoiceDataToInvoiceStatus = addInvoiceDataToInvoiceStatus,
+        _setInvoiceUnloaded = setInvoiceUnloaded,
         super(const InvoiceDataInitial()) {
     on<GetAllInvoiceDataEvent>(_onGetAllInvoiceData);
     on<GetInvoiceDataByIdEvent>(_onGetInvoiceDataById);
@@ -40,6 +44,7 @@ class InvoiceDataBloc extends Bloc<InvoiceDataEvent, InvoiceDataState> {
     on<GetInvoiceDataByCustomerIdEvent>(_onGetInvoiceDataByCustomerId);
     on<AddInvoiceDataToDeliveryEvent>(_onAddInvoiceDataToDelivery);
     on<AddInvoiceDataToInvoiceStatusEvent>(_onAddInvoiceDataToInvoiceStatus);
+    on<SetInvoiceUnloadedByIdEvent>(_onSetInvoiceUnloadedById);
   }
 
   Future<void> _onGetAllInvoiceData(
@@ -196,6 +201,26 @@ class InvoiceDataBloc extends Bloc<InvoiceDataEvent, InvoiceDataState> {
         
         // Refresh the invoice data
         add(GetInvoiceDataByIdEvent(event.invoiceId));
+      },
+    );
+  }
+
+  Future<void> _onSetInvoiceUnloadedById(
+    SetInvoiceUnloadedByIdEvent event,
+    Emitter<InvoiceDataState> emit,
+  ) async {
+    emit(const InvoiceDataLoading());
+    debugPrint('🔄 BLOC: Setting invoice to unloaded: ${event.invoiceDataId}');
+
+    final result = await _setInvoiceUnloaded(event.invoiceDataId);
+    result.fold(
+      (failure) {
+        debugPrint('❌ BLOC: Failed to set invoice to unloaded: ${failure.message}');
+        emit(InvoiceDataError(message: failure.message, statusCode: failure.statusCode));
+      },
+      (success) {
+        debugPrint('✅ BLOC: Successfully set invoice to unloaded');
+        emit(InvoiceUnloadedSuccess(invoiceDataId: event.invoiceDataId));
       },
     );
   }

@@ -32,6 +32,10 @@ abstract class DeliveryDataRemoteDataSource {
   Future<DeliveryDataModel> setInvoiceIntoUnloading(String deliveryDataId);
 
   Future<DeliveryDataModel> setInvoiceIntoUnloaded(String deliveryDataId);
+
+  Future<DeliveryDataModel> setInvoiceIntoCompleted(String deliveryDataId);
+
+  Future<DeliveryDataModel> updateDeliveryLocation(String id, double latitude, double longitude);
 }
 
 class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
@@ -53,6 +57,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
             expand:
                 'customer,customer.invoices,customer.deliveryStatus,'
                 'invoice,invoice.products,invoice.customer,'
+                'invoices,invoices.products,invoices.customer,'
                 'trip,trip.deliveryTeam,trip.personels,'
                 'deliveryUpdates,deliveryUpdates.customer,'
                 'invoiceItems,invoiceItems.invoice',
@@ -91,7 +96,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .collection('deliveryData')
           .getFullList(
             filter: 'hasTrip = false',
-            expand: 'customer,invoice,trip,deliveryUpdates',
+            expand: 'customer,invoice,invoices,invoices.products,invoices.customer,trip,deliveryUpdates,invoiceItems',
             sort: '-created',
           );
 
@@ -121,7 +126,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       final result = await _pocketBaseClient
           .collection('deliveryData')
           .getFullList(
-            expand: 'customer,invoice,trip,deliveryUpdates, invoiceItems',
+            expand: 'customer,invoice,invoices,invoices.products,invoices.customer,trip,deliveryUpdates,invoiceItems',
             filter: 'trip = "$tripId"',
             sort: 'customer.name',
           );
@@ -155,7 +160,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .collection('deliveryData')
           .getOne(
             id,
-            expand: 'customer,invoice,trip,deliveryUpdates,invoiceItems',
+            expand: 'customer,invoice,invoices,invoices.products,invoices.customer,trip,deliveryUpdates,invoiceItems',
           );
 
       debugPrint('✅ Retrieved delivery data with ID: $id');
@@ -372,7 +377,63 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
         '🔄 Setting invoice to unloading for delivery data: $deliveryDataId',
       );
 
-      // Update the delivery data with unloading status
+      // Step 1: Get delivery data with invoices to extract invoice IDs
+      final deliveryRecord = await _pocketBaseClient
+          .collection('deliveryData')
+          .getOne(
+            deliveryDataId,
+            expand: 'invoices',
+          );
+
+      // Step 2: Extract invoice IDs from the delivery data
+      List<String> invoiceIds = [];
+      if (deliveryRecord.expand['invoices'] != null) {
+        final invoicesData = deliveryRecord.expand['invoices'];
+        if (invoicesData is List) {
+          invoiceIds = invoicesData!.map((invoice) => invoice.id).toList();
+          debugPrint('📋 Found ${invoiceIds.length} invoices: $invoiceIds');
+        }
+      }
+
+      if (invoiceIds.isEmpty) {
+        debugPrint('⚠️ No invoices found for delivery data: $deliveryDataId');
+      } else {
+        // Step 3: Update invoiceStatus collection for all matching invoices
+        for (String invoiceId in invoiceIds) {
+          debugPrint('🔄 Updating invoiceStatus for invoice: $invoiceId');
+          
+          try {
+            // Find invoiceStatus records where invoiceData field matches this invoice ID
+            final invoiceStatusRecords = await _pocketBaseClient
+                .collection('invoiceStatus')
+                .getFullList(
+                  filter: 'invoiceData = "$invoiceId"',
+                );
+
+            debugPrint('📊 Found ${invoiceStatusRecords.length} invoiceStatus records for invoice: $invoiceId');
+
+            // Update all matching invoiceStatus records
+            for (var statusRecord in invoiceStatusRecords) {
+              await _pocketBaseClient
+                  .collection('invoiceStatus')
+                  .update(
+                    statusRecord.id,
+                    body: {
+                      'tripStatus': 'unloading',
+                      'updated': DateTime.now().toUtc().toIso8601String(),
+                    },
+                  );
+              
+              debugPrint('✅ Updated invoiceStatus record: ${statusRecord.id} to unloading');
+            }
+          } catch (e) {
+            debugPrint('❌ Error updating invoiceStatus for invoice $invoiceId: $e');
+            // Continue with other invoices even if one fails
+          }
+        }
+      }
+
+      // Step 4: Update the delivery data with unloading status
       await _pocketBaseClient
           .collection('deliveryData')
           .update(
@@ -383,14 +444,14 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
             },
           );
 
-      debugPrint('✅ Successfully set invoice to unloading status');
+      debugPrint('✅ Successfully set delivery data invoice status to unloading');
 
-      // Get the updated record with expanded relations
+      // Step 5: Get the updated record with expanded relations
       final updatedRecord = await _pocketBaseClient
           .collection('deliveryData')
           .getOne(
             deliveryDataId,
-            expand: 'customer,invoice,trip,deliveryUpdates,invoiceItems',
+            expand: 'customer,invoice,invoices,invoices.products,invoices.customer,trip,deliveryUpdates,invoiceItems',
           );
 
       return _processDeliveryDataRecord(updatedRecord);
@@ -409,10 +470,66 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
   ) async {
     try {
       debugPrint(
-        '🔄 Setting invoice to unloading for delivery data: $deliveryDataId',
+        '🔄 Setting invoice to unloaded for delivery data: $deliveryDataId',
       );
 
-      // Update the delivery data with unloading status
+      // Step 1: Get delivery data with invoices to extract invoice IDs
+      final deliveryRecord = await _pocketBaseClient
+          .collection('deliveryData')
+          .getOne(
+            deliveryDataId,
+            expand: 'invoices',
+          );
+
+      // Step 2: Extract invoice IDs from the delivery data
+      List<String> invoiceIds = [];
+      if (deliveryRecord.expand['invoices'] != null) {
+        final invoicesData = deliveryRecord.expand['invoices'];
+        if (invoicesData is List) {
+          invoiceIds = invoicesData!.map((invoice) => invoice.id).toList();
+          debugPrint('📋 Found ${invoiceIds.length} invoices: $invoiceIds');
+        }
+      }
+
+      if (invoiceIds.isEmpty) {
+        debugPrint('⚠️ No invoices found for delivery data: $deliveryDataId');
+      } else {
+        // Step 3: Update invoiceStatus collection for all matching invoices
+        for (String invoiceId in invoiceIds) {
+          debugPrint('🔄 Updating invoiceStatus for invoice: $invoiceId');
+          
+          try {
+            // Find invoiceStatus records where invoiceData field matches this invoice ID
+            final invoiceStatusRecords = await _pocketBaseClient
+                .collection('invoiceStatus')
+                .getFullList(
+                  filter: 'invoiceData = "$invoiceId"',
+                );
+
+            debugPrint('📊 Found ${invoiceStatusRecords.length} invoiceStatus records for invoice: $invoiceId');
+
+            // Update all matching invoiceStatus records
+            for (var statusRecord in invoiceStatusRecords) {
+              await _pocketBaseClient
+                  .collection('invoiceStatus')
+                  .update(
+                    statusRecord.id,
+                    body: {
+                      'tripStatus': 'unloaded',
+                      'updated': DateTime.now().toUtc().toIso8601String(),
+                    },
+                  );
+              
+              debugPrint('✅ Updated invoiceStatus record: ${statusRecord.id} to unloaded');
+            }
+          } catch (e) {
+            debugPrint('❌ Error updating invoiceStatus for invoice $invoiceId: $e');
+            // Continue with other invoices even if one fails
+          }
+        }
+      }
+
+      // Step 4: Update the delivery data with unloaded status
       await _pocketBaseClient
           .collection('deliveryData')
           .update(
@@ -423,21 +540,115 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
             },
           );
 
-      debugPrint('✅ Successfully set invoice to unloading status');
+      debugPrint('✅ Successfully set delivery data invoice status to unloaded');
 
-      // Get the updated record with expanded relations
+      // Step 5: Get the updated record with expanded relations
       final updatedRecord = await _pocketBaseClient
           .collection('deliveryData')
           .getOne(
             deliveryDataId,
-            expand: 'customer,invoice,trip,deliveryUpdates,invoiceItems',
+            expand: 'customer,invoice,invoices,invoices.products,invoices.customer,trip,deliveryUpdates,invoiceItems',
           );
 
       return _processDeliveryDataRecord(updatedRecord);
     } catch (e) {
-      debugPrint('❌ Failed to set invoice to unloading: ${e.toString()}');
+      debugPrint('❌ Failed to set invoice to unloaded: ${e.toString()}');
       throw ServerException(
-        message: 'Failed to set invoice to unloading: ${e.toString()}',
+        message: 'Failed to set invoice to unloaded: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
+
+  @override
+  Future<DeliveryDataModel> setInvoiceIntoCompleted(String deliveryDataId) async {
+   try {
+      debugPrint(
+        '🔄 Setting invoice to unloaded for delivery data: $deliveryDataId',
+      );
+
+      // Step 1: Get delivery data with invoices to extract invoice IDs
+      final deliveryRecord = await _pocketBaseClient
+          .collection('deliveryData')
+          .getOne(
+            deliveryDataId,
+            expand: 'invoices',
+          );
+
+      // Step 2: Extract invoice IDs from the delivery data
+      List<String> invoiceIds = [];
+      if (deliveryRecord.expand['invoices'] != null) {
+        final invoicesData = deliveryRecord.expand['invoices'];
+        if (invoicesData is List) {
+          invoiceIds = invoicesData!.map((invoice) => invoice.id).toList();
+          debugPrint('📋 Found ${invoiceIds.length} invoices: $invoiceIds');
+        }
+      }
+
+      if (invoiceIds.isEmpty) {
+        debugPrint('⚠️ No invoices found for delivery data: $deliveryDataId');
+      } else {
+        // Step 3: Update invoiceStatus collection for all matching invoices
+        for (String invoiceId in invoiceIds) {
+          debugPrint('🔄 Updating invoiceStatus for invoice: $invoiceId');
+          
+          try {
+            // Find invoiceStatus records where invoiceData field matches this invoice ID
+            final invoiceStatusRecords = await _pocketBaseClient
+                .collection('invoiceStatus')
+                .getFullList(
+                  filter: 'invoiceData = "$invoiceId"',
+                );
+
+            debugPrint('📊 Found ${invoiceStatusRecords.length} invoiceStatus records for invoice: $invoiceId');
+
+            // Update all matching invoiceStatus records
+            for (var statusRecord in invoiceStatusRecords) {
+              await _pocketBaseClient
+                  .collection('invoiceStatus')
+                  .update(
+                    statusRecord.id,
+                    body: {
+                      'tripStatus': 'completed',
+                      'updated': DateTime.now().toUtc().toIso8601String(),
+                    },
+                  );
+              
+              debugPrint('✅ Updated invoiceStatus record: ${statusRecord.id} to unloaded');
+            }
+          } catch (e) {
+            debugPrint('❌ Error updating invoiceStatus for invoice $invoiceId: $e');
+            // Continue with other invoices even if one fails
+          }
+        }
+      }
+
+      // Step 4: Update the delivery data with unloaded status
+      await _pocketBaseClient
+          .collection('deliveryData')
+          .update(
+            deliveryDataId,
+            body: {
+              'invoiceStatus': 'completed',
+              'updated': DateTime.now().toUtc().toIso8601String(),
+            },
+          );
+
+      debugPrint('✅ Successfully set delivery data invoice status to unloaded');
+
+      // Step 5: Get the updated record with expanded relations
+      final updatedRecord = await _pocketBaseClient
+          .collection('deliveryData')
+          .getOne(
+            deliveryDataId,
+            expand: 'customer,invoice,invoices,invoices.products,invoices.customer,trip,deliveryUpdates,invoiceItems',
+          );
+
+      return _processDeliveryDataRecord(updatedRecord);
+    } catch (e) {
+      debugPrint('❌ Failed to set invoice to unloaded: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to set invoice to unloaded: ${e.toString()}',
         statusCode: '500',
       );
     }
@@ -508,6 +719,28 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       }
     } else if (record.data['invoice'] != null) {
       invoiceModel = InvoiceDataModel(id: record.data['invoice'].toString());
+    }
+
+    // Process invoices data (multiple)
+    List<InvoiceDataModel> invoicesList = [];
+    if (record.expand['invoices'] != null) {
+      final invoicesData = record.expand['invoices'];
+      if (invoicesData is List) {
+        invoicesList = invoicesData!.map((invoice) {
+          return InvoiceDataModel.fromJson({
+            'id': invoice.id,
+            'collectionId': invoice.collectionId,
+            'collectionName': invoice.collectionName,
+            ...invoice.data,
+            'expand': invoice.expand,
+          });
+        }).toList();
+      }
+    } else if (record.data['invoices'] != null &&
+        record.data['invoices'] is List) {
+      invoicesList = (record.data['invoices'] as List)
+          .map((id) => InvoiceDataModel(id: id.toString()))
+          .toList();
     }
 
     // Process trip data
@@ -605,6 +838,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       customer: customerModel,
       invoiceItems: invoiceItemsList,
       invoice: invoiceModel,
+      invoices: invoicesList,
       trip: tripModel,
       deliveryUpdates: deliveryUpdatesList,
       paymentMode: record.data['paymentMode']?.toString(),
@@ -663,5 +897,43 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       return null;
     }
   }
+
+  @override
+  Future<DeliveryDataModel> updateDeliveryLocation(String id, double latitude, double longitude) async {
+    try {
+      debugPrint('🔄 Updating delivery location for ID: $id');
+      debugPrint('📍 Coordinates: Lat: $latitude, Long: $longitude');
+
+      await _pocketBaseClient
+          .collection('deliveryData')
+          .update(
+            id,
+            body: {
+              'pinLang': latitude,
+              'pinLong': longitude,
+            },
+          );
+
+      debugPrint('✅ Successfully updated delivery location for ID: $id');
+
+      // Get the full record with expanded relationships
+      final fullRecord = await _pocketBaseClient
+          .collection('deliveryData')
+          .getOne(
+            id,
+            expand: 'customer,invoice,invoices,invoices.products,invoices.customer,trip,deliveryUpdates,invoiceItems',
+          );
+
+      return _processDeliveryDataRecord(fullRecord);
+    } catch (e) {
+      debugPrint('❌ Failed to update delivery location: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to update delivery location: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
+  
+  
 }
 

@@ -1,22 +1,8 @@
 import 'package:equatable/equatable.dart';
 
-enum LogLevel {
-  debug,
-  info,
-  warning,
-  error,
-  success,
-}
+import '../../../../../../enums/log_level.dart';
 
-enum LogCategory {
-  authentication,
-  tripManagement,
-  deliveryUpdate,
-  deliveryReceipt,
-  general,
-  sync,
-  network,
-}
+
 
 class LogEntryEntity extends Equatable {
   const LogEntryEntity({

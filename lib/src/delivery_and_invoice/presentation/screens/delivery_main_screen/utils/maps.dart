@@ -41,7 +41,9 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
 
   void _loadDeliveryData() {
     if (widget.selectedCustomer?.id != null) {
-      debugPrint('🗺️ Loading delivery data for map: ${widget.selectedCustomer!.id}');
+      debugPrint(
+        '🗺️ Loading delivery data for map: ${widget.selectedCustomer!.id}',
+      );
       context.read<DeliveryDataBloc>().add(
         GetLocalDeliveryDataByIdEvent(widget.selectedCustomer!.id!),
       );
@@ -90,18 +92,20 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<DeliveryDataBloc, DeliveryDataState>(
-      listenWhen: (previous, current) =>
-          current is DeliveryDataLoaded || current is DeliveryDataError,
+      listenWhen:
+          (previous, current) =>
+              current is DeliveryDataLoaded || current is DeliveryDataError,
       listener: (context, state) {
         setState(() {
           _cachedState = state;
         });
       },
-      buildWhen: (previous, current) =>
-          current is DeliveryDataLoaded ||
-          current is DeliveryDataLoading ||
-          current is DeliveryDataError ||
-          _cachedState == null,
+      buildWhen:
+          (previous, current) =>
+              current is DeliveryDataLoaded ||
+              current is DeliveryDataLoading ||
+              current is DeliveryDataError ||
+              _cachedState == null,
       builder: (context, state) {
         final effectiveState = _cachedState ?? state;
 
@@ -162,11 +166,7 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Colors.grey[600],
-              ),
+              Icon(Icons.error_outline, size: 48, color: Colors.grey[600]),
               const SizedBox(height: 16),
               Text(
                 'Map unavailable',
@@ -182,10 +182,7 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
                 child: Text(
                   errorMessage,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ),
             ],
@@ -202,13 +199,17 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
     try {
       // Get customer from delivery data
       dynamic customer;
-      
+
       if (state is DeliveryDataLoaded) {
         customer = state.deliveryData.customer.target;
-        debugPrint('🗺️ Using customer from loaded delivery data: ${customer?.storeName ?? customer?.name}');
+        debugPrint(
+          '🗺️ Using customer from loaded delivery data: ${customer?.name ?? customer?.name}',
+        );
       } else if (widget.selectedCustomer != null) {
         customer = widget.selectedCustomer!.customer.target;
-        debugPrint('🗺️ Using customer from widget: ${customer?.storeName ?? customer?.name}');
+        debugPrint(
+          '🗺️ Using customer from widget: ${customer?.name ?? customer?.name}',
+        );
       }
 
       if (customer == null) {
@@ -222,11 +223,14 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
 
       if (lat != null && lng != null) {
         final location = LatLng(lat, lng);
-        debugPrint('🗺️ Customer location: ${customer.name ?? customer.name} at $lat, $lng');
+        debugPrint(
+          '🗺️ Customer location: ${customer.name ?? customer.name} at $lat, $lng',
+        );
         return location;
       } else {
-        
-        debugPrint('⚠️ Invalid coordinates for customer: ${customer.ownerName ?? customer.name}');
+        debugPrint(
+          '⚠️ Invalid coordinates for customer: ${customer.ownerName ?? customer.name}',
+        );
         debugPrint('   Latitude: ${customer.latitude}');
         debugPrint('   Longitude: ${customer.longitude}');
         return defaultLocation;
@@ -244,9 +248,7 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
         return Container(
           height: _heightAnimation.value,
           width: double.infinity,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-          ),
+          decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
           child: ClipRRect(
             child: FlutterMap(
               mapController: mapController,
@@ -294,7 +296,7 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
   Future<void> _openInMaps(LatLng location) async {
     try {
       final coords = '${location.latitude},${location.longitude}';
-      
+
       if (Platform.isAndroid) {
         final url = 'geo:$coords?q=$coords';
         final uri = Uri.parse(url);
@@ -332,7 +334,8 @@ class _CustomerMapScreenState extends State<CustomerMapScreen>
   }
 
   Future<void> _openGoogleMapsWeb(LatLng location) async {
-    final url = 'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}';
+    final url =
+        'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);

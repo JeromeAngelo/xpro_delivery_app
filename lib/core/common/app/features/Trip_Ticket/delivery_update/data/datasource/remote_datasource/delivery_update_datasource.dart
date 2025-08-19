@@ -10,6 +10,7 @@ import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'dart:typed_data' show Uint8List;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:x_pro_delivery_app/core/services/location_services.dart';
 
 import '../../models/delivery_update_model.dart';
 
@@ -28,6 +29,7 @@ abstract class DeliveryUpdateDatasource {
     required String image,
   });
   Future<void> updateQueueRemarks(String customerId, String queueCount);
+  Future<void> pinArrivedLocation(String deliveryId);
 }
 
 class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
@@ -98,6 +100,10 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         final allowedTitles = ['arrived', 'mark as undelivered'];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
+      if (latestStatus == 'waiting for customer') {
+        final allowedTitles = ['unloading', 'mark as undelivered'];
+        return _filterStatusChoices(allStatuses, allowedTitles);
+      }
 
       // Handle Waiting for customers
 
@@ -114,7 +120,11 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       // Handle Arrived status
       if (latestStatus == 'arrived') {
-        final allowedTitles = ['unloading', 'mark as undelivered'];
+        final allowedTitles = [
+          'unloading',
+          'mark as undelivered',
+          'waiting for customer',
+        ];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
 
@@ -329,14 +339,16 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       final deliveryReceiptRecord = deliveryReceiptRecords.items.first;
       debugPrint('✅ Found delivery receipt: ${deliveryReceiptRecord.id}');
 
-      // Step 3: Extract customer and invoice IDs from delivery data
-      debugPrint('🔍 Extracting customer and invoice data from delivery data');
+      // Step 3: Extract customer and invoices IDs from delivery data
+      debugPrint('🔍 Extracting customer and invoices data from delivery data');
 
       final customerId = deliveryData.customer.target?.id;
-      final invoiceId = deliveryData.invoice.target?.id;
+      final invoices = deliveryData.invoices;
+      final invoiceIds = invoices.map((invoice) => invoice.id).toList();
 
       debugPrint('👤 Customer ID: $customerId');
-      debugPrint('📄 Invoice ID: $invoiceId');
+      debugPrint('📄 Invoice IDs: $invoiceIds');
+      debugPrint('📦 Number of invoices: ${invoices.length}');
 
       if (customerId == null || customerId.isEmpty) {
         throw const ServerException(
@@ -345,16 +357,16 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         );
       }
 
-      if (invoiceId == null || invoiceId.isEmpty) {
+      if (invoiceIds.isEmpty) {
         throw const ServerException(
-          message: 'Invoice ID not found in delivery data',
+          message: 'No invoices found in delivery data',
           statusCode: '404',
         );
       }
 
-      // Step 4: Create record in deliveryCollection with customer and invoice
+      // Step 4: Create record in deliveryCollection with customer and invoices
       debugPrint(
-        '📝 Creating delivery collection record with customer and invoice',
+        '📝 Creating delivery collection record with customer and invoices',
       );
 
       final deliveryCollectionData = {
@@ -362,7 +374,11 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         'trip': tripId,
         'deliveryReceipt': deliveryReceiptRecord.id,
         'customer': customerId,
-        'invoice': invoiceId,
+        'invoice':
+            invoiceIds.isNotEmpty
+                ? invoiceIds.first
+                : null, // Primary invoice for backward compatibility
+        'invoices': invoiceIds, // Multiple invoices
         'invoiceStatus': 'completed',
         'completedAt': DateTime.now().toUtc().toIso8601String(),
         'status': 'completed',
@@ -373,7 +389,10 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       debugPrint('   - Trip: $tripId');
       debugPrint('   - Delivery Receipt: ${deliveryReceiptRecord.id}');
       debugPrint('   - Customer: $customerId');
-      debugPrint('   - Invoice: $invoiceId');
+      debugPrint(
+        '   - Primary Invoice: ${invoiceIds.isNotEmpty ? invoiceIds.first : "null"}',
+      );
+      debugPrint('   - All Invoices: $invoiceIds');
       debugPrint('   - Status: completed');
 
       final deliveryCollectionRecord = await _pocketBaseClient
@@ -867,6 +886,39 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         debugPrint('❌ Failed to read original image file: $fallbackError');
         return null;
       }
+    }
+  }
+
+  @override
+  Future<void> pinArrivedLocation(String deliveryId) async {
+    try {
+      debugPrint('📍 Pinning arrived location for delivery: $deliveryId');
+
+      // Get current location using the location service
+      final position = await LocationService.getCurrentLocation();
+      
+      debugPrint('📍 Current location: ${position.latitude}, ${position.longitude}');
+
+      // Update delivery data with location
+      await _pocketBaseClient
+          .collection('deliveryData')
+          .update(
+            deliveryId,
+            body: {
+              'pinLang': position.longitude,
+              'pinLong': position.latitude,
+              'updated': DateTime.now().toUtc().toIso8601String(),
+            },
+          );
+
+      debugPrint('✅ Successfully pinned location for delivery: $deliveryId');
+      debugPrint('📍 Pinned coordinates: lat=${position.latitude}, lng=${position.longitude}');
+    } catch (e) {
+      debugPrint('❌ Failed to pin arrived location: $e');
+      throw ServerException(
+        message: 'Failed to pin arrived location: $e',
+        statusCode: '500',
+      );
     }
   }
 }

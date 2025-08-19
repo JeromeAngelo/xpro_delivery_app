@@ -8,6 +8,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delive
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/default_drawer.dart';
+import 'package:x_pro_delivery_app/core/services/app_debug_logger.dart';
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
 import 'package:x_pro_delivery_app/core/services/sync_service.dart';
 import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
@@ -41,6 +42,7 @@ class _HomepageViewState extends State<HomepageView>
   @override
   void initState() {
     super.initState();
+    AppDebugLogger.instance.logInfo('🏠 Homepage initialized');
     _initializeBlocs();
     _syncService = sl<SyncService>();
     //  _authBloc = context.read<AuthBloc>();
@@ -608,12 +610,15 @@ class _HomepageViewState extends State<HomepageView>
 
             switch (value) {
               case 'refresh_screen':
+                AppDebugLogger.instance.logInfo('🔄 User action: Screen refresh requested');
                 await _handleScreenRefresh();
                 break;
               case 'sync_all':
+                AppDebugLogger.instance.logInfo('🔄 User action: Full sync requested');
                 await _handleFullSync();
                 break;
               case 'process_pending':
+                AppDebugLogger.instance.logInfo('🔄 User action: Process pending operations requested');
                 await _handlePendingOperations();
                 break;
             }

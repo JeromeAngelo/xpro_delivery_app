@@ -62,7 +62,7 @@ class UndeliveredCustomerListTile extends StatelessWidget {
 
         // Get customer data directly from cancelled invoice entity
         final customer = cancelledInvoice.customer.target;
-        final invoice = cancelledInvoice.invoice.target;
+        final invoices = cancelledInvoice.invoices;
 
         debugPrint(
           '👤 Processing customer for cancelled invoice ${cancelledInvoice.id}:',
@@ -70,7 +70,14 @@ class UndeliveredCustomerListTile extends StatelessWidget {
         debugPrint('   - Customer ID: ${customer?.id}');
         debugPrint('   - Customer Name: ${customer?.name}');
         debugPrint('   - Store Name: ${customer?.ownerName}');
-        debugPrint('   - Invoice ID: ${invoice?.id}');
+        debugPrint('   - Number of invoices: ${invoices.length}');
+        
+        // Log individual invoice details
+        for (int i = 0; i < invoices.length; i++) {
+          final invoice = invoices[i];
+          debugPrint('   - Invoice ${i + 1} (${invoice.refId ?? invoice.name}): ₱${NumberFormat('#,##0.00').format(invoice.totalAmount ?? 0.0)}');
+        }
+        
         debugPrint(
           '   - Reason: ${cancelledInvoice.reason.toString().split('.').last}',
         );
@@ -101,7 +108,7 @@ class UndeliveredCustomerListTile extends StatelessWidget {
               );
             },
             title: storeName,
-            subtitle: reasonText,
+            subtitle: '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'} • $reasonText',
             leading: CircleAvatar(
               backgroundColor:
                   isOffline

@@ -145,8 +145,28 @@ class DeliveryDataRepoImpl implements DeliveryDataRepo {
       debugPrint('✅ Retrieved delivery data with ID: $id from local storage');
       return Right(localDeliveryData);
     } on CacheException catch (e) {
-      debugPrint('⚠️ Cache Error: ${e.message}');
-      return Left(CacheFailure(message: e.message, statusCode: 404));
+      debugPrint('⚠️ Local Cache Error: ${e.message}');
+      
+      // Try to get data from remote if local fails
+      try {
+        debugPrint('🌐 Attempting to retrieve delivery data from remote');
+        final remoteDeliveryData = await _remoteDataSource.getDeliveryDataById(id);
+        debugPrint('✅ Retrieved delivery data with ID: $id from remote');
+        
+        // Cache the remote data locally for future use
+        try {
+          await _localDataSource.updateDeliveryData(remoteDeliveryData);
+          debugPrint('💾 Cached remote delivery data to local storage');
+        } catch (cacheError) {
+          debugPrint('⚠️ Failed to cache remote data locally: $cacheError');
+          // Continue even if caching fails
+        }
+        
+        return Right(remoteDeliveryData);
+      } on ServerException catch (serverError) {
+        debugPrint('❌ Remote fetch also failed: ${serverError.message}');
+        return Left(ServerFailure(message: serverError.message, statusCode: serverError.statusCode));
+      }
     } catch (e) {
       debugPrint('⚠️ Unexpected Error: ${e.toString()}');
       return Left(CacheFailure(message: e.toString(), statusCode: 404));
@@ -161,8 +181,28 @@ class DeliveryDataRepoImpl implements DeliveryDataRepo {
       debugPrint('✅ Retrieved ${localDeliveryData.length} delivery data records for trip ID: $tripId from local storage');
       return Right(localDeliveryData);
     } on CacheException catch (e) {
-      debugPrint('⚠️ Cache Error: ${e.message}');
-      return Left(CacheFailure(message: e.message, statusCode: 404));
+      debugPrint('⚠️ Local Cache Error: ${e.message}');
+      
+      // Try to get data from remote if local fails
+      try {
+        debugPrint('🌐 Attempting to retrieve delivery data from remote');
+        final remoteDeliveryData = await _remoteDataSource.getDeliveryDataByTripId(tripId);
+        debugPrint('✅ Retrieved ${remoteDeliveryData.length} delivery data records for trip ID: $tripId from remote');
+        
+        // Cache the remote data locally for future use
+        try {
+          await _localDataSource.cacheDeliveryData(remoteDeliveryData);
+          debugPrint('💾 Cached remote delivery data to local storage');
+        } catch (cacheError) {
+          debugPrint('⚠️ Failed to cache remote data locally: $cacheError');
+          // Continue even if caching fails
+        }
+        
+        return Right(remoteDeliveryData);
+      } on ServerException catch (serverError) {
+        debugPrint('❌ Remote fetch also failed: ${serverError.message}');
+        return Left(ServerFailure(message: serverError.message, statusCode: serverError.statusCode));
+      }
     } catch (e) {
       debugPrint('⚠️ Unexpected Error: ${e.toString()}');
       return Left(CacheFailure(message: e.toString(), statusCode: 404));
@@ -298,6 +338,61 @@ ResultFuture<DeliveryDataEntity> setInvoiceIntoUnloading(String deliveryDataId) 
     return Right(result);
   } on ServerException catch (e) {
     debugPrint('❌ Failed to set invoice to unloading: ${e.message}');
+    return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+  } catch (e) {
+    debugPrint('❌ Unexpected error: ${e.toString()}');
+    return Left(ServerFailure(message: e.toString(), statusCode: '500'));
+  }
+  }
+
+  @override
+  ResultFuture<DeliveryDataEntity> updateDeliveryLocation(String id, double latitude, double longitude) async {
+    try {
+      debugPrint('🔄 Updating delivery location for ID: $id');
+      debugPrint('📍 Coordinates: Lat: $latitude, Long: $longitude');
+      
+      final result = await _remoteDataSource.updateDeliveryLocation(id, latitude, longitude);
+      debugPrint('✅ Successfully updated delivery location for ID: $id');
+      
+      // Update local cache with the updated data
+      try {
+        await _localDataSource.updateDeliveryData(result);
+        debugPrint('💾 Updated delivery location in local storage');
+      } catch (cacheError) {
+        debugPrint('⚠️ Failed to update local cache: $cacheError');
+        // Continue even if local update fails
+      }
+      
+      return Right(result);
+    } on ServerException catch (e) {
+      debugPrint('❌ Failed to update delivery location: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      debugPrint('❌ Unexpected error: ${e.toString()}');
+      return Left(ServerFailure(message: e.toString(), statusCode: '500'));
+    }
+  }
+  
+  @override
+  ResultFuture<DeliveryDataEntity> setInvoiceIntoCompleted(String deliveryDataId) async {
+    try {
+    debugPrint('🔄 Setting invoice to completed for delivery data: $deliveryDataId');
+    
+    final result = await _remoteDataSource.setInvoiceIntoCompleted(deliveryDataId);
+    debugPrint('✅ Successfully set invoice to completed');
+    
+    // Update local cache
+    try {
+      await _localDataSource.updateDeliveryData(result);
+      debugPrint('💾 Updated delivery data in local storage');
+    } catch (cacheError) {
+      debugPrint('⚠️ Failed to update local cache: $cacheError');
+      // Continue even if local update fails
+    }
+    
+    return Right(result);
+  } on ServerException catch (e) {
+    debugPrint('❌ Failed to set invoice to completed: ${e.message}');
     return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
   } catch (e) {
     debugPrint('❌ Unexpected error: ${e.toString()}');

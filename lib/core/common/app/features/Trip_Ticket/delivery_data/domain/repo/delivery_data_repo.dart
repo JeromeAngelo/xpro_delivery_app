@@ -34,6 +34,14 @@ abstract class DeliveryDataRepo {
 
   ResultFuture<DeliveryDataEntity> setInvoiceIntoUnloading(String deliveryDataId);
 
-    ResultFuture<DeliveryDataEntity> setInvoiceIntoUnloaded(String deliveryDataId);
+  ResultFuture<DeliveryDataEntity> setInvoiceIntoUnloaded(String deliveryDataId);
+
+    ResultFuture<DeliveryDataEntity> setInvoiceIntoCompleted(String deliveryDataId);
+
+
+  /// Update delivery location by ID
+  /// 
+  /// Takes a delivery data ID, latitude and longitude and updates the location
+  ResultFuture<DeliveryDataEntity> updateDeliveryLocation(String id, double latitude, double longitude);
 
 }

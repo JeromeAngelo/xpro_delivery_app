@@ -589,10 +589,15 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
                         isFromLocal: _isOffline,
                         onTap: () {
                           debugPrint('🔄 Tapped delivery: ${delivery.id}');
+                          debugPrint('📊 Delivery index in list: $index');
+                          debugPrint('📊 Total deliveries: ${deliveries.length}');
+                          debugPrint('📊 Is last customer: ${index == deliveries.length - 1}');
+                          
                           if (delivery.id != null) {
-                            _deliveryDataBloc.add(
-                              GetLocalDeliveryDataByIdEvent(delivery.id!),
-                            );
+                            debugPrint('🚀 Navigating to delivery details for: ${delivery.id}');
+                            
+                            // Navigate immediately with customer data
+                            // Data loading will be handled by the destination screen
                             context.go(
                               '/delivery-and-invoice/${delivery.id}',
                               extra: delivery,

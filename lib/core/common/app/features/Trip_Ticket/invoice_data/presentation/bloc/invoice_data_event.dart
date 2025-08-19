@@ -69,3 +69,13 @@ class AddInvoiceDataToInvoiceStatusEvent extends InvoiceDataEvent {
   @override
   List<Object?> get props => [invoiceId, invoiceStatusId];
 }
+
+// Event for setting invoice unloaded by ID
+class SetInvoiceUnloadedByIdEvent extends InvoiceDataEvent {
+  final String invoiceDataId;
+
+  const SetInvoiceUnloadedByIdEvent(this.invoiceDataId);
+
+  @override
+  List<Object?> get props => [invoiceDataId];
+}

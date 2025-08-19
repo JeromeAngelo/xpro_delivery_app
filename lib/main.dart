@@ -6,6 +6,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:provider/provider.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_status/presentation/bloc/invoice_status_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/presentation/bloc/logs_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
@@ -72,6 +73,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<CustomerDataBloc>()),
         BlocProvider(create: (_) => sl<InvoiceDataBloc>()),
         BlocProvider(create: (_) => sl<InvoiceItemsBloc>()),
+        BlocProvider(create: (_) => sl<InvoiceStatusBloc>()),
+
         BlocProvider(create: (_) => sl<DeliveryDataBloc>()),
         BlocProvider(create: (_) => sl<DeliveryVehicleBloc>()),
         BlocProvider(create: (_) => sl<DeliveryReceiptBloc>()),
@@ -79,8 +82,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<CollectionsBloc>()),
         BlocProvider(create: (_) => sl<ReturnItemsBloc>()),
         BlocProvider(create: (_) => sl<UserPerformanceBloc>()),
-                BlocProvider(create: (_) => sl<LogsBloc>()),
-
+        BlocProvider(create: (_) => sl<LogsBloc>()),
       ],
       child: MultiProvider(
         providers: [
@@ -91,31 +93,37 @@ class MyApp extends StatelessWidget {
           designSize: const Size(375, 812), // iPhone 11 Pro size as base
           minTextAdapt: true,
           splitScreenMode: true,
-          builder: (context, child) => MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            title: 'X_Pro_Delivery_App',
-            routerConfig: router,
-            theme: FlexThemeData.light(
-              scheme: FlexScheme.amber,
-              appBarStyle: FlexAppBarStyle.primary,
-            ),
-            darkTheme: FlexThemeData.dark(scheme: FlexScheme.amber),
-            themeMode: ThemeMode.system,
-            builder: (context, child) => ResponsiveBreakpoints.builder(
-              child: Column(
-                children: [
-                  const OfflineBanner(),
-                  Expanded(child: child!),
-                ],
+          builder:
+              (context, child) => MaterialApp.router(
+                debugShowCheckedModeBanner: false,
+                title: 'X_Pro_Delivery_App',
+                routerConfig: router,
+                theme: FlexThemeData.light(
+                  scheme: FlexScheme.amber,
+                  appBarStyle: FlexAppBarStyle.primary,
+                ),
+                darkTheme: FlexThemeData.dark(scheme: FlexScheme.amber),
+                themeMode: ThemeMode.system,
+                builder:
+                    (context, child) => ResponsiveBreakpoints.builder(
+                      child: Column(
+                        children: [
+                          const OfflineBanner(),
+                          Expanded(child: child!),
+                        ],
+                      ),
+                      breakpoints: [
+                        const Breakpoint(start: 0, end: 450, name: MOBILE),
+                        const Breakpoint(start: 451, end: 800, name: TABLET),
+                        const Breakpoint(start: 801, end: 1920, name: DESKTOP),
+                        const Breakpoint(
+                          start: 1921,
+                          end: double.infinity,
+                          name: '4K',
+                        ),
+                      ],
+                    ),
               ),
-              breakpoints: [
-                const Breakpoint(start: 0, end: 450, name: MOBILE),
-                const Breakpoint(start: 451, end: 800, name: TABLET),
-                const Breakpoint(start: 801, end: 1920, name: DESKTOP),
-                const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
-              ],
-            ),
-          ),
         ),
       ),
     );

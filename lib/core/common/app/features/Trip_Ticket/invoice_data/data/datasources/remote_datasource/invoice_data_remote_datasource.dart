@@ -30,6 +30,9 @@ abstract class InvoiceDataRemoteDataSource {
     required String invoiceId,
     required String invoiceStatusId,
   });
+
+  // Set invoice unloaded by ID
+  Future<bool> setInvoiceUnloadedById(String invoiceDataId);
 }
 
 class InvoiceDataRemoteDataSourceImpl implements InvoiceDataRemoteDataSource {
@@ -432,6 +435,51 @@ class InvoiceDataRemoteDataSourceImpl implements InvoiceDataRemoteDataSource {
       debugPrint('❌ Failed to add invoice to invoice status: ${e.toString()}');
       throw ServerException(
         message: 'Failed to add invoice to invoice status: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
+
+  @override
+  Future<bool> setInvoiceUnloadedById(String invoiceDataId) async {
+    try {
+      debugPrint('🔄 Setting invoice to unloaded for invoice data ID: $invoiceDataId');
+
+      // Find invoiceStatus records where invoiceData field matches this invoice ID
+      final invoiceStatusRecords = await _pocketBaseClient
+          .collection('invoiceStatus')
+          .getFullList(
+            filter: 'invoiceData = "$invoiceDataId"',
+          );
+
+      debugPrint('📊 Found ${invoiceStatusRecords.length} invoiceStatus records for invoice: $invoiceDataId');
+
+      if (invoiceStatusRecords.isEmpty) {
+        debugPrint('⚠️ No invoiceStatus records found for invoice: $invoiceDataId');
+        return false;
+      }
+
+      // Update all matching invoiceStatus records
+      for (var statusRecord in invoiceStatusRecords) {
+        await _pocketBaseClient
+            .collection('invoiceStatus')
+            .update(
+              statusRecord.id,
+              body: {
+                'tripStatus': 'unloaded',
+                'updated': DateTime.now().toUtc().toIso8601String(),
+              },
+            );
+        
+        debugPrint('✅ Updated invoiceStatus record: ${statusRecord.id} to unloaded');
+      }
+
+      debugPrint('✅ Successfully set invoice to unloaded for invoice data ID: $invoiceDataId');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Failed to set invoice to unloaded: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to set invoice to unloaded: ${e.toString()}',
         statusCode: '500',
       );
     }

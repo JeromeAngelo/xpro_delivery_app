@@ -17,7 +17,6 @@ import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/tr
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/trip_list_tiles/view_undelivered_customers.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/widgets/end_trip_checklist_tiles.dart';
 
-
 class FinalizeDeliveriesView extends StatefulWidget {
   const FinalizeDeliveriesView({super.key});
 
@@ -295,7 +294,7 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No checklist items found',
+                        'Loading Checklist Please Wait',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),

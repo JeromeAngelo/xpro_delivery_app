@@ -98,3 +98,14 @@ class UpdateQueueRemarksEvent extends DeliveryUpdateEvent {
   @override
   List<Object> get props => [customerId,  queueCount];
 }
+
+class PinArrivedLocationEvent extends DeliveryUpdateEvent {
+  final String deliveryId;
+
+  const PinArrivedLocationEvent({
+    required this.deliveryId,
+  });
+
+  @override
+  List<Object> get props => [deliveryId];
+}

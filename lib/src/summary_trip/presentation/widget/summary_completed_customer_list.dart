@@ -54,22 +54,38 @@ class SummaryCompletedCustomerList extends StatelessWidget {
         
         // Get customer data directly from collection entity
         final customer = collection.customer.target;
-        final invoice = collection.invoice.target;
+        final invoices = collection.invoices;
         
         debugPrint('👤 Processing customer for collection ${collection.id}:');
         debugPrint('   - Customer ID: ${customer?.id}');
         debugPrint('   - Customer Name: ${customer?.name}');
         debugPrint('   - Owner Name: ${customer?.ownerName}');
-        debugPrint('   - Invoice ID: ${invoice?.id}');
+        debugPrint('   - Number of invoices: ${invoices.length}');
         debugPrint('   - Collection Total: ${collection.totalAmount}');
-        debugPrint('   - Invoice Total: ${invoice?.totalAmount}');
+        
+        // Log individual invoice details
+        for (int i = 0; i < invoices.length; i++) {
+          final invoice = invoices[i];
+          debugPrint('   - Invoice ${i + 1} (${invoice.refId ?? invoice.name}): ₱${NumberFormat('#,##0.00').format(invoice.totalAmount ?? 0.0)}');
+        }
         
         // Extract customer information directly from collection's customer relation
         final customerName = customer?.ownerName ?? customer?.name ?? 'Unknown Customer';
         final storeName = customer?.name ?? customerName;
         
-        // Use collection's totalAmount first, fallback to invoice totalAmount
-        final totalAmount = collection.totalAmount ?? invoice?.totalAmount ?? 0.0;
+        // Calculate total amount from all invoices
+        double totalAmount = 0.0;
+        if (invoices.isNotEmpty) {
+          for (final invoice in invoices) {
+            totalAmount += invoice.totalAmount ?? 0.0;
+          }
+        }
+        
+        // Fallback to collection totalAmount if invoices don't have amounts
+        if (totalAmount == 0.0 && collection.totalAmount != null) {
+          totalAmount = collection.totalAmount!;
+          debugPrint('   🔄 Using collection totalAmount as fallback: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
+        }
         
         debugPrint('📊 Final display data:');
         debugPrint('   - Store Name: $storeName');
@@ -86,13 +102,13 @@ class SummaryCompletedCustomerList extends StatelessWidget {
                 extra: {
                   'collection': collection,
                   'customer': customer,
-                  'invoice': invoice,
+                  'invoices': invoices.toList(),
                   'isOffline': isOffline,
                 },
               );
             },
             title: storeName,
-            subtitle: '₱${NumberFormat('#,##0.00').format(totalAmount)}',
+            subtitle: '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'} • ₱${NumberFormat('#,##0.00').format(totalAmount)}',
             leading: CircleAvatar(
               backgroundColor: isOffline 
                   ? Colors.orange.withOpacity(0.1)

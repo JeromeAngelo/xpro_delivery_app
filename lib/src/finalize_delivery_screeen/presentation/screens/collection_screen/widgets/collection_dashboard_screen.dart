@@ -95,34 +95,41 @@ class CollectionDashboardScreen extends StatelessWidget {
     debugPrint('📊 DASHBOARD: Calculating collection statistics');
     debugPrint('📊 Total collections received: ${collections.length}');
 
-    // Calculate total amount from collection entities directly
-    final totalAmount = collections.fold<double>(
-      0,
-      (sum, collection) {
-        final collectionAmount = collection.totalAmount ?? 0.0;
-        debugPrint('💰 Collection ${collection.id}: ₱${NumberFormat('#,##0.00').format(collectionAmount)}');
-        return sum + collectionAmount;
-      },
-    );
+    // Calculate total amount from all invoices in all collections
+    double totalAmount = 0.0;
+    int totalInvoices = 0;
+    
+    for (final collection in collections) {
+      final invoices = collection.invoices;
+      final invoicesCount = invoices.length;
+      totalInvoices += invoicesCount;
+      
+      debugPrint('📊 Collection ${collection.id}: ${invoicesCount} invoices');
+      
+      // Calculate amount from invoices in this collection
+      double collectionAmount = 0.0;
+      for (final invoice in invoices) {
+        final invoiceAmount = invoice.totalAmount ?? 0.0;
+        collectionAmount += invoiceAmount;
+        debugPrint('   💰 Invoice ${invoice.refId ?? invoice.name}: ₱${NumberFormat('#,##0.00').format(invoiceAmount)}');
+      }
+      
+      // Fallback to collection totalAmount if invoices don't have amounts
+      if (collectionAmount == 0.0 && collection.totalAmount != null) {
+        collectionAmount = collection.totalAmount!;
+        debugPrint('   🔄 Using collection totalAmount as fallback: ₱${NumberFormat('#,##0.00').format(collectionAmount)}');
+      }
+      
+      totalAmount += collectionAmount;
+      debugPrint('💰 Collection ${collection.id} total: ₱${NumberFormat('#,##0.00').format(collectionAmount)}');
+    }
 
-    debugPrint('💰 DASHBOARD: Total amount calculated: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
+    debugPrint('💰 DASHBOARD: Total amount from all invoices: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
 
     // Total collections count
     final totalCollections = collections.length;
     debugPrint('📦 DASHBOARD: Total collections count: $totalCollections');
-    
-    // Count delivery items (invoices) from collection entities
-    final totalDeliveryItems = collections.fold<int>(
-      0,
-      (sum, collection) {
-        // Check if collection has an invoice relation
-        final hasInvoice = collection.invoice.target != null;
-        debugPrint('📄 Collection ${collection.id} has invoice: $hasInvoice');
-        return sum + (hasInvoice ? 1 : 0);
-      },
-    );
-
-    debugPrint('📄 DASHBOARD: Total delivery items (invoices): $totalDeliveryItems');
+    debugPrint('📄 DASHBOARD: Total invoices across all collections: $totalInvoices');
 
     // Get completion date from trip data
     String completionDate = 'Today';
@@ -137,7 +144,7 @@ class CollectionDashboardScreen extends StatelessWidget {
     // Debug summary
     debugPrint('📊 DASHBOARD SUMMARY:');
     debugPrint('   💰 Total Amount: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
-    debugPrint('   📄 Delivery Items: $totalDeliveryItems');
+    debugPrint('   📄 Total Invoices: $totalInvoices');
     debugPrint('   📦 Collections: $totalCollections');
     debugPrint('   📅 Date: $completionDate');
 
@@ -157,9 +164,9 @@ class CollectionDashboardScreen extends StatelessWidget {
         ),
         _buildInfoItem(
           context,
-          Icons.inventory,
-          totalDeliveryItems.toString(),
-          'Delivery Items',
+          Icons.receipt_long,
+          totalInvoices.toString(),
+          'Total Invoices',
         ),
         _buildInfoItem(
           context,

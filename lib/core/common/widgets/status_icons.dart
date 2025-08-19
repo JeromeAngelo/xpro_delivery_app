@@ -5,7 +5,8 @@ class StatusIcons {
     switch (status.toLowerCase()) {
       case 'arrived':
         return Icons.location_on;
-
+       case 'waiting for customer':
+        return Icons.timer;
       case 'unloading':
         return Icons.unarchive;
       case 'mark as undelivered':

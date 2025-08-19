@@ -1,8 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- Location permissions -->
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <!-- Required for Android 10+ if you need background location -->
 <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+<!-- Camera permission -->
+<uses-permission android:name="android.permission.CAMERA" />
+<!-- Storage permissions for image_picker (automatically handled) -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+<!-- For Android 13+ (API level 33) photo and media permissions -->
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <application
         android:label="XPro Delivery"
         android:name="${applicationName}"

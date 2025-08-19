@@ -9,9 +9,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
-import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/widgets/accept_trip_button.dart';
-import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/widgets/customer_list.dart';
-import 'package:x_pro_delivery_app/src/trip_ticket_page/presentation/widgets/dashboard.dart';
+import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/accept_trip_button.dart';
+import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/customer_list.dart';
+import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/dashboard.dart';
 
 class GetTripTickerView extends StatefulWidget {
   const GetTripTickerView({super.key, required this.tripNumber});

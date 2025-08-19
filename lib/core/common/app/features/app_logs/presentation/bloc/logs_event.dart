@@ -22,3 +22,11 @@ class DownloadLogsPdfEvent extends LogsEvent {
 class RefreshLogsEvent extends LogsEvent {
   const RefreshLogsEvent();
 }
+
+class SyncLogsToRemoteEvent extends LogsEvent {
+  const SyncLogsToRemoteEvent();
+}
+
+class LoadUnsyncedLogsEvent extends LogsEvent {
+  const LoadUnsyncedLogsEvent();
+}

@@ -104,3 +104,13 @@ class InvoiceDataAddedToInvoiceStatus extends InvoiceDataState {
   @override
   List<Object?> get props => [invoiceId, invoiceStatusId];
 }
+
+// State for setting invoice unloaded by ID
+class InvoiceUnloadedSuccess extends InvoiceDataState {
+  final String invoiceDataId;
+
+  const InvoiceUnloadedSuccess({required this.invoiceDataId});
+
+  @override
+  List<Object?> get props => [invoiceDataId];
+}

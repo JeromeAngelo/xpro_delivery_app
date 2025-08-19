@@ -13,11 +13,10 @@ class DeliveryList extends StatelessWidget {
     this.isLoading = false,
   });
 
-  
   @override
   Widget build(BuildContext context) {
     debugPrint('🔄 Building DeliveryList with ${deliveries.length} items');
-    
+
     if (deliveries.isEmpty) {
       return Center(
         child: Column(
@@ -46,16 +45,17 @@ class DeliveryList extends StatelessWidget {
       itemCount: deliveries.length,
       itemBuilder: (context, index) {
         final delivery = deliveries[index];
-        
+
         // Try to get the fully loaded delivery data if available
         DeliveryDataEntity displayDelivery = delivery;
-        if (delivery.id != null && loadedDeliveryData.containsKey(delivery.id)) {
+        if (delivery.id != null &&
+            loadedDeliveryData.containsKey(delivery.id)) {
           final loadedDelivery = loadedDeliveryData[delivery.id];
           if (loadedDelivery is DeliveryDataEntity) {
             displayDelivery = loadedDelivery;
           }
         }
-        
+
         return _buildDeliveryCard(context, displayDelivery);
       },
     );
@@ -66,9 +66,7 @@ class DeliveryList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Card(
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           child: Column(
@@ -136,15 +134,11 @@ class DeliveryList extends StatelessWidget {
         _buildInfoRow(
           context,
           Icons.receipt_sharp,
-          refId ?? 'No Ref ID',
+          _getInvoiceCountText(delivery),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
-        _buildInfoRow(
-          context,
-          Icons.location_on,
-          municipality ?? "Unknown",
-        ),
+        _buildInfoRow(context, Icons.location_on, municipality ?? "Unknown"),
         const SizedBox(height: 8),
         if (invoiceData != null)
           _buildInfoRow(
@@ -201,6 +195,18 @@ class DeliveryList extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _getInvoiceCountText(DeliveryDataEntity customer) {
+    final invoiceCount = customer.invoices.length;
+
+    if (invoiceCount == 0) {
+      return "No Invoices Available";
+    } else if (invoiceCount == 1) {
+      return "1 Invoice";
+    } else {
+      return "$invoiceCount Invoices";
+    }
   }
 
   Widget _buildInfoRow(

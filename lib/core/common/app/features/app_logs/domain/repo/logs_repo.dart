@@ -15,4 +15,13 @@ abstract class LogsRepo {
 
   /// Download logs as PDF
   ResultFuture<String> downloadLogsAsPdf();
+
+  /// Sync local logs to remote (PocketBase)
+  ResultFuture<int> syncLogsToRemote();
+
+  /// Get unsynced logs (for syncing)
+  ResultFuture<List<LogEntryEntity>> getUnsyncedLogs();
+
+  /// Mark logs as synced
+  ResultFuture<void> markLogsAsSynced(List<String> logIds);
 }

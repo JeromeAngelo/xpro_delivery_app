@@ -22,6 +22,7 @@ class DeliveryDataEntity extends Equatable {
   // Relations
   final ToOne<CustomerDataModel> customer = ToOne<CustomerDataModel>();
   final ToOne<InvoiceDataModel> invoice = ToOne<InvoiceDataModel>();
+  final ToMany<InvoiceDataModel> invoices = ToMany<InvoiceDataModel>();
   final ToOne<TripModel> trip = ToOne<TripModel>();
   final ToMany<DeliveryUpdateEntity> deliveryUpdates =
       ToMany<DeliveryUpdateEntity>();
@@ -56,6 +57,7 @@ class DeliveryDataEntity extends Equatable {
     this.collectionName,
     CustomerDataModel? customerData,
     InvoiceDataModel? invoiceData,
+    List<InvoiceDataModel>? invoicesList,
     TripModel? tripData,
     List<DeliveryUpdateModel>? deliveryUpdatesList,
     List<InvoiceItemsModel>? invoiceItemsList,
@@ -77,6 +79,7 @@ class DeliveryDataEntity extends Equatable {
   }) {
     if (customerData != null) customer.target = customerData;
     if (invoiceData != null) invoice.target = invoiceData;
+    if (invoicesList != null) invoices.addAll(invoicesList);
     if (tripData != null) trip.target = tripData;
     if (deliveryUpdatesList != null) {
       deliveryUpdates.addAll(deliveryUpdatesList);
@@ -93,6 +96,7 @@ class DeliveryDataEntity extends Equatable {
     collectionName,
     customer.target?.id,
     invoice.target?.id,
+    invoices,
     trip.target?.id,
     paymentSelection,
     totalDeliveryTime,

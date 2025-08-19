@@ -102,5 +102,31 @@ class SetInvoiceIntoUnloadedEvent extends DeliveryDataEvent {
   List<Object?> get props => [deliveryDataId];
 }
 
+/// Event to set invoice into unloading status
+class SetInvoiceIntoCompletedEvent extends DeliveryDataEvent {
+  final String deliveryDataId;
+
+  const SetInvoiceIntoCompletedEvent(this.deliveryDataId);
+
+  @override
+  List<Object?> get props => [deliveryDataId];
+}
+
+/// Event to update delivery location
+class UpdateDeliveryLocationEvent extends DeliveryDataEvent {
+  final String id;
+  final double latitude;
+  final double longitude;
+
+  const UpdateDeliveryLocationEvent({
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  @override
+  List<Object?> get props => [id, latitude, longitude];
+}
+
 
 

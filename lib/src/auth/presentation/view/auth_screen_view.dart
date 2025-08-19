@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
@@ -25,6 +26,12 @@ class _AuthScreenViewState extends State<AuthScreenView> {
   final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
+  void _markUserAsNotFirstTimer() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isFirstTimer', false);
+    debugPrint('✅ Marked user as no longer first timer after successful authentication');
+  }
+
   @override
   void dispose() {
     emailController.dispose();
@@ -41,11 +48,14 @@ class _AuthScreenViewState extends State<AuthScreenView> {
           CoreUtils.showSnackBar(context, state.message);
           debugPrint("State: $state");
         } else if (state is SignedIn) {
-          print("State: $state");
-          print("State.users: ${state.users}");
-          print("State.users runtimeType: ${state.users.runtimeType}");
+          debugPrint("State: $state");
+          debugPrint("State.users: ${state.users}");
+          debugPrint("State.users runtimeType: ${state.users.runtimeType}");
 
           context.read<UserProvider>().initUser(state.users as LocalUsersModel);
+          
+          // Mark user as no longer first timer after successful authentication
+          _markUserAsNotFirstTimer();
           
           context.go('/loading');
         }

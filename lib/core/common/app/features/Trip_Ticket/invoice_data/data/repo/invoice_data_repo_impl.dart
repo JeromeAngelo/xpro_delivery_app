@@ -103,4 +103,17 @@ class InvoiceDataRepoImpl implements InvoiceDataRepo {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     }
   }
+
+  @override
+  ResultFuture<bool> setInvoiceUnloadedById(String invoiceDataId) async {
+    try {
+      debugPrint('🌐 Setting invoice to unloaded: $invoiceDataId');
+      final result = await _remoteDataSource.setInvoiceUnloadedById(invoiceDataId);
+      debugPrint('✅ Successfully set invoice to unloaded');
+      return Right(result);
+    } on ServerException catch (e) {
+      debugPrint('⚠️ API Error: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    }
+  }
 }

@@ -7,6 +7,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/itialized_pending_status.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/update_delivery_status.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/update_queue_remarks.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/pin_arrived_location.dart';
 import './delivery_update_event.dart';
 import './delivery_update_state.dart';
 
@@ -18,6 +19,7 @@ class DeliveryUpdateBloc extends Bloc<DeliveryUpdateEvent, DeliveryUpdateState> 
   final InitializePendingStatus _initializePendingStatus;
   final CreateDeliveryStatus _createDeliveryStatus;
   final UpdateQueueRemarks _updateQueueRemarks;
+  final PinArrivedLocation _pinArrivedLocation;
   DeliveryUpdateState? _cachedState;
 
   DeliveryUpdateBloc({
@@ -28,6 +30,7 @@ class DeliveryUpdateBloc extends Bloc<DeliveryUpdateEvent, DeliveryUpdateState> 
     required InitializePendingStatus initializePendingStatus,
     required CreateDeliveryStatus createDeliveryStatus,
    required UpdateQueueRemarks updateQueueRemarks,
+   required PinArrivedLocation pinArrivedLocation,
 
   }) : _getDeliveryStatusChoices = getDeliveryStatusChoices,
        _updateDeliveryStatus = updateDeliveryStatus,
@@ -36,6 +39,7 @@ class DeliveryUpdateBloc extends Bloc<DeliveryUpdateEvent, DeliveryUpdateState> 
        _initializePendingStatus = initializePendingStatus,
        _createDeliveryStatus = createDeliveryStatus,
        _updateQueueRemarks = updateQueueRemarks,
+       _pinArrivedLocation = pinArrivedLocation,
        super(DeliveryUpdateInitial()) {
     on<GetDeliveryStatusChoicesEvent>(_onGetDeliveryStatusChoices);
     on<LoadLocalDeliveryStatusChoicesEvent>(_onLoadLocalDeliveryStatusChoices);
@@ -46,6 +50,7 @@ class DeliveryUpdateBloc extends Bloc<DeliveryUpdateEvent, DeliveryUpdateState> 
     on<CreateDeliveryStatusEvent>(_onCreateDeliveryStatus);
        on<UpdateQueueRemarksEvent>(_onUpdateQueueRemarks);
 on<CheckLocalEndDeliveryStatusEvent>(_onCheckLocalEndDeliveryStatus);
+    on<PinArrivedLocationEvent>(_onPinArrivedLocation);
 
   }
 
@@ -242,6 +247,35 @@ Future<void> _onCheckLocalEndDeliveryStatus(
       (failure) => emit(DeliveryUpdateError(failure.message)),
       (_) => emit(DeliveryStatusCreated(event.customerId)),
     );
+  }
+
+  Future<void> _onPinArrivedLocation(
+    PinArrivedLocationEvent event,
+    Emitter<DeliveryUpdateState> emit,
+  ) async {
+    debugPrint('📍 Starting location pinning for delivery: ${event.deliveryId}');
+    emit(DeliveryUpdateLoading());
+
+    final result = await _pinArrivedLocation(
+      PinArrivedLocationParams(
+        deliveryId: event.deliveryId,
+      ),
+    );
+
+    if (!emit.isDone) {
+      result.fold(
+        (failure) {
+          debugPrint('❌ Location pinning failed: ${failure.message}');
+          emit(DeliveryUpdateError(failure.message));
+        },
+        (_) {
+          debugPrint('✅ Location pinning successful');
+          emit(PinArrivedLocationSuccess(
+            deliveryId: event.deliveryId,
+          ));
+        },
+      );
+    }
   }
 
   @override

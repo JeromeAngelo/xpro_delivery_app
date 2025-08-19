@@ -101,15 +101,21 @@ class _SpecificUndeliveredCustomerScreenState
 
   Widget _buildCancelledInvoiceDetails(BuildContext context, cancelledInvoice) {
     final customer = cancelledInvoice.customer.target;
-    final invoice = cancelledInvoice.invoice.target;
+    final invoices = cancelledInvoice.invoices;
     final deliveryData = cancelledInvoice.deliveryData.target;
     final trip = cancelledInvoice.trip.target;
 
     debugPrint('🎯 Cancelled Invoice Details:');
     debugPrint('   📦 Cancelled Invoice ID: ${cancelledInvoice.id}');
     debugPrint('   👤 Customer: ${customer?.storeName ?? 'Unknown'}');
-    debugPrint('   📄 Invoice: ${invoice?.name ?? 'No invoice'}');
+    debugPrint('   📄 Number of invoices: ${invoices.length}');
     debugPrint('   🚫 Reason: ${cancelledInvoice.reason?.name ?? 'No reason'}');
+    
+    // Log individual invoice details
+    for (int i = 0; i < invoices.length; i++) {
+      final invoice = invoices[i];
+      debugPrint('   📋 Invoice ${i + 1}: ${invoice.refId ?? invoice.name} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}');
+    }
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -134,9 +140,9 @@ class _SpecificUndeliveredCustomerScreenState
               const SizedBox(height: 16),
             ],
 
-            // Invoice Information Card
-            if (invoice != null) ...[
-              _buildInvoiceInfoCard(context, invoice),
+            // Invoices Information Card
+            if (invoices.isNotEmpty) ...[
+              _buildInvoicesInfoCard(context, invoices),
               const SizedBox(height: 16),
             ],
 
@@ -251,7 +257,15 @@ class _SpecificUndeliveredCustomerScreenState
     );
   }
 
-  Widget _buildInvoiceInfoCard(BuildContext context, invoice) {
+  Widget _buildInvoicesInfoCard(BuildContext context, invoices) {
+    // Calculate total amount from all invoices
+    double totalInvoicesAmount = 0.0;
+    if (invoices.isNotEmpty) {
+      for (final invoice in invoices) {
+        totalInvoicesAmount += invoice.totalAmount ?? 0.0;
+      }
+    }
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -262,13 +276,13 @@ class _SpecificUndeliveredCustomerScreenState
             Row(
               children: [
                 Icon(
-                  Icons.description,
+                  Icons.receipt_long,
                   color: Theme.of(context).colorScheme.tertiary,
                   size: 24,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Invoice Information',
+                  'Invoices Information',
                   style: Theme.of(context).textTheme.titleMedium!.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -276,16 +290,31 @@ class _SpecificUndeliveredCustomerScreenState
               ],
             ),
             const Divider(height: 24),
-            _buildInfoRow('Invoice Number', invoice.refId ?? invoice.name ?? 'Unknown'),
             _buildInfoRow(
-              'Invoice Amount',
-              '₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+              'Number of Invoices',
+              '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'}',
+            ),
+            
+            // Show individual invoice details
+            ...invoices.asMap().entries.map((entry) {
+              final index = entry.key;
+              final invoice = entry.value;
+              return Column(
+                children: [
+                  _buildInfoRow(
+                    'Invoice ${index + 1}',
+                    '${invoice.refId ?? invoice.name ?? 'Unknown'} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+                  ),
+                ],
+              );
+            }),
+            
+            _buildInfoRow(
+              'Total Invoices Amount',
+              '₱${totalInvoicesAmount.toStringAsFixed(2)}',
               isHighlighted: true,
             ),
-            if (invoice.dueDate != null)
-              _buildInfoRow('Due Date', _formatDate(invoice.dueDate)),
-            _buildInfoRow('Invoice Status', invoice.status ?? 'Unknown'),
-            _buildInfoRow('Created', _formatDate(invoice.created)),
+
           ],
         ),
       ),

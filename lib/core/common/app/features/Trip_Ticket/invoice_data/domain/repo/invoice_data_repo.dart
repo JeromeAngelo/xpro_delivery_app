@@ -26,8 +26,11 @@ abstract class InvoiceDataRepo {
   });
 
     // Add invoice data to invoice status
-  ResultFuture<bool> addInvoiceDataToInvoiceStatus({
+    ResultFuture<bool> addInvoiceDataToInvoiceStatus({
     required String invoiceId,
     required String invoiceStatusId,
-  });
+    });
+
+  // Set invoice unloaded by ID
+  ResultFuture<bool> setInvoiceUnloadedById(String invoiceDataId);
 }

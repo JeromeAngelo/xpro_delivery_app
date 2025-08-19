@@ -18,6 +18,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_state.dart';
 import 'package:x_pro_delivery_app/core/enums/mode_of_payment.dart';
+import 'package:x_pro_delivery_app/core/services/app_debug_logger.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
 import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/delivery_orders_pdf.dart';
 
@@ -74,6 +75,11 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
   @override
   void initState() {
     super.initState();
+    AppDebugLogger.instance.logInfo(
+      '📝 Payment confirmation initialized',
+      details: 'Customer: ${widget.deliveryData.storeName}, Amount: ₱${widget.amount.toStringAsFixed(2)}',
+    );
+    
     // Pre-populate customer name if available
     final customer = widget.deliveryData.customer.target;
     if (customer?.name != null) {
@@ -470,7 +476,10 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
     return BlocConsumer<DeliveryReceiptBloc, DeliveryReceiptState>(
       listener: (context, state) {
         if (state is DeliveryReceiptCreated) {
-          debugPrint('🔄 Processing delivery receipt creation success');
+          AppDebugLogger.instance.logSuccess(
+            '✅ Payment confirmation completed',
+            details: 'Customer: ${widget.deliveryData.storeName}, Amount: ₱${widget.amount.toStringAsFixed(2)}',
+          );
 
           // Show immediate feedback
           ScaffoldMessenger.of(context).showSnackBar(
@@ -552,6 +561,8 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
   }
 
   Future<void> _takePicture() async {
+    AppDebugLogger.instance.logInfo('📷 Camera opened for delivery photo');
+    
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
@@ -562,8 +573,13 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
         setState(() {
           capturedImages.add(image.path);
         });
+        AppDebugLogger.instance.logSuccess(
+          '📸 Photo captured successfully',
+          details: 'Total photos: ${capturedImages.length}',
+        );
       }
     } catch (e) {
+      AppDebugLogger.instance.logError('❌ Camera error: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error taking picture: $e')));
@@ -579,6 +595,11 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
   // Update the _confirmPayment method to be synchronous:
   void _confirmPayment() {
     if (!_validateFields()) return;
+
+    AppDebugLogger.instance.logInfo(
+      '💳 Payment confirmation initiated',
+      details: 'Amount: ₱${widget.amount.toStringAsFixed(2)}, Mode: ${widget.modeOfPayment.name}',
+    );
 
     // Show immediate feedback that processing has started
     ScaffoldMessenger.of(context).showSnackBar(

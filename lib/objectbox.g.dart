@@ -34,6 +34,8 @@ import 'core/common/app/features/Trip_Ticket/invoice_data/data/model/invoice_dat
 import 'core/common/app/features/Trip_Ticket/invoice_data/domain/entity/invoice_data_entity.dart';
 import 'core/common/app/features/Trip_Ticket/invoice_items/data/model/invoice_items_model.dart';
 import 'core/common/app/features/Trip_Ticket/invoice_items/domain/entity/invoice_items_entity.dart';
+import 'core/common/app/features/Trip_Ticket/invoice_status/data/model/invoice_status_model.dart';
+import 'core/common/app/features/Trip_Ticket/invoice_status/domain/entity/invoice_status_entity.dart';
 import 'core/common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart';
 import 'core/common/app/features/Trip_Ticket/return_items/domain/entity/return_items_entity.dart';
 import 'core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
@@ -1033,7 +1035,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(136, 8572364359171147937),
+        indexId: const obx_int.IdUid(141, 8976760665311177153),
         relationTarget: 'TripModel',
       ),
     ],
@@ -1365,7 +1367,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(135, 1056979858007497304),
+        indexId: const obx_int.IdUid(139, 1498077514876797370),
         relationTarget: 'TripModel',
       ),
     ],
@@ -1787,6 +1789,11 @@ final _entities = <obx_int.ModelEntity>[
         id: const obx_int.IdUid(49, 8890252336964719573),
         name: 'invoiceItems',
         targetId: const obx_int.IdUid(61, 2520708785790055940),
+      ),
+      obx_int.ModelRelation(
+        id: const obx_int.IdUid(52, 2804511821638289007),
+        name: 'invoices',
+        targetId: const obx_int.IdUid(59, 6569961212987627256),
       ),
     ],
     backlinks: <obx_int.ModelBacklink>[],
@@ -2258,7 +2265,13 @@ final _entities = <obx_int.ModelEntity>[
         relationTarget: 'InvoiceDataModel',
       ),
     ],
-    relations: <obx_int.ModelRelation>[],
+    relations: <obx_int.ModelRelation>[
+      obx_int.ModelRelation(
+        id: const obx_int.IdUid(50, 7248760973464895799),
+        name: 'invoices',
+        targetId: const obx_int.IdUid(59, 6569961212987627256),
+      ),
+    ],
     backlinks: <obx_int.ModelBacklink>[],
   ),
   obx_int.ModelEntity(
@@ -2388,7 +2401,13 @@ final _entities = <obx_int.ModelEntity>[
         relationTarget: 'InvoiceDataModel',
       ),
     ],
-    relations: <obx_int.ModelRelation>[],
+    relations: <obx_int.ModelRelation>[
+      obx_int.ModelRelation(
+        id: const obx_int.IdUid(51, 1183977227842710033),
+        name: 'invoices',
+        targetId: const obx_int.IdUid(59, 6569961212987627256),
+      ),
+    ],
     backlinks: <obx_int.ModelBacklink>[],
   ),
   obx_int.ModelEntity(
@@ -2957,6 +2976,82 @@ final _entities = <obx_int.ModelEntity>[
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
   ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(75, 7140982549523238352),
+    name: 'InvoiceStatusEntity',
+    lastPropertyId: const obx_int.IdUid(7, 3361716387080211145),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 9077987873615865762),
+        name: 'dbId',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 562331865642410087),
+        name: 'id',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 4121449269182848589),
+        name: 'collectionId',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 5602327719757752823),
+        name: 'collectionName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 2931820423468839887),
+        name: 'invoiceDataId',
+        type: 11,
+        flags: 520,
+        indexId: const obx_int.IdUid(140, 8085853412025881100),
+        relationTarget: 'InvoiceDataModel',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(6, 8758771299941472412),
+        name: 'created',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 3361716387080211145),
+        name: 'updated',
+        type: 10,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(76, 3546031072707572946),
+    name: 'InvoiceStatusModel',
+    lastPropertyId: const obx_int.IdUid(2, 692970277932223833),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 5201683130247104026),
+        name: 'objectBoxId',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 692970277932223833),
+        name: 'pocketbaseId',
+        type: 9,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
 ];
 
 /// Shortcut for [obx.Store.new] that passes [getObjectBoxModel] and for Flutter
@@ -2997,9 +3092,9 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(74, 566513554873847289),
-    lastIndexId: const obx_int.IdUid(136, 8572364359171147937),
-    lastRelationId: const obx_int.IdUid(49, 8890252336964719573),
+    lastEntityId: const obx_int.IdUid(76, 3546031072707572946),
+    lastIndexId: const obx_int.IdUid(141, 8976760665311177153),
+    lastRelationId: const obx_int.IdUid(52, 2804511821638289007),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
       1709191995835174192,
@@ -3108,6 +3203,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
       4202647451836453134,
       4559760120099527645,
       5992119699418627524,
+      1056979858007497304,
+      8572364359171147937,
+      7247713234655754338,
+      7036718240826879657,
     ],
     retiredPropertyUids: const [
       3346502891055187729,
@@ -5754,6 +5853,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 object.deliveryUpdates,
             obx_int.RelInfo<DeliveryDataEntity>.toMany(49, object.dbId):
                 object.invoiceItems,
+            obx_int.RelInfo<DeliveryDataEntity>.toMany(52, object.dbId):
+                object.invoices,
           },
       getId: (DeliveryDataEntity object) => object.dbId,
       setId: (DeliveryDataEntity object, int id) {
@@ -5947,6 +6048,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           object.invoiceItems,
           store,
           obx_int.RelInfo<DeliveryDataEntity>.toMany(49, object.dbId),
+        );
+        obx_int.InternalToManyAccess.setRelInfo<DeliveryDataEntity>(
+          object.invoices,
+          store,
+          obx_int.RelInfo<DeliveryDataEntity>.toMany(52, object.dbId),
         );
         return object;
       },
@@ -6504,7 +6610,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
             object.customer,
             object.invoice,
           ],
-      toManyRelations: (CancelledInvoiceEntity object) => {},
+      toManyRelations:
+          (CancelledInvoiceEntity object) => {
+            obx_int.RelInfo<CancelledInvoiceEntity>.toMany(50, object.dbId):
+                object.invoices,
+          },
       getId: (CancelledInvoiceEntity object) => object.dbId,
       setId: (CancelledInvoiceEntity object, int id) {
         object.dbId = id;
@@ -6612,6 +6722,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           0,
         );
         object.invoice.attach(store);
+        obx_int.InternalToManyAccess.setRelInfo<CancelledInvoiceEntity>(
+          object.invoices,
+          store,
+          obx_int.RelInfo<CancelledInvoiceEntity>.toMany(50, object.dbId),
+        );
         return object;
       },
     ),
@@ -6688,7 +6803,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
             object.customer,
             object.invoice,
           ],
-      toManyRelations: (CollectionEntity object) => {},
+      toManyRelations:
+          (CollectionEntity object) => {
+            obx_int.RelInfo<CollectionEntity>.toMany(51, object.dbId):
+                object.invoices,
+          },
       getId: (CollectionEntity object) => object.dbId,
       setId: (CollectionEntity object, int id) {
         object.dbId = id;
@@ -6796,6 +6915,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           0,
         );
         object.invoice.attach(store);
+        obx_int.InternalToManyAccess.setRelInfo<CollectionEntity>(
+          object.invoices,
+          store,
+          obx_int.RelInfo<CollectionEntity>.toMany(51, object.dbId),
+        );
         return object;
       },
     ),
@@ -7616,6 +7740,122 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 rootOffset,
                 10,
               );
+
+        return object;
+      },
+    ),
+    InvoiceStatusEntity: obx_int.EntityDefinition<InvoiceStatusEntity>(
+      model: _entities[47],
+      toOneRelations: (InvoiceStatusEntity object) => [object.invoiceData],
+      toManyRelations: (InvoiceStatusEntity object) => {},
+      getId: (InvoiceStatusEntity object) => object.dbId,
+      setId: (InvoiceStatusEntity object, int id) {
+        object.dbId = id;
+      },
+      objectToFB: (InvoiceStatusEntity object, fb.Builder fbb) {
+        final idOffset = object.id == null ? null : fbb.writeString(object.id!);
+        final collectionIdOffset =
+            object.collectionId == null
+                ? null
+                : fbb.writeString(object.collectionId!);
+        final collectionNameOffset =
+            object.collectionName == null
+                ? null
+                : fbb.writeString(object.collectionName!);
+        fbb.startTable(8);
+        fbb.addInt64(0, object.dbId);
+        fbb.addOffset(1, idOffset);
+        fbb.addOffset(2, collectionIdOffset);
+        fbb.addOffset(3, collectionNameOffset);
+        fbb.addInt64(4, object.invoiceData.targetId);
+        fbb.addInt64(5, object.created?.millisecondsSinceEpoch);
+        fbb.addInt64(6, object.updated?.millisecondsSinceEpoch);
+        fbb.finish(fbb.endTable());
+        return object.dbId;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final createdValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          14,
+        );
+        final updatedValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          16,
+        );
+        final dbIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final idParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 6);
+        final collectionIdParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 8);
+        final collectionNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 10);
+        final createdParam =
+            createdValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(createdValue);
+        final updatedParam =
+            updatedValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(updatedValue);
+        final object = InvoiceStatusEntity(
+          dbId: dbIdParam,
+          id: idParam,
+          collectionId: collectionIdParam,
+          collectionName: collectionNameParam,
+          created: createdParam,
+          updated: updatedParam,
+        );
+        object.invoiceData.targetId = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          12,
+          0,
+        );
+        object.invoiceData.attach(store);
+        return object;
+      },
+    ),
+    InvoiceStatusModel: obx_int.EntityDefinition<InvoiceStatusModel>(
+      model: _entities[48],
+      toOneRelations: (InvoiceStatusModel object) => [],
+      toManyRelations: (InvoiceStatusModel object) => {},
+      getId: (InvoiceStatusModel object) => object.objectBoxId,
+      setId: (InvoiceStatusModel object, int id) {
+        object.objectBoxId = id;
+      },
+      objectToFB: (InvoiceStatusModel object, fb.Builder fbb) {
+        final pocketbaseIdOffset = fbb.writeString(object.pocketbaseId);
+        fbb.startTable(3);
+        fbb.addInt64(0, object.objectBoxId);
+        fbb.addOffset(1, pocketbaseIdOffset);
+        fbb.finish(fbb.endTable());
+        return object.objectBoxId;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final objectBoxIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final object = InvoiceStatusModel(objectBoxId: objectBoxIdParam)
+          ..pocketbaseId = const fb.StringReader(
+            asciiOptimization: true,
+          ).vTableGet(buffer, rootOffset, 6, '');
 
         return object;
       },
@@ -8900,6 +9140,12 @@ class DeliveryDataEntity_ {
       obx.QueryRelationToMany<DeliveryDataEntity, InvoiceItemsModel>(
         _entities[26].relations[1],
       );
+
+  /// see [DeliveryDataEntity.invoices]
+  static final invoices =
+      obx.QueryRelationToMany<DeliveryDataEntity, InvoiceDataModel>(
+        _entities[26].relations[2],
+      );
 }
 
 /// [DeliveryDataModel] entity fields to define ObjectBox queries.
@@ -9244,6 +9490,12 @@ class CancelledInvoiceEntity_ {
       obx.QueryRelationToOne<CancelledInvoiceEntity, InvoiceDataModel>(
         _entities[34].properties[10],
       );
+
+  /// see [CancelledInvoiceEntity.invoices]
+  static final invoices =
+      obx.QueryRelationToMany<CancelledInvoiceEntity, InvoiceDataModel>(
+        _entities[34].relations[0],
+      );
 }
 
 /// [CancelledInvoiceModel] entity fields to define ObjectBox queries.
@@ -9337,6 +9589,12 @@ class CollectionEntity_ {
   static final invoice =
       obx.QueryRelationToOne<CollectionEntity, InvoiceDataModel>(
         _entities[36].properties[10],
+      );
+
+  /// see [CollectionEntity.invoices]
+  static final invoices =
+      obx.QueryRelationToMany<CollectionEntity, InvoiceDataModel>(
+        _entities[36].relations[0],
       );
 }
 
@@ -9764,5 +10022,57 @@ class LogEntryModel_ {
   /// See [LogEntryModel.categoryIndex].
   static final categoryIndex = obx.QueryIntegerProperty<LogEntryModel>(
     _entities[46].properties[3],
+  );
+}
+
+/// [InvoiceStatusEntity] entity fields to define ObjectBox queries.
+class InvoiceStatusEntity_ {
+  /// See [InvoiceStatusEntity.dbId].
+  static final dbId = obx.QueryIntegerProperty<InvoiceStatusEntity>(
+    _entities[47].properties[0],
+  );
+
+  /// See [InvoiceStatusEntity.id].
+  static final id = obx.QueryStringProperty<InvoiceStatusEntity>(
+    _entities[47].properties[1],
+  );
+
+  /// See [InvoiceStatusEntity.collectionId].
+  static final collectionId = obx.QueryStringProperty<InvoiceStatusEntity>(
+    _entities[47].properties[2],
+  );
+
+  /// See [InvoiceStatusEntity.collectionName].
+  static final collectionName = obx.QueryStringProperty<InvoiceStatusEntity>(
+    _entities[47].properties[3],
+  );
+
+  /// See [InvoiceStatusEntity.invoiceData].
+  static final invoiceData =
+      obx.QueryRelationToOne<InvoiceStatusEntity, InvoiceDataModel>(
+        _entities[47].properties[4],
+      );
+
+  /// See [InvoiceStatusEntity.created].
+  static final created = obx.QueryDateProperty<InvoiceStatusEntity>(
+    _entities[47].properties[5],
+  );
+
+  /// See [InvoiceStatusEntity.updated].
+  static final updated = obx.QueryDateProperty<InvoiceStatusEntity>(
+    _entities[47].properties[6],
+  );
+}
+
+/// [InvoiceStatusModel] entity fields to define ObjectBox queries.
+class InvoiceStatusModel_ {
+  /// See [InvoiceStatusModel.objectBoxId].
+  static final objectBoxId = obx.QueryIntegerProperty<InvoiceStatusModel>(
+    _entities[48].properties[0],
+  );
+
+  /// See [InvoiceStatusModel.pocketbaseId].
+  static final pocketbaseId = obx.QueryStringProperty<InvoiceStatusModel>(
+    _entities[48].properties[1],
   );
 }

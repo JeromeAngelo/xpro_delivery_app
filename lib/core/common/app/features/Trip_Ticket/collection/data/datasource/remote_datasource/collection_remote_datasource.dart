@@ -66,7 +66,7 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
           .collection('deliveryCollection')
           .getFullList(
             filter: 'trip = "$pocketBaseTripId"',
-            expand: 'deliveryData,trip,customer,invoice',
+            expand: 'deliveryData,trip,customer,invoice,invoices,invoices.products,invoices.customer',
             sort: '-created',
           );
 
@@ -98,7 +98,7 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
           .collection('deliveryCollection')
           .getOne(
             collectionId,
-            expand: 'deliveryData,trip,customer,invoice',
+            expand: 'deliveryData,trip,customer,invoice,invoices,invoices.products,invoices.customer',
           );
 
       debugPrint('✅ Retrieved collection from API: ${record.id}');
@@ -218,6 +218,29 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
       debugPrint('📋 Using invoice ID reference: ${invoiceModel.id}');
     }
 
+    // Process invoices data (multiple)
+    List<InvoiceDataModel> invoicesList = [];
+    if (record.expand['invoices'] != null) {
+      final invoicesData = record.expand['invoices'];
+      if (invoicesData is List) {
+        invoicesList = invoicesData!.map((invoice) {
+          return InvoiceDataModel.fromJson({
+            'id': invoice.id,
+            'collectionId': invoice.collectionId,
+            'collectionName': invoice.collectionName,
+            ...invoice.data,
+            'expand': invoice.expand,
+          });
+        }).toList();
+        debugPrint('✅ Processed ${invoicesList.length} invoices for collection');
+      }
+    } else if (record.data['invoices'] != null && record.data['invoices'] is List) {
+      invoicesList = (record.data['invoices'] as List)
+          .map((id) => InvoiceDataModel(id: id.toString()))
+          .toList();
+      debugPrint('📋 Using ${invoicesList.length} invoice ID references');
+    }
+
     // Parse totalAmount with fallback to invoice amount
     double? totalAmount;
     if (record.data['totalAmount'] != null) {
@@ -258,6 +281,7 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
       trip: tripModel,
       customer: customerModel,
       invoice: invoiceModel,
+      invoices: invoicesList,
       created: parseDate(record.created),
       updated: parseDate(record.updated),
     );

@@ -97,21 +97,14 @@ class CustomDotIndicator extends StatelessWidget {
   final Color color;
   final double size;
 
-  const CustomDotIndicator({
-    super.key,
-    required this.color,
-    this.size = 15.0,
-  });
+  const CustomDotIndicator({super.key, required this.color, this.size = 15.0});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }
@@ -123,7 +116,7 @@ class CustomTimelineTileBuilder {
     required Widget Function(BuildContext, int) contentsBuilder,
     required Widget Function(BuildContext, int) indicatorBuilder,
     required Widget Function(BuildContext, int, String) connectorBuilder,
-    double nodePosition = 0.04,
+    double nodePosition = 0.09,
     ScrollPhysics? physics,
   }) {
     return Builder(
@@ -156,10 +149,7 @@ class CustomTimelineTileBuilder {
                   // Content
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.only(
-                        left: 8.0,
-                        bottom: 16.0,
-                      ),
+                      padding: const EdgeInsets.only(left: 8.0, bottom: 16.0),
                       child: contentsBuilder(context, index),
                     ),
                   ),
@@ -177,17 +167,11 @@ class CustomTimelineTileBuilder {
 class CustomDecoratedLineConnector extends StatelessWidget {
   final BoxDecoration decoration;
 
-  const CustomDecoratedLineConnector({
-    super.key,
-    required this.decoration,
-  });
+  const CustomDecoratedLineConnector({super.key, required this.decoration});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 2.0,
-      decoration: decoration,
-    );
+    return Container(width: 2.0, decoration: decoration);
   }
 }
 
@@ -204,9 +188,6 @@ class CustomSolidLineConnector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: thickness,
-      color: color,
-    );
+    return Container(width: thickness, color: color);
   }
 }

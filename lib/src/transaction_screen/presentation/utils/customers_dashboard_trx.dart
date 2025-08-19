@@ -250,22 +250,40 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
     debugPrint('💰 Calculating total amount for delivery: ${deliveryData.id}');
 
     double total = 0.0;
-    final invoiceItems = deliveryData.invoiceItems;
 
-    if (invoiceItems.isNotEmpty) {
-      for (var item in invoiceItems) {
-        final itemTotal = item.totalAmount ?? 0.0;
-        total += itemTotal;
+    // Use invoices relation for total amount calculation
+    if (deliveryData.invoices.isNotEmpty) {
+      for (var invoice in deliveryData.invoices) {
+        final invoiceTotal = invoice.totalAmount ?? 0.0;
+        total += invoiceTotal;
         debugPrint(
-          '   📦 Item: ${item.name} - Amount: ₱${itemTotal.toStringAsFixed(2)}',
+          '   📄 Invoice: ${invoice.id} - Amount: ₱${invoiceTotal.toStringAsFixed(2)}',
         );
       }
+      debugPrint('💵 Total from invoices: ₱${total.toStringAsFixed(2)}');
     } else {
-      // Fallback to invoice total if available
+      // Fallback to single invoice relation if invoices collection is empty
       final invoice = deliveryData.invoice.target;
       if (invoice != null && invoice.totalAmount != null) {
         total = invoice.totalAmount!;
-        debugPrint('   📄 Using invoice total: ₱${total.toStringAsFixed(2)}');
+        debugPrint(
+          '   📄 Using single invoice total: ₱${total.toStringAsFixed(2)}',
+        );
+      } else {
+        // Last fallback to invoice items if both invoice relations are unavailable
+        final invoiceItems = deliveryData.invoiceItems;
+        if (invoiceItems.isNotEmpty) {
+          for (var item in invoiceItems) {
+            final itemTotal = item.totalAmount ?? 0.0;
+            total += itemTotal;
+            debugPrint(
+              '   📦 Item: ${item.name} - Amount: ₱${itemTotal.toStringAsFixed(2)}',
+            );
+          }
+          debugPrint(
+            '💵 Total from invoice items: ₱${total.toStringAsFixed(2)}',
+          );
+        }
       }
     }
 

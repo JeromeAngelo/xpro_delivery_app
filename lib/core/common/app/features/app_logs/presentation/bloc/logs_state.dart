@@ -50,3 +50,25 @@ class LogsPdfGenerated extends LogsState {
 class LogsPdfGenerating extends LogsState {
   const LogsPdfGenerating();
 }
+
+class LogsSyncing extends LogsState {
+  const LogsSyncing();
+}
+
+class LogsSyncSuccess extends LogsState {
+  const LogsSyncSuccess(this.syncedCount);
+
+  final int syncedCount;
+
+  @override
+  List<Object> get props => [syncedCount];
+}
+
+class UnsyncedLogsLoaded extends LogsState {
+  const UnsyncedLogsLoaded(this.unsyncedLogs);
+
+  final List<LogEntryEntity> unsyncedLogs;
+
+  @override
+  List<Object> get props => [unsyncedLogs];
+}

@@ -133,5 +133,37 @@ class InvoiceSetToUnloaded extends DeliveryDataState {
   List<Object?> get props => [deliveryData, deliveryDataId];
 }
 
+/// State when invoice is successfully set to unloading
+class InvoiceSetToCompleted extends DeliveryDataState {
+  final DeliveryDataEntity deliveryData;
+  final String deliveryDataId;
+
+  const InvoiceSetToCompleted({
+    required this.deliveryData,
+    required this.deliveryDataId,
+  });
+
+  @override
+  List<Object?> get props => [deliveryData, deliveryDataId];
+}
+
+/// State when delivery location is successfully updated
+class DeliveryLocationUpdated extends DeliveryDataState {
+  final DeliveryDataEntity deliveryData;
+  final String deliveryDataId;
+  final double latitude;
+  final double longitude;
+
+  const DeliveryLocationUpdated({
+    required this.deliveryData,
+    required this.deliveryDataId,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  @override
+  List<Object?> get props => [deliveryData, deliveryDataId, latitude, longitude];
+}
+
 
 

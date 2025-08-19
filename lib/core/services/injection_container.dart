@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/update_delivery_location.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart'
     show ReturnItemsModel;
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/data/repo/logs_repo_impl.dart';
@@ -238,9 +239,18 @@ import '../common/app/features/Trip_Ticket/collection/domain/usecases/delete_col
     show DeleteCollection;
 import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_id.dart';
 import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_trip_id.dart';
+import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_completed.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloaded.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloading.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/sync_delivery_data_by_trip_id.dart';
+import '../common/app/features/Trip_Ticket/delivery_update/domain/usecase/pin_arrived_location.dart';
+import '../common/app/features/Trip_Ticket/invoice_data/domain/usecase/set_invoice_unloaded.dart';
+import '../common/app/features/Trip_Ticket/invoice_status/data/datasources/local_datasource/invoice_status_local_datasource.dart';
+import '../common/app/features/Trip_Ticket/invoice_status/data/datasources/remote_datasource/invoice_status_remote_datasource.dart';
+import '../common/app/features/Trip_Ticket/invoice_status/data/repo/invoice_status_repo_impl.dart';
+import '../common/app/features/Trip_Ticket/invoice_status/domain/repo/invoice_status_repo.dart';
+import '../common/app/features/Trip_Ticket/invoice_status/domain/usecase/get_invoice_status_by_invoice_id.dart';
+import '../common/app/features/Trip_Ticket/invoice_status/presentation/bloc/invoice_status_bloc.dart';
 import '../common/app/features/Trip_Ticket/return_items/data/datasource/local_datasource/return_items_local_datasource.dart';
 import '../common/app/features/Trip_Ticket/return_items/data/datasource/remote_datasource/return_items_remote_datasource.dart';
 import '../common/app/features/Trip_Ticket/return_items/data/repo/return_items_repo_impl.dart';
@@ -249,12 +259,16 @@ import '../common/app/features/Trip_Ticket/return_items/domain/usecases/add_item
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_trip_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
-import '../common/app/features/app_logs/data/datasource/logs_local_datasource/logs_local_datasource.dart';
+import '../common/app/features/app_logs/data/datasource/local_datasource/logs_local_datasource/logs_local_datasource.dart';
 import '../common/app/features/app_logs/domain/usecases/add_log.dart';
 import '../common/app/features/app_logs/domain/usecases/clear_logs.dart';
 import '../common/app/features/app_logs/domain/usecases/download_logs_pdf.dart';
 import '../common/app/features/app_logs/domain/usecases/get_logs.dart'
     show GetLogs;
+import '../common/app/features/app_logs/data/datasource/remote_datasource/logs_remote_datasource.dart';
+import '../common/app/features/app_logs/domain/usecases/get_unsynced_logs.dart';
+import '../common/app/features/app_logs/domain/usecases/mark_logs_as_synced.dart';
+import '../common/app/features/app_logs/domain/usecases/sync_logs_to_remote.dart';
 import '../common/app/features/sync_data/cubit/sync_cubit.dart';
 import '../common/app/features/user_performance/data/datasources/local_datasource/user_performance_local_datasource.dart';
 import '../common/app/features/user_performance/data/datasources/remote_datasource/user_performance_remote_datasource.dart';
@@ -296,6 +310,7 @@ Future<void> init() async {
 
   //new entities
   await initInvoiceData();
+  await initInvoiceStatus();
   await initCustomerData();
   await initInvoiceItems();
   await initDeliveryData();
@@ -617,7 +632,7 @@ Future<void> initDeliveryUpdate() async {
       checkEndDeliverStatus: sl(),
       initializePendingStatus: sl(),
       createDeliveryStatus: sl(),
-      updateQueueRemarks: sl(),
+      updateQueueRemarks: sl(), pinArrivedLocation: sl(),
     ),
   );
   sl.registerLazySingleton(() => CompleteDelivery(sl()));
@@ -627,6 +642,7 @@ Future<void> initDeliveryUpdate() async {
   sl.registerLazySingleton(() => InitializePendingStatus(sl()));
   sl.registerLazySingleton(() => CreateDeliveryStatus(sl()));
   sl.registerLazySingleton(() => UpdateQueueRemarks(sl()));
+  sl.registerLazySingleton( () => PinArrivedLocation(sl()));
   sl.registerLazySingleton<DeliveryUpdateRepo>(
     () => DeliveryUpdateRepoImpl(sl(), sl()),
   );
@@ -803,8 +819,10 @@ Future<void> initDeliveryData() async {
       deleteDeliveryData: sl(),
       setInvoiceIntoUnloading: sl(),
       calculateDeliveryTime: sl(),
+      updateDeliveryLocation: sl(),
       syncDeliveryDataByTripId: sl(),
       setInvoiceIntoUnloaded: sl(),
+      setInvoiceIntoCompleted: sl(),
       connectivity: sl()
     ),
   );
@@ -814,9 +832,11 @@ Future<void> initDeliveryData() async {
   sl.registerLazySingleton(() => GetDeliveryDataByTripId(sl()));
   sl.registerLazySingleton(() => GetDeliveryDataById(sl()));
   sl.registerLazySingleton(() => DeleteDeliveryData(sl()));
+  sl.registerLazySingleton(() => SetInvoiceIntoCompleted(sl()));
   sl.registerLazySingleton(() => CalculateDeliveryTimeByDeliveryId(sl()));
   sl.registerLazySingleton(() => SyncDeliveryDataByTripId(sl()));
   sl.registerLazySingleton(() => SetInvoiceIntoUnloading(sl()));
+  sl.registerLazySingleton(() => UpdateDeliveryLocation(sl()));
   sl.registerLazySingleton(() => SetInvoiceIntoUnloaded(sl()));
 
   // Repository
@@ -868,6 +888,7 @@ Future<void> initInvoiceData() async {
       getInvoiceDataByCustomerId: sl(),
       addInvoiceDataToDelivery: sl(),
       addInvoiceDataToInvoiceStatus: sl(),
+      setInvoiceUnloaded: sl()
     ),
   );
 
@@ -877,10 +898,41 @@ Future<void> initInvoiceData() async {
   sl.registerLazySingleton(() => GetInvoiceDataByDeliveryId(sl()));
   sl.registerLazySingleton(() => AddInvoiceDataToDelivery(sl()));
   sl.registerLazySingleton(() => AddInvoiceDataToInvoiceStatus(sl()));
+  sl.registerLazySingleton(() => SetInvoiceUnloaded(sl()));
 
   sl.registerLazySingleton<InvoiceDataRepo>(() => InvoiceDataRepoImpl(sl()));
   sl.registerLazySingleton<InvoiceDataRemoteDataSource>(
     () => InvoiceDataRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+}
+
+Future<void> initInvoiceStatus() async {
+  final objectBoxStore = await ObjectBoxStore.create();
+
+  // BLoC
+  sl.registerLazySingleton(
+    () => InvoiceStatusBloc(
+      getInvoiceStatusByInvoiceId: sl(),
+    ),
+  );
+
+  // Usecases
+  sl.registerLazySingleton(() => GetInvoiceStatusByInvoiceId(sl()));
+
+  // Repository
+  sl.registerLazySingleton<InvoiceStatusRepo>(() => InvoiceStatusRepoImpl(
+    remoteDataSource: sl(),
+    localDataSource: sl(),
+  ));
+
+  // Remote DataSource
+  sl.registerLazySingleton<InvoiceStatusRemoteDataSource>(
+    () => InvoiceStatusRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+
+  // Local DataSource
+  sl.registerLazySingleton<InvoiceStatusLocalDataSource>(
+    () => InvoiceStatusLocalDataSourceImpl(store: objectBoxStore.store),
   );
 }
 
@@ -1085,26 +1137,43 @@ Future<void> initReturnItems() async {
 }
 
 Future<void> initAppLogs() async {
+  // BLoC
   sl.registerLazySingleton(
     () => LogsBloc(
       getLogs: sl(),
       clearLogs: sl(),
       downloadLogsPdf: sl(),
       addLog: sl(),
+      syncLogsToRemote: sl(),
+      getUnsyncedLogs: sl(),
     ),
   );
 
+  // Use Cases
   sl.registerLazySingleton(() => GetLogs(sl()));
   sl.registerLazySingleton(() => ClearLogs(sl()));
   sl.registerLazySingleton(() => DownloadLogsPdf(sl()));
   sl.registerLazySingleton(() => AddLog(sl()));
+  sl.registerLazySingleton(() => SyncLogsToRemote(sl()));
+  sl.registerLazySingleton(() => GetUnsyncedLogs(sl()));
+  sl.registerLazySingleton(() => MarkLogsAsSynced(sl()));
 
+  // Repository
   sl.registerLazySingleton<LogsRepo>(
-    () => LogsRepoImpl(logsLocalDatasource: sl()),
+    () => LogsRepoImpl(
+      logsLocalDatasource: sl(),
+      logsRemoteDataSource: sl(),
+    ),
   );
 
+  // Local DataSource
   sl.registerLazySingleton<LogsLocalDatasource>(
     () => LogsLocalDatasourceImpl(),
+  );
+
+  // Remote DataSource
+  sl.registerLazySingleton<LogsRemoteDataSource>(
+    () => LogsRemoteDataSourceImpl(pocketBaseClient: sl()),
   );
 
   // Initialize AppLogger with the AddLog usecase

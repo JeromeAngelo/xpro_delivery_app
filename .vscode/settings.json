@@ -27,5 +27,6 @@
       "database": "orderingAppDB",
       "username": "root"
     }
-  ]
+  ],
+  "cmake.sourceDirectory": "/home/software-developer/Workspace/Xpro Delivery Projects/Xpro-delivery-app-pocketbase-online/latest_version/x_pro_delivery_app/linux"
 }

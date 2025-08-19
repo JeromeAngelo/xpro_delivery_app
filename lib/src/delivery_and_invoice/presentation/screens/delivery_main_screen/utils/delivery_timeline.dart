@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/custom_timeline.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 
@@ -15,25 +14,48 @@ class DeliveryTimeline extends StatefulWidget {
 }
 
 class _DeliveryTimelineState extends State<DeliveryTimeline> {
+  DeliveryDataState? _cachedState;
+
   @override
   void initState() {
     super.initState();
-    _loadLocalTimeline();
-  }
-
-  void _loadLocalTimeline() {
-    debugPrint('📱 Loading local timeline for delivery: ${widget.customerId}');
-    context.read<DeliveryDataBloc>().add(
-      GetLocalDeliveryDataByIdEvent(widget.customerId),
-    );
+    // Data loading is handled by the parent screen/router
+    // No need to load data again here to prevent multiple loading states
+    debugPrint('📱 DeliveryTimeline: Initialized for customer: ${widget.customerId}');
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+    return BlocConsumer<DeliveryDataBloc, DeliveryDataState>(
+      listenWhen: (previous, current) =>
+          current is DeliveryDataLoaded ||
+          current is DeliveryDataError ||
+          current is InvoiceSetToUnloading ||
+          current is InvoiceSetToUnloaded,
+      listener: (context, state) {
+        if (mounted) {
+          setState(() {
+            _cachedState = state;
+          });
+        }
+      },
+      buildWhen: (previous, current) =>
+          current is DeliveryDataLoaded ||
+          current is DeliveryDataError ||
+          current is InvoiceSetToUnloading ||
+          current is InvoiceSetToUnloaded ||
+          // Only show loading if we have no cached data at all  
+          (current is DeliveryDataLoading && _cachedState == null),
       builder: (context, state) {
-        if (state is DeliveryDataLoaded) {
-          final statusUpdates = state.deliveryData.deliveryUpdates.toList();
+        debugPrint('📱 Timeline: Building with state: ${state.runtimeType}');
+        
+        // Prioritize cached data for offline-first approach
+        final effectiveState = _cachedState ?? state;
+
+        if (effectiveState is DeliveryDataLoaded && 
+            effectiveState.deliveryData.id != null) {
+          debugPrint('📱 Timeline: Using loaded data with ID: ${effectiveState.deliveryData.id}');
+          final statusUpdates = effectiveState.deliveryData.deliveryUpdates.toList();
 
           if (statusUpdates.isEmpty) {
             return const SizedBox();
@@ -47,17 +69,18 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                 const SizedBox(height: 12),
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * .9,
+                    maxHeight: MediaQuery.of(context).size.height * 1.1,
                     minHeight: 100,
                   ),
                   child: CustomTimelineTileBuilder.connected(
                     physics: const NeverScrollableScrollPhysics(),
                     nodePosition: 0.07,
+                  
                     itemCount: statusUpdates.length,
                     contentsBuilder: (_, index) {
                       final status = statusUpdates[index];
                       return Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: EdgeInsets.all(5.0),
                         child: Card(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -67,12 +90,17 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                               StatusIcons.getStatusIcon(status.title ?? ''),
                               color: Theme.of(context).colorScheme.primary,
                             ),
-                            title: Text(status.title ?? ''),
-                            subtitle: Text(status.subtitle ?? ''),
+                            title: Text(
+                              status.title ?? '',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            subtitle: Text(
+                              status.subtitle ?? '',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             trailing: Text(
-                              _formatDateTime(
-                                status.time ?? DateTime.now(),
-                              ),
+                              _formatDateTime(status.time ?? DateTime.now()),
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ),
@@ -113,4 +141,3 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
     return '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $amPm';
   }
 }
-
