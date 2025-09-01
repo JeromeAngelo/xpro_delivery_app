@@ -161,15 +161,19 @@ class UpdateTripLocationEvent extends TripEvent {
   final String tripId;
   final double latitude;
   final double longitude;
+  final double? accuracy;
+  final String? source;
   
   const UpdateTripLocationEvent({
     required this.tripId,
     required this.latitude,
     required this.longitude,
+    this.accuracy,
+    this.source,
   });
   
   @override
-  List<Object?> get props => [tripId, latitude, longitude];
+  List<Object?> get props => [tripId, latitude, longitude, accuracy, source];
 }
 
 // Add event for starting location tracking
@@ -194,6 +198,34 @@ class StopLocationTrackingEvent extends TripEvent {
   
   @override
   List<Object?> get props => [];
+}
+
+// Add event for checking trip personnels
+class CheckTripPersonnelsEvent extends TripEvent {
+  final String tripId;
+  final String userId; // User ID to check against the personnels
+  
+  const CheckTripPersonnelsEvent({
+    required this.tripId,
+    required this.userId,
+  });
+  
+  @override
+  List<Object?> get props => [tripId, userId];
+}
+
+// Add event for setting mismatched personnel reason
+class SetMismatchedReasonEvent extends TripEvent {
+  final String tripId;
+  final String reasonCode; // Reason code from MismatchedPersonnelReasonCode enum
+  
+  const SetMismatchedReasonEvent({
+    required this.tripId,
+    required this.reasonCode,
+  });
+  
+  @override
+  List<Object?> get props => [tripId, reasonCode];
 }
 
 

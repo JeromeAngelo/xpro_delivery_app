@@ -15,6 +15,9 @@ class UpdateTripLocation implements UsecaseWithParams<TripEntity, UpdateTripLoca
       params.tripId,
       params.latitude,
       params.longitude,
+      accuracy: params.accuracy,
+      source: params.source,
+      totalDistance: params.totalDistance,
     );
   }
 }
@@ -23,13 +26,19 @@ class UpdateTripLocationParams extends Equatable {
   final String tripId;
   final double latitude;
   final double longitude;
+  final double? accuracy;
+  final String? source;
+  final double? totalDistance;
 
   const UpdateTripLocationParams({
     required this.tripId,
     required this.latitude,
     required this.longitude,
+    this.accuracy,
+    this.source,
+    this.totalDistance,
   });
 
   @override
-  List<Object?> get props => [tripId, latitude, longitude];
+  List<Object?> get props => [tripId, latitude, longitude, accuracy, source, totalDistance];
 }

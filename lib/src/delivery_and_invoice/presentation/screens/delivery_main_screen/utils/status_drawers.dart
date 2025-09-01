@@ -227,9 +227,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
     debugPrint('📝 Updating status at: ${currentTime.toIso8601String()}');
 
     if (statusTitle.toLowerCase() == 'arrived') {
-      debugPrint(
-        '📍 Processing arrived status - updating location and status',
-      );
+      debugPrint('📍 Processing arrived status - updating location and status');
       final deliveryDataBloc = context.read<DeliveryDataBloc>();
       final customerState = deliveryDataBloc.state;
 
@@ -247,11 +245,11 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
       if (customerState is DeliveryDataLoaded) {
         final deliveryData = customerState.deliveryData;
         debugPrint('📦 Setting invoice to unloading for: ${deliveryData.id}');
-        
+
         context.read<DeliveryDataBloc>().add(
           SetInvoiceIntoUnloadingEvent(deliveryData.id ?? ''),
         );
-        
+
         // Also update the delivery status
         context.read<DeliveryUpdateBloc>().add(
           UpdateDeliveryStatusEvent(
@@ -267,7 +265,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
       // Close the modal bottom sheet first and navigate
       if (mounted) {
         Navigator.of(context).pop();
-        
+
         final customerState = context.read<DeliveryDataBloc>().state;
         if (customerState is DeliveryDataLoaded) {
           // Use a small delay to ensure navigation state is clean
@@ -275,7 +273,10 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
             if (mounted) {
               context.push(
                 '/undeliverable/${widget.customerId}',
-                extra: {'customer': customerState.deliveryData, 'statusId': statusId},
+                extra: {
+                  'customer': customerState.deliveryData,
+                  'statusId': statusId,
+                },
               );
             }
           });
@@ -292,7 +293,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
 
         if (customerState is DeliveryDataLoaded) {
           final deliveryData = customerState.deliveryData;
-          
+
           // Close the modal bottom sheet first
           Navigator.of(context).pop();
 
@@ -304,6 +305,10 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
             CompleteDeliveryEvent(deliveryData: deliveryData),
           );
 
+          context.read<DeliveryDataBloc>().add(
+            SetInvoiceIntoCompletedEvent(deliveryData.id ?? ''),
+          );
+
           // Use a small delay to ensure navigation state is clean
           Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted) {
@@ -312,7 +317,8 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                 context: context,
                 barrierDismissible: false,
                 builder:
-                    (context) => CustomerSummaryDialog(deliveryData: deliveryData),
+                    (context) =>
+                        CustomerSummaryDialog(deliveryData: deliveryData),
               );
             }
           });
@@ -320,8 +326,6 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
       }
       return;
     }
-
-  
 
     // Update delivery status - this will trigger the BlocListener above to close the drawer
     debugPrint('📝 Firing status update event for: $statusTitle');

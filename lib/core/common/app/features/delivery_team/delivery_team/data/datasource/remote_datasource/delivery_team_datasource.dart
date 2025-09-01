@@ -249,7 +249,7 @@ DeliveryTeamModel _processDeliveryTeamRecord(RecordModel record) {
     activeDeliveries: _safeParseInt(record.data['activeDeliveries']),
     totalDelivered: _safeParseInt(record.data['totalDelivered']),
     undeliveredCustomers: _safeParseInt(record.data['undeliveredCustomers']),
-    totalDistanceTravelled: _safeParseDouble(record.data['totalDistanceTravelled']),
+    totalDistanceTravelled: _safeParseDouble(record.data['totalDistanceTraveled']),
   );
 }
 

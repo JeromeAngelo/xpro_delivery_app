@@ -9,6 +9,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import 'package:x_pro_delivery_app/core/services/app_debug_logger.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/accept_trip_button.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/customer_list.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/dashboard.dart';
@@ -31,10 +32,12 @@ class _GetTripTickerViewState extends State<GetTripTickerView> {
   @override
   void initState() {
     super.initState();
+    AppDebugLogger.instance.logInfo('🎫 Trip Ticket View initialized for trip: ${widget.tripNumber}');
     _loadTripDetails();
   }
 
   void _loadTripDetails() {
+    AppDebugLogger.instance.logInfo('🔍 Loading trip details for: ${widget.tripNumber}');
     context.read<TripBloc>().add(SearchTripEvent(widget.tripNumber));
   }
 
@@ -62,6 +65,7 @@ class _GetTripTickerViewState extends State<GetTripTickerView> {
   }
 
   Future<void> _refreshData() async {
+    AppDebugLogger.instance.logInfo('🔄 User action: Refreshing trip ticket data for: ${widget.tripNumber}');
     _loadTripDetails();
     setState(() {
       _loadedDeliveryData.clear();
@@ -75,11 +79,15 @@ class _GetTripTickerViewState extends State<GetTripTickerView> {
       onWillPop: () async => false,
       child: BlocListener<TripBloc, TripState>(
         listener: (context, state) {
+          AppDebugLogger.instance.logInfo('🎫 Trip state changed: ${state.runtimeType}');
+          
           if (state is TripAccepting) {
+            AppDebugLogger.instance.logInfo('🔄 Trip accepting - navigating to accepting screen');
             context.go('/accepting-trip');
           }
 
           if (state is TripAccepted && state.trip.id != null) {
+            AppDebugLogger.instance.logInfo('✅ Trip accepted successfully - ID: ${state.trip.id}');
             context.read<DeliveryDataBloc>()
               ..add(GetLocalDeliveryDataByIdEvent(state.trip.id!))
               ..add(GetDeliveryDataByIdEvent(state.trip.id!));
@@ -88,13 +96,19 @@ class _GetTripTickerViewState extends State<GetTripTickerView> {
 
           // When trip is loaded, start loading delivery data details
           if (state is TripLoaded && state.trip.deliveryData.isNotEmpty) {
+            AppDebugLogger.instance.logInfo('📋 Trip loaded with ${state.trip.deliveryData.length} delivery items');
             _loadDeliveryDataDetails(state.trip.deliveryData);
+          }
+          
+          if (state is TripError) {
+            AppDebugLogger.instance.logError('❌ Trip error: ${state.message}');
           }
         },
         child: BlocListener<DeliveryDataBloc, DeliveryDataState>(
           listener: (context, state) {
             // When delivery data is loaded, store it in our map
             if (state is DeliveryDataLoaded && state.deliveryData.id != null) {
+              AppDebugLogger.instance.logInfo('📦 Delivery data loaded for ID: ${state.deliveryData.id}');
               setState(() {
                 _loadedDeliveryData[state.deliveryData.id!] =
                     state.deliveryData;
@@ -113,11 +127,16 @@ class _GetTripTickerViewState extends State<GetTripTickerView> {
 
                     if (loadedIds.containsAll(allDeliveryIds)) {
                       _isLoadingDeliveryData = false;
+                      AppDebugLogger.instance.logInfo('✅ All delivery data loaded successfully');
                       debugPrint('✅ All delivery data loaded successfully');
                     }
                   }
                 }
               });
+            }
+            
+            if (state is DeliveryDataError) {
+              AppDebugLogger.instance.logError('❌ Delivery data error: ${state.message}');
             }
           },
           child: Scaffold(

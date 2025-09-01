@@ -7,10 +7,22 @@ class LocationService {
   static Position? _lastPosition;
   static Timer? _locationTimer;
   static StreamController<Position>? _locationController;
+  static final List<Position> _recentPositions = [];
+  static DateTime? _lastUpdateTime;
 
-  // Constants
-  static const int _updateIntervalMinutes = 5;
-  static const int _distanceFilterMeters = 1000;
+  // Simple Distance Tracking Constants - All Motion Combined
+  static const int _updateIntervalMinutes =
+      5; // Time-based updates every 5 minutes
+  static const int _distanceFilterMeters =
+      10; // Distance-based updates every 5 meters of movement
+  static const double _accuracyThreshold =
+      50.0; // Accept readings within 50 meters (relaxed for real-world GPS)
+  static const double _minMovementThreshold =
+      10; // Update for any movement ≥ 5 meters (filters GPS noise)
+  static const double _maxRealisticSpeedKmh =
+      200.0; // Higher threshold to allow for all types of movement
+  static const int _smoothingBufferSize =
+      3; // Smaller buffer for more responsive tracking
 
   static Future<bool> enableLocationService() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -39,38 +51,206 @@ class LocationService {
       (_) => _updateLocation(),
     );
 
-    // Set up distance-based updates
+    // Set up distance-based updates with relaxed settings
     Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
+        accuracy:
+            LocationAccuracy
+                .high, // Use high instead of best for better compatibility
         distanceFilter: _distanceFilterMeters,
+        // Remove timeLimit to prevent timeout exceptions
       ),
-    ).listen(_handleNewPosition);
+    ).listen(
+      _handleNewPosition,
+      onError: (error) {
+        debugPrint('⚠️ LOCATION: Position stream error: $error');
+        // Don't stop tracking on errors, just log them
+      },
+    );
 
-    // Return distance stream
-    return _locationController!.stream.map((position) {
-      if (_lastPosition != null) {
-        final distanceInMeters = Geolocator.distanceBetween(
-          _lastPosition!.latitude,
-          _lastPosition!.longitude,
-          position.latitude,
-          position.longitude,
-        );
-        _totalDistance += distanceInMeters / 1000; // Convert to kilometers
+    // Return distance stream with enhanced position processing
+    return _locationController!.stream
+        .where(_isValidPosition) // Filter valid positions
+        .map(_processPosition); // Process and calculate distance
+  }
+
+  // Simple position validation for any movement
+  static bool _isValidPosition(Position position) {
+    debugPrint('🔍 LOCATION: Validating position for movement tracking...');
+    debugPrint('   📍 Lat: ${position.latitude}, Lng: ${position.longitude}');
+    debugPrint('   🎯 Accuracy: ${position.accuracy} meters');
+    debugPrint('   ⏰ Timestamp: ${position.timestamp}');
+
+    // 1. Accept most accuracy levels - only reject extremely poor readings
+    if (position.accuracy > _accuracyThreshold) {
+      debugPrint(
+        'ℹ️ LOCATION: Lower accuracy (${position.accuracy}m > ${_accuracyThreshold}m) but still acceptable for distance tracking',
+      );
+      // Continue processing instead of rejecting
+    }
+
+    // 2. Check if position is realistic (not null island coordinates)
+    if (position.latitude == 0.0 && position.longitude == 0.0) {
+      debugPrint('❌ LOCATION: Null island coordinates - REJECTED');
+      return false;
+    }
+
+    // 3. Simple movement validation - accept any movement ≥ 1 meter
+    if (_lastPosition != null) {
+      final distanceInMeters = Geolocator.distanceBetween(
+        _lastPosition!.latitude,
+        _lastPosition!.longitude,
+        position.latitude,
+        position.longitude,
+      );
+
+      debugPrint(
+        '   📏 Distance from last: ${distanceInMeters.toStringAsFixed(2)}m',
+      );
+
+      // Only record movement ≥ 5 meters to avoid GPS noise
+      if (distanceInMeters < _minMovementThreshold) {
         debugPrint(
-            '📍 Distance updated: ${_totalDistance.toStringAsFixed(2)} km');
+          '❌ LOCATION: Insufficient movement (${distanceInMeters.toStringAsFixed(2)}m < ${_minMovementThreshold}m) - REJECTED',
+        );
+        return false;
       }
-      _lastPosition = position;
-      return _totalDistance;
-    });
+
+      // 4. Basic speed validation (only reject completely unrealistic speeds)
+      if (_lastUpdateTime != null) {
+        final timeDiffSeconds =
+            position.timestamp.difference(_lastUpdateTime!).inSeconds;
+        if (timeDiffSeconds > 0) {
+          final speedKmh = (distanceInMeters / 1000) / (timeDiffSeconds / 3600);
+          debugPrint(
+            '   🚶🚛 Movement speed: ${speedKmh.toStringAsFixed(2)} km/h (all motion types accepted)',
+          );
+
+          if (speedKmh > _maxRealisticSpeedKmh) {
+            debugPrint(
+              '❌ LOCATION: Unrealistic speed (${speedKmh.toStringAsFixed(2)} km/h > ${_maxRealisticSpeedKmh} km/h) - REJECTED',
+            );
+            return false;
+          }
+        }
+      }
+    }
+
+    debugPrint('✅ LOCATION: Position validated - movement ≥5m accepted');
+    return true;
+  }
+
+  // Simple position processing - track all movement distance
+  static double _processPosition(Position position) {
+    debugPrint(
+      '🔄 LOCATION: Processing position for total distance tracking...',
+    );
+
+    // Add to smoothing buffer for accuracy
+    _recentPositions.add(position);
+    if (_recentPositions.length > _smoothingBufferSize) {
+      _recentPositions.removeAt(0);
+    }
+
+    // Use smoothed position for more accurate distance calculation
+    final smoothedPosition = _getSmoothPosition();
+
+    if (_lastPosition != null && smoothedPosition != null) {
+      final distanceInMeters = Geolocator.distanceBetween(
+        _lastPosition!.latitude,
+        _lastPosition!.longitude,
+        smoothedPosition.latitude,
+        smoothedPosition.longitude,
+      );
+
+      final distanceKm = distanceInMeters / 1000;
+      _totalDistance += distanceKm;
+
+      debugPrint(
+        '📍 LOCATION: Total distance updated (all movement types combined)',
+      );
+      debugPrint(
+        '   📏 Movement segment: ${distanceInMeters.toStringAsFixed(2)}m',
+      );
+      debugPrint(
+        '   📊 Total distance: ${_totalDistance.toStringAsFixed(3)} km',
+      );
+      debugPrint(
+        '   🎯 Smoothed coordinates: ${smoothedPosition.latitude.toStringAsFixed(6)}, ${smoothedPosition.longitude.toStringAsFixed(6)}',
+      );
+      debugPrint(
+        '   ⏰ Update frequency: Every ${_updateIntervalMinutes}min OR ${_distanceFilterMeters}m movement',
+      );
+    }
+
+    _lastPosition = smoothedPosition ?? position;
+    _lastUpdateTime = position.timestamp;
+    return _totalDistance;
+  }
+
+  // Position smoothing for accurate distance calculation
+  static Position? _getSmoothPosition() {
+    if (_recentPositions.isEmpty) return null;
+    if (_recentPositions.length == 1) return _recentPositions.first;
+
+    debugPrint(
+      '🎯 LOCATION: Smoothing ${_recentPositions.length} positions for accurate distance tracking...',
+    );
+
+    // Calculate weighted average (newer positions have higher weight)
+    double totalWeight = 0;
+    double weightedLat = 0;
+    double weightedLng = 0;
+    double weightedAccuracy = 0;
+
+    for (int i = 0; i < _recentPositions.length; i++) {
+      final position = _recentPositions[i];
+      final weight = (i + 1).toDouble(); // Newer positions get higher weight
+
+      totalWeight += weight;
+      weightedLat += position.latitude * weight;
+      weightedLng += position.longitude * weight;
+      weightedAccuracy += position.accuracy * weight;
+    }
+
+    final smoothedLat = weightedLat / totalWeight;
+    final smoothedLng = weightedLng / totalWeight;
+    final smoothedAccuracy = weightedAccuracy / totalWeight;
+
+    debugPrint(
+      '   📍 Raw latest: ${_recentPositions.last.latitude}, ${_recentPositions.last.longitude}',
+    );
+    debugPrint(
+      '   🎯 Smoothed: ${smoothedLat.toStringAsFixed(6)}, ${smoothedLng.toStringAsFixed(6)}',
+    );
+    debugPrint(
+      '   📊 Accuracy improved: ${_recentPositions.last.accuracy.toStringAsFixed(2)}m -> ${smoothedAccuracy.toStringAsFixed(2)}m',
+    );
+
+    // Create smoothed position
+    return Position(
+      latitude: smoothedLat,
+      longitude: smoothedLng,
+      timestamp: _recentPositions.last.timestamp,
+      accuracy: smoothedAccuracy,
+      altitude: _recentPositions.last.altitude,
+      heading: _recentPositions.last.heading,
+      speed: _recentPositions.last.speed,
+      speedAccuracy: _recentPositions.last.speedAccuracy,
+      altitudeAccuracy: _recentPositions.last.altitudeAccuracy,
+      headingAccuracy: _recentPositions.last.headingAccuracy,
+    );
   }
 
   static Future<void> _updateLocation() async {
     try {
+      debugPrint('⏰ LOCATION: Timer-based location update triggered');
       final position = await getCurrentLocation();
       _locationController?.add(position);
+      debugPrint('✅ LOCATION: Timer-based position added to stream');
     } catch (e) {
-      debugPrint('❌ Location update failed: $e');
+      debugPrint('⚠️ LOCATION: Timer-based update failed (non-critical): $e');
+      // Don't stop tracking, just continue with distance-based updates
     }
   }
 
@@ -89,20 +269,75 @@ class LocationService {
       return Future.error('Location permission denied');
     }
 
-    return await Geolocator.getCurrentPosition(
+    // Get position with relaxed settings to prevent timeouts
+    final position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
+      // Remove timeLimit to prevent timeout exceptions
     );
+
+    debugPrint('📍 LOCATION: Current position obtained');
+    debugPrint(
+      '   📍 Coordinates: ${position.latitude}, ${position.longitude}',
+    );
+    debugPrint('   🎯 Accuracy: ${position.accuracy} meters');
+
+    return position;
   }
 
   static void stopTracking() {
+    debugPrint('🛑 LOCATION: Stopping location tracking...');
+
     _locationTimer?.cancel();
     _locationController?.close();
     _locationTimer = null;
     _locationController = null;
     _lastPosition = null;
+    _lastUpdateTime = null;
     _totalDistance = 0;
-    debugPrint('📍 Location tracking stopped');
+    _recentPositions.clear();
+
+    debugPrint('✅ LOCATION: Location tracking stopped and buffers cleared');
+  }
+
+  // Get current location without strict validation (simple approach)
+  static Future<Position> getValidatedCurrentLocation() async {
+    debugPrint('🔍 LOCATION: Getting current location (relaxed validation)...');
+
+    try {
+      final position = await getCurrentLocation();
+      debugPrint(
+        '✅ LOCATION: Position obtained - will be processed by validation filter',
+      );
+      debugPrint(
+        '   📍 Coordinates: ${position.latitude}, ${position.longitude}',
+      );
+      debugPrint('   🎯 Accuracy: ${position.accuracy} meters');
+      return position;
+    } catch (e) {
+      debugPrint('❌ LOCATION: Error getting location: $e');
+      throw Exception('Failed to get current location: $e');
+    }
   }
 
   static double getTotalDistance() => _totalDistance;
+
+  // Get comprehensive tracking information
+  static Map<String, dynamic> getTrackingInfo() {
+    return {
+      'totalDistance': _totalDistance,
+      'lastPosition':
+          _lastPosition != null
+              ? {
+                'latitude': _lastPosition!.latitude,
+                'longitude': _lastPosition!.longitude,
+                'accuracy': _lastPosition!.accuracy,
+                'timestamp': _lastPosition!.timestamp.toIso8601String(),
+              }
+              : null,
+      'lastUpdateTime': _lastUpdateTime?.toIso8601String(),
+      'recentPositionsCount': _recentPositions.length,
+      'isTracking':
+          _locationController != null && !_locationController!.isClosed,
+    };
+  }
 }

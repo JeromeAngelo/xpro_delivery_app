@@ -259,6 +259,8 @@ import '../common/app/features/Trip_Ticket/return_items/domain/usecases/add_item
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_trip_id.dart';
 import '../common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
+import '../common/app/features/Trip_Ticket/trip/domain/usecase/check_trip_personnels.dart';
+import '../common/app/features/Trip_Ticket/trip/domain/usecase/set_mismatched_reason.dart';
 import '../common/app/features/app_logs/data/datasource/local_datasource/logs_local_datasource/logs_local_datasource.dart';
 import '../common/app/features/app_logs/domain/usecases/add_log.dart';
 import '../common/app/features/app_logs/domain/usecases/clear_logs.dart';
@@ -577,6 +579,8 @@ Future<void> initTrip() async {
       endTrip: sl(),
       updateTripLocation: sl(),
       deliveryDataBloc: sl(),
+      checkTripPersonnels: sl(),
+      setMismatchedReason: sl(),
       connectivity: sl(),
     ),
   );
@@ -593,6 +597,8 @@ Future<void> initTrip() async {
 
   sl.registerLazySingleton(() => CheckEndTripStatus(sl()));
 
+  sl.registerLazySingleton(() => SetMismatchedReason(sl()));
+
   sl.registerLazySingleton(() => SearchTrips(sl()));
 
   sl.registerLazySingleton(() => GetTripsByDateRange(sl()));
@@ -602,6 +608,8 @@ Future<void> initTrip() async {
   sl.registerLazySingleton(() => ScanQRUsecase(sl()));
 
   sl.registerLazySingleton(() => EndTrip(sl()));
+
+  sl.registerLazySingleton(() => CheckTripPersonnels(sl()));
 
   sl.registerLazySingleton<TripRepo>(() => TripRepoImpl(sl(), sl()));
 

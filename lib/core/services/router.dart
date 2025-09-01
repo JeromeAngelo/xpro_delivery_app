@@ -133,9 +133,11 @@ final router = GoRouter(
       ),
     ),
     GoRoute(
-  path: '/accepting-trip',
-  builder: (context, state) => const AcceptingTripLoadingScreen(),
-),
+      path: '/accepting-trip/:tripId',
+      builder: (context, state) => AcceptingTripLoadingScreen(
+        tripId: state.pathParameters['tripId']!,
+      ),
+    ),
 
     GoRoute(
       path: '/checklist',

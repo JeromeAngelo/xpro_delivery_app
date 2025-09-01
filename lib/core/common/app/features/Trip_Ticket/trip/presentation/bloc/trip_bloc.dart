@@ -10,6 +10,7 @@ import 'package:x_pro_delivery_app/core/mixins/offline_first_mixin.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/accept_trip.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/calculate_total_distance.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/check_end_trip_status.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/check_trip_personnels.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/end_trip.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/get_trip.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/get_trip_by_id.dart';
@@ -18,6 +19,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/dom
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/search_trip.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/search_trip_by_details.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/update_trip_location.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/set_mismatched_reason.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
@@ -43,6 +45,8 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
   final CalculateTotalTripDistance _calculateTotalTripDistance;
   final ScanQRUsecase _scanQRUsecase;
   final EndTrip _endTrip;
+  final CheckTripPersonnels _checkTripPersonnels;
+  final SetMismatchedReason _setMismatchedReason;
 
   // Field to store the subscription to the location updates
   StreamSubscription<double>? _locationSubscription;
@@ -64,6 +68,8 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
     required ScanQRUsecase scanQRUsecase,
     required UpdateTripLocation updateTripLocation,
     required EndTrip endTrip,
+    required CheckTripPersonnels checkTripPersonnels,
+    required SetMismatchedReason setMismatchedReason,
     required ConnectivityProvider connectivity,
   }) : _getTrip = getTrip,
        _getTripById = getTripById,
@@ -78,6 +84,8 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
        _scanQRUsecase = scanQRUsecase,
        _updateTripLocation = updateTripLocation,
        _endTrip = endTrip,
+       _checkTripPersonnels = checkTripPersonnels,
+       _setMismatchedReason = setMismatchedReason,
        _connectivity = connectivity,
 
        super(TripInitial()) {
@@ -97,6 +105,8 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
     on<UpdateTripLocationEvent>(_onUpdateTripLocation);
     on<StartLocationTrackingEvent>(_onStartLocationTracking);
     on<StopLocationTrackingEvent>(_onStopLocationTracking);
+    on<CheckTripPersonnelsEvent>(_onCheckTripPersonnels);
+    on<SetMismatchedReasonEvent>(_onSetMismatchedReason);
   }
 
   Future<void> _onGetTripById(
@@ -463,10 +473,13 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
     UpdateTripLocationEvent event,
     Emitter<TripState> emit,
   ) async {
-    debugPrint('🔄 BLOC: Updating trip location for ID: ${event.tripId}');
-    debugPrint(
-      '📍 Coordinates: Lat: ${event.latitude}, Long: ${event.longitude}',
-    );
+    debugPrint('🔄 BLOC: Updating trip location with distance tracking for ID: ${event.tripId}');
+    debugPrint('📍 Coordinates: Lat: ${event.latitude}, Long: ${event.longitude}');
+    debugPrint('🎯 Accuracy: ${event.accuracy?.toStringAsFixed(2) ?? 'Unknown'} meters');
+    
+    // Get current total distance from LocationService
+    final currentTotalDistance = LocationService.getTotalDistance();
+    debugPrint('📏 BLOC: Current total distance from LocationService: ${currentTotalDistance.toStringAsFixed(3)} km');
 
     emit(TripLocationUpdating());
 
@@ -474,6 +487,9 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
       tripId: event.tripId,
       latitude: event.latitude,
       longitude: event.longitude,
+      accuracy: event.accuracy,
+      source: event.source ?? 'GPS_Enhanced',
+      totalDistance: currentTotalDistance,
     );
 
     final result = await _updateTripLocation(params);
@@ -526,40 +542,55 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
       // Store the trip ID being tracked
       _trackedTripId = event.tripId;
 
-      // Get initial position and update trip
+      // Get initial position and update trip (no strict validation)
+      debugPrint('📍 BLOC: Getting initial position...');
       final initialPosition = await LocationService.getCurrentLocation();
-
+      
+      debugPrint('✅ BLOC: Initial position obtained - updating trip location');
       add(
         UpdateTripLocationEvent(
           tripId: event.tripId,
           latitude: initialPosition.latitude,
           longitude: initialPosition.longitude,
+          accuracy: initialPosition.accuracy,
+          source: 'GPS_Initial_Validated',
         ),
       );
 
-      // Start tracking distance using LocationService
+      // Start tracking distance using enhanced LocationService
       _locationSubscription = LocationService.trackDistance().listen((
         distance,
       ) async {
-        // When distance is updated, get current position and update trip location
+        // When distance is updated, get validated current position and update trip location
         try {
+          debugPrint('📍 BLOC: Distance update triggered (${distance.toStringAsFixed(2)} km)');
+          
+          // Get current location (no strict validation)
           final position = await LocationService.getCurrentLocation();
 
           if (_trackedTripId == event.tripId) {
+            debugPrint('🔄 BLOC: Updating trip location with current position');
             add(
               UpdateTripLocationEvent(
                 tripId: event.tripId,
                 latitude: position.latitude,
                 longitude: position.longitude,
+                accuracy: position.accuracy,
+                source: 'GPS_Tracking_Validated',
               ),
             );
 
-            debugPrint(
-              '📍 Updated location - Distance traveled: ${distance.toStringAsFixed(2)} km',
-            );
+            debugPrint('📍 BLOC: Location updated successfully');
+            debugPrint('   📏 Distance traveled: ${distance.toStringAsFixed(2)} km');
+            debugPrint('   📍 Position: ${position.latitude}, ${position.longitude}');
+            debugPrint('   🎯 Accuracy: ${position.accuracy} meters');
+          } else {
+            debugPrint('⚠️ BLOC: Trip ID mismatch - skipping location update');
           }
         } catch (e) {
-          debugPrint('❌ Error getting current location: $e');
+          debugPrint('❌ BLOC: Error getting current location: $e');
+          // Don't emit error state here as this is background tracking
+          // Just log the error and continue
         }
       });
 
@@ -568,8 +599,8 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
           tripId: event.tripId,
           updateInterval: const Duration(
             minutes: 5,
-          ), // Using default from LocationService
-          distanceFilter: 1000.0, // Using default from LocationService
+          ), // Time-based updates every 5 minutes
+          distanceFilter: 5.0, // Distance-based updates every 5 meters
         ),
       );
 
@@ -605,6 +636,78 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
     _cachedState = null;
     emit(TripInitial());
     add(const GetTripEvent());
+  }
+
+  Future<void> _onCheckTripPersonnels(
+    CheckTripPersonnelsEvent event,
+    Emitter<TripState> emit,
+  ) async {
+    debugPrint('🔍 BLOC: Checking trip personnels for trip: ${event.tripId}, user: ${event.userId}');
+    emit(const TripPersonnelsChecking());
+
+    final result = await _checkTripPersonnels(event.tripId);
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ BLOC: Failed to check trip personnels: ${failure.message}');
+        
+        // Check if this is a personnel authorization error (403 status)
+        if (failure.statusCode == '403' && 
+            (failure.message.contains('not authorized') || 
+             failure.message.contains('not assigned') || 
+             failure.message.contains('is not assigned as personnel'))) {
+          debugPrint('🚫 BLOC: Detected personnel authorization error');
+          debugPrint('   Status Code: ${failure.statusCode}');
+          debugPrint('   Error Message: ${failure.message}');
+          emit(TripPersonnelMismatch(
+            message: failure.message,
+            tripId: event.tripId,
+            userId: event.userId,
+          ));
+        } else {
+          // Other errors (network, server, etc.)
+          debugPrint('❌ BLOC: Non-authorization error detected');
+          debugPrint('   Status Code: ${failure.statusCode}');
+          debugPrint('   Error Message: ${failure.message}');
+          emit(TripError(failure.message));
+        }
+      },
+      (personnelIds) {
+        debugPrint('✅ BLOC: Found ${personnelIds.length} personnels');
+        debugPrint('   Personnel IDs: $personnelIds');
+        debugPrint('   User ${event.userId} is authorized for this trip');
+        emit(TripPersonnelsChecked(personnelIds));
+      },
+    );
+  }
+
+  Future<void> _onSetMismatchedReason(
+    SetMismatchedReasonEvent event,
+    Emitter<TripState> emit,
+  ) async {
+    debugPrint('📝 BLOC: Setting mismatched personnel reason for trip: ${event.tripId}');
+    debugPrint('   📋 Reason Code: ${event.reasonCode}');
+    
+    emit(const TripMismatchReasonSetting());
+
+    final result = await _setMismatchedReason(SetMismatchedReasonParams(
+      tripId: event.tripId,
+      reasonCode: event.reasonCode,
+    ));
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ BLOC: Failed to set mismatched reason: ${failure.message}');
+        emit(TripError(failure.message));
+      },
+      (success) {
+        debugPrint('✅ BLOC: Mismatched reason set successfully');
+        emit(TripMismatchReasonSet(
+          tripId: event.tripId,
+          reasonCode: event.reasonCode,
+        ));
+      },
+    );
   }
 
   @override

@@ -7,7 +7,7 @@ abstract class TripRepo {
   ResultFuture<(TripEntity, String)> acceptTrip(String tripId);
   ResultFuture<TripEntity> loadLocalTrip();
  // New method to update trip location
-  ResultFuture<TripEntity> updateTripLocation(String tripId, double latitude, double longitude);
+  ResultFuture<TripEntity> updateTripLocation(String tripId, double latitude, double longitude, {double? accuracy, String? source, double? totalDistance});
   ResultFuture<bool> checkEndTripStatus(); // Add this new function
   ResultFuture<bool> checkEndTripOtpStatus(String tripId); // New function
 ResultFuture<TripEntity> scanTripByQR(String qrData);
@@ -34,5 +34,9 @@ ResultFuture<TripEntity> scanTripByQR(String qrData);
 
   ResultFuture<TripEntity> endTrip(String tripId);
 
+  ResultFuture<List<String>> checkTripPersonnels(String tripId);
+
+  // Set mismatched personnel reason in tripticket
+  ResultFuture<bool> setMismatchedReason(String tripId, String reasonCode);
 
 }

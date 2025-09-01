@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
@@ -67,14 +68,8 @@ class AcceptTripButton extends StatelessWidget {
                   label: 'Accept Trip',
                   onPressed: () {
                     debugPrint('🔘 Accept button pressed for trip: $tripId');
-                    context.read<TripBloc>().add(AcceptTripEvent(tripId));
-
-                    context.read<TripBloc>().add(StartLocationTrackingEvent(
-                          tripId: tripId,
-                          // Optional: customize update interval and distance filter
-                          // updateInterval: const Duration(minutes: 3),
-                          // distanceFilter: 500.0, // 500 meters
-                        ));
+                    // Navigate to accepting screen with tripId as path parameter
+                    context.go('/accepting-trip/$tripId');
                   },
                 ),
         );

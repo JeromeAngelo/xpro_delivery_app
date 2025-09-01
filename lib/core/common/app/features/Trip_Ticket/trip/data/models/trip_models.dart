@@ -16,6 +16,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
 
+import '../../../../../../../enums/mismatched_personnel_reason_code.dart';
+
 @Entity()
 class TripModel extends TripEntity {
   @Id(assignable: true)
@@ -40,6 +42,8 @@ class TripModel extends TripEntity {
     super.deliveryVehicle,
     super.user,
     super.totalTripDistance,
+    super.allowMismatchedPersonnels,
+    super.mismatchedPersonnelReasonCode,
     super.otp,
     super.latitude,
     super.longitude,
@@ -235,6 +239,32 @@ class TripModel extends TripEntity {
       }
     }
 
+    // Parse payment selection enum
+    MismatchedPersonnelReasonCode? parseReasonSelection(dynamic value) {
+      if (value == null || value.toString().isEmpty) return null;
+      try {
+        final enumValue = value.toString().toLowerCase();
+        switch (enumValue) {
+          case 'absent':
+            return MismatchedPersonnelReasonCode.absent;
+          case 'late':
+            return MismatchedPersonnelReasonCode.late_;
+          case 'leave':
+            return MismatchedPersonnelReasonCode.leave;
+          case 'none':
+            return MismatchedPersonnelReasonCode.none;
+            case 'others':
+            return MismatchedPersonnelReasonCode.other;
+          default:
+            debugPrint('⚠️ Unknown payment mode: $enumValue');
+            return null;
+        }
+      } catch (e) {
+        debugPrint('❌ Error parsing payment selection: $e');
+        return null;
+      }
+    }
+
     return TripModel(
       id: json['id']?.toString(),
       collectionId: json['collectionId']?.toString(),
@@ -242,6 +272,8 @@ class TripModel extends TripEntity {
       tripNumberId: json['tripNumberId']?.toString(),
       qrCode: json['qrCode']?.toString(),
       deliveryTeam: deliveryTeamModel,
+      mismatchedPersonnelReasonCode: parseReasonSelection(json['mismatchedPersonnelReasonCode']),
+      allowMismatchedPersonnels: json['allowMismatchedPersonnels'] as bool? ?? false,
       user: usersModel,
       totalTripDistance: json['totalTripDistance']?.toString(),
       personelsList: personelsList,
@@ -281,6 +313,28 @@ class TripModel extends TripEntity {
   }
 
   DataMap toJson() {
+     String? reasonSelectionString;
+    if (mismatchedPersonnelReasonCode != null) {
+      switch (mismatchedPersonnelReasonCode!) {
+        case  MismatchedPersonnelReasonCode.absent:
+          reasonSelectionString = 'absent';
+          break;
+        case  MismatchedPersonnelReasonCode.late_:
+          reasonSelectionString = 'late';
+           case  MismatchedPersonnelReasonCode.managementApproved:
+          reasonSelectionString = 'managementApproved';
+          break;
+        case  MismatchedPersonnelReasonCode.leave:
+          reasonSelectionString = 'leave';
+          break;
+        case  MismatchedPersonnelReasonCode.none:
+          reasonSelectionString = 'none';
+          break;
+           case  MismatchedPersonnelReasonCode.other:
+          reasonSelectionString = 'other';
+          break;
+      }
+    }
     return {
       'id': id,
       'collectionId': collectionId,
@@ -293,7 +347,7 @@ class TripModel extends TripEntity {
       'deliveryVehicle': deliveryVehicle.target?.id,
       'personels': personels.map((p) => p.id).toList(),
       'vehicle': vehicle.map((v) => v.id).toList(),
-     
+      'mismatchedPersonnelReasonCode': reasonSelectionString,
       'endTripChecklist': endTripChecklist.map((e) => e.id).toList(),
       'deliveryData': deliveryData.map((d) => d.id).toList(),
       'created': created?.toIso8601String(),
@@ -305,6 +359,7 @@ class TripModel extends TripEntity {
       'isEndTrip': isEndTrip,
       'timeEndTrip': timeEndTrip?.toIso8601String(),
       'isAccepted': isAccepted,
+      'allowMismatchedPersonnels' : allowMismatchedPersonnels,
       'otp': otp.target?.id,
       'endTripOtp': endTripOtp.target?.id,
     };
@@ -317,7 +372,7 @@ class TripModel extends TripEntity {
     String? tripNumberId,
     String? totalTripDistance,
     String? qrCode,
-  
+  MismatchedPersonnelReasonCode? mismatchedPersonnelReasonCode,
     List<PersonelModel>? personelsList,
     List<ChecklistModel>? checklistItems,
     List<VehicleModel>? vehicleList,
@@ -348,7 +403,8 @@ class TripModel extends TripEntity {
       personelsList: personelsList ?? personels.toList(),
       checklistItems: checklistItems ?? checklist.toList(),
       vehicleList: vehicleList ?? vehicle.toList(),
-   
+      allowMismatchedPersonnels: allowMismatchedPersonnels ?? allowMismatchedPersonnels,
+      mismatchedPersonnelReasonCode: mismatchedPersonnelReasonCode ?? this.mismatchedPersonnelReasonCode,
       endTripChecklistItems: endTripChecklistItems ?? endTripChecklist.toList(),
       deliveryDataList: deliveryDataList ?? deliveryData.toList(),
       latitude: latitude ?? this.latitude,

@@ -609,7 +609,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
                   .update(
                     statusRecord.id,
                     body: {
-                      'tripStatus': 'completed',
+                      'tripStatus': 'delivered',
                       'updated': DateTime.now().toUtc().toIso8601String(),
                     },
                   );

@@ -282,19 +282,25 @@ ResultFuture<TripEntity> endTrip(String tripId) async {
 }
 
  @override
-ResultFuture<TripEntity> updateTripLocation(String tripId, double latitude, double longitude) async {
+ResultFuture<TripEntity> updateTripLocation(String tripId, double latitude, double longitude, {double? accuracy, String? source, double? totalDistance}) async {
   try {
-    debugPrint('🔄 REPO: Updating trip location');
-    debugPrint('📍 Coordinates: Lat: $latitude, Long: $longitude');
+    debugPrint('🔄 REPO: Updating trip location with distance tracking');
+    debugPrint('📍 Coordinates: Lat: ${latitude.toStringAsFixed(6)}, Long: ${longitude.toStringAsFixed(6)}');
+    debugPrint('🎯 Accuracy: ${accuracy?.toStringAsFixed(2) ?? 'Unknown'} meters');
+    debugPrint('📡 Source: ${source ?? 'GPS'}');
+    debugPrint('📏 Total Distance: ${totalDistance?.toStringAsFixed(3) ?? 'Unknown'} km');
     
-    // Call the remote data source to update the trip location
+    // Call the remote data source to update the trip location with distance info
     final updatedTrip = await _remoteDatasource.updateTripLocation(
       tripId, 
       latitude, 
-      longitude
+      longitude,
+      accuracy: accuracy,
+      source: source,
+      totalDistance: totalDistance,
     );
     
-    debugPrint('✅ REPO: Trip location updated successfully');
+    debugPrint('✅ REPO: Trip location and distance updated successfully');
     return Right(updatedTrip);
   } on ServerException catch (e) {
     debugPrint('❌ REPO: Server error updating trip location: ${e.message}');
@@ -308,6 +314,43 @@ ResultFuture<TripEntity> updateTripLocation(String tripId, double latitude, doub
   }
 }
 
+  @override
+  ResultFuture<List<String>> checkTripPersonnels(String tripId) async {
+    try {
+      debugPrint('🔍 REPO: Checking trip personnels for ID: $tripId');
+      final result = await _remoteDatasource.checkTripPersonnels(tripId);
+      debugPrint('✅ REPO: Found ${result.length} personnels');
+      return Right(result);
+    } on ServerException catch (e) {
+      debugPrint('❌ REPO: Failed to check trip personnels: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      debugPrint('❌ REPO: Unexpected error checking trip personnels: $e');
+      return Left(ServerFailure(
+        message: 'Failed to check trip personnels: $e',
+        statusCode: '500',
+      ));
+    }
+  }
 
+  @override
+  ResultFuture<bool> setMismatchedReason(String tripId, String reasonCode) async {
+    try {
+      debugPrint('🔄 REPO: Setting mismatched personnel reason');
+      debugPrint('   🎯 Trip ID: $tripId');
+      debugPrint('   📋 Reason Code: $reasonCode');
+      
+      final result = await _remoteDatasource.setMismatchedReason(tripId, reasonCode);
+      
+      debugPrint('✅ REPO: Trip mismatch reason set successfully');
+      return Right(result);
+    } on ServerException catch (e) {
+      debugPrint('❌ REPO: Server error setting mismatch reason: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      debugPrint('❌ REPO: Unexpected error setting mismatch reason: $e');
+      return Left(ServerFailure(message: 'Failed to set mismatch reason: $e', statusCode: '500'));
+    }
+  }
 
 }

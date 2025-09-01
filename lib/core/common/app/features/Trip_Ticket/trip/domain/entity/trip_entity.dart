@@ -13,6 +13,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
 import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
 
+import '../../../../../../../enums/mismatched_personnel_reason_code.dart';
+
 @Entity()
 class TripEntity extends Equatable {
   @Id()
@@ -27,7 +29,7 @@ class TripEntity extends Equatable {
   final ToMany<PersonelModel> personels = ToMany<PersonelModel>();
   final ToMany<ChecklistModel> checklist = ToMany<ChecklistModel>();
   final ToMany<VehicleModel> vehicle = ToMany<VehicleModel>();
- 
+
   final ToMany<EndTripChecklistModel> endTripChecklist =
       ToMany<EndTripChecklistModel>();
   final ToMany<TripUpdateModel> tripUpdates = ToMany<TripUpdateModel>();
@@ -36,13 +38,16 @@ class TripEntity extends Equatable {
   final ToOne<LocalUsersModel> user = ToOne<LocalUsersModel>();
   // Added deliveryData relation
   final ToMany<DeliveryDataModel> deliveryData = ToMany<DeliveryDataModel>();
-    final ToOne<DeliveryVehicleModel> deliveryVehicle = ToOne<DeliveryVehicleModel>();
+  final ToOne<DeliveryVehicleModel> deliveryVehicle =
+      ToOne<DeliveryVehicleModel>();
 
-  double? latitude;  // Added latitude field
+  double? latitude; // Added latitude field
   double? longitude; // Added longitude field
   String? totalTripDistance;
+  bool? allowMismatchedPersonnels;
   bool? isAccepted;
   bool? isEndTrip;
+  MismatchedPersonnelReasonCode? mismatchedPersonnelReasonCode;
   DateTime? timeEndTrip;
   DateTime? timeAccepted;
   DateTime? created;
@@ -65,10 +70,12 @@ class TripEntity extends Equatable {
     LocalUsersModel? user,
     List<DeliveryDataModel>? deliveryData, // Added parameter for deliveryData
     DeliveryVehicleModel? deliveryVehicle,
-    this.latitude,  // Added to constructor
+    this.latitude, // Added to constructor
     this.longitude, // Added to constructor
     this.totalTripDistance,
+    this.mismatchedPersonnelReasonCode,
     this.timeEndTrip,
+    this.allowMismatchedPersonnels,
     this.isEndTrip,
     this.timeAccepted,
     this.isAccepted,
@@ -81,11 +88,10 @@ class TripEntity extends Equatable {
     if (personels != null) this.personels.addAll(personels);
     if (checklist != null) this.checklist.addAll(checklist);
     if (vehicle != null) this.vehicle.addAll(vehicle);
-        if (deliveryVehicle != null) this.deliveryVehicle.target = deliveryVehicle;
+    if (deliveryVehicle != null) this.deliveryVehicle.target = deliveryVehicle;
 
     if (user != null) this.user.target = user;
-    
-   
+
     if (endTripChecklist != null) {
       this.endTripChecklist.addAll(endTripChecklist);
     }
@@ -98,29 +104,31 @@ class TripEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        tripNumberId,
-        timeline.target?.id,
-        deliveryTeam.target?.id,
-        user.target?.id,
-        deliveryVehicle.target?.id,
-        totalTripDistance,
-        personels,
-        vehicle,
-        checklist,
-        endTripChecklist,
-        tripUpdates,
-        timeAccepted,
-        otp.target?.id,
-        endTripOtp.target?.id,
-        timeEndTrip,
-        isEndTrip,
-        qrCode,
-        isAccepted,
-        created,
-        updated,
-        latitude,  // Added to props
-        longitude, // Added to props
-        deliveryData, // Added to props
-      ];
+    id,
+    tripNumberId,
+    timeline.target?.id,
+    deliveryTeam.target?.id,
+    user.target?.id,
+    deliveryVehicle.target?.id,
+    totalTripDistance,
+    personels,
+    vehicle,
+    checklist,
+    endTripChecklist,
+    tripUpdates,
+    mismatchedPersonnelReasonCode,
+    allowMismatchedPersonnels,
+    timeAccepted,
+    otp.target?.id,
+    endTripOtp.target?.id,
+    timeEndTrip,
+    isEndTrip,
+    qrCode,
+    isAccepted,
+    created,
+    updated,
+    latitude, // Added to props
+    longitude, // Added to props
+    deliveryData, // Added to props
+  ];
 }

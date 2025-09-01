@@ -206,6 +206,62 @@ class LocationTrackingError extends TripState {
   List<Object?> get props => [message];
 }
 
+// Add state for trip personnels check result
+class TripPersonnelsChecked extends TripState {
+  final List<String> personnelIds;
+  
+  const TripPersonnelsChecked(this.personnelIds);
+  
+  @override
+  List<Object?> get props => [personnelIds];
+}
+
+// Add state for trip personnels checking
+class TripPersonnelsChecking extends TripState {
+  const TripPersonnelsChecking();
+  
+  @override
+  List<Object?> get props => [];
+}
+
+// Add state for trip personnel mismatch
+class TripPersonnelMismatch extends TripState {
+  final String message;
+  final String tripId;
+  final String userId;
+  
+  const TripPersonnelMismatch({
+    required this.message,
+    required this.tripId,
+    required this.userId,
+  });
+  
+  @override
+  List<Object?> get props => [message, tripId, userId];
+}
+
+// Add state for when mismatched reason is being set
+class TripMismatchReasonSetting extends TripState {
+  const TripMismatchReasonSetting();
+  
+  @override
+  List<Object?> get props => [];
+}
+
+// Add state for when mismatched reason has been set
+class TripMismatchReasonSet extends TripState {
+  final String tripId;
+  final String reasonCode;
+  
+  const TripMismatchReasonSet({
+    required this.tripId,
+    required this.reasonCode,
+  });
+  
+  @override
+  List<Object?> get props => [tripId, reasonCode];
+}
+
 
 
 

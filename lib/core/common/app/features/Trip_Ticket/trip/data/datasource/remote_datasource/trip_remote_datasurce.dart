@@ -7,6 +7,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/dat
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 
+
 abstract class TripRemoteDatasurce {
   Future<TripModel> loadTrip();
   Future<TripModel> getTripById(String id);
@@ -39,7 +40,13 @@ abstract class TripRemoteDatasurce {
     String tripId,
     double latitude,
     double longitude,
+    {double? accuracy, String? source, double? totalDistance}
   );
+  
+  Future<List<String>> checkTripPersonnels(String tripId);
+  
+  // Set mismatched personnel reason in tripticket
+  Future<bool> setMismatchedReason(String tripId, String reasonCode);
 }
 
 class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
@@ -1444,10 +1451,13 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
     String tripId,
     double latitude,
     double longitude,
+    {double? accuracy, String? source, double? totalDistance}
   ) async {
     try {
-      debugPrint('🔄 REMOTE: Updating trip location for ID: $tripId');
-      debugPrint('📍 Coordinates: Lat: $latitude, Long: $longitude');
+      debugPrint('🔄 REMOTE: Updating enhanced trip location for ID: $tripId');
+      debugPrint('📍 Coordinates: Lat: ${latitude.toStringAsFixed(6)}, Long: ${longitude.toStringAsFixed(6)}');
+      debugPrint('🎯 Accuracy: ${accuracy?.toStringAsFixed(2) ?? 'Unknown'} meters');
+      debugPrint('📡 Source: ${source ?? 'GPS_Enhanced'}');
 
       // Extract trip ID if we received a JSON object
       String actualTripId;
@@ -1468,7 +1478,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             expand: 'customers,timeline,personels,vehicle,checklist',
           );
 
-      // Update the trip with new coordinates
+      // Update the trip with new coordinates and accuracy info
       final updatedRecord = await _pocketBaseClient
           .collection('tripticket')
           .update(
@@ -1476,12 +1486,25 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
             body: {
               'latitude': latitude.toString(),
               'longitude': longitude.toString(),
+              'locationAccuracy': accuracy?.toString() ?? '0',
+              'locationSource': source ?? 'GPS_Enhanced',
               'updated': DateTime.now().toIso8601String(),
             },
           );
 
-      // Create a new record in tripCoordinatesUpdates collection
-      await _createTripCoordinateUpdate(actualTripId, latitude, longitude);
+      // Use the total distance passed from the BLoC (from LocationService)
+      final distanceToRecord = totalDistance ?? 0.0;
+      debugPrint('📊 REMOTE: Using total distance for recording: ${distanceToRecord.toStringAsFixed(3)} km');
+
+      // Create enhanced record in tripCoordinatesUpdates collection with distance tracking
+      await _createTripCoordinateUpdate(
+        actualTripId, 
+        latitude, 
+        longitude,
+        accuracy: accuracy,
+        source: source,
+        totalDistance: distanceToRecord, // Pass total distance from LocationService
+      );
 
       debugPrint('✅ Trip location updated successfully');
 
@@ -1818,19 +1841,24 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
     }
   }
 
-  // Enhanced trip coordinate update creation with better error handling
+  // Enhanced trip coordinate update creation with distance tracking
   Future<void> _createTripCoordinateUpdate(
     String tripId,
     double latitude,
     double longitude,
+    {double? accuracy, String? source, double? totalDistance}
   ) async {
     try {
-      debugPrint('🔄 Creating trip coordinate update record');
+      debugPrint('🔄 REMOTE: Creating enhanced trip coordinate update with distance tracking');
+      debugPrint('   📍 Coordinates: ${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}');
+      debugPrint('   🎯 Accuracy: ${accuracy?.toStringAsFixed(2) ?? 'Unknown'} meters');
+      debugPrint('   📡 Source: ${source ?? 'GPS'}');
+      debugPrint('   📏 Total Distance: ${totalDistance?.toStringAsFixed(3) ?? 'Unknown'} km');
 
       final now = DateTime.now();
       final timestamp = now.toIso8601String();
 
-      // Create the record in tripCoordinatesUpdates collection
+      // Create enhanced coordinate record with distance information
       await _pocketBaseClient
           .collection('tripCoordinatesUpdates')
           .create(
@@ -1838,17 +1866,25 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
               'trip': tripId,
               'latitude': latitude.toString(),
               'longitude': longitude.toString(),
+              'accuracy': accuracy?.toString() ?? '0',
+              'source': source ?? 'GPS_VALIDATED',
+              'totalDistance': totalDistance?.toString() ?? '0',
               'created': timestamp,
               'updated': timestamp,
+              'isValidated': 'true',
             },
           );
 
-      debugPrint('✅ Trip coordinate update record created successfully');
+      debugPrint('✅ REMOTE: Enhanced trip coordinate record created successfully');
+
+      // Now update the delivery team's total distance traveled
+      await _updateDeliveryTeamDistance(tripId, totalDistance);
+
     } catch (e) {
-      debugPrint('⚠️ Error creating trip coordinate update record: $e');
+      debugPrint('⚠️ REMOTE: Error creating enhanced coordinate update record: $e');
 
       try {
-        // Attempt a simplified version
+        // Attempt a simplified version with minimal required fields
         await _pocketBaseClient
             .collection('tripCoordinatesUpdates')
             .create(
@@ -1856,13 +1892,267 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
                 'trip': tripId,
                 'latitude': latitude.toString(),
                 'longitude': longitude.toString(),
+                'totalDistance': totalDistance?.toString() ?? '0',
                 'created': DateTime.now().toIso8601String(),
+                'source': 'GPS_FALLBACK',
               },
             );
-        debugPrint('✅ Trip coordinate update record created (simplified)');
+        debugPrint('✅ REMOTE: Trip coordinate record created (fallback mode)');
+        
+        // Still try to update delivery team distance even in fallback mode
+        await _updateDeliveryTeamDistance(tripId, totalDistance);
+        
       } catch (e2) {
-        debugPrint('❌ Failed to create coordinate update record: $e2');
+        debugPrint('❌ REMOTE: Failed to create coordinate update record (both attempts): $e2');
       }
     }
   }
+
+  // Update delivery team total distance traveled
+  Future<void> _updateDeliveryTeamDistance(String tripId, double? currentSessionDistance) async {
+    try {
+      if (currentSessionDistance == null) {
+        debugPrint('⚠️ REMOTE: No current session distance provided - skipping delivery team distance update');
+        return;
+      }
+
+      debugPrint('🚛 REMOTE: Updating delivery team cumulative distance for trip: $tripId');
+      debugPrint('   📏 Current Session Distance: ${currentSessionDistance.toStringAsFixed(3)} km');
+
+      // Find delivery team record using tripTicket field
+      final deliveryTeamRecords = await _pocketBaseClient
+          .collection('deliveryTeam')
+          .getList(
+            filter: 'tripTicket = "$tripId"',
+            perPage: 1,
+          );
+
+      if (deliveryTeamRecords.items.isEmpty) {
+        debugPrint('⚠️ REMOTE: No delivery team found for trip: $tripId');
+        debugPrint('   This might be normal if trip is not yet fully assigned');
+        return;
+      }
+
+      final deliveryTeamRecord = deliveryTeamRecords.items.first;
+      final deliveryTeamId = deliveryTeamRecord.id;
+      
+      // Get previous total distance from database (handles app restart scenario)
+      final previousDistanceStr = deliveryTeamRecord.data['totalDistanceTraveled']?.toString() ?? '0';
+      final previousDistance = double.tryParse(previousDistanceStr) ?? 0.0;
+      
+      // Calculate cumulative distance: previous + current session
+      final cumulativeDistance = previousDistance + currentSessionDistance;
+      
+      debugPrint('🎯 REMOTE: Found delivery team: $deliveryTeamId');
+      debugPrint('   📋 Previous Total Distance: ${previousDistance.toStringAsFixed(3)} km');
+      debugPrint('   📋 Current Session Distance: ${currentSessionDistance.toStringAsFixed(3)} km');
+      debugPrint('   📋 New Cumulative Distance: ${cumulativeDistance.toStringAsFixed(3)} km');
+
+      // Update the delivery team's cumulative total distance traveled
+      await _pocketBaseClient
+          .collection('deliveryTeam')
+          .update(
+            deliveryTeamId,
+            body: {
+              'totalDistanceTraveled': cumulativeDistance.toStringAsFixed(3), // Store cumulative distance
+              'currentSessionDistance': currentSessionDistance.toStringAsFixed(3), // Track current session
+              'lastLocationUpdate': DateTime.now().toIso8601String(),
+              'updated': DateTime.now().toIso8601String(),
+            },
+          );
+
+      debugPrint('✅ REMOTE: Delivery team cumulative distance updated successfully');
+      debugPrint('   🎯 Delivery Team ID: $deliveryTeamId');
+      debugPrint('   📏 Previous: ${previousDistance.toStringAsFixed(3)} km');
+      debugPrint('   📏 Session: ${currentSessionDistance.toStringAsFixed(3)} km');  
+      debugPrint('   📏 Cumulative Total: ${cumulativeDistance.toStringAsFixed(3)} km');
+
+    } catch (e) {
+      debugPrint('❌ REMOTE: Error updating delivery team distance: $e');
+      debugPrint('   This error is non-critical - coordinate tracking will continue');
+      // Don't throw error here as coordinate creation should still succeed
+    }
+  }
+
+  @override
+  Future<List<String>> checkTripPersonnels(String tripId) async {
+    try {
+      debugPrint('🔍 REMOTE: Checking trip personnels for tripId: $tripId');
+      
+      // Step 1: Get the current logged-in user ID from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final storedUserData = prefs.getString('user_data');
+      
+      if (storedUserData == null) {
+        throw const ServerException(
+          message: 'No user data found. Please log in again.',
+          statusCode: '401',
+        );
+      }
+      
+      final userData = jsonDecode(storedUserData);
+      final currentUserId = userData['id'];
+      debugPrint('👤 Current logged-in user ID: $currentUserId');
+      
+      // Step 2: Get the tripticket record with expanded personnel data to get more details
+      final tripRecord = await _pocketBaseClient
+          .collection('tripticket')
+          .getOne(tripId, expand: 'personels');
+      
+      // Step 3: Extract personnel IDs from the "personels" field as a list
+      final personnelIds = tripRecord.data['personels'] as List? ?? [];
+      debugPrint('👥 Found ${personnelIds.length} personnel IDs in trip: $personnelIds');
+      
+      if (personnelIds.isEmpty) {
+        throw const ServerException(
+          message: 'No personnel assigned to this trip',
+          statusCode: '404',
+        );
+      }
+      
+      // Step 4: Check each personnel record to find matching user ID
+      bool userFound = false;
+      List<String> matchedPersonnelIds = [];
+      
+      debugPrint('🔍 Starting personnel verification...');
+      debugPrint('   Looking for user ID: $currentUserId');
+      debugPrint('   Total personnel to check: ${personnelIds.length}');
+      
+      for (int i = 0; i < personnelIds.length; i++) {
+        String personnelId = personnelIds[i];
+        try {
+          debugPrint('🔍 [${'$i'.padLeft(2)}/${personnelIds.length}] Checking personnel ID: $personnelId');
+          
+          // Get the personnel record from "personel" collection
+          final personnelRecord = await _pocketBaseClient
+              .collection('personels')
+              .getOne(personnelId);
+          
+          final personnelData = personnelRecord.data;
+          final personnelUserId = personnelData['user'];
+          final personnelName = personnelData['name'] ?? 'Unknown';
+          final personnelRole = personnelData['role'] ?? 'Unknown';
+          
+          debugPrint('   Personnel Details:');
+          debugPrint('     - ID: $personnelId');
+          debugPrint('     - Name: $personnelName');
+          debugPrint('     - Role: $personnelRole');
+          debugPrint('     - User ID: $personnelUserId');
+          debugPrint('     - User ID Type: ${personnelUserId.runtimeType}');
+          debugPrint('     - Current User ID Type: ${currentUserId.runtimeType}');
+          
+          // Convert both to strings for comparison to handle type mismatches
+          final personnelUserIdStr = personnelUserId?.toString();
+          final currentUserIdStr = currentUserId?.toString();
+          
+          debugPrint('     - Personnel User ID (String): "$personnelUserIdStr"');
+          debugPrint('     - Current User ID (String): "$currentUserIdStr"');
+          
+          // Check if this personnel's user ID matches the current user
+          if (personnelUserIdStr != null && 
+              currentUserIdStr != null && 
+              personnelUserIdStr == currentUserIdStr) {
+            debugPrint('✅ MATCH FOUND! Personnel $personnelId ($personnelName) belongs to current user');
+            debugPrint('   ✓ Personnel User ID: "$personnelUserIdStr" == Current User ID: "$currentUserIdStr"');
+            userFound = true;
+            matchedPersonnelIds.add(personnelId);
+          } else {
+            debugPrint('❌ No match for personnel $personnelId ($personnelName)');
+            debugPrint('   ✗ Personnel User ID: "$personnelUserIdStr" != Current User ID: "$currentUserIdStr"');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error checking personnel $personnelId: $e');
+          debugPrint('   This personnel record may be corrupted or inaccessible');
+          continue; // Continue checking other personnel
+        }
+      }
+      
+      debugPrint('🔍 Personnel verification summary:');
+      debugPrint('   - Total personnel checked: ${personnelIds.length}');
+      debugPrint('   - Matches found: ${matchedPersonnelIds.length}');
+      debugPrint('   - User authorized: $userFound');
+      
+      if (!userFound) {
+        final errorMessage = 'User $currentUserId is not assigned as personnel to this trip.\n'
+            'Trip has ${personnelIds.length} personnel assigned, but none match your user ID.\n'
+            'Please contact your supervisor to verify your assignment to this trip.';
+        
+        debugPrint('❌ AUTHORIZATION FAILED: $errorMessage');
+        throw ServerException(
+          message: errorMessage,
+          statusCode: '403',
+        );
+      }
+      
+      debugPrint('✅ REMOTE: User authorized! Found ${matchedPersonnelIds.length} matching personnel records');
+      debugPrint('   Matched Personnel IDs: $matchedPersonnelIds');
+      
+      return matchedPersonnelIds;
+    } catch (e) {
+      debugPrint('❌ REMOTE: Error checking trip personnels: $e');
+      throw ServerException(
+        message: e is ServerException ? e.message : 'Failed to check trip personnels: $e',
+        statusCode: e is ServerException ? e.statusCode : '500',
+      );
+    }
+  }
+
+  @override
+  Future<bool> setMismatchedReason(String tripId, String reasonCode) async {
+    try {
+      debugPrint('📝 REMOTE: Setting mismatched personnel reason for trip: $tripId');
+      debugPrint('   📋 Reason Code: $reasonCode');
+
+      // Update the tripticket record with the chosen reason
+      await _pocketBaseClient
+          .collection('tripticket')
+          .update(
+            tripId,
+            body: {
+              'mismatchedPersonnelReasonCode': reasonCode,
+              'allowMismatchedPersonnels': false,
+              'updated': DateTime.now().toIso8601String(),
+            },
+          );
+
+      debugPrint('✅ REMOTE: Trip mismatch reason updated successfully');
+      debugPrint('   🎯 Trip ID: $tripId');
+      debugPrint('   📋 Reason Code: $reasonCode');
+      debugPrint('   🚫 Allow Mismatched: false');
+
+      return true;
+    } catch (e) {
+      debugPrint('❌ REMOTE: Error setting mismatched personnel reason: $e');
+      throw ServerException(
+        message: 'Failed to set mismatched personnel reason: $e',
+        statusCode: '500',
+      );
+    }
+  }
+
+
+
+  // MismatchedPersonnelReasonCode _parseReasonCode(String statusString) {
+  //   final normalizedReasonString = statusString.toLowerCase().trim();
+
+  //   switch (normalizedReasonString) {
+  //     case 'none':
+  //     case '':
+  //       return MismatchedPersonnelReasonCode.none;
+  //     case 'absent':
+  //       return MismatchedPersonnelReasonCode.absent;
+  //     case 'late':
+  //       return MismatchedPersonnelReasonCode.late_;
+  //     case 'other':
+  //       return MismatchedPersonnelReasonCode.other;
+  //     case 'leave':
+  //       return MismatchedPersonnelReasonCode.leave;
+    
+  //     default:
+  //       debugPrint(
+  //         '⚠️ Unknown invoice status: "$statusString", defaulting to none',
+  //       );
+  //       return MismatchedPersonnelReasonCode.none;
+  //   }
+  // }
 }
