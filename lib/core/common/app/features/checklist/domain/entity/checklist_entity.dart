@@ -13,6 +13,7 @@ class ChecklistEntity extends Equatable {
     required this.id,
     required this.objectName,
     required this.isChecked,
+    this.description,
     this.status,
     this.timeCompleted,
     TripModel? tripModel,
@@ -22,6 +23,7 @@ class ChecklistEntity extends Equatable {
 
   final String id;
   final String? objectName;
+  final String? description;
   bool? isChecked;
   final String? status;
   DateTime? timeCompleted;
@@ -30,7 +32,8 @@ class ChecklistEntity extends Equatable {
       : id = '',
         objectName = '',
         isChecked = false,
-        status = '';
+        status = '',
+        description = '';
 
   @override
   List<Object?> get props => [
@@ -39,6 +42,7 @@ class ChecklistEntity extends Equatable {
         isChecked,
         timeCompleted,
         trip.target?.id,
+        description
       ];
 
   @override

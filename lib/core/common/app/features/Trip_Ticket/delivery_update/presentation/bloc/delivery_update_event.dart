@@ -20,6 +20,25 @@ class LoadLocalDeliveryStatusChoicesEvent extends DeliveryUpdateEvent {
   List<Object> get props => [customerId];
 }
 
+class GetBulkDeliveryStatusChoicesEvent extends DeliveryUpdateEvent {
+  final List<String> customerIds;
+
+  const GetBulkDeliveryStatusChoicesEvent(this.customerIds);
+
+  @override
+  List<Object> get props => [customerIds];
+}
+
+class LoadLocalBulkDeliveryStatusChoicesEvent extends DeliveryUpdateEvent {
+  final List<String> customerIds;
+
+  const LoadLocalBulkDeliveryStatusChoicesEvent(this.customerIds);
+
+  @override
+  List<Object> get props => [customerIds];
+}
+
+
 // Existing events remain the same
 class UpdateDeliveryStatusEvent extends DeliveryUpdateEvent {
   final String customerId;
@@ -60,6 +79,21 @@ class CheckLocalEndDeliveryStatusEvent extends DeliveryUpdateEvent {
   List<Object> get props => [tripId];
 }
 
+class BulkUpdateDeliveryStatusEvent extends DeliveryUpdateEvent {
+  final List<String> customerIds;
+  final String statusId;
+
+  const BulkUpdateDeliveryStatusEvent({
+    required this.customerIds,
+    required this.statusId,
+  });
+
+  @override
+  List<Object> get props => [customerIds, statusId];
+}
+
+
+
 
 class InitializePendingStatusEvent extends DeliveryUpdateEvent {
   final List<String> customerIds;
@@ -87,17 +121,20 @@ class CreateDeliveryStatusEvent extends DeliveryUpdateEvent {
   List<Object> get props => [customerId, title, subtitle, time, isAssigned, image];
 }
 class UpdateQueueRemarksEvent extends DeliveryUpdateEvent {
-  final String customerId;
-  final String queueCount;
+  final String statusId;
+  final String remarks;
+  final String image;
 
   const UpdateQueueRemarksEvent({
-    required this.customerId,
-    required this.queueCount,
+    required this.statusId,
+    required this.remarks,
+    required this.image,
   });
 
   @override
-  List<Object> get props => [customerId,  queueCount];
+  List<Object> get props => [statusId, remarks, image];
 }
+
 
 class PinArrivedLocationEvent extends DeliveryUpdateEvent {
   final String deliveryId;

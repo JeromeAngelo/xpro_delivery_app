@@ -24,6 +24,7 @@ class TripEntity extends Equatable {
   String? collectionId;
   String? collectionName;
   String? tripNumberId;
+  String? name;
   final ToOne<UpdateTimelineModel> timeline = ToOne<UpdateTimelineModel>();
   final ToOne<DeliveryTeamModel> deliveryTeam = ToOne<DeliveryTeamModel>();
   final ToMany<PersonelModel> personels = ToMany<PersonelModel>();
@@ -52,12 +53,15 @@ class TripEntity extends Equatable {
   DateTime? timeAccepted;
   DateTime? created;
   DateTime? updated;
+  DateTime? deliveryDate;
   String? qrCode;
   TripEntity({
     this.id,
     this.collectionId,
     this.collectionName,
     this.tripNumberId,
+    this.name,
+    this.deliveryDate,
     UpdateTimelineModel? timeline,
     DeliveryTeamModel? deliveryTeam,
     List<PersonelModel>? personels,
@@ -123,6 +127,8 @@ class TripEntity extends Equatable {
     endTripOtp.target?.id,
     timeEndTrip,
     isEndTrip,
+    name,
+    deliveryDate,
     qrCode,
     isAccepted,
     created,

@@ -18,6 +18,7 @@ import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/refractors/confirm_button.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/refractors/delivery_list.dart';
 
+
 import '../../../../core/common/app/features/checklist/data/model/checklist_model.dart';
 import '../../../../core/utils/route_utils.dart';
 
@@ -36,7 +37,6 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
   late final ChecklistBloc _checklistBloc;
   late final DeliveryDataBloc _customerBloc;
   bool _isInitialized = false;
-
   @override
   void initState() {
     super.initState();
@@ -46,47 +46,46 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView> {
   }
 
   @override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  
-  // Check if we need to restore to this route on app restart
-  _checkAndRestoreRoute();
-}
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-Future<void> _checkAndRestoreRoute() async {
-  final savedRoute = await RouteUtils.getLastActiveRoute();
-  if (savedRoute == '/checklist') {
-    debugPrint('📍 Restored to important checklist screen');
-    // Ensure data is fresh when restored
-    _refreshAllData();
+    // Check if we need to restore to this route on app restart
+    _checkAndRestoreRoute();
   }
-}
 
-void _refreshAllData() {
-  SharedPreferences.getInstance().then((prefs) {
-    final storedData = prefs.getString('user_data');
-    if (storedData != null) {
-      final userData = jsonDecode(storedData);
-      final userId = userData['id'];
-      final tripData = userData['trip'] as Map<String, dynamic>?;
-
-      if (userId != null && tripData != null && tripData['id'] != null) {
-        // Refresh all data when restored to this important screen
-        _authBloc.add(LoadLocalUserByIdEvent(userId));
-        _authBloc.add(GetUserTripEvent(tripData['id']));
-        
-        _customerBloc
-          ..add(GetLocalDeliveryDataByTripIdEvent(tripData['id']))
-          ..add(GetDeliveryDataByTripIdEvent(tripData['id']));
-          
-        _checklistBloc
-          ..add(LoadLocalChecklistByTripIdEvent(tripData['id']))
-          ..add(LoadChecklistByTripIdEvent(tripData['id']));
-      }
+  Future<void> _checkAndRestoreRoute() async {
+    final savedRoute = await RouteUtils.getLastActiveRoute();
+    if (savedRoute == '/checklist') {
+      debugPrint('📍 Restored to important checklist screen');
+      // Ensure data is fresh when restored
+      _refreshAllData();
     }
-  });
-}
+  }
 
+  void _refreshAllData() {
+    SharedPreferences.getInstance().then((prefs) {
+      final storedData = prefs.getString('user_data');
+      if (storedData != null) {
+        final userData = jsonDecode(storedData);
+        final userId = userData['id'];
+        final tripData = userData['trip'] as Map<String, dynamic>?;
+
+        if (userId != null && tripData != null && tripData['id'] != null) {
+          // Refresh all data when restored to this important screen
+          _authBloc.add(LoadLocalUserByIdEvent(userId));
+          _authBloc.add(GetUserTripEvent(tripData['id']));
+
+          _customerBloc
+            ..add(GetLocalDeliveryDataByTripIdEvent(tripData['id']))
+            ..add(GetDeliveryDataByTripIdEvent(tripData['id']));
+
+          _checklistBloc
+            ..add(LoadLocalChecklistByTripIdEvent(tripData['id']))
+            ..add(LoadChecklistByTripIdEvent(tripData['id']));
+        }
+      }
+    });
+  }
 
   void _initializeBlocs() {
     _authBloc = context.read<AuthBloc>();
@@ -282,88 +281,101 @@ void _refreshAllData() {
       ),
     );
   }
-Widget _buildChecklistSection() {
-  return BlocBuilder<ChecklistBloc, ChecklistState>(
-    buildWhen: (previous, current) {
-      if (current is ChecklistLoaded && previous is ChecklistLoaded) {
-        return current.checklist.length != previous.checklist.length;
-      }
-      return current is ChecklistLoaded;
-    },
-    builder: (context, state) {
-      final effectiveState = _cachedChecklistState ?? state;
 
-      if (effectiveState is ChecklistLoaded) {
-        return Column(
-          children: effectiveState.checklist.map((item) {
-            debugPrint('🔍 Rendering checklist item: ${item.objectName}');
+  Widget _buildChecklistSection() {
+    return BlocBuilder<ChecklistBloc, ChecklistState>(
+      buildWhen: (previous, current) {
+        if (current is ChecklistLoaded && previous is ChecklistLoaded) {
+          return current.checklist.length != previous.checklist.length;
+        }
+        return current is ChecklistLoaded;
+      },
+      builder: (context, state) {
+        final effectiveState = _cachedChecklistState ?? state;
 
-            return BlocBuilder<ChecklistBloc, ChecklistState>(
-              buildWhen: (previous, current) {
-                if (current is ChecklistLoaded && previous is ChecklistLoaded) {
-                  // Find items without using firstWhere to avoid type issues
-                  ChecklistModel? prevItem;
-                  ChecklistModel? currentItem;
+        if (effectiveState is ChecklistLoaded) {
+          return Column(
+            children:
+                effectiveState.checklist.map((item) {
+                  debugPrint('🔍 Rendering checklist item: ${item.objectName}');
 
-                  try {
-                    prevItem = previous.checklist
-                        .cast<ChecklistModel>()
-                        .where((i) => i.id == item.id)
-                        .firstOrNull ?? item as ChecklistModel;
-                    currentItem = current.checklist
-                        .cast<ChecklistModel>()
-                        .where((i) => i.id == item.id)
-                        .firstOrNull ?? item as ChecklistModel;
-                  } catch (e) {
-                    debugPrint('⚠️ Type casting error: $e');
-                    return false;
-                  }
+                  return BlocBuilder<ChecklistBloc, ChecklistState>(
+                    buildWhen: (previous, current) {
+                      if (current is ChecklistLoaded &&
+                          previous is ChecklistLoaded) {
+                        // Find items without using firstWhere to avoid type issues
+                        ChecklistModel? prevItem;
+                        ChecklistModel? currentItem;
 
-                  return prevItem.isChecked != currentItem.isChecked;
-                }
-                return false;
-              },
-              builder: (context, itemState) {
-                ChecklistModel currentItem;
+                        try {
+                          prevItem =
+                              previous.checklist
+                                  .cast<ChecklistModel>()
+                                  .where((i) => i.id == item.id)
+                                  .firstOrNull ??
+                              item as ChecklistModel;
+                          currentItem =
+                              current.checklist
+                                  .cast<ChecklistModel>()
+                                  .where((i) => i.id == item.id)
+                                  .firstOrNull ??
+                              item as ChecklistModel;
+                        } catch (e) {
+                          debugPrint('⚠️ Type casting error: $e');
+                          return false;
+                        }
 
-                try {
-                  if (itemState is ChecklistLoaded) {
-                    currentItem = itemState.checklist
-                        .cast<ChecklistModel>()
-                        .where((i) => i.id == item.id)
-                        .firstOrNull ?? item as ChecklistModel;
-                  } else {
-                    currentItem = item as ChecklistModel;
-                  }
-                } catch (e) {
-                  debugPrint('⚠️ Error getting current item: $e');
-                  currentItem = item as ChecklistModel;
-                }
+                        return prevItem.isChecked != currentItem.isChecked;
+                      }
+                      return false;
+                    },
+                    builder: (context, itemState) {
+                      ChecklistModel currentItem;
 
-                // Get the actual checked state from the current item
-                final actualCheckedState = currentItem.isChecked ?? false;
-                
-                debugPrint('🔍 Item ${currentItem.objectName}: actualCheckedState=$actualCheckedState');
+                      try {
+                        if (itemState is ChecklistLoaded) {
+                          currentItem =
+                              itemState.checklist
+                                  .cast<ChecklistModel>()
+                                  .where((i) => i.id == item.id)
+                                  .firstOrNull ??
+                              item as ChecklistModel;
+                        } else {
+                          currentItem = item as ChecklistModel;
+                        }
+                      } catch (e) {
+                        debugPrint('⚠️ Error getting current item: $e');
+                        currentItem = item as ChecklistModel;
+                      }
 
-                return ChecklistTile(
-                  key: ValueKey('checklist_${item.id}'),
-                  checklist: currentItem,
-                  isChecked: actualCheckedState, // Pass the actual checked state
-                  onChanged: (value) {
-                    debugPrint('🔄 Checkbox changed for ${currentItem.objectName}: $value');
-                    _checklistBloc.add(CheckItemEvent(item.id));
-                  },
-                );
-              },
-            );
-          }).toList(),
-        );
-      }
-      return const SizedBox.shrink();
-    },
-  );
-}
+                      // Get the actual checked state from the current item
+                      final actualCheckedState = currentItem.isChecked ?? false;
 
+                      debugPrint(
+                        '🔍 Item ${currentItem.objectName}: actualCheckedState=$actualCheckedState',
+                      );
+
+                      return ChecklistTile(
+                        key: ValueKey('checklist_${item.id}'),
+                        checklist: currentItem,
+                        isChecked:
+                            actualCheckedState, // Pass the actual checked state
+                        onChanged: (value) {
+                          debugPrint(
+                            '🔄 Checkbox changed for ${currentItem.objectName}: $value',
+                          );
+                          _checklistBloc.add(CheckItemEvent(item.id));
+                        },
+                      );
+                    },
+                  );
+                }).toList(),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
 
   Widget _buildDeliverySection(BuildContext context) {
     return Column(
@@ -459,35 +471,31 @@ Widget _buildChecklistSection() {
   }
 
   @override
-void dispose() {
-  _cachedDeliveryDataState = null;
-  _cachedChecklistState = null;
-  
-  // Clear the saved route when leaving this important screen
-  // Only clear if user has completed the checklist process
-  _clearRouteIfCompleted();
-  
-  super.dispose();
-}
+  void dispose() {
+    _cachedDeliveryDataState = null;
+    _cachedChecklistState = null;
 
-Future<void> _clearRouteIfCompleted() async {
-  // Check if all checklist items are completed
-  if (_cachedChecklistState is ChecklistLoaded) {
-    final checklistState = _cachedChecklistState as ChecklistLoaded;
-    final allCompleted = checklistState.checklist.every(
-      (item) => item.isChecked ?? false,
-    );
-    
-    if (allCompleted) {
-      debugPrint('✅ Checklist completed, clearing saved route');
-      await RouteUtils.clearSavedRoute();
-    } else {
-      debugPrint('⚠️ Checklist not completed, keeping saved route');
+    // Clear the saved route when leaving this important screen
+    // Only clear if user has completed the checklist process
+    _clearRouteIfCompleted();
+
+    super.dispose();
+  }
+
+  Future<void> _clearRouteIfCompleted() async {
+    // Check if all checklist items are completed
+    if (_cachedChecklistState is ChecklistLoaded) {
+      final checklistState = _cachedChecklistState as ChecklistLoaded;
+      final allCompleted = checklistState.checklist.every(
+        (item) => item.isChecked ?? false,
+      );
+
+      if (allCompleted) {
+        debugPrint('✅ Checklist completed, clearing saved route');
+        await RouteUtils.clearSavedRoute();
+      } else {
+        debugPrint('⚠️ Checklist not completed, keeping saved route');
+      }
     }
   }
-}
-
-
- 
-
 }

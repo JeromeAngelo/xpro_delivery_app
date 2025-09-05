@@ -16,6 +16,8 @@ abstract class DeliveryUpdateRepo {
   ResultFuture<DataMap> checkEndDeliverStatus(String tripId);
   ResultFuture<DataMap> checkLocalEndDeliverStatus(String tripId);
   ResultFuture<void> initializePendingStatus(List<String> customerIds);
+  ResultFuture<Map<String, List<DeliveryUpdateEntity>>> getBulkDeliveryStatusChoices(List<String> customerIds);
+
   
   // Status creation
   ResultFuture<void> createDeliveryStatus(
@@ -29,12 +31,19 @@ abstract class DeliveryUpdateRepo {
 
    // Add this new function
   ResultFuture<void> updateQueueRemarks(
-    String customerId, 
-    String queueCount,
+    String statusId, 
+    String remarks,
+    String image,
   );
 
   // Pin arrived location function
   ResultFuture<void> pinArrivedLocation(String deliveryId);
+
+   // ✅ New bulk update function
+  ResultFuture<void> bulkUpdateDeliveryStatus(
+    List<String> customerIds,
+    String statusId,
+  );
 }
 
 

@@ -36,6 +36,7 @@ class TripTicketDashBoard extends StatelessWidget {
   Widget _buildHeader(BuildContext context, TripLoaded tripState) {
     //  final userName = context.read<UserProvider>().user?.name;
     final tripNumber = tripState.trip.tripNumberId;
+    final tripName = tripState.trip.name;
 
     return Row(
       children: [
@@ -43,15 +44,7 @@ class TripTicketDashBoard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Text(
-              //   userName ?? 'Driver Not Assigned',
-              //   style: Theme.of(context).textTheme.titleLarge!.copyWith(
-              //         color: userName != null
-              //             ? Theme.of(context).colorScheme.onSurface
-              //             : Theme.of(context).colorScheme.error,
-              //       ),
-              // ),
-              const SizedBox(height: 10),
+            
               Text(
                 tripNumber != null
                     ? 'Trip: $tripNumber'
@@ -60,6 +53,17 @@ class TripTicketDashBoard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color:
                       tripNumber != null
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(context).colorScheme.error,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                tripName ?? 'Trip Name Not Available',
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color:
+                      tripName != null
                           ? Theme.of(context).colorScheme.onSurface
                           : Theme.of(context).colorScheme.error,
                 ),

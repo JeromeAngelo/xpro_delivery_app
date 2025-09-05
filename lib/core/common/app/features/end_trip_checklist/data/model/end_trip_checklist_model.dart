@@ -32,6 +32,7 @@ class EndTripChecklistModel extends EndChecklistEntity {
     String? objectName,
     bool? isChecked,
     String? status,
+    String? description,
     String? trip,
     super.timeCompleted,
   }) : id = id ?? '',
@@ -43,6 +44,7 @@ class EndTripChecklistModel extends EndChecklistEntity {
          id: id ?? '',
          objectName: objectName ?? '',
          isChecked: isChecked ?? false,
+         description: description ?? '',
          status: status ?? '',
          trip: trip ?? '',
        );
@@ -54,6 +56,7 @@ class EndTripChecklistModel extends EndChecklistEntity {
       isChecked: json['isChecked'] as bool? ?? false,
       status: json['status']?.toString() ?? '',
       trip: json['trip']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
       timeCompleted: json['timeCompleted'] != null 
           ? DateTime.tryParse(json['timeCompleted'].toString())?.toUtc() 
           : null,
@@ -67,6 +70,7 @@ class EndTripChecklistModel extends EndChecklistEntity {
       'isChecked': isChecked,
       'status': status,
       'trip': trip,
+      'description': description,
       'timeCompleted': timeCompleted?.toIso8601String(),
     };
   }

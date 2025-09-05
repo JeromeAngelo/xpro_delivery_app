@@ -20,6 +20,13 @@ abstract class DeliveryUpdateDatasource {
   Future<void> completeDelivery(DeliveryDataEntity deliveryData);
   Future<DataMap> checkEndDeliverStatus(String tripId);
   Future<void> initializePendingStatus(List<String> customerIds);
+  Future<Map<String, List<DeliveryUpdateModel>>> getBulkDeliveryStatusChoices(
+    List<String> customerIds,
+  );
+  Future<void> bulkUpdateDeliveryStatus(
+    List<String> customerIds,
+    String statusId,
+  );
   Future<void> createDeliveryStatus(
     String customerId, {
     required String title,
@@ -28,7 +35,7 @@ abstract class DeliveryUpdateDatasource {
     required bool isAssigned,
     required String image,
   });
-  Future<void> updateQueueRemarks(String customerId, String queueCount);
+  Future<void> updateQueueRemarks(String statusId, String remarks, String image);
   Future<void> pinArrivedLocation(String deliveryId);
 }
 
@@ -37,30 +44,71 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
     : _pocketBaseClient = pocketBaseClient;
 
   final PocketBase _pocketBaseClient;
-  @override
-  Future<void> updateQueueRemarks(String customerId, String queueCount) async {
-    try {
-      debugPrint('🔄 Updating queue remarks for customer: $customerId');
+@override
+Future<void> updateQueueRemarks(
+  String statusId,
+  String remarks,
+  String image,
+) async {
+  try {
+    debugPrint('📝 Updating queue remarks for status: $statusId');
+    final files = <MultipartFile>[];
 
-      // Update customer record
-      await _pocketBaseClient
-          .collection('customers')
-          .update(
-            customerId,
-            body: {
-              'remarks': queueCount,
-              'updated': DateTime.now().toIso8601String(),
-            },
-          );
+    // 🔽 Process image if provided
+    if (image.isNotEmpty) {
+      try {
+        final imageFile = File(image);
+        if (await imageFile.exists()) {
+          debugPrint('📸 Processing status update image...');
 
-      ;
-
-      debugPrint('✅ Queue remarks updated across all collections');
-    } catch (e) {
-      debugPrint('❌ Failed to update queue remarks: $e');
-      throw ServerException(message: e.toString(), statusCode: '404');
+          final compressedImageBytes = await _compressImageToSmallSize(image);
+          if (compressedImageBytes != null) {
+            files.add(
+              MultipartFile.fromBytes(
+                'image',
+                compressedImageBytes,
+                filename: 'status_update_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              ),
+            );
+            debugPrint(
+              '✅ Added compressed image (${compressedImageBytes.length} bytes)',
+            );
+          } else {
+            // fallback to original if compression fails
+            final originalBytes = await imageFile.readAsBytes();
+            files.add(
+              MultipartFile.fromBytes(
+                'image',
+                originalBytes,
+                filename: 'status_update_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              ),
+            );
+            debugPrint(
+              '⚠️ Using original image (compression failed): ${originalBytes.length} bytes',
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error processing image: $e');
+      }
     }
+  
+    // 🔽 Perform update call to PocketBase (deliveryUpdate collection)
+    await _pocketBaseClient.collection('deliveryUpdate').update(
+      statusId,
+      body: {
+        'remarks': remarks,
+      },
+      files: files,
+    );
+
+    debugPrint('✅ Queue remarks successfully updated for status $statusId');
+  } catch (e) {
+    debugPrint('❌ Failed to update queue remarks: $e');
+    throw ServerException(message: e.toString(), statusCode: '404');
   }
+}
+
 
   @override
   Future<List<DeliveryUpdateModel>> getDeliveryStatusChoices(
@@ -101,6 +149,11 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
       if (latestStatus == 'waiting for customer') {
+        final allowedTitles = ['unloading', 'mark as undelivered', 'invoices in queue'];
+        return _filterStatusChoices(allStatuses, allowedTitles);
+      }
+
+       if (latestStatus == 'invoices in queue') {
         final allowedTitles = ['unloading', 'mark as undelivered'];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
@@ -124,6 +177,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
           'unloading',
           'mark as undelivered',
           'waiting for customer',
+          'invoices in queue'
         ];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
@@ -190,6 +244,120 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
   }
 
   @override
+  Future<Map<String, List<DeliveryUpdateModel>>> getBulkDeliveryStatusChoices(
+    List<String> customerIds,
+  ) async {
+    final Map<String, List<DeliveryUpdateModel>> result = {};
+
+    try {
+      debugPrint(
+        '🚚 Fetching bulk delivery status choices for customers: $customerIds',
+      );
+
+      for (final customerId in customerIds) {
+        try {
+          final customerRecord = await _pocketBaseClient
+              .collection('deliveryData')
+              .getOne(customerId, expand: 'deliveryUpdates');
+
+          final deliveryUpdates =
+              customerRecord.expand['deliveryUpdates'] as List?;
+          final latestStatus =
+              deliveryUpdates?.isNotEmpty == true
+                  ? deliveryUpdates!.last.data['title'].toString().toLowerCase()
+                  : '';
+
+          debugPrint(
+            '📍 Latest status for customer $customerId: $latestStatus',
+          );
+
+          final allStatuses =
+              await _pocketBaseClient
+                  .collection('deliveryStatusChoices')
+                  .getFullList();
+
+          // Handle different states
+          List<DeliveryUpdateModel> filteredStatuses = [];
+          if (latestStatus == 'in transit') {
+            filteredStatuses = _filterStatusChoices(allStatuses, [
+              'arrived',
+              'mark as undelivered',
+            ]);
+          } else if (latestStatus == 'waiting for customer') {
+            filteredStatuses = _filterStatusChoices(allStatuses, [
+              'unloading',
+              'invoices in queue',
+              'mark as undelivered',
+            ]);
+          }  else if (latestStatus == 'invoices in queue') {
+            filteredStatuses = _filterStatusChoices(allStatuses, [
+              'unloading',
+              'mark as undelivered',
+            ]);
+          } else if (latestStatus == 'unloading') {
+            filteredStatuses = _filterStatusChoices(allStatuses, [
+              'mark as received',
+            ]);
+          } else if (latestStatus == 'mark as received') {
+            filteredStatuses = _filterStatusChoices(allStatuses, [
+              'end delivery',
+            ]);
+          } else if (latestStatus == 'arrived') {
+            filteredStatuses = _filterStatusChoices(allStatuses, [
+               'unloading',
+          'mark as undelivered',
+          'waiting for customer',
+          'invoices in queue'
+            ]);
+          } else if (latestStatus == 'mark as undelivered' ||
+              latestStatus == 'end delivery') {
+            filteredStatuses = [];
+          } else {
+            // Default logic: remove already assigned
+            final assignedTitles =
+                deliveryUpdates
+                    ?.map(
+                      (record) => record.data['title'].toString().toLowerCase(),
+                    )
+                    .toSet() ??
+                {};
+
+            filteredStatuses =
+                allStatuses
+                    .where(
+                      (status) =>
+                          !assignedTitles.contains(
+                            status.data['title'].toString().toLowerCase(),
+                          ),
+                    )
+                    .map(
+                      (record) => DeliveryUpdateModel.fromJson(record.toJson()),
+                    )
+                    .toList();
+          }
+
+          result[customerId] = filteredStatuses;
+          debugPrint(
+            '✅ Added ${filteredStatuses.length} statuses for $customerId',
+          );
+        } catch (e) {
+          debugPrint('❌ Failed to fetch statuses for $customerId: $e');
+          result[customerId] = [];
+        }
+      }
+
+      return result;
+    } catch (e) {
+      debugPrint('❌ Error in bulk status fetch: ${e.toString()}');
+      throw ServerException(
+        message:
+            'Failed to fetch bulk delivery status choices: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
+
+  @override
   Future<void> updateDeliveryStatus(String customerId, String statusId) async {
     try {
       debugPrint(
@@ -249,6 +417,93 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
             e is ServerException
                 ? e.message
                 : 'Operation failed: ${e.toString()}',
+        statusCode: e is ServerException ? e.statusCode : '500',
+      );
+    }
+  }
+
+  @override
+  Future<void> bulkUpdateDeliveryStatus(
+    List<String> customerIds,
+    String statusId,
+  ) async {
+    try {
+      debugPrint(
+        '🔄 Processing bulk status update - Customers: $customerIds, Status: $statusId',
+      );
+
+      // Validate status ID
+      if (statusId.isEmpty) {
+        debugPrint('⚠️ Invalid status ID provided');
+        throw const ServerException(
+          message: 'Invalid status ID',
+          statusCode: '400',
+        );
+      }
+
+      // Get the status record once (reuse for all customers)
+      final statusRecord = await _pocketBaseClient
+          .collection('deliveryStatusChoices')
+          .getOne(statusId);
+
+      final title = statusRecord.data['title'];
+      final subtitle = statusRecord.data['subtitle'];
+
+      debugPrint('✅ Retrieved status: $title');
+
+      final currentTime = DateTime.now().toIso8601String();
+
+      // Iterate over all customers
+      for (final customerId in customerIds) {
+        try {
+          debugPrint('➡️ Updating customer: $customerId');
+
+          // Create delivery update record for this customer
+          final deliveryUpdateRecord = await _pocketBaseClient
+              .collection('deliveryUpdate')
+              .create(
+                body: {
+                  'deliveryData': customerId,
+                  'status': statusId,
+                  'title': title,
+                  'subtitle': subtitle,
+                  'created': currentTime,
+                  'time': currentTime,
+                  'isAssigned': true,
+                },
+              );
+
+          debugPrint(
+            '📝 Created delivery update: ${deliveryUpdateRecord.id} for customer $customerId',
+          );
+
+          // Update deliveryData record
+          await _pocketBaseClient
+              .collection('deliveryData')
+              .update(
+                customerId,
+                body: {
+                  'deliveryUpdates+': [deliveryUpdateRecord.id],
+                },
+              );
+
+          debugPrint('✅ Successfully updated status for customer: $customerId');
+        } catch (e) {
+          debugPrint('⚠️ Failed to update customer $customerId: $e');
+          // Continue with next customer instead of breaking whole process
+        }
+      }
+
+      debugPrint(
+        '🎉 Bulk update completed for ${customerIds.length} customers',
+      );
+    } catch (e) {
+      debugPrint('❌ Bulk operation failed: ${e.toString()}');
+      throw ServerException(
+        message:
+            e is ServerException
+                ? e.message
+                : 'Bulk operation failed: ${e.toString()}',
         statusCode: e is ServerException ? e.statusCode : '500',
       );
     }
@@ -896,8 +1151,10 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       // Get current location using the location service
       final position = await LocationService.getCurrentLocation();
-      
-      debugPrint('📍 Current location: ${position.latitude}, ${position.longitude}');
+
+      debugPrint(
+        '📍 Current location: ${position.latitude}, ${position.longitude}',
+      );
 
       // Update delivery data with location
       await _pocketBaseClient
@@ -912,7 +1169,9 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
           );
 
       debugPrint('✅ Successfully pinned location for delivery: $deliveryId');
-      debugPrint('📍 Pinned coordinates: lat=${position.latitude}, lng=${position.longitude}');
+      debugPrint(
+        '📍 Pinned coordinates: lat=${position.latitude}, lng=${position.longitude}',
+      );
     } catch (e) {
       debugPrint('❌ Failed to pin arrived location: $e');
       throw ServerException(

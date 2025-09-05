@@ -8,11 +8,14 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/update_delivery_status.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/update_queue_remarks.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/pin_arrived_location.dart';
+import '../../domain/usecase/bulk_update_delivery_status.dart';
+import '../../domain/usecase/get_bulk_delivery_status_choices.dart';
 import './delivery_update_event.dart';
 import './delivery_update_state.dart';
 
 class DeliveryUpdateBloc extends Bloc<DeliveryUpdateEvent, DeliveryUpdateState> {
   final GetDeliveryStatusChoices _getDeliveryStatusChoices;
+  final GetBulkDeliveryStatusChoices _getBulkDeliveryStatusChoices;
   final UpdateDeliveryStatus _updateDeliveryStatus;
   final CompleteDelivery _completeDelivery;
   final CheckEndDeliverStatus _checkEndDeliverStatus;
@@ -20,26 +23,33 @@ class DeliveryUpdateBloc extends Bloc<DeliveryUpdateEvent, DeliveryUpdateState> 
   final CreateDeliveryStatus _createDeliveryStatus;
   final UpdateQueueRemarks _updateQueueRemarks;
   final PinArrivedLocation _pinArrivedLocation;
+  // Add the dependency
+final BulkUpdateDeliveryStatus _bulkUpdateDeliveryStatus;
   DeliveryUpdateState? _cachedState;
 
   DeliveryUpdateBloc({
     required GetDeliveryStatusChoices getDeliveryStatusChoices,
     required UpdateDeliveryStatus updateDeliveryStatus,
     required CompleteDelivery completeDelivery,
+    required GetBulkDeliveryStatusChoices getBulkDeliveryStatusChoices,
     required CheckEndDeliverStatus checkEndDeliverStatus,
     required InitializePendingStatus initializePendingStatus,
     required CreateDeliveryStatus createDeliveryStatus,
    required UpdateQueueRemarks updateQueueRemarks,
    required PinArrivedLocation pinArrivedLocation,
-
+required BulkUpdateDeliveryStatus bulkUpdateDeliveryStatus,
   }) : _getDeliveryStatusChoices = getDeliveryStatusChoices,
        _updateDeliveryStatus = updateDeliveryStatus,
        _completeDelivery = completeDelivery,
+       _getBulkDeliveryStatusChoices = getBulkDeliveryStatusChoices,
        _checkEndDeliverStatus = checkEndDeliverStatus,
        _initializePendingStatus = initializePendingStatus,
        _createDeliveryStatus = createDeliveryStatus,
        _updateQueueRemarks = updateQueueRemarks,
        _pinArrivedLocation = pinArrivedLocation,
+
+_bulkUpdateDeliveryStatus = bulkUpdateDeliveryStatus,
+
        super(DeliveryUpdateInitial()) {
     on<GetDeliveryStatusChoicesEvent>(_onGetDeliveryStatusChoices);
     on<LoadLocalDeliveryStatusChoicesEvent>(_onLoadLocalDeliveryStatusChoices);
@@ -51,32 +61,81 @@ class DeliveryUpdateBloc extends Bloc<DeliveryUpdateEvent, DeliveryUpdateState> 
        on<UpdateQueueRemarksEvent>(_onUpdateQueueRemarks);
 on<CheckLocalEndDeliveryStatusEvent>(_onCheckLocalEndDeliveryStatus);
     on<PinArrivedLocationEvent>(_onPinArrivedLocation);
-
+on<BulkUpdateDeliveryStatusEvent>(_onBulkUpdateDeliveries);
+ on<GetBulkDeliveryStatusChoicesEvent>(_onGetBulkDeliveryStatusChoices);
+  on<LoadLocalBulkDeliveryStatusChoicesEvent>(_onLoadLocalBulkDeliveryStatusChoices);
   }
 
-  Future<void> _onUpdateQueueRemarks(
-    UpdateQueueRemarksEvent event,
-    Emitter<DeliveryUpdateState> emit,
-  ) async {
-    emit(DeliveryUpdateLoading());
+Future<void> _onUpdateQueueRemarks(
+  UpdateQueueRemarksEvent event,
+  Emitter<DeliveryUpdateState> emit,
+) async {
+  emit(DeliveryUpdateLoading());
 
-    final result = await _updateQueueRemarks(
-      UpdateQueueRemarksParams(
-        customerId: event.customerId,
-        queueCount: event.queueCount,
-      ),
+  final result = await _updateQueueRemarks(
+    UpdateQueueRemarksParams(
+      statusId: event.statusId,
+      remarks: event.remarks,
+      image: event.image,
+    ),
+  );
+
+  if (!emit.isDone) {
+    result.fold(
+      (failure) => emit(DeliveryUpdateError(failure.message)),
+      (_) => emit(QueueRemarksUpdated(
+        statusId: event.statusId,
+        remarks: event.remarks,
+        image: event.image,
+      )),
     );
-
-    if (!emit.isDone) {
-      result.fold(
-        (failure) => emit(DeliveryUpdateError(failure.message)),
-        (_) => emit(QueueRemarksUpdated(
-          customerId: event.customerId,
-          queueCount: event.queueCount,
-        )),
-      );
-    }
   }
+}
+
+
+Future<void> _onGetBulkDeliveryStatusChoices(
+  GetBulkDeliveryStatusChoicesEvent event,
+  Emitter<DeliveryUpdateState> emit,
+) async {
+  debugPrint('🌐 Fetching bulk delivery status choices (remote)');
+  emit(DeliveryUpdateLoading());
+
+  final result = await _getBulkDeliveryStatusChoices(event.customerIds);
+
+  result.fold(
+    (failure) {
+      debugPrint('❌ Bulk fetch failed: ${failure.message}');
+      emit(DeliveryUpdateError(failure.message));
+    },
+    (data) {
+      debugPrint('✅ Bulk fetch success for ${data.length} customers');
+      emit(BulkDeliveryStatusChoicesLoaded(data));
+    },
+  );
+}
+
+Future<void> _onLoadLocalBulkDeliveryStatusChoices(
+  LoadLocalBulkDeliveryStatusChoicesEvent event,
+  Emitter<DeliveryUpdateState> emit,
+) async {
+  debugPrint('📱 Fetching bulk delivery status choices (local)');
+  emit(DeliveryUpdateLoading());
+
+  final result = await _getBulkDeliveryStatusChoices(event.customerIds);
+
+  result.fold(
+    (failure) {
+      emit(DeliveryUpdateError(failure.message, isLocalError: true));
+      add(GetBulkDeliveryStatusChoicesEvent(event.customerIds)); // fallback remote
+    },
+    (data) {
+      emit(BulkDeliveryStatusChoicesLoaded(data, isFromLocal: true));
+      add(GetBulkDeliveryStatusChoicesEvent(event.customerIds)); // refresh in background
+    },
+  );
+}
+
+
 Future<void> _onGetDeliveryStatusChoices(
   GetDeliveryStatusChoicesEvent event,
   Emitter<DeliveryUpdateState> emit,
@@ -142,6 +201,43 @@ Future<void> _onGetDeliveryStatusChoices(
       add(LoadLocalDeliveryStatusChoicesEvent(event.customerId));
       // Then update with remote data
       add(GetDeliveryStatusChoicesEvent(event.customerId));
+    },
+  );
+}
+
+
+// Now add the function
+Future<void> _onBulkUpdateDeliveries(
+  BulkUpdateDeliveryStatusEvent event,
+  Emitter<DeliveryUpdateState> emit,
+) async {
+  debugPrint('🔄 Bulk updating delivery statuses');
+  emit(DeliveryUpdateLoading());
+
+  final result = await _bulkUpdateDeliveryStatus(
+    BulkUpdateDeliveryStatusParams(
+      customerIds: event.customerIds,
+      statusId: event.statusId,
+    ),
+  );
+
+  result.fold(
+    (failure) {
+      debugPrint('❌ Bulk update failed: ${failure.message}');
+      emit(DeliveryUpdateError(failure.message));
+    },
+    (_) {
+      debugPrint('✅ Bulk update successful for ${event.customerIds.length} deliveries');
+      emit(BulkDeliveryStatusUpdateSuccess(
+        customerIds: event.customerIds,
+        statusId: event.statusId,
+      ));
+
+      // Refresh each delivery's statuses
+      for (final deliveryId in event.customerIds) {
+        add(LoadLocalDeliveryStatusChoicesEvent(deliveryId));
+        add(GetDeliveryStatusChoicesEvent(deliveryId));
+      }
     },
   );
 }

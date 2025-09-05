@@ -374,6 +374,8 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
           'isAccepted': tripRecord.data['isAccepted'] ?? false,
           'isEndTrip': tripRecord.data['isEndTrip'] ?? false,
           'qrCode': tripRecord.data['qrCode'],
+          'deliveryDate': tripRecord.data['deliveryDate'],
+          'name':tripRecord.data['name'],
           'customers': _mapExpandedRecord(tripRecord.expand['customers']),
           'deliveryTeam': _mapExpandedRecord(tripRecord.expand['deliveryTeam']),
           'personels': _mapExpandedRecord(tripRecord.expand['personels']),
@@ -545,6 +547,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         'collectionId': tripRecord.collectionId,
         'collectionName': tripRecord.collectionName,
         'tripNumberId': tripRecord.data['tripNumberId'],
+        'name': tripRecord.data['name'],
         'isAccepted': tripRecord.data['isAccepted'] ?? false,
         'isEndTrip': tripRecord.data['isEndTrip'] ?? false,
         'qrCode': tripRecord.data['qrCode'],
@@ -557,7 +560,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         'timeEndTrip': _formatDateField(tripRecord.data['timeEndTrip']),
         'created': _formatDateField(tripRecord.created),
         'updated': _formatDateField(tripRecord.updated),
-        
+        'deliveryDate': _formatDateField(tripRecord.data['deliveryDate']),
         // Use helper methods to properly convert RecordModel to Map
         'customers': _mapExpandedList(tripRecord.expand['customers']),
         'deliveryTeam': _mapExpandedSingleRecord(tripRecord.expand['deliveryTeam']),

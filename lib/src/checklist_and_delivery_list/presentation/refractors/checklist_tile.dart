@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/domain/entity/checklist_entity.dart';
-import 'package:x_pro_delivery_app/core/common/widgets/list_tiles.dart';
 
-class ChecklistTile extends StatelessWidget {
+import '../../../../core/common/app/features/checklist/domain/entity/checklist_entity.dart';
+
+class ChecklistTile extends StatefulWidget {
   final ChecklistEntity checklist;
   final Function(bool?) onChanged;
   final bool isChecked;
@@ -15,46 +15,46 @@ class ChecklistTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Debug print to check the checked state
-    debugPrint(
-      '🔍 ChecklistTile - ${checklist.objectName}: isChecked=$isChecked, entity.isChecked=${checklist.isChecked}',
-    );
+  State<ChecklistTile> createState() => _ChecklistTileState();
+}
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: CommonListTiles(
-        title: checklist.objectName ?? '',
-        leading: Icon(
-          Icons.checklist_rounded,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        trailing: Transform.scale(
-          scale: 1.1,
-          child: Checkbox(
-            value: isChecked, // Use the passed isChecked parameter
-            onChanged: onChanged,
-            activeColor: Theme.of(context).colorScheme.primary,
-            checkColor: Colors.white, // Ensure check mark is visible
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
+class _ChecklistTileState extends State<ChecklistTile> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.all(16),
+          leading: Checkbox(
+            value: widget.isChecked,
+            onChanged: (value) {
+              widget.onChanged(value);
+            },
           ),
+          title: Text(
+            widget.checklist.objectName ?? 'No Name',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 20, bottom: 20),
+                  child: Text(
+                    widget.checklist.description ?? 'No Description',
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        titleStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-          decoration: isChecked ? TextDecoration.lineThrough : null,
-          color:
-              isChecked
-                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
-                  : Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 1,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
   }

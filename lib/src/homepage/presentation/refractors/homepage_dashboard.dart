@@ -145,6 +145,7 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
                       'Trip Number: ${effectiveState.user.tripNumberId ?? 'No Trip Number'}',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                    
                   ],
                 ),
               ),
@@ -174,6 +175,10 @@ class _HomepageDashboardState extends State<HomepageDashboard> {
                           'Trip Number: ${(effectiveState as UserTripLoaded).trip.tripNumberId ?? 'No Trip Number'}',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
+                        Text(
+                      'Route: ${(effectiveState).trip.name ?? 'No Trip Route'}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    )
                       ],
                     ),
                   ),

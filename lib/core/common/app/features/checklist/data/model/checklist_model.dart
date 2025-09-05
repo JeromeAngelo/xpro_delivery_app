@@ -21,6 +21,7 @@ class ChecklistModel extends ChecklistEntity {
     String? objectName,
     bool? isChecked,
     String? status,
+    String? description,
     super.timeCompleted,
     super.tripModel,
     this.tripId,
@@ -36,6 +37,7 @@ class ChecklistModel extends ChecklistEntity {
     final model = ChecklistModel(
       id: json['id']?.toString() ?? '',
       objectName: json['objectName']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
       isChecked: json['isChecked'] as bool? ?? false,
       status: json['status']?.toString() ?? '',
       timeCompleted: json['timeCompleted'] != null 
@@ -52,6 +54,7 @@ class ChecklistModel extends ChecklistEntity {
       'id': id,
       'objectName': objectName,
       'isChecked': isChecked,
+      'description': description,
       'status': status,
       'timeCompleted': timeCompleted?.toIso8601String(),
       'trip': tripId,

@@ -3,28 +3,28 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/usecases/usecase.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 
-class UpdateQueueRemarks extends UsecaseWithParams<void, UpdateQueueRemarksParams> {
+class UpdateQueueRemarks
+    extends UsecaseWithParams<void, UpdateQueueRemarksParams> {
   const UpdateQueueRemarks(this._repo);
 
   final DeliveryUpdateRepo _repo;
 
   @override
-  ResultFuture<void> call(UpdateQueueRemarksParams params) => 
-    _repo.updateQueueRemarks(
-      params.customerId,
-      params.queueCount,
-    );
+  ResultFuture<void> call(UpdateQueueRemarksParams params) =>
+      _repo.updateQueueRemarks(params.statusId, params.remarks, params.image);
 }
 
 class UpdateQueueRemarksParams extends Equatable {
-  final String customerId;
-  final String queueCount;
+  final String statusId;
+  final String remarks;
+  final String image;
 
   const UpdateQueueRemarksParams({
-    required this.customerId,
-    required this.queueCount,
+    required this.statusId,
+    required this.remarks,
+    required this.image,
   });
 
   @override
-  List<Object?> get props => [customerId,  queueCount];
+  List<Object?> get props => [statusId, remarks, image];
 }

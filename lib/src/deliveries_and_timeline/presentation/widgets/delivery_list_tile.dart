@@ -10,12 +10,19 @@ class DeliveryListTile extends StatelessWidget {
   final DeliveryDataEntity delivery;
   final VoidCallback? onTap;
   final bool isFromLocal;
-
+   final bool selectionMode;
+  final VoidCallback? onLongPress;
+   final ValueChanged<bool> onSelectionChanged;
+ final bool isSelected;
   const DeliveryListTile({
     super.key,
     required this.delivery,
     required this.isFromLocal,
     this.onTap,
+     required this.selectionMode,
+    this.onLongPress,
+     required this.isSelected,
+    required this.onSelectionChanged,
   });
 
   @override
@@ -165,94 +172,104 @@ class DeliveryListTile extends StatelessWidget {
       );
     }
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          // Pre-load delivery data to local storage
-          if (delivery.id != null) {
-            context.read<DeliveryDataBloc>().add(
-              GetLocalDeliveryDataByIdEvent(delivery.id!),
-            );
-          }
-
-          // Navigate after ensuring data is in local storage
-          if (delivery.id != null) {
-            context.pushReplacement(
-              '/delivery-and-invoice/${delivery.id}',
-              extra: delivery,
-            );
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.1),
-                    child: Icon(
-                      Icons.store,
-                      color: Theme.of(context).colorScheme.primary,
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          onTap: () {
+            // Pre-load delivery data to local storage
+            if (delivery.id != null) {
+              context.read<DeliveryDataBloc>().add(
+                GetLocalDeliveryDataByIdEvent(delivery.id!),
+              );
+            }
+      
+            // Navigate after ensuring data is in local storage
+            if (delivery.id != null) {
+              context.pushReplacement(
+                '/delivery-and-invoice/${delivery.id}',
+                extra: delivery,
+              );
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.1),
+                      child: Icon(
+                        Icons.store,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          storeName ?? 'No Store Name',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                            fontWeight: FontWeight.w500,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            storeName ?? 'No Store Name',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          municipality ?? 'No Address',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                          Text(
+                            '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            municipality ?? 'No Address',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Divider(),
-              Row(
-                children: [
-                  Text(
-                    'Status: ',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    selectionMode
+            ? Checkbox(
+                value: isSelected, // default unchecked
+                 onChanged: (val) {
+                          if (val != null) {
+                            onSelectionChanged(val);
+                          }
+                        }, // leave null for now
+              )
+            : Icon(Icons.arrow_forward_ios), // your original trailing icon
+      
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Divider(),
+                Row(
+                  children: [
+                    Text(
+                      'Status: ',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  Text(
-                    _getDeliveryStatus(delivery),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
+                    Text(
+                      _getDeliveryStatus(delivery),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-             
-            ],
+                  ],
+                ),
+               
+              ],
+            ),
           ),
         ),
       ),

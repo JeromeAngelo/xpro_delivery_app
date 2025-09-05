@@ -110,10 +110,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
                 ?.map((p) => p is RecordModel ? p.data : p)
                 .toList() ??
             [],
-        'vehicle':
-            record.expand['vehicle'] is List
-                ? ((record.expand['vehicle'] as List).first as RecordModel).data
-                : (record.expand['vehicle'] as RecordModel?)?.data,
+        
         'checklist':
             (record.expand['checklist'] as List?)
                 ?.map((c) => c is RecordModel ? c.data : c)
@@ -603,6 +600,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           'objectName': 'Invoices',
           'isChecked': false,
           'status': 'pending',
+          'description' : 'Check the number of Invoices',
           'created': DateTime.now().toIso8601String(),
         },
         {
@@ -610,12 +608,16 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           'objectName': 'Pushcarts',
           'isChecked': false,
           'status': 'pending',
+                    'description' : 'Check the number of Pushcarts',
+
           'created': DateTime.now().toIso8601String(),
         },
         {
           'trip': actualTripId,
           'objectName': 'BLOWBAGETS',
           'isChecked': false,
+                    'description' : 'Follow the BLOWBAGETS instructions for safety',
+
           'status': 'pending',
           'created': DateTime.now().toIso8601String(),
         },
@@ -891,6 +893,11 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           if (tripRecord.data['timeEndTrip'] != null) {
             final timeEndTripDate = parseDate(tripRecord.data['timeEndTrip']);
             data['timeEndTrip'] = timeEndTripDate?.toIso8601String();
+          }
+
+           if (tripRecord.data['deliveryDate'] != null) {
+            final timeEndTripDate = parseDate(tripRecord.data['deliveryDate']);
+            data['deliveryDate'] = timeEndTripDate?.toIso8601String();
           }
 
           return data;
@@ -1270,6 +1277,8 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'isAccepted': record.data['isAccepted'],
         'deliveryVehicle': record.data['deliveryVehicle'],
         'timeAccepted': record.data['timeAccepted'],
+        'name': record.data['name'],
+        'deliveryDate': record.data['deliveryDate'],
         'longitude': record.data['longitude'],
         'latitude': record.data['latitude'],
       };

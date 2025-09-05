@@ -52,6 +52,32 @@ class DeliveryCompletionSuccess extends DeliveryUpdateState {
   List<Object?> get props => [deliveryDataId, tripId];
 }
 
+class BulkDeliveryStatusUpdateSuccess extends DeliveryUpdateState {
+  final List<String> customerIds;
+  final String statusId;
+  final bool isFromLocal;
+
+  const BulkDeliveryStatusUpdateSuccess({
+    required this.customerIds,
+    required this.statusId,
+    this.isFromLocal = false,
+  });
+
+  @override
+  List<Object> get props => [customerIds, statusId, isFromLocal];
+}
+
+class BulkDeliveryStatusUpdateError extends DeliveryUpdateState {
+  final String message;
+  final bool isLocalError;
+
+  const BulkDeliveryStatusUpdateError(this.message, {this.isLocalError = false});
+
+  @override
+  List<Object> get props => [message, isLocalError];
+}
+
+
 
 // delivery_update_state.dart
 class EndDeliveryStatusChecked extends DeliveryUpdateState {
@@ -83,17 +109,20 @@ class DeliveryStatusCreated extends DeliveryUpdateState {
   List<Object> get props => [customerId];
 }
 class QueueRemarksUpdated extends DeliveryUpdateState {
-  final String customerId;
-  final String queueCount;
+  final String statusId;
+  final String remarks;
+  final String image;
 
   const QueueRemarksUpdated({
-    required this.customerId,
-    required this.queueCount,
+    required this.statusId,
+    required this.remarks,
+    required this.image,
   });
 
   @override
-  List<Object> get props => [customerId, queueCount];
+  List<Object> get props => [statusId, remarks, image];
 }
+
 
 class PinArrivedLocationSuccess extends DeliveryUpdateState {
   final String deliveryId;
@@ -105,6 +134,33 @@ class PinArrivedLocationSuccess extends DeliveryUpdateState {
   @override
   List<Object> get props => [deliveryId];
 }
+
+class BulkDeliveryStatusChoicesLoaded extends DeliveryUpdateState {
+  final Map<String, List<DeliveryUpdateEntity>> bulkStatusChoices;
+  final bool isFromLocal;
+
+  const BulkDeliveryStatusChoicesLoaded(
+    this.bulkStatusChoices, {
+    this.isFromLocal = false,
+  });
+
+  @override
+  List<Object> get props => [bulkStatusChoices, isFromLocal];
+}
+
+class BulkDeliveryStatusChoicesError extends DeliveryUpdateState {
+  final String message;
+  final bool isLocalError;
+
+  const BulkDeliveryStatusChoicesError(
+    this.message, {
+    this.isLocalError = false,
+  });
+
+  @override
+  List<Object> get props => [message, isLocalError];
+}
+
 
 
 

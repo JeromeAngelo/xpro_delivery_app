@@ -150,7 +150,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(2, 2437256378976969932),
     name: 'ChecklistEntity',
-    lastPropertyId: const obx_int.IdUid(7, 94474667100763187),
+    lastPropertyId: const obx_int.IdUid(8, 2136454817149967725),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -196,6 +196,12 @@ final _entities = <obx_int.ModelEntity>[
         flags: 520,
         indexId: const obx_int.IdUid(41, 5008797146945500630),
         relationTarget: 'TripModel',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 2136454817149967725),
+        name: 'description',
+        type: 9,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -470,7 +476,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(14, 4634356157032572206),
     name: 'TripEntity',
-    lastPropertyId: const obx_int.IdUid(22, 245363032872952798),
+    lastPropertyId: const obx_int.IdUid(25, 626156953183959655),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -610,6 +616,24 @@ final _entities = <obx_int.ModelEntity>[
         flags: 520,
         indexId: const obx_int.IdUid(61, 8619182400183796725),
         relationTarget: 'DeliveryVehicleModel',
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(23, 2584058250560362913),
+        name: 'name',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(24, 4302120255473557971),
+        name: 'allowMismatchedPersonnels',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(25, 626156953183959655),
+        name: 'deliveryDate',
+        type: 10,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[
@@ -1035,7 +1059,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(141, 8976760665311177153),
+        indexId: const obx_int.IdUid(143, 4295261022001219369),
         relationTarget: 'TripModel',
       ),
     ],
@@ -1113,7 +1137,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(42, 792996251176618181),
     name: 'EndChecklistEntity',
-    lastPropertyId: const obx_int.IdUid(7, 4872620912309772707),
+    lastPropertyId: const obx_int.IdUid(8, 252946663843519247),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -1155,6 +1179,12 @@ final _entities = <obx_int.ModelEntity>[
       obx_int.ModelProperty(
         id: const obx_int.IdUid(7, 4872620912309772707),
         name: 'trip',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 252946663843519247),
+        name: 'description',
         type: 9,
         flags: 0,
       ),
@@ -1367,7 +1397,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(139, 1498077514876797370),
+        indexId: const obx_int.IdUid(142, 4386486870506067259),
         relationTarget: 'TripModel',
       ),
     ],
@@ -3093,7 +3123,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
     lastEntityId: const obx_int.IdUid(76, 3546031072707572946),
-    lastIndexId: const obx_int.IdUid(141, 8976760665311177153),
+    lastIndexId: const obx_int.IdUid(143, 4295261022001219369),
     lastRelationId: const obx_int.IdUid(52, 2804511821638289007),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [
@@ -3207,6 +3237,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
       8572364359171147937,
       7247713234655754338,
       7036718240826879657,
+      1498077514876797370,
+      8976760665311177153,
     ],
     retiredPropertyUids: const [
       3346502891055187729,
@@ -3822,7 +3854,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 : fbb.writeString(object.objectName!);
         final statusOffset =
             object.status == null ? null : fbb.writeString(object.status!);
-        fbb.startTable(8);
+        final descriptionOffset =
+            object.description == null
+                ? null
+                : fbb.writeString(object.description!);
+        fbb.startTable(9);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, objectNameOffset);
@@ -3830,6 +3866,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(4, statusOffset);
         fbb.addInt64(5, object.timeCompleted?.millisecondsSinceEpoch);
         fbb.addInt64(6, object.trip.targetId);
+        fbb.addOffset(7, descriptionOffset);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -3852,6 +3889,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           10,
         );
+        final descriptionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 18);
         final statusParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 12);
@@ -3863,6 +3903,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           id: idParam,
           objectName: objectNameParam,
           isChecked: isCheckedParam,
+          description: descriptionParam,
           status: statusParam,
           timeCompleted: timeCompletedParam,
         )..dbId = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
@@ -4295,7 +4336,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 : fbb.writeString(object.totalTripDistance!);
         final qrCodeOffset =
             object.qrCode == null ? null : fbb.writeString(object.qrCode!);
-        fbb.startTable(23);
+        final nameOffset =
+            object.name == null ? null : fbb.writeString(object.name!);
+        fbb.startTable(26);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, collectionIdOffset);
@@ -4317,6 +4360,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addFloat64(19, object.latitude);
         fbb.addFloat64(20, object.longitude);
         fbb.addInt64(21, object.deliveryVehicle.targetId);
+        fbb.addOffset(22, nameOffset);
+        fbb.addBool(23, object.allowMismatchedPersonnels);
+        fbb.addInt64(24, object.deliveryDate?.millisecondsSinceEpoch);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -4343,6 +4389,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           34,
         );
+        final deliveryDateValue = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          52,
+        );
         final idParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 6);
@@ -4355,6 +4406,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final tripNumberIdParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 12);
+        final nameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 48);
+        final deliveryDateParam =
+            deliveryDateValue == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(deliveryDateValue);
         final latitudeParam = const fb.Float64Reader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -4372,6 +4430,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
             timeEndTripValue == null
                 ? null
                 : DateTime.fromMillisecondsSinceEpoch(timeEndTripValue);
+        final allowMismatchedPersonnelsParam = const fb.BoolReader()
+            .vTableGetNullable(buffer, rootOffset, 50);
         final isEndTripParam = const fb.BoolReader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -4402,10 +4462,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
           collectionId: collectionIdParam,
           collectionName: collectionNameParam,
           tripNumberId: tripNumberIdParam,
+          name: nameParam,
+          deliveryDate: deliveryDateParam,
           latitude: latitudeParam,
           longitude: longitudeParam,
           totalTripDistance: totalTripDistanceParam,
           timeEndTrip: timeEndTripParam,
+          allowMismatchedPersonnels: allowMismatchedPersonnelsParam,
           isEndTrip: isEndTripParam,
           timeAccepted: timeAcceptedParam,
           isAccepted: isAcceptedParam,
@@ -5151,7 +5214,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final statusOffset =
             object.status == null ? null : fbb.writeString(object.status!);
         final tripOffset = fbb.writeString(object.trip);
-        fbb.startTable(8);
+        final descriptionOffset =
+            object.description == null
+                ? null
+                : fbb.writeString(object.description!);
+        fbb.startTable(9);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, objectNameOffset);
@@ -5159,6 +5226,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(4, statusOffset);
         fbb.addInt64(5, object.timeCompleted?.millisecondsSinceEpoch);
         fbb.addOffset(6, tripOffset);
+        fbb.addOffset(7, descriptionOffset);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -5184,6 +5252,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final tripParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 16, '');
+        final descriptionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 18);
         final statusParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 12);
@@ -5196,6 +5267,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           objectName: objectNameParam,
           isChecked: isCheckedParam,
           trip: tripParam,
+          description: descriptionParam,
           status: statusParam,
           timeCompleted: timeCompletedParam,
         )..dbId = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
@@ -7960,6 +8032,11 @@ class ChecklistEntity_ {
   static final trip = obx.QueryRelationToOne<ChecklistEntity, TripModel>(
     _entities[1].properties[6],
   );
+
+  /// See [ChecklistEntity.description].
+  static final description = obx.QueryStringProperty<ChecklistEntity>(
+    _entities[1].properties[7],
+  );
 }
 
 /// [ChecklistModel] entity fields to define ObjectBox queries.
@@ -8263,6 +8340,21 @@ class TripEntity_ {
       obx.QueryRelationToOne<TripEntity, DeliveryVehicleModel>(
         _entities[7].properties[20],
       );
+
+  /// See [TripEntity.name].
+  static final name = obx.QueryStringProperty<TripEntity>(
+    _entities[7].properties[21],
+  );
+
+  /// See [TripEntity.allowMismatchedPersonnels].
+  static final allowMismatchedPersonnels = obx.QueryBooleanProperty<TripEntity>(
+    _entities[7].properties[22],
+  );
+
+  /// See [TripEntity.deliveryDate].
+  static final deliveryDate = obx.QueryDateProperty<TripEntity>(
+    _entities[7].properties[23],
+  );
 
   /// see [TripEntity.personels]
   static final personels = obx.QueryRelationToMany<TripEntity, PersonelModel>(
@@ -8668,6 +8760,11 @@ class EndChecklistEntity_ {
   /// See [EndChecklistEntity.trip].
   static final trip = obx.QueryStringProperty<EndChecklistEntity>(
     _entities[17].properties[6],
+  );
+
+  /// See [EndChecklistEntity.description].
+  static final description = obx.QueryStringProperty<EndChecklistEntity>(
+    _entities[17].properties[7],
   );
 }
 

@@ -50,7 +50,9 @@ class TripModel extends TripEntity {
     super.endTripOtp,
     super.deliveryTeam,
     super.timeAccepted,
+    super.name,
     super.isEndTrip,
+    super.deliveryDate,
     super.timeEndTrip,
     super.created,
     super.updated,
@@ -270,6 +272,7 @@ class TripModel extends TripEntity {
       collectionId: json['collectionId']?.toString(),
       collectionName: json['collectionName']?.toString(),
       tripNumberId: json['tripNumberId']?.toString(),
+      name: json['name']?.toString(),
       qrCode: json['qrCode']?.toString(),
       deliveryTeam: deliveryTeamModel,
       mismatchedPersonnelReasonCode: parseReasonSelection(json['mismatchedPersonnelReasonCode']),
@@ -294,6 +297,10 @@ class TripModel extends TripEntity {
       timeAccepted:
           json['timeAccepted'] != null
               ? DateTime.parse(json['timeAccepted'].toString())
+              : null,
+               deliveryDate:
+          json['deliveryDate'] != null
+              ? DateTime.parse(json['deliveryDate'].toString())
               : null,
       isEndTrip: json['isEndTrip'] as bool? ?? false,
       timeEndTrip:
@@ -358,6 +365,8 @@ class TripModel extends TripEntity {
       'longitude': longitude?.toString(),
       'isEndTrip': isEndTrip,
       'timeEndTrip': timeEndTrip?.toIso8601String(),
+      'name':name,
+      'deliveryDate': deliveryDate?.toIso8601String(),
       'isAccepted': isAccepted,
       'allowMismatchedPersonnels' : allowMismatchedPersonnels,
       'otp': otp.target?.id,
@@ -376,7 +385,7 @@ class TripModel extends TripEntity {
     List<PersonelModel>? personelsList,
     List<ChecklistModel>? checklistItems,
     List<VehicleModel>? vehicleList,
- 
+  String? name,
     List<EndTripChecklistModel>? endTripChecklistItems,
     List<TripUpdateModel>? tripUpdateList,
     List<DeliveryDataModel>? deliveryDataList,
@@ -391,6 +400,7 @@ class TripModel extends TripEntity {
     DateTime? created,
     DateTime? updated,
     DateTime? timeAccepted,
+    DateTime? deliveryDate,
     bool? isAccepted,
   }) {
     return TripModel(
@@ -410,6 +420,8 @@ class TripModel extends TripEntity {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       timeAccepted: timeAccepted ?? this.timeAccepted,
+      deliveryDate: deliveryDate ?? this.deliveryDate,
+      name: name ?? this.name,
       created: created ?? this.created,
       updated: updated ?? this.updated,
       isAccepted: isAccepted ?? this.isAccepted,

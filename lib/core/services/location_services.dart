@@ -33,14 +33,20 @@ class LocationService {
     return serviceEnabled;
   }
 
-  static Future<bool> requestPermission() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    return permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse;
+static Future<bool> requestPermission() async {
+  LocationPermission permission = await Geolocator.checkPermission();
+  debugPrint('Current permission status: $permission');
+  if (permission == LocationPermission.denied) {
+    debugPrint('Requesting permission...');
+    permission = await Geolocator.requestPermission();
+    debugPrint('Permission request result: $permission');
   }
+  if (permission == LocationPermission.deniedForever) {
+    debugPrint('Permission denied forever');
+    return false;
+  }
+  return true;
+}
 
   static Stream<double> trackDistance() {
     _locationController = StreamController<Position>.broadcast();
@@ -68,10 +74,11 @@ class LocationService {
       },
     );
 
-    // Return distance stream with enhanced position processing
-    return _locationController!.stream
-        .where(_isValidPosition) // Filter valid positions
-        .map(_processPosition); // Process and calculate distance
+   return _locationController!.stream
+    .where((pos) => _isValidPosition(pos))
+    .map((pos) => _processPosition(pos));
+
+
   }
 
   // Simple position validation for any movement
@@ -258,31 +265,28 @@ class LocationService {
     _locationController?.add(position);
   }
 
-  static Future<Position> getCurrentLocation() async {
-    bool serviceEnabled = await enableLocationService();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled');
-    }
-
-    bool permissionGranted = await requestPermission();
-    if (!permissionGranted) {
-      return Future.error('Location permission denied');
-    }
-
-    // Get position with relaxed settings to prevent timeouts
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-      // Remove timeLimit to prevent timeout exceptions
-    );
-
-    debugPrint('📍 LOCATION: Current position obtained');
-    debugPrint(
-      '   📍 Coordinates: ${position.latitude}, ${position.longitude}',
-    );
-    debugPrint('   🎯 Accuracy: ${position.accuracy} meters');
-
-    return position;
+ static Future<Position> getCurrentLocation() async {
+  bool serviceEnabled = await enableLocationService();
+  if (!serviceEnabled) {
+    return Future.error('Location services are disabled');
   }
+  LocationPermission permission = await Geolocator.checkPermission();
+  debugPrint('Current permission status: $permission');
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+  }
+  if (permission == LocationPermission.deniedForever) {
+    return Future.error('Location permission denied forever');
+  }
+  try {
+    final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    debugPrint('Current location: ${position.latitude}, ${position.longitude}');
+    return position;
+  } catch (e) {
+    debugPrint('Error getting current location: $e');
+    return Future.error('Error getting current location');
+  }
+}
 
   static void stopTracking() {
     debugPrint('🛑 LOCATION: Stopping location tracking...');

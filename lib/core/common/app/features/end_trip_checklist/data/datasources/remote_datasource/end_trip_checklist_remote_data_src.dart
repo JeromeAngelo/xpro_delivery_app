@@ -52,11 +52,13 @@ Future<List<EndTripChecklistModel>> generateEndTripChecklist(String tripId) asyn
         'objectName': 'Collections',
         'isChecked': false,
         'status': 'pending',
+        'description': 'Check all the collections',
         'created': DateTime.now().toIso8601String(),
       },
       {
         'trip': actualTripId,
         'objectName': 'Pushcarts',
+        'description': 'Check all the pushcarts',
         'isChecked': false,
         'status': 'pending',
         'created': DateTime.now().toIso8601String(),
@@ -64,6 +66,7 @@ Future<List<EndTripChecklistModel>> generateEndTripChecklist(String tripId) asyn
       {
         'trip': actualTripId,
         'objectName': 'Remittance',
+        'description': 'Check all the remittances',
         'isChecked': false,
         'status': 'pending',
         'created': DateTime.now().toIso8601String(),
@@ -153,6 +156,7 @@ Future<List<EndTripChecklistModel>> loadEndTripChecklist(String tripId) async {
         'isChecked': record.data['isChecked'] ?? false,
         'status': record.data['status'] ?? 'pending',
         'timeCompleted': record.data['timeCompleted'],
+        'description': record.data['description'] ?? '',
         'trip': actualTripId,
         'expand': {
           'trip': record.expand['trip']?.map((trip) => trip.data).first,

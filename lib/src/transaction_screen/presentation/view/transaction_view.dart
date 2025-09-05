@@ -98,67 +98,6 @@ class _TransactionViewState extends State<TransactionView> {
     }
   }
 
-  // void _loadExistingReceipt() {
-  //   if (widget.deliveryData.id != null) {
-  //     debugPrint('🔄 Loading existing delivery receipt for: ${widget.deliveryData.id}');
-
-  //     // Load local receipt first
-  //     context.read<DeliveryReceiptBloc>().add(
-  //       LoadLocalDeliveryReceiptByDeliveryDataIdEvent(widget.deliveryData.id!),
-  //     );
-  //   }
-  // }
-
-  // bool _validateFields() {
-  //   if (_selectedPaymentMode == null) {
-  //     _showErrorSnackBar('Please select mode of payment');
-  //     return false;
-  //   }
-
-  //   if (_amountController.text.isEmpty) {
-  //     _showErrorSnackBar('Please enter amount');
-  //     return false;
-  //   }
-
-  //   if (_showChequeNumberField && _chequeNumberController.text.isEmpty) {
-  //     _showErrorSnackBar('Please enter cheque number');
-  //     return false;
-  //   }
-
-  //   if (_showEWalletFields) {
-  //     if (_selectedEWalletType == null) {
-  //       _showErrorSnackBar('Please select E-Wallet type');
-  //       return false;
-  //     }
-  //     if (_eWalletAccountController.text.isEmpty) {
-  //       _showErrorSnackBar('Please enter E-Wallet account');
-  //       return false;
-  //     }
-  //   }
-
-  //   return true;
-  // }
-
-  // void _showErrorSnackBar(String message) {
-  //   ScaffoldMessenger.of(
-  //     context,
-  //   ).showSnackBar(SnackBar(content: Text(message)));
-  // }
-
-  // ModeOfPayment _getModeOfPayment(String? mode) {
-  //   switch (mode) {
-  //     case 'Bank Transfer':
-  //       return ModeOfPayment.bankTransfer;
-  //     case 'Cash On Delivery':
-  //       return ModeOfPayment.cashOnDelivery;
-  //     case 'Cheque':
-  //       return ModeOfPayment.cheque;
-  //     case 'E-Wallet':
-  //       return ModeOfPayment.eWallet;
-  //     default:
-  //       return ModeOfPayment.cashOnDelivery;
-  //   }
-  // }
 
   void _handlePaymentModeChange(String? newValue) async {
     AppDebugLogger.instance.logInfo(
@@ -271,7 +210,7 @@ class _TransactionViewState extends State<TransactionView> {
           ),
           value: _selectedBankName,
           items:
-              ['BDO', 'Metrobank', 'RCBC', 'LandBank', 'Others']
+              ['BDO', 'Metrobank', 'Security Bank']
                   .map(
                     (value) =>
                         DropdownMenuItem(value: value, child: Text(value)),

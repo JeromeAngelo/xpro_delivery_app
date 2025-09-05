@@ -243,6 +243,8 @@ import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_inv
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloaded.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloading.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/sync_delivery_data_by_trip_id.dart';
+import '../common/app/features/Trip_Ticket/delivery_update/domain/usecase/bulk_update_delivery_status.dart';
+import '../common/app/features/Trip_Ticket/delivery_update/domain/usecase/get_bulk_delivery_status_choices.dart';
 import '../common/app/features/Trip_Ticket/delivery_update/domain/usecase/pin_arrived_location.dart';
 import '../common/app/features/Trip_Ticket/invoice_data/domain/usecase/set_invoice_unloaded.dart';
 import '../common/app/features/Trip_Ticket/invoice_status/data/datasources/local_datasource/invoice_status_local_datasource.dart';
@@ -640,7 +642,8 @@ Future<void> initDeliveryUpdate() async {
       checkEndDeliverStatus: sl(),
       initializePendingStatus: sl(),
       createDeliveryStatus: sl(),
-      updateQueueRemarks: sl(), pinArrivedLocation: sl(),
+      updateQueueRemarks: sl(), pinArrivedLocation: sl(), bulkUpdateDeliveryStatus: sl(), getBulkDeliveryStatusChoices: sl(),
+      
     ),
   );
   sl.registerLazySingleton(() => CompleteDelivery(sl()));
@@ -649,6 +652,8 @@ Future<void> initDeliveryUpdate() async {
   sl.registerLazySingleton(() => CheckEndDeliverStatus(sl()));
   sl.registerLazySingleton(() => InitializePendingStatus(sl()));
   sl.registerLazySingleton(() => CreateDeliveryStatus(sl()));
+  sl.registerLazySingleton(() => GetBulkDeliveryStatusChoices(sl()));
+  sl.registerLazySingleton(() => BulkUpdateDeliveryStatus(sl()));
   sl.registerLazySingleton(() => UpdateQueueRemarks(sl()));
   sl.registerLazySingleton( () => PinArrivedLocation(sl()));
   sl.registerLazySingleton<DeliveryUpdateRepo>(

@@ -7,6 +7,8 @@ class StatusIcons {
         return Icons.location_on;
        case 'waiting for customer':
         return Icons.timer;
+         case 'invoices in queue':
+        return Icons.queue;
       case 'unloading':
         return Icons.unarchive;
       case 'mark as undelivered':

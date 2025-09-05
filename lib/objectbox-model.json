@@ -75,7 +75,7 @@
     },
     {
       "id": "2:2437256378976969932",
-      "lastPropertyId": "7:94474667100763187",
+      "lastPropertyId": "8:2136454817149967725",
       "name": "ChecklistEntity",
       "properties": [
         {
@@ -116,6 +116,11 @@
           "flags": 520,
           "indexId": "41:5008797146945500630",
           "relationTarget": "TripModel"
+        },
+        {
+          "id": "8:2136454817149967725",
+          "name": "description",
+          "type": 9
         }
       ],
       "relations": []
@@ -351,7 +356,7 @@
     },
     {
       "id": "14:4634356157032572206",
-      "lastPropertyId": "22:245363032872952798",
+      "lastPropertyId": "25:626156953183959655",
       "name": "TripEntity",
       "properties": [
         {
@@ -477,6 +482,21 @@
           "flags": 520,
           "indexId": "61:8619182400183796725",
           "relationTarget": "DeliveryVehicleModel"
+        },
+        {
+          "id": "23:2584058250560362913",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "24:4302120255473557971",
+          "name": "allowMismatchedPersonnels",
+          "type": 1
+        },
+        {
+          "id": "25:626156953183959655",
+          "name": "deliveryDate",
+          "type": 10
         }
       ],
       "relations": [
@@ -850,7 +870,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "141:8976760665311177153",
+          "indexId": "143:4295261022001219369",
           "relationTarget": "TripModel"
         }
       ],
@@ -916,7 +936,7 @@
     },
     {
       "id": "42:792996251176618181",
-      "lastPropertyId": "7:4872620912309772707",
+      "lastPropertyId": "8:252946663843519247",
       "name": "EndChecklistEntity",
       "properties": [
         {
@@ -953,6 +973,11 @@
         {
           "id": "7:4872620912309772707",
           "name": "trip",
+          "type": 9
+        },
+        {
+          "id": "8:252946663843519247",
+          "name": "description",
           "type": 9
         }
       ],
@@ -1134,7 +1159,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "139:1498077514876797370",
+          "indexId": "142:4386486870506067259",
           "relationTarget": "TripModel"
         }
       ],
@@ -2596,7 +2621,7 @@
     }
   ],
   "lastEntityId": "76:3546031072707572946",
-  "lastIndexId": "141:8976760665311177153",
+  "lastIndexId": "143:4295261022001219369",
   "lastRelationId": "52:2804511821638289007",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
@@ -2711,7 +2736,9 @@
     1056979858007497304,
     8572364359171147937,
     7247713234655754338,
-    7036718240826879657
+    7036718240826879657,
+    1498077514876797370,
+    8976760665311177153
   ],
   "retiredPropertyUids": [
     3346502891055187729,

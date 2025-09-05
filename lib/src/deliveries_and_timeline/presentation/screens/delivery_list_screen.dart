@@ -20,6 +20,8 @@ import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widg
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/end_trip_btn.dart';
 
 import '../../../../core/common/widgets/loading_tile.dart';
+import '../widgets/quick_action_button.dart';
+import '../widgets/quick_update_dialog.dart';
 
 class DeliveryListScreen extends StatefulWidget {
   const DeliveryListScreen({super.key});
@@ -45,6 +47,30 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
   StreamSubscription? _authSubscription;
   StreamSubscription? _deliveryDataSubscription;
   StreamSubscription? _deliverySubscription;
+ Set<String> selectedDeliveries = {}; // Track selected deliveries
+   bool selectionMode = false;
+
+  void _enableSelectionMode() {
+    setState(() {
+      selectionMode = true;
+    });
+  }
+
+  void _disableSelectionMode() {
+    setState(() {
+      selectionMode = false;
+    });
+  }
+
+  void _toggleSelection(String id, bool isSelected) {
+    setState(() {
+      if (isSelected) {
+        selectedDeliveries.add(id);
+      } else {
+        selectedDeliveries.remove(id);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -587,6 +613,14 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
                       child: DeliveryListTile(
                         delivery: delivery,
                         isFromLocal: _isOffline,
+                         selectionMode: selectionMode,
+                          isSelected: selectedDeliveries.contains(delivery.id),
+                         onSelectionChanged: (selected) {
+    if (delivery.id != null) {
+      _toggleSelection(delivery.id!, selected);
+    }
+  },
+            onLongPress: _enableSelectionMode,
                         onTap: () {
                           debugPrint('🔄 Tapped delivery: ${delivery.id}');
                           debugPrint('📊 Delivery index in list: $index');
@@ -612,11 +646,32 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
             ],
           ),
         ),
+
+          // Switch buttons depending on mode
+          selectionMode
+              ? QuickActionButton(
+                 bulkEnabled: selectedDeliveries.isNotEmpty,
+                   onBulkUpdate: () async {
+    final result = await showDialog(
+      context: context,
+      builder: (_) => QuickUpdateDialog(
+        selectedDeliveryIds: selectedDeliveries.toList(),
+      ),
+    );
+
+    if (result == true) {
+      // ✅ Clear selection & reset to default mode
+      _disableSelectionMode();
+    }
+  },
+                  onCancel: _disableSelectionMode,
+                )
+              :EndTripButton(
+                    isEnabled: isEndTripButtonEnabled,
+                    tooltip: endTripButtonTooltip,
+                  ),
         // Always show EndTripButton but control its enabled state
-        EndTripButton(
-          isEnabled: isEndTripButtonEnabled,
-          tooltip: endTripButtonTooltip,
-        ),
+        
       ],
     );
   }

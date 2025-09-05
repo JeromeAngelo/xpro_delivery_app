@@ -61,6 +61,7 @@ Future<List<ChecklistModel>> loadChecklistByTripId(String tripId) async {
         'collectionId': record.collectionId,
         'collectionName': record.collectionName,
         'objectName': record.data['objectName'],
+        'description': record.data['description'],
         'isChecked': record.data['isChecked'] ?? false,
         'timeCompleted': record.data['timeCompleted'],
         'trip': actualTripId,

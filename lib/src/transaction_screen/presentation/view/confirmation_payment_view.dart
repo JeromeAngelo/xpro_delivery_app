@@ -94,12 +94,7 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
   }
 
   bool _validateFields() {
-    if (_signaturePadKey.currentState?.clear == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please provide signature')));
-      return false;
-    }
+    
 
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(

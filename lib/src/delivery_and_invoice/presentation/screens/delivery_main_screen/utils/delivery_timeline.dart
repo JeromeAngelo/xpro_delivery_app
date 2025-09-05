@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/custom_timeline.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
@@ -21,17 +22,20 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
     super.initState();
     // Data loading is handled by the parent screen/router
     // No need to load data again here to prevent multiple loading states
-    debugPrint('📱 DeliveryTimeline: Initialized for customer: ${widget.customerId}');
+    debugPrint(
+      '📱 DeliveryTimeline: Initialized for customer: ${widget.customerId}',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<DeliveryDataBloc, DeliveryDataState>(
-      listenWhen: (previous, current) =>
-          current is DeliveryDataLoaded ||
-          current is DeliveryDataError ||
-          current is InvoiceSetToUnloading ||
-          current is InvoiceSetToUnloaded,
+      listenWhen:
+          (previous, current) =>
+              current is DeliveryDataLoaded ||
+              current is DeliveryDataError ||
+              current is InvoiceSetToUnloading ||
+              current is InvoiceSetToUnloaded,
       listener: (context, state) {
         if (mounted) {
           setState(() {
@@ -39,23 +43,27 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
           });
         }
       },
-      buildWhen: (previous, current) =>
-          current is DeliveryDataLoaded ||
-          current is DeliveryDataError ||
-          current is InvoiceSetToUnloading ||
-          current is InvoiceSetToUnloaded ||
-          // Only show loading if we have no cached data at all  
-          (current is DeliveryDataLoading && _cachedState == null),
+      buildWhen:
+          (previous, current) =>
+              current is DeliveryDataLoaded ||
+              current is DeliveryDataError ||
+              current is InvoiceSetToUnloading ||
+              current is InvoiceSetToUnloaded ||
+              // Only show loading if we have no cached data at all
+              (current is DeliveryDataLoading && _cachedState == null),
       builder: (context, state) {
         debugPrint('📱 Timeline: Building with state: ${state.runtimeType}');
-        
+
         // Prioritize cached data for offline-first approach
         final effectiveState = _cachedState ?? state;
 
-        if (effectiveState is DeliveryDataLoaded && 
+        if (effectiveState is DeliveryDataLoaded &&
             effectiveState.deliveryData.id != null) {
-          debugPrint('📱 Timeline: Using loaded data with ID: ${effectiveState.deliveryData.id}');
-          final statusUpdates = effectiveState.deliveryData.deliveryUpdates.toList();
+          debugPrint(
+            '📱 Timeline: Using loaded data with ID: ${effectiveState.deliveryData.id}',
+          );
+          final statusUpdates =
+              effectiveState.deliveryData.deliveryUpdates.toList();
 
           if (statusUpdates.isEmpty) {
             return const SizedBox();
@@ -75,7 +83,7 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                   child: CustomTimelineTileBuilder.connected(
                     physics: const NeverScrollableScrollPhysics(),
                     nodePosition: 0.07,
-                  
+
                     itemCount: statusUpdates.length,
                     contentsBuilder: (_, index) {
                       final status = statusUpdates[index];
@@ -86,22 +94,49 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
-                            leading: Icon(
-                              StatusIcons.getStatusIcon(status.title ?? ''),
-                              color: Theme.of(context).colorScheme.primary,
+                            leading: Column(
+                              //    mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  StatusIcons.getStatusIcon(status.title ?? ''),
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ],
                             ),
                             title: Text(
                               status.title ?? '',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
-                            subtitle: Text(
-                              status.subtitle ?? '',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                              overflow: TextOverflow.ellipsis,
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  status.subtitle ?? '',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  _formatDateTime(
+                                    status.time ?? DateTime.now(),
+                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
                             ),
-                            trailing: Text(
-                              _formatDateTime(status.time ?? DateTime.now()),
-                              style: Theme.of(context).textTheme.bodySmall,
+                            trailing: GestureDetector(
+                              onTap: () {
+                                if (status.id != null) {
+                                  context.push(
+                                    '/update-remark/${status.id ?? ''}',
+                                    extra: status,
+                                  );
+                                }
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [Icon(Icons.arrow_forward_ios)],
+                              ),
                             ),
                           ),
                         ),

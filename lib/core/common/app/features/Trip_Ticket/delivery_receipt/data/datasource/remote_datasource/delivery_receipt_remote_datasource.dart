@@ -4,6 +4,7 @@ import 'dart:typed_data' show Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/model/delivery_receipt_model.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
@@ -228,7 +229,7 @@ class DeliveryReceiptRemoteDatasourceImpl
             final imagePath = customerImages[i];
             final imageFile = File(imagePath);
             if (await imageFile.exists()) {
-              final compressedImageBytes = await _compressImage(imagePath);
+              final compressedImageBytes = await _compressImageToSmallSize(imagePath);
               if (compressedImageBytes != null) {
                 files.add(
                   MultipartFile.fromBytes(
@@ -350,36 +351,105 @@ class DeliveryReceiptRemoteDatasourceImpl
     }
   }
 
-  /// Compress image file to reduce size
-  Future<Uint8List?> _compressImage(String imagePath) async {
+  /// Compress image file to very small size for delivery status
+  Future<Uint8List?> _compressImageToSmallSize(String imagePath) async {
     try {
-      debugPrint('🗜️ Compressing image: $imagePath');
+      debugPrint(
+        '🗜️ Compressing delivery status image to very small size: $imagePath',
+      );
 
-      final compressedBytes = await FlutterImageCompress.compressWithFile(
+      // First compression pass - aggressive settings for very small file size
+      final firstPassBytes = await FlutterImageCompress.compressWithFile(
         imagePath,
-        quality: 70, // 70% quality
-        minWidth: 800, // Max width 800px
-        minHeight: 600, // Max height 600px
+        quality: 50, // Lower quality for smaller size
+        minWidth: 600, // Smaller max width
+        minHeight: 400, // Smaller max height
         format: CompressFormat.jpeg,
       );
 
-      if (compressedBytes != null) {
-        final originalSize = await File(imagePath).length();
-        debugPrint(
-          '📊 Image compressed: ${originalSize} bytes -> ${compressedBytes.length} bytes',
-        );
-        debugPrint(
-          '📉 Compression ratio: ${((originalSize - compressedBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
-        );
+      if (firstPassBytes == null) {
+        debugPrint('❌ First compression pass failed');
+        return null;
       }
 
-      return compressedBytes;
+      // Check if we need a second pass for even smaller size
+      const maxSizeBytes = 500 * 1024; // 500KB max
+      if (firstPassBytes.length > maxSizeBytes) {
+        debugPrint(
+          '🔄 File still too large (${firstPassBytes.length} bytes), applying second compression pass...',
+        );
+
+        // Create temporary file for second pass
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = File(
+          '${tempDir.path}/temp_delivery_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+        await tempFile.writeAsBytes(firstPassBytes);
+
+        // Second compression pass - even more aggressive
+        final secondPassBytes = await FlutterImageCompress.compressWithFile(
+          tempFile.path,
+          quality: 30, // Very low quality
+          minWidth: 400, // Even smaller dimensions
+          minHeight: 300,
+          format: CompressFormat.jpeg,
+        );
+
+        // Clean up temp file
+        try {
+          await tempFile.delete();
+        } catch (e) {
+          debugPrint('⚠️ Failed to delete temp file: $e');
+        }
+
+        if (secondPassBytes != null) {
+          final originalSize = await File(imagePath).length();
+          debugPrint(
+            '📊 Delivery status image compressed (2 passes): ${originalSize} bytes -> ${secondPassBytes.length} bytes',
+          );
+          debugPrint(
+            '📉 Compression ratio: ${((originalSize - secondPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
+          );
+          return secondPassBytes;
+        } else {
+          debugPrint(
+            '⚠️ Second compression pass failed, using first pass result',
+          );
+          final originalSize = await File(imagePath).length();
+          debugPrint(
+            '📊 Delivery status image compressed (1 pass): ${originalSize} bytes -> ${firstPassBytes.length} bytes',
+          );
+          debugPrint(
+            '📉 Compression ratio: ${((originalSize - firstPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
+          );
+          return firstPassBytes;
+        }
+      } else {
+        final originalSize = await File(imagePath).length();
+        debugPrint(
+          '📊 Delivery status image compressed: ${originalSize} bytes -> ${firstPassBytes.length} bytes',
+        );
+        debugPrint(
+          '📉 Compression ratio: ${((originalSize - firstPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
+        );
+        return firstPassBytes;
+      }
     } catch (e) {
-      debugPrint('⚠️ Image compression failed: $e');
+      debugPrint('⚠️ Delivery status image compression failed: $e');
       // Fallback to original file
-      return await File(imagePath).readAsBytes();
+      try {
+        final originalBytes = await File(imagePath).readAsBytes();
+        debugPrint(
+          '📄 Using original image file: ${originalBytes.length} bytes',
+        );
+        return originalBytes;
+      } catch (fallbackError) {
+        debugPrint('❌ Failed to read original image file: $fallbackError');
+        return null;
+      }
     }
   }
+
 
   /// Convert signature image to PDF
   Future<Uint8List> _convertSignatureToPdf(String signaturePath) async {
@@ -387,7 +457,7 @@ class DeliveryReceiptRemoteDatasourceImpl
       debugPrint('📄 Converting signature to PDF: $signaturePath');
 
       // Read and compress the signature image first
-      final compressedImageBytes = await _compressImage(signaturePath);
+      final compressedImageBytes = await _compressImageToSmallSize(signaturePath);
       if (compressedImageBytes == null) {
         throw Exception('Failed to process signature image');
       }
@@ -447,7 +517,7 @@ class DeliveryReceiptRemoteDatasourceImpl
     } catch (e) {
       debugPrint('❌ Signature to PDF conversion failed: $e');
       // Fallback to compressed image
-      return await _compressImage(signaturePath) ?? Uint8List(0);
+      return await _compressImageToSmallSize(signaturePath) ?? Uint8List(0);
     }
   }
 
