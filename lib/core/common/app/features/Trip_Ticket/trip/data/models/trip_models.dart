@@ -48,6 +48,7 @@ class TripModel extends TripEntity {
     super.timeAccepted,
     super.isEndTrip,
     super.timeEndTrip,
+    super.deliveryDate,
     super.created,
     super.name,
     super.updated,
@@ -308,6 +309,9 @@ class TripModel extends TripEntity {
       timeEndTrip: json['timeEndTrip'] != null
           ? _parseDateTime(json['timeEndTrip'])
           : null,
+          deliveryDate: json['deliveryDate'] != null
+          ? _parseDateTime(json['deliveryDate'])
+          : null,
       created: json['created'] != null
           ? _parseDateTime(json['created'])
           : null,
@@ -367,6 +371,7 @@ class TripModel extends TripEntity {
       'timeAccepted': timeAccepted?.toIso8601String(),
       'isEndTrip': isEndTrip,
       'timeEndTrip': timeEndTrip?.toIso8601String(),
+      'deliveryDate': deliveryDate?.toIso8601String(),
       'created': created?.toIso8601String(),
       'updated': updated?.toIso8601String(),
       'qrCode': qrCode,
@@ -395,6 +400,7 @@ class TripModel extends TripEntity {
       user: entity.user,
       totalTripDistance: entity.totalTripDistance,
       otp: entity.otp,
+      deliveryDate: entity.deliveryDate,
       endTripOtp: entity.endTripOtp,
       deliveryTeam: entity.deliveryTeam,
       timeAccepted: entity.timeAccepted,
@@ -434,6 +440,7 @@ class TripModel extends TripEntity {
     DateTime? timeAccepted,
     bool? isEndTrip,
     DateTime? timeEndTrip,
+    DateTime? deliveryDate,
     DateTime? created,
     DateTime? updated,
     String? qrCode,
@@ -469,6 +476,7 @@ class TripModel extends TripEntity {
       timeEndTrip: timeEndTrip ?? this.timeEndTrip,
       created: created ?? this.created,
       updated: updated ?? this.updated,
+      deliveryDate: deliveryDate ?? this.deliveryDate,
       qrCode: qrCode ?? this.qrCode,
       isAccepted: isAccepted ?? this.isAccepted,
     );

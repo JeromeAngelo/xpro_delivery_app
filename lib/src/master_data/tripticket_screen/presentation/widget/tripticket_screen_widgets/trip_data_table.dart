@@ -70,7 +70,7 @@ class _TripDataTableState extends State<TripDataTable> {
       columns: [
         DataColumn(label: Text('ID', style: headerStyle)),
         DataColumn(label: Text('Trip Number', style: headerStyle)),
-                DataColumn(label: Text('Name', style: headerStyle)),
+                DataColumn(label: Text('Route Name', style: headerStyle)),
 
         DataColumn(label: Text('Start Date', style: headerStyle)),
         DataColumn(label: Text('End Date', style: headerStyle)),

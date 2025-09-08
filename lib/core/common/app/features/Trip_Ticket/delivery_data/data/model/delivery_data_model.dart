@@ -20,9 +20,13 @@ class DeliveryDataModel extends DeliveryDataEntity {
     TripModel? trip,
     List<DeliveryUpdateModel>? deliveryUpdates,
     List<InvoiceItemsModel>? invoiceItems,
+    List<InvoiceDataModel>? invoices,
+    super.pinLang,
+    super.pinLong,
     super.deliveryNumber,
     super.hasTrip,
     super.created,
+
     super.updated,
     this.objectBoxId = 0,
   }) : pocketbaseId = id ?? '',
@@ -30,6 +34,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
          customer: customer,
          invoice: invoice,
          trip: trip,
+         invoices: invoices ?? [],
          deliveryUpdates: deliveryUpdates ?? [],
          invoiceItems: invoiceItems,
        );
@@ -146,6 +151,36 @@ class DeliveryDataModel extends DeliveryDataEntity {
       tripModel = TripModel(id: json['trip'].toString());
     }
 
+    // Process invoices relation (multiple)
+    List<InvoiceDataModel> invoicesList = [];
+    if (expandedData != null && expandedData.containsKey('invoices')) {
+      final invoicesData = expandedData['invoices'];
+      if (invoicesData != null && invoicesData is List) {
+        invoicesList =
+            invoicesData.map((invoice) {
+              if (invoice is RecordModel) {
+                return InvoiceDataModel.fromJson({
+                  'id': invoice.id,
+                  'collectionId': invoice.collectionId,
+                  'collectionName': invoice.collectionName,
+                  ...invoice.data,
+                  'expand': invoice.expand,
+                });
+              } else if (invoice is Map) {
+                return InvoiceDataModel.fromJson(invoice as DataMap);
+              }
+              // If it's just an ID string, create a minimal model
+              return InvoiceDataModel(id: invoice.toString());
+            }).toList();
+      }
+    } else if (json['invoices'] != null && json['invoices'] is List) {
+      // If not expanded, just store the IDs
+      invoicesList =
+          (json['invoices'] as List)
+              .map((id) => InvoiceDataModel(id: id.toString()))
+              .toList();
+    }
+
     // Process deliveryUpdates relation (multiple)
     List<DeliveryUpdateModel> deliveryUpdatesList = [];
     if (expandedData != null && expandedData.containsKey('deliveryUpdates')) {
@@ -183,8 +218,11 @@ class DeliveryDataModel extends DeliveryDataEntity {
       collectionName: json['collectionName']?.toString(),
       hasTrip: json['hasTrip'] as bool,
       deliveryNumber: json['deliveryNumber']?.toString(),
-      customer: customerModel,
+      pinLang: json['pinLang'] != null ? double.tryParse(json['pinLang'].toString()) : null,
+      pinLong: json['pinLong'] != null ? double.tryParse(json['pinLong'].toString()) : null,     
+       customer: customerModel,
       invoice: invoiceModel,
+      invoices: invoicesList,
       invoiceItems: invoiceItemsList,
       trip: tripModel,
       deliveryUpdates: deliveryUpdatesList,
@@ -202,6 +240,9 @@ class DeliveryDataModel extends DeliveryDataEntity {
       'deliveryNumber': deliveryNumber,
       'customer': customer?.id,
       'invoice': invoice?.id,
+      'pinLang': pinLang,
+      'pinLong': pinLong,
+      'invoices': invoices?.map((invoice) => invoice.id).toList(),
       'invoiceItems':
           invoiceItems?.map((item) => item.id).toList(), // Add this line
       'trip': trip?.id,
@@ -217,10 +258,13 @@ class DeliveryDataModel extends DeliveryDataEntity {
     String? collectionName,
     CustomerDataModel? customer,
     InvoiceDataModel? invoice,
+    List<InvoiceDataModel>? invoices,
     TripModel? trip,
     List<DeliveryUpdateModel>? deliveryUpdates,
     List<InvoiceItemsModel>? invoiceItems,
     String? deliveryNumber,
+    double? pinLang,
+    double? pinLong,
     bool? hasTrip,
     DateTime? created,
     DateTime? updated,
@@ -264,6 +308,16 @@ class DeliveryDataModel extends DeliveryDataEntity {
                 customer: this.invoice!.customer,
               )
               : null),
+      invoices:
+          invoices ??
+          (this.invoices
+              ?.map(
+                (invoice) =>
+                    invoice is InvoiceDataModel
+                        ? invoice
+                        : InvoiceDataModel(id: invoice.id),
+              )
+              .toList()),
       trip:
           trip ??
           (this.trip is TripModel
@@ -295,6 +349,8 @@ class DeliveryDataModel extends DeliveryDataEntity {
       deliveryNumber: deliveryNumber ?? this.deliveryNumber,
       created: created ?? this.created,
       updated: updated ?? this.updated,
+      pinLang: pinLang ?? this.pinLang,
+      pinLong: pinLong ?? this.pinLong,
       objectBoxId: objectBoxId,
     );
   }

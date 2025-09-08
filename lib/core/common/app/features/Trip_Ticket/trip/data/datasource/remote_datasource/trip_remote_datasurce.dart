@@ -252,6 +252,11 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       tripData['isAccepted'] = false;
       tripData['isEndTrip'] = false;
 
+       // Add deliveryDate field
+    if (trip.deliveryDate != null) {
+      tripData['deliveryDate'] = trip.deliveryDate!.toIso8601String();
+    }
+
       // Generate QR code (using trip number as the QR code value)
       tripData['qrCode'] = tripNumberId;
       debugPrint('📄 Generated QR code: ${tripData['qrCode']}');
@@ -838,6 +843,17 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         }
       }
 
+       // Parse dates properly
+      DateTime? deliveryDate;
+      if (record.data['deliveryDate'] != null) {
+        try {
+          deliveryDate = DateTime.parse(record.data['deliveryDate']);
+          debugPrint('✅ Parsed timeAccepted: $timeAccepted');
+        } catch (e) {
+          debugPrint('❌ Failed to parse timeAccepted: ${e.toString()}');
+        }
+      }
+
       DateTime? timeEndTrip;
       if (record.data['timeEndTrip'] != null) {
         try {
@@ -1086,6 +1102,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'volumeRate': record.data['volumeRate'],
         'weightRate': record.data['weightRate'],
         'averageFillRate': record.data['averageFillRate'],
+        'deliveryDate': deliveryDate?.toIso8601String(),
       };
 
       return TripModel.fromJson(mappedData);

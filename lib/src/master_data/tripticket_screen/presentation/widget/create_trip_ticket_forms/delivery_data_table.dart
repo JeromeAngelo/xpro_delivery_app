@@ -166,7 +166,7 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
               // Show table with data
               return DynamicDataTable<DeliveryDataModel>(
                 data: _allDeliveries,
-                
+
                 columnBuilder: (context) => columns,
                 rowBuilder: (delivery, index) {
                   final isSelected =
@@ -206,83 +206,179 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
                         ),
                       ),
                       DataCell(Text(delivery.customer?.name ?? 'N/A')),
-                      DataCell(Text(delivery.invoice?.name ?? 'N/A')),
+                      DataCell(
+                        SizedBox(
+                          width: 150,
+                          height: 40, // Fixed height for the cell
+                          child: delivery.invoices != null &&
+                                  delivery.invoices!.isNotEmpty
+                              ? delivery.invoices!.length > 1
+                                  ? SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children:
+                                            delivery.invoices!.map((invoice) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 2.0,
+                                            ),
+                                            child: Text(
+                                              invoice.name ?? 'N/A',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    )
+                                  : Text(
+                                      delivery.invoices!.first.name ?? 'N/A',
+                                      style: const TextStyle(fontSize: 12),
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                              : delivery.invoice != null
+                                  ? Text(
+                                      delivery.invoice!.name ?? 'N/A',
+                                      style: const TextStyle(fontSize: 12),
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                  : const Text('N/A'),
+                        ),
+                      ),
                       DataCell(
                         Text(
-                          delivery.invoice?.totalAmount != null
-                              ? '₱${delivery.invoice?.totalAmount!.toStringAsFixed(2)}'
+                          delivery.invoices != null &&
+                                  delivery.invoices!.isNotEmpty
+                              ? '₱${delivery.invoices!.fold<double>(0.0, (sum, invoice) => sum + (invoice.totalAmount ?? 0.0)).toStringAsFixed(2)}'
+                              : delivery.invoice?.totalAmount != null
+                              ? '₱${delivery.invoice!.totalAmount!.toStringAsFixed(2)}'
                               : 'N/A',
                         ),
                       ),
                       DataCell(
-                        Text(_formatDate(delivery.invoice?.documentDate)),
+                        Text(
+                          delivery.invoices != null &&
+                                  delivery.invoices!.isNotEmpty
+                              ? _formatDate(
+                                delivery.invoices!
+                                    .map((invoice) => invoice.documentDate)
+                                    .where((date) => date != null)
+                                    .fold<DateTime?>(
+                                      null,
+                                      (latest, date) =>
+                                          latest == null ||
+                                                  date!.isAfter(latest)
+                                              ? date
+                                              : latest,
+                                    ),
+                              )
+                              : _formatDate(delivery.invoice?.documentDate),
+                        ),
                       ),
                     ],
                   );
                 },
                 isLoading: false,
                 emptyMessage: 'No delivery data available',
-                buttonPlaceholder:
-                    _selectedDeliveryIds.isNotEmpty
-                        ? ElevatedButton.icon(
-                          // In the remove delivery data button's onPressed callback:
-                          onPressed: () {
-                            // Show confirmation dialog before deleting
-                            showDialog(
-                              context: context,
-                              builder:
-                                  (dialogContext) => AlertDialog(
-                                    title: const Text('Confirm Deletion'),
-                                    content: const Text(
-                                      'Are you sure you want to delete the selected delivery data? This action cannot be undone.',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed:
-                                            () =>
-                                                Navigator.of(
-                                                  dialogContext,
-                                                ).pop(),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(dialogContext).pop();
-
-                                          // Get the IDs of selected delivery data
-                                          final selectedIds =
-                                              _selectedDeliveryIds.toList();
-
-                                          // Delete each selected delivery data
-                                          for (final id in selectedIds) {
-                                            context
-                                                .read<DeliveryDataBloc>()
-                                                .add(
-                                                  DeleteDeliveryDataEvent(id),
-                                                );
-                                          }
-
-                                          // Clear selection after deletion
-                                          setState(() {
-                                            _selectedDeliveryIds.clear();
-                                          });
-                                        },
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Colors.red,
-                                        ),
-                                        child: const Text('Remove'),
-                                      ),
-                                    ],
-                                  ),
-                            );
-                          },
-
-                          icon: const Icon(Icons.check),
-                          label: Text(
-                            'Remove ${_selectedDeliveryIds.length} Selected',
+                buttonPlaceholder: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Total amount display - always visible
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        border: Border.all(color: Colors.blue[200]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calculate, color: Colors.blue[700], size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Total Amount: ${_calculateSelectedDeliveriesTotal()}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[700],
+                              fontSize: 14,
+                            ),
                           ),
-                        )
-                        : null,
+                        ],
+                      ),
+                    ),
+                    // Remove button - only show when items are selected
+                    if (_selectedDeliveryIds.isNotEmpty)
+                            ElevatedButton.icon(
+                              // In the remove delivery data button's onPressed callback:
+                              onPressed: () {
+                                // Show confirmation dialog before deleting
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (dialogContext) => AlertDialog(
+                                        title: const Text('Confirm Deletion'),
+                                        content: const Text(
+                                          'Are you sure you want to delete the selected delivery data? This action cannot be undone.',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () =>
+                                                    Navigator.of(
+                                                      dialogContext,
+                                                    ).pop(),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(dialogContext).pop();
+
+                                              // Get the IDs of selected delivery data
+                                              final selectedIds =
+                                                  _selectedDeliveryIds.toList();
+
+                                              // Delete each selected delivery data
+                                              for (final id in selectedIds) {
+                                                context
+                                                    .read<DeliveryDataBloc>()
+                                                    .add(
+                                                      DeleteDeliveryDataEvent(id),
+                                                    );
+                                              }
+
+                                              // Clear selection after deletion
+                                              setState(() {
+                                                _selectedDeliveryIds.clear();
+                                              });
+                                            },
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors.red,
+                                            ),
+                                            child: const Text('Remove'),
+                                          ),
+                                        ],
+                                      ),
+                                );
+                              },
+
+                              icon: const Icon(Icons.delete),
+                              label: Text(
+                                'Remove ${_selectedDeliveryIds.length} Selected',
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red[600],
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                  ],
+                ),
               );
             },
           ),
@@ -416,6 +512,29 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
         ],
       ),
     );
+  }
+
+  // Calculate total amount for all deliveries
+  String _calculateSelectedDeliveriesTotal() {
+    double totalAmount = 0.0;
+    
+    // Calculate total from all deliveries (not just selected ones)
+    for (final delivery in _allDeliveries) {
+      if (delivery.invoices != null && delivery.invoices!.isNotEmpty) {
+        // Sum all invoices in the delivery
+        totalAmount += delivery.invoices!.fold<double>(
+          0.0, 
+          (sum, invoice) => sum + (invoice.totalAmount ?? 0.0),
+        );
+      } else if (delivery.invoice?.totalAmount != null) {
+        // Fallback to single invoice
+        totalAmount += delivery.invoice!.totalAmount!;
+      }
+    }
+    
+    // Format with commas and currency symbol
+    final formatter = NumberFormat('#,##0.00');
+    return '₱${formatter.format(totalAmount)}';
   }
 
   String _formatDate(DateTime? date) {

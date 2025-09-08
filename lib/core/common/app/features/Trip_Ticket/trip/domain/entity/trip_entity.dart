@@ -50,6 +50,7 @@ class TripEntity extends Equatable {
   bool? isEndTrip;
   DateTime? timeEndTrip;
   DateTime? timeAccepted;
+   DateTime? deliveryDate;
   DateTime? created;
   DateTime? updated;
   String? qrCode;
@@ -60,6 +61,7 @@ class TripEntity extends Equatable {
     this.collectionName,
     this.tripNumberId,
     this.deliveryTeam,
+    this.deliveryDate,
     this.name,
     List<PersonelModel>? personels,
     List<ChecklistModel>? checklist,
@@ -119,6 +121,7 @@ class TripEntity extends Equatable {
     timeAccepted,
     cancelledInvoice,
     deliveryCollection,
+    deliveryDate,
     otp?.id,
     endTripOtp?.id,
     timeEndTrip,

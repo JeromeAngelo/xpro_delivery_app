@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
@@ -119,7 +120,7 @@ class TripCustomersTable extends StatelessWidget {
 
                     // Invoice Number
                     DataCell(
-                      Text(delivery.invoice?.name ?? 'N/A'),
+                      Text(_formatInvoiceNumbers(delivery)),
                       onTap:
                           () => _navigateToDeliveryDetails(context, delivery),
                     ),
@@ -221,6 +222,9 @@ class TripCustomersTable extends StatelessWidget {
       case 'in transit':
         color = Colors.indigo;
         break;
+         case 'waiting for customer':
+        color = Colors.yellow;
+        break;
       case 'delivered':
         color = Colors.green;
         break;
@@ -253,14 +257,38 @@ class TripCustomersTable extends StatelessWidget {
     );
   }
 
-  String _formatCurrency(DeliveryDataEntity delivery) {
-    // Try to get the total amount from the invoice
-    if (delivery.invoice?.totalAmount != null) {
-      final amount = delivery.invoice!.totalAmount!;
-      return '₱${amount.toStringAsFixed(2)}';
+  String _formatInvoiceNumbers(DeliveryDataEntity delivery) {
+    if (delivery.invoices != null && delivery.invoices!.isNotEmpty) {
+      if (delivery.invoices!.length == 1) {
+        return delivery.invoices!.first.name ?? 'N/A';
+      } else {
+        return '${delivery.invoices!.length} invoices';
+      }
+    } else if (delivery.invoice?.name != null) {
+      return delivery.invoice!.name!;
     }
-
     return 'N/A';
+  }
+
+  String _formatCurrency(DeliveryDataEntity delivery) {
+    double totalAmount = 0.0;
+    
+    // Calculate total from all invoices if available
+    if (delivery.invoices != null && delivery.invoices!.isNotEmpty) {
+      totalAmount = delivery.invoices!.fold<double>(
+        0.0, 
+        (sum, invoice) => sum + (invoice.totalAmount ?? 0.0),
+      );
+    } else if (delivery.invoice?.totalAmount != null) {
+      // Fallback to single invoice
+      totalAmount = delivery.invoice!.totalAmount!;
+    } else {
+      return 'N/A';
+    }
+    
+    // Format with commas and currency symbol
+    final formatter = NumberFormat('#,##0.00');
+    return '₱${formatter.format(totalAmount)}';
   }
 
   void _showDeleteDeliveryDialog(

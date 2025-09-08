@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart'
     show TripModel;
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
@@ -57,9 +58,10 @@ class _CreateTripTicketScreenViewState
   // Selected items - Updated to use new models
   List<DeliveryDataModel> _selectedDeliveries = [];
   DeliveryVehicleModel? _selectedVehicle;
-  List<PersonelModel> _selectedPersonnel = [];
+  PersonelModel? _selectedTeamLeader;
+  List<PersonelModel> _selectedHelpers = [];
   List<ChecklistModel> _selectedChecklists = [];
-
+  DateTime? _deliveryDate;
   bool _isLoading = false;
   String? _errorMessage;
   bool _hasNavigated = false;
@@ -118,14 +120,19 @@ class _CreateTripTicketScreenViewState
       return;
     }
 
-    if (_selectedPersonnel.isEmpty) {
-      CoreUtils.showSnackBar(context, 'Please select at least one personnel');
+    if (_selectedTeamLeader == null) {
+      CoreUtils.showSnackBar(context, 'Please select a team leader');
       return;
     }
 
-    // Check if more than 2 personnel are selected
-    if (_selectedPersonnel.length > 3) {
-      CoreUtils.showSnackBar(context, 'Maximum of 3 personnel allowed');
+    if (_selectedHelpers.isEmpty) {
+      CoreUtils.showSnackBar(context, 'Please select at least one helper');
+      return;
+    }
+
+    // Check if more than 2 helpers are selected
+    if (_selectedHelpers.length > 2) {
+      CoreUtils.showSnackBar(context, 'Maximum of 2 helpers allowed');
       return;
     }
 
@@ -136,13 +143,24 @@ class _CreateTripTicketScreenViewState
     });
 
     // Create trip model with the selected data
+    // Combine team leader and helpers into one list
+    final allPersonnel = <PersonelModel>[];
+    if (_selectedTeamLeader != null) {
+      allPersonnel.add(_selectedTeamLeader!);
+    }
+    allPersonnel.addAll(_selectedHelpers);
+
     final tripModel = TripModel(
       tripNumberId: _tripIdController.text,
-      name: _tripNameController.text.trim().isEmpty ? null : _tripNameController.text.trim(),
+      name:
+          _tripNameController.text.trim().isEmpty
+              ? null
+              : _tripNameController.text.trim(),
       qrCode: _qrCodeController.text,
       vehicleModel: _selectedVehicle,
       deliveryDataList: _selectedDeliveries,
-      personelsList: _selectedPersonnel,
+      personelsList: allPersonnel,
+      deliveryDate: _deliveryDate,
       checklistItems: _selectedChecklists,
     );
 
@@ -163,68 +181,67 @@ class _CreateTripTicketScreenViewState
     context.read<ChecklistBloc>().add(const GetAllChecklistsEvent());
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     // Define navigation items
     final navigationItems = AppNavigationItems.generalTripItems();
 
     return BlocConsumer<TripBloc, TripState>(
-    listenWhen: (previous, current) {
+      listenWhen: (previous, current) {
         // Only listen to specific states to avoid unnecessary triggers
         return current is TripLoading ||
-        current is TripTicketCreated ||
-          current is TripError ||
-          (current is AllTripTicketsLoaded && _isLoading && !_hasNavigated);
+            current is TripTicketCreated ||
+            current is TripError ||
+            (current is AllTripTicketsLoaded && _isLoading && !_hasNavigated);
       },
       listener: (context, state) {
         debugPrint('🔄 TripBloc State Changed: ${state.runtimeType}');
-        
+
         if (state is TripLoading) {
-        debugPrint('📤 Trip loading state received');
+          debugPrint('📤 Trip loading state received');
           if (mounted) {
             setState(() {
-          _isLoading = true;
-          _errorMessage = null;
+              _isLoading = true;
+              _errorMessage = null;
             });
           }
         } else if (state is TripTicketCreated) {
           debugPrint(
             '✅ Trip ticket created successfully: ${state.trip.tripNumberId}',
-    );
+          );
           if (mounted && !_hasNavigated) {
             setState(() {
               _isLoading = false;
               _errorMessage = null;
-            _hasNavigated = true;
-    });
+              _hasNavigated = true;
+            });
 
             // Show success message
-          CoreUtils.showSnackBar(
-        context,
-          'Trip ticket ${state.trip.tripNumberId} created successfully',
-          );
+            CoreUtils.showSnackBar(
+              context,
+              'Trip ticket ${state.trip.tripNumberId} created successfully',
+            );
 
             // Navigate back to trip tickets list immediately
             context.go('/tripticket');
           }
-        } else if (state is AllTripTicketsLoaded && _isLoading && !_hasNavigated) {
-          debugPrint('✅ All trip tickets loaded - processing as trip creation success');
-          
+        } else if (state is AllTripTicketsLoaded &&
+            _isLoading &&
+            !_hasNavigated) {
+          debugPrint(
+            '✅ All trip tickets loaded - processing as trip creation success',
+          );
+
           if (mounted) {
             setState(() {
-    _isLoading = false;
-            _errorMessage = null;
-            _hasNavigated = true;
+              _isLoading = false;
+              _errorMessage = null;
+              _hasNavigated = true;
             });
 
             // Show success message and navigate
-            CoreUtils.showSnackBar(
-              context,
-              'Trip ticket created successfully',
-            );
-            
+            CoreUtils.showSnackBar(context, 'Trip ticket created successfully');
+
             context.go('/tripticket');
           }
         } else if (state is TripError) {
@@ -306,6 +323,9 @@ class _CreateTripTicketScreenViewState
 
                 // Checklist Form
                 _buildChecklistForm(),
+                const SizedBox(height: 24),
+
+                _buildDeliveryDateForm(),
               ],
             ),
           ),
@@ -364,10 +384,16 @@ class _CreateTripTicketScreenViewState
 
         return PersonnelForm(
           availablePersonnel: availablePersonnel,
-          selectedPersonnel: _selectedPersonnel,
-          onPersonnelChanged: (personnel) {
+          selectedTeamLeader: _selectedTeamLeader,
+          selectedHelpers: _selectedHelpers,
+          onTeamLeaderChanged: (teamLeader) {
             setState(() {
-              _selectedPersonnel = personnel;
+              _selectedTeamLeader = teamLeader;
+            });
+          },
+          onHelpersChanged: (helpers) {
+            setState(() {
+              _selectedHelpers = helpers;
             });
           },
         );
@@ -394,6 +420,65 @@ class _CreateTripTicketScreenViewState
           },
         );
       },
+    );
+  }
+
+  Widget _buildDeliveryDateForm() {
+    return Row(
+      children: [
+        Text(
+          'Delivery Date',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+
+        SizedBox(width: 115),
+        GestureDetector(
+          onTap: () async {
+            final DateTime? pickedDate = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime.now(),
+              lastDate: DateTime(2050),
+            );
+            if (pickedDate != null) {
+              setState(() {
+                _deliveryDate = pickedDate;
+              });
+            }
+          },
+          child: Container(
+            height: 40,
+            width: 200,
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Center(
+              child: Text(
+                _deliveryDate != null
+                    ? DateFormat('MM/dd/yyyy').format(_deliveryDate!)
+                    : 'Set Delivery Date',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () {
+            setState(() {
+              _deliveryDate = null;
+            });
+          },
+          icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.error),
+          tooltip: 'Reset Delivery Date',
+        ),
+      ],
     );
   }
 }

@@ -116,12 +116,12 @@ class _TripDetailsFormState extends State<TripDetailsForm> {
                     controller: widget.tripIdController,
                     readOnly: true, // Auto-generated, so read-only
                   ),
-                  
+
                   // Trip Name field
                   AppTextField(
-                    label: 'Trip Name',
+                    label: 'Route Name',
                     controller: widget.tripNameController,
-                    hintText: 'Enter trip name (optional)',
+                    hintText: 'Enter Route name',
                     required: false,
                   ),
                 ],

@@ -148,7 +148,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .getFullList(
             filter:
                 'hasTrip = true', // ← ONLY DIFFERENCE: true instead of false
-            expand: 'customer,invoice,trip,deliveryUpdates,invoiceItems',
+            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
             sort: '-created',
           );
 
@@ -178,7 +178,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .collection('deliveryData')
           .getFullList(
             filter: 'hasTrip = false',
-            expand: 'customer,invoice,trip,deliveryUpdates,invoiceItems',
+            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
             sort: '-created',
           );
 
@@ -202,7 +202,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       final result = await _pocketBaseClient
           .collection('deliveryData')
           .getFullList(
-            expand: 'customer,invoice,trip,deliveryUpdates,invoiceItems',
+            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
             filter: 'trip = "$tripId"',
             sort: '-created',
           );
@@ -230,7 +230,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .collection('deliveryData')
           .getOne(
             id,
-            expand: 'customer,invoice,trip,deliveryUpdates,invoiceItems',
+            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
           );
 
       debugPrint('✅ Retrieved delivery data with ID: $id');
@@ -428,6 +428,29 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
               .toList();
     }
 
+    // Process invoices (multiple relation)
+    List<InvoiceDataModel> invoicesList = [];
+    if (record.expand['invoices'] != null) {
+      final invoicesData = record.expand['invoices'];
+      if (invoicesData is List) {
+        invoicesList =
+            invoicesData!.map((invoice) {
+              return InvoiceDataModel.fromJson({
+                'id': invoice.id,
+                'collectionId': invoice.collectionId,
+                'collectionName': invoice.collectionName,
+                ...invoice.data,
+                'expand': invoice.expand,
+              });
+            }).toList();
+      }
+    } else if (record.data['invoices'] != null && record.data['invoices'] is List) {
+      invoicesList =
+          (record.data['invoices'] as List)
+              .map((id) => InvoiceDataModel(id: id.toString()))
+              .toList();
+    }
+
     // Add this after the deliveryUpdates processing section:
 
     // Process invoice items
@@ -468,8 +491,11 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       collectionId: record.collectionId,
       collectionName: record.collectionName,
       deliveryNumber: record.data['deliveryNumber'],
+      pinLang: record.data['pinLang'] != null ? double.tryParse(record.data['pinLang'].toString()) : null,
+      pinLong: record.data['pinLong'] != null ? double.tryParse(record.data['pinLong'].toString()) : null,
       customer: customerModel,
       invoice: invoiceModel,
+      invoices: invoicesList,
       trip: tripModel,
       invoiceItems: invoiceItemsList,
       deliveryUpdates: deliveryUpdatesList,

@@ -46,6 +46,13 @@ DeliveryStatusData _getStatusByName(String name) {
         color: Colors.orange,
         subtitle: 'Truck has arrived',
       );
+    case 'waiting for customer':
+      return DeliveryStatusData(
+        name: 'Waiting for Customer',
+        icon: StatusIcons.getStatusIcon('waiting for customer'),
+        color: Colors.yellow,
+        subtitle: 'waiting for customer at location',
+      );
     case 'unloading':
       return DeliveryStatusData(
         name: 'Unloading',
@@ -92,6 +99,8 @@ List<DeliveryStatusData> getAllDeliveryStatuses() {
     DeliveryStatusData.fromName('pending'),
     DeliveryStatusData.fromName('in transit'),
     DeliveryStatusData.fromName('arrived'),
+    DeliveryStatusData.fromName('waiting for customer'),
+
     DeliveryStatusData.fromName('unloading'),
     DeliveryStatusData.fromName('mark as received'),
 

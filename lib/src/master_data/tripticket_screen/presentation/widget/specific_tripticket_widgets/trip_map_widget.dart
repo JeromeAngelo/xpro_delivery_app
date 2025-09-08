@@ -1,6 +1,7 @@
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip_coordinates_update/domain/entity/trip_coordinates_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:xpro_delivery_admin_app/core/enums/trip_update_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,11 +9,25 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Helper class to track points with timestamps for chronological ordering
+class _TimestampedPoint {
+  final LatLng point;
+  final DateTime timestamp;
+  final String type; // 'coordinate' or 'delivery'
+
+  _TimestampedPoint({
+    required this.point,
+    required this.timestamp,
+    required this.type,
+  });
+}
+
 class TripMapWidget extends StatefulWidget {
   final String tripId;
   final TripEntity? trip;
   final List<TripUpdateEntity> tripUpdates;
-  final List<TripCoordinatesEntity> tripCoordinates; // Add this line
+  final List<TripCoordinatesEntity> tripCoordinates;
+  final List<DeliveryDataEntity> deliveryData;
   final bool isLoading;
   final String? errorMessage;
   final VoidCallback onRefresh;
@@ -23,7 +38,8 @@ class TripMapWidget extends StatefulWidget {
     required this.tripId,
     this.trip,
     required this.tripUpdates,
-    required this.tripCoordinates, // Add this line
+    required this.tripCoordinates,
+    required this.deliveryData,
     required this.isLoading,
     this.errorMessage,
     required this.onRefresh,
@@ -51,42 +67,150 @@ class _TripMapWidgetState extends State<TripMapWidget>
 
   List<Marker> _createCoordinateMarkers() {
     final orderedCoordinates = _getOrderedCoordinates();
+    List<Marker> markers = [];
 
-    return orderedCoordinates.asMap().entries.map((entry) {
-      final index = entry.key;
-      final coord = entry.value;
-      final isFirst = index == 0;
-      final isLast = index == orderedCoordinates.length - 1;
-
-      return Marker(
-        point: LatLng(coord.latitude!, coord.longitude!),
-        width: 20,
-        height: 20,
+    // Only show start and end markers, not intermediate points
+    if (orderedCoordinates.isNotEmpty) {
+      // Start marker
+      markers.add(Marker(
+        point: LatLng(orderedCoordinates.first.latitude!, orderedCoordinates.first.longitude!),
+        width: 30,
+        height: 30,
         child: Container(
           decoration: BoxDecoration(
-            color:
-                isFirst
-                    ? Colors.green.withOpacity(0.8)
-                    : isLast
-                    ? Colors.red.withOpacity(0.8)
-                    : Colors.blue.withOpacity(0.7),
+            color: Colors.green,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          child: Center(
-            child: Icon(
-              isFirst
-                  ? Icons.play_arrow
-                  : isLast
-                  ? Icons.flag
-                  : Icons.circle,
-              size: 12,
+          child: const Icon(
+            Icons.play_arrow,
+            size: 16,
+            color: Colors.white,
+          ),
+        ),
+      ));
+
+      // End marker (only if different from start)
+      if (orderedCoordinates.length > 1) {
+        markers.add(Marker(
+          point: LatLng(orderedCoordinates.last.latitude!, orderedCoordinates.last.longitude!),
+          width: 30,
+          height: 30,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.flag,
+              size: 16,
               color: Colors.white,
             ),
           ),
+        ));
+      }
+    }
+
+    return markers;
+  }
+
+  List<Marker> _createDeliveryMarkers() {
+    List<Marker> markers = [];
+
+    for (int i = 0; i < widget.deliveryData.length; i++) {
+      final delivery = widget.deliveryData[i];
+      
+      // Check if delivery has valid coordinates
+      if (delivery.pinLang != null && delivery.pinLong != null &&
+          delivery.pinLang! != 0.0 && delivery.pinLong! != 0.0) {
+        
+        markers.add(Marker(
+          point: LatLng(delivery.pinLang!, delivery.pinLong!),
+          width: 40,
+          height: 40,
+          child: GestureDetector(
+            onTap: () => _showDeliveryInfo(delivery),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.purple,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                  Text(
+                    '${i + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ));
+      }
+    }
+
+    return markers;
+  }
+
+  void _showDeliveryInfo(DeliveryDataEntity delivery) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delivery: ${delivery.customer?.name ?? "Unknown"}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Delivery Number: ${delivery.deliveryNumber ?? "N/A"}'),
+            const SizedBox(height: 8),
+            Text('Customer: ${delivery.customer?.name ?? "N/A"}'),
+            const SizedBox(height: 8),
+            Text('Invoices: ${delivery.invoices?.length ?? (delivery.invoice != null ? 1 : 0)}'),
+            const SizedBox(height: 8),
+            Text('Location: ${delivery.pinLang}, ${delivery.pinLong}'),
+          ],
         ),
-      );
-    }).toList();
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   List<TripCoordinatesEntity> _getOrderedCoordinates() {
@@ -114,17 +238,44 @@ class _TripMapWidgetState extends State<TripMapWidget>
   }
 
   List<LatLng> _createOrderedRoutePoints() {
-    final orderedCoordinates = _getOrderedCoordinates();
+    // Create a list to hold all chronological points with their timestamps
+    List<_TimestampedPoint> timestampedPoints = [];
 
-    if (orderedCoordinates.isEmpty) return [];
+    // 1. Add trip coordinates with their timestamps
+    final validCoordinates = widget.tripCoordinates.where((coord) => 
+      coord.latitude != null && coord.longitude != null &&
+      coord.latitude! != 0.0 && coord.longitude! != 0.0
+    ).toList();
 
-    // Create the linear path points
-    final routePoints =
-        orderedCoordinates
-            .map((coord) => LatLng(coord.latitude!, coord.longitude!))
-            .toList();
+    for (final coord in validCoordinates) {
+      timestampedPoints.add(_TimestampedPoint(
+        point: LatLng(coord.latitude!, coord.longitude!),
+        timestamp: coord.created ?? DateTime.now(),
+        type: 'coordinate',
+      ));
+    }
 
-    // Add the current truck location as the final point if available
+    // 2. Add delivery locations with their timestamps
+    final validDeliveries = widget.deliveryData.where((delivery) => 
+      delivery.pinLang != null && delivery.pinLong != null &&
+      delivery.pinLang! != 0.0 && delivery.pinLong! != 0.0
+    ).toList();
+
+    for (final delivery in validDeliveries) {
+      timestampedPoints.add(_TimestampedPoint(
+        point: LatLng(delivery.pinLang!, delivery.pinLong!),
+        timestamp: delivery.created ?? DateTime.now(),
+        type: 'delivery',
+      ));
+    }
+
+    // 3. Sort all points chronologically by creation time
+    timestampedPoints.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    // 4. Extract the ordered LatLng points
+    List<LatLng> orderedPoints = timestampedPoints.map((tp) => tp.point).toList();
+
+    // 5. Add current truck location as the final point if available
     if (widget.trip != null &&
         widget.trip!.latitude != null &&
         widget.trip!.longitude != null &&
@@ -135,15 +286,16 @@ class _TripMapWidgetState extends State<TripMapWidget>
         widget.trip!.longitude!,
       );
 
-      // Only add if it's different from the last coordinate
-      if (routePoints.isEmpty ||
-          routePoints.last.latitude != truckLocation.latitude ||
-          routePoints.last.longitude != truckLocation.longitude) {
-        routePoints.add(truckLocation);
+      // Only add if it's different from the last point
+      if (orderedPoints.isEmpty ||
+          orderedPoints.last.latitude != truckLocation.latitude ||
+          orderedPoints.last.longitude != truckLocation.longitude) {
+        orderedPoints.add(truckLocation);
       }
     }
 
-    return routePoints;
+    debugPrint('🗺️ Created route with ${orderedPoints.length} chronologically ordered points');
+    return orderedPoints;
   }
 
   // Street View functionality methods
@@ -635,7 +787,7 @@ class _TripMapWidgetState extends State<TripMapWidget>
                               width: 12,
                               height: 12,
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.7),
+                                color: Colors.purple,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: Colors.white,
@@ -643,14 +795,14 @@ class _TripMapWidgetState extends State<TripMapWidget>
                                 ),
                               ),
                               child: const Icon(
-                                Icons.circle,
+                                Icons.location_on,
                                 size: 8,
                                 color: Colors.white,
                               ),
                             ),
                             const SizedBox(width: 4),
                             const Text(
-                              'Route Points',
+                              'Delivery Points',
                               style: TextStyle(fontSize: 12),
                             ),
                           ],
@@ -662,7 +814,7 @@ class _TripMapWidgetState extends State<TripMapWidget>
                               width: 12,
                               height: 12,
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.8),
+                                color: Colors.red,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: Colors.white,
@@ -797,8 +949,10 @@ class _TripMapWidgetState extends State<TripMapWidget>
 
   Widget _buildMap(LatLng center, List<Marker> markers) {
     try {
-      // Add street view marker if position is set
+      // Combine all markers (coordinates, deliveries, street view)
       final allMarkers = List<Marker>.from(markers);
+      allMarkers.addAll(_createDeliveryMarkers());
+      
       if (_streetViewPosition != null) {
         allMarkers.add(
           Marker(

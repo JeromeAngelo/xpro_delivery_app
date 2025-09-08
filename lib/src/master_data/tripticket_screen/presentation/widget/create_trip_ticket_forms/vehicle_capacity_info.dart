@@ -11,12 +11,8 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/del
 
 class VehicleCapacityInfo extends StatelessWidget {
   final DeliveryVehicleEntity? vehicle;
-  
-  const VehicleCapacityInfo({
-    super.key,
-    this.vehicle,
-   
-  });
+
+  const VehicleCapacityInfo({super.key, this.vehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -358,7 +354,14 @@ class VehicleCapacityInfo extends StatelessWidget {
 
     // Calculate total weight and volume from all deliveries
     for (final delivery in deliveries) {
-      if (delivery.invoice != null) {
+      if (delivery.invoices != null && delivery.invoices!.isNotEmpty) {
+        // Sum all invoices in the delivery
+        for (final invoice in delivery.invoices!) {
+          totalWeight += invoice.weight ?? 0;
+          totalVolume += invoice.volume ?? 0;
+        }
+      } else if (delivery.invoice != null) {
+        // Fallback to single invoice
         totalWeight += delivery.invoice!.weight ?? 0;
         totalVolume += delivery.invoice!.volume ?? 0;
       }

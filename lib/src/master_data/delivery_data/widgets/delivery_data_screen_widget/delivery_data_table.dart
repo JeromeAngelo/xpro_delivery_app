@@ -202,7 +202,7 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  delivery.invoice?.name ?? 'No Invoice',
+                  '${delivery.invoices!.length} ',
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 if (delivery.invoice?.totalAmount != null)
@@ -301,11 +301,9 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
       context.go('/delivery-details/${delivery.id}');
 
       // Show details dialog for now (can be changed to navigation later)
-    //  _showDeliveryDetailsDialog(context, delivery);
+      //  _showDeliveryDetailsDialog(context, delivery);
     }
   }
-
-
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'N/A';

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'package:printing/printing.dart';
@@ -22,9 +23,7 @@ void showPrintQrDialog(BuildContext context, TripEntity trip) {
     barrierDismissible: true,
     builder: (BuildContext dialogContext) {
       return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
           width: 500,
           padding: const EdgeInsets.all(24),
@@ -38,10 +37,7 @@ void showPrintQrDialog(BuildContext context, TripEntity trip) {
                 children: [
                   const Text(
                     'Print QR Code',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -91,11 +87,7 @@ void showPrintQrDialog(BuildContext context, TripEntity trip) {
                     // Trip Number
                     Row(
                       children: [
-                        const Icon(
-                          Icons.numbers,
-                          size: 20,
-                          color: Colors.blue,
-                        ),
+                        const Icon(Icons.numbers, size: 20, color: Colors.blue),
                         const SizedBox(width: 8),
                         const Text(
                           'Trip Number: ',
@@ -110,17 +102,30 @@ void showPrintQrDialog(BuildContext context, TripEntity trip) {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Icon(Icons.route, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Route: ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          trip.name ?? 'N/A',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ),
+                    //     const SizedBox(height: 16),
 
                     // Personnel List
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.people,
-                          size: 20,
-                          color: Colors.green,
-                        ),
+                        const Icon(Icons.people, size: 20, color: Colors.blue),
                         const SizedBox(width: 8),
                         const Text(
                           'Personnel: ',
@@ -130,33 +135,65 @@ void showPrintQrDialog(BuildContext context, TripEntity trip) {
                           ),
                         ),
                         Expanded(
-                          child: trip.personels.isNotEmpty
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: trip.personels
-                                      .map(
-                                        (personnel) => Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: 4,
-                                          ),
-                                          child: Text(
-                                            '• ${personnel.name ?? 'Unknown Personnel'}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                                )
-                              : const Text(
-                                  'No personnel assigned',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontStyle: FontStyle.italic,
-                                    color: Colors.grey,
+                          child:
+                              trip.personels.isNotEmpty
+                                  ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children:
+                                        trip.personels
+                                            .map(
+                                              (personnel) => Padding(
+                                                padding: const EdgeInsets.only(
+                                                  bottom: 4,
+                                                ),
+                                                child: Text(
+                                                  '• ${personnel.name ?? 'Unknown Personnel'}',
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                  )
+                                  : const Text(
+                                    'No personnel assigned',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.date_range,
+                          size: 20,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(width: 8),
+                        Row(
+                          children: [
+                            Text(
+                              'Delivery Date: ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              trip.deliveryDate != null
+                                  ? DateFormat(
+                                    'MM/dd/yyyy',
+                                  ).format(trip.deliveryDate!)
+                                  : 'N/A',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -204,13 +241,13 @@ Future<void> _printQrCode(BuildContext context, TripEntity trip) async {
   try {
     // Generate PDF with QR code and trip information
     final pdf = await _generateQrCodePdf(trip);
-    
+
     // Show print dialog using the printing package
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf,
       name: 'Trip_QR_Code_${trip.tripNumberId ?? 'Unknown'}.pdf',
     );
-    
+
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -233,18 +270,18 @@ Future<void> _printQrCode(BuildContext context, TripEntity trip) async {
 
 Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
   final pdf = pw.Document();
-  
+
   // Generate QR code as bytes for PDF
   final qrValidationResult = QrValidator.validate(
     data: trip.qrCode!,
     version: QrVersions.auto,
     errorCorrectionLevel: QrErrorCorrectLevel.L,
   );
-  
+
   if (qrValidationResult.status != QrValidationStatus.valid) {
     throw Exception('Invalid QR code data');
   }
-  
+
   final qrCode = qrValidationResult.qrCode!;
   final painter = QrPainter.withQr(
     qr: qrCode,
@@ -258,11 +295,11 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
     ),
     gapless: false,
   );
-  
+
   // Convert to image data for PDF
   final picData = await painter.toImageData(300);
   final qrImage = pw.MemoryImage(picData!.buffer.asUint8List());
-  
+
   // Build PDF page
   pdf.addPage(
     pw.Page(
@@ -302,9 +339,9 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
                 ],
               ),
             ),
-            
+
             pw.SizedBox(height: 30),
-            
+
             // QR Code and Trip Info in row
             pw.Row(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -320,9 +357,9 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
                   padding: const pw.EdgeInsets.all(10),
                   child: pw.Image(qrImage),
                 ),
-                
+
                 pw.SizedBox(width: 30),
-                
+
                 // Trip Information
                 pw.Expanded(
                   child: pw.Column(
@@ -355,12 +392,20 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
                                 color: PdfColors.blue900,
                               ),
                             ),
+                            pw.SizedBox(height: 4),
+                            pw.Text(
+                              trip.name ?? 'N/A',
+                              style: const pw.TextStyle(
+                                fontSize: 16,
+                                color: PdfColors.blue900,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      
+
                       pw.SizedBox(height: 20),
-                      
+
                       // Personnel List
                       pw.Container(
                         padding: const pw.EdgeInsets.all(12),
@@ -403,6 +448,14 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
                                   color: PdfColors.grey600,
                                 ),
                               ),
+                            pw.SizedBox(height: 4),
+                            pw.Text(
+                              'Delivery Date: ${trip.deliveryDate != null ? DateFormat('MM/dd/yyyy').format(trip.deliveryDate!) : ''}',
+                              style: const pw.TextStyle(
+                                fontSize: 12,
+                                color: PdfColors.green900,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -411,9 +464,9 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
                 ),
               ],
             ),
-            
+
             pw.SizedBox(height: 30),
-            
+
             // QR Code Value
             pw.Container(
               padding: const pw.EdgeInsets.all(12),
@@ -443,9 +496,9 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
                 ],
               ),
             ),
-            
+
             pw.SizedBox(height: 30),
-            
+
             // Instructions
             pw.Container(
               padding: const pw.EdgeInsets.all(12),
@@ -476,7 +529,7 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
                 ],
               ),
             ),
-            
+
             // Footer
             pw.Spacer(),
             pw.Container(
@@ -499,6 +552,6 @@ Future<Uint8List> _generateQrCodePdf(TripEntity trip) async {
       },
     ),
   );
-  
+
   return pdf.save();
 }

@@ -55,8 +55,11 @@ class TripTicketSpecificTripView extends StatefulWidget {
 class _TripTicketSpecificTripViewState
     extends State<TripTicketSpecificTripView> {
   List<TripCoordinatesEntity> _tripCoordinates = [];
+  List<DeliveryDataEntity> _deliveryData = [];
   bool _isCoordinatesLoading = true;
+  bool _isDeliveryDataLoading = true;
   String? _coordinatesErrorMessage;
+  String? _deliveryDataErrorMessage;
 
   // Customer pagination state
   int _customerCurrentPage = 1;
@@ -475,68 +478,98 @@ class _TripTicketSpecificTripViewState
 
   // Add this method to your class
   Widget _buildTripMapWidget(TripEntity trip) {
-    return BlocConsumer<TripUpdatesBloc, TripUpdatesState>(
-      listener: (context, state) {
-        if (state is TripUpdatesError) {
+    return BlocConsumer<DeliveryDataBloc, DeliveryDataState>(
+      listener: (context, deliveryState) {
+        if (deliveryState is DeliveryDataByTripLoaded && deliveryState.tripId == widget.tripId) {
           setState(() {
-            _mapErrorMessage = state.message;
-            _isMapLoading = false;
+            _deliveryData = deliveryState.deliveryData;
+            _isDeliveryDataLoading = false;
+            _deliveryDataErrorMessage = null;
           });
-          debugPrint('❌ Error loading trip updates: ${state.message}');
-        } else if (state is TripUpdatesLoaded) {
+          debugPrint('✅ Loaded ${deliveryState.deliveryData.length} delivery data for map');
+        } else if (deliveryState is DeliveryDataError) {
           setState(() {
-            _tripUpdates = state.updates;
-            _isMapLoading = false;
+            _deliveryDataErrorMessage = deliveryState.message;
+            _isDeliveryDataLoading = false;
           });
-          debugPrint('✅ Loaded ${_tripUpdates.length} trip updates');
+          debugPrint('❌ Error loading delivery data: ${deliveryState.message}');
+        } else if (deliveryState is DeliveryDataLoading) {
+          setState(() {
+            _isDeliveryDataLoading = true;
+            _deliveryDataErrorMessage = null;
+          });
         }
       },
-      builder: (context, updatesState) {
-        return BlocConsumer<
-          TripCoordinatesUpdateBloc,
-          TripCoordinatesUpdateState
-        >(
+      builder: (context, deliveryState) {
+        return BlocConsumer<TripUpdatesBloc, TripUpdatesState>(
           listener: (context, state) {
-            if (state is TripCoordinatesUpdateError) {
+            if (state is TripUpdatesError) {
               setState(() {
-                _coordinatesErrorMessage = state.message;
-                _isCoordinatesLoading = false;
+                _mapErrorMessage = state.message;
+                _isMapLoading = false;
               });
-              debugPrint('❌ Error loading trip coordinates: ${state.message}');
-            } else if (state is TripCoordinatesUpdateLoaded) {
+              debugPrint('❌ Error loading trip updates: ${state.message}');
+            } else if (state is TripUpdatesLoaded) {
               setState(() {
-                _tripCoordinates = state.coordinates;
-                _isCoordinatesLoading = false;
+                _tripUpdates = state.updates;
+                _isMapLoading = false;
               });
-              debugPrint(
-                '✅ Loaded ${_tripCoordinates.length} trip coordinates',
-              );
-            } else if (state is TripCoordinatesUpdateEmpty) {
-              setState(() {
-                _tripCoordinates = [];
-                _isCoordinatesLoading = false;
-              });
-              debugPrint('ℹ️ No trip coordinates found');
+              debugPrint('✅ Loaded ${_tripUpdates.length} trip updates');
             }
           },
-          builder: (context, coordinatesState) {
-            // Always show the map widget, but pass the loading state
-            return TripMapWidget(
-              tripId: widget.tripId,
-              trip: trip,
-              tripUpdates: _tripUpdates,
-              tripCoordinates: _tripCoordinates,
-              isLoading:
-                  updatesState is TripUpdatesLoading ||
-                  _isMapLoading ||
-                  coordinatesState is TripCoordinatesUpdateLoading ||
-                  _isCoordinatesLoading,
-              errorMessage: _mapErrorMessage ?? _coordinatesErrorMessage,
-              onRefresh: () {
-                _loadTripUpdatesForMap();
-                _loadTripCoordinatesForMap();
+          builder: (context, updatesState) {
+            return BlocConsumer<
+              TripCoordinatesUpdateBloc,
+              TripCoordinatesUpdateState
+            >(
+              listener: (context, state) {
+                if (state is TripCoordinatesUpdateError) {
+                  setState(() {
+                    _coordinatesErrorMessage = state.message;
+                    _isCoordinatesLoading = false;
+                  });
+                  debugPrint('❌ Error loading trip coordinates: ${state.message}');
+                } else if (state is TripCoordinatesUpdateLoaded) {
+                  setState(() {
+                    _tripCoordinates = state.coordinates;
+                    _isCoordinatesLoading = false;
+                  });
+                  debugPrint(
+                    '✅ Loaded ${_tripCoordinates.length} trip coordinates',
+                  );
+                } else if (state is TripCoordinatesUpdateEmpty) {
+                  setState(() {
+                    _tripCoordinates = [];
+                    _isCoordinatesLoading = false;
+                  });
+                  debugPrint('ℹ️ No trip coordinates found');
+                }
               },
-              height: 400, // You can adjust this height as needed
+              builder: (context, coordinatesState) {
+                // Always show the map widget, but pass the loading state
+                return TripMapWidget(
+                  tripId: widget.tripId,
+                  trip: trip,
+                  tripUpdates: _tripUpdates,
+                  tripCoordinates: _tripCoordinates,
+                  deliveryData: _deliveryData,
+                  isLoading:
+                      updatesState is TripUpdatesLoading ||
+                      _isMapLoading ||
+                      coordinatesState is TripCoordinatesUpdateLoading ||
+                      _isCoordinatesLoading ||
+                      _isDeliveryDataLoading,
+                  errorMessage: _mapErrorMessage ?? _coordinatesErrorMessage ?? _deliveryDataErrorMessage,
+                  onRefresh: () {
+                    _loadTripUpdatesForMap();
+                    _loadTripCoordinatesForMap();
+                    context.read<DeliveryDataBloc>().add(
+                      GetDeliveryDataByTripIdEvent(widget.tripId),
+                    );
+                  },
+                  height: 400,
+                );
+              },
             );
           },
         );

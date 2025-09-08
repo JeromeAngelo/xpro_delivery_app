@@ -15,10 +15,12 @@ class DeliveryDataEntity extends Equatable {
   final CustomerDataEntity? customer;
   final InvoiceDataEntity? invoice;
   final TripEntity? trip;
+  final List<InvoiceDataEntity>? invoices; // List of invoice updates>
   final List<DeliveryUpdateEntity> deliveryUpdates;
-  final List<InvoiceItemsEntity>? invoiceItems; 
+  final List<InvoiceItemsEntity>? invoiceItems;
   final String? deliveryNumber;
-
+  final double? pinLang;
+  final double? pinLong;
   // Standard fields
   final DateTime? created;
   final DateTime? updated;
@@ -31,12 +33,15 @@ class DeliveryDataEntity extends Equatable {
     this.customer,
     this.invoice,
     this.deliveryNumber,
+    this.pinLang,
+    this.pinLong,
+    this.invoices,
     this.invoiceItems,
     this.trip,
     this.deliveryUpdates = const [],
     this.created,
     this.updated,
-    this.hasTrip
+    this.hasTrip,
   });
 
   @override
@@ -48,6 +53,7 @@ class DeliveryDataEntity extends Equatable {
     invoice,
     deliveryNumber,
     invoiceItems,
+    invoices,
     trip,
     deliveryUpdates,
     hasTrip,

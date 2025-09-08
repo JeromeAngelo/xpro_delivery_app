@@ -37,6 +37,11 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
       return DateFormat('MM/dd/yyyy hh:mm a').format(date);
     }
 
+     String dateFormat(DateTime? date) {
+      if (date == null) return 'Not set';
+      return DateFormat('MM/dd/yyyy').format(date);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -152,7 +157,7 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
                                     icon: const Icon(Icons.print),
                                     label: const Text('Print QR Code'),
                                     onPressed: () {
-                                    showPrintQrDialog(context, widget.trip!);
+                                      showPrintQrDialog(context, widget.trip!);
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blue,
@@ -226,11 +231,20 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
               label: 'Trip Number',
             ),
             DashboardInfoItem(
+              icon: Icons.numbers,
+              value: widget.trip?.name ?? 'N/A',
+              label: 'Route Name',
+            ),
+            DashboardInfoItem(
               icon: Icons.people,
               value: widget.trip?.deliveryData.length.toString() ?? '0',
               label: 'Deliveries',
             ),
-
+            DashboardInfoItem(
+              icon: Icons.play_circle_filled,
+              value: dateFormat(widget.trip?.deliveryDate),
+              label: 'Delivery Date',
+            ),
             DashboardInfoItem(
               icon: Icons.play_circle_filled,
               value: formatDate(widget.trip?.timeAccepted),
@@ -520,6 +534,4 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
       ),
     );
   }
-
-
 }

@@ -249,6 +249,11 @@ class _DeliveryMonitoringScreenState extends State<DeliveryMonitoringScreen> {
         return true;
       }
 
+      if (statusLower == 'waiting for customer' &&
+          (deliveryStatus.contains('waiting for customer'))) {
+        return true;
+      }
+
       // Special cases
       if (statusLower == 'delivered' &&
           (deliveryStatus.contains('mark as received'))) {

@@ -145,13 +145,13 @@ class CustomerTile extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Invoice Number: ${deliveryData.invoice?.name ?? 'N/A'}',
+                        'Invoices: ${_getInvoiceCount(deliveryData)}',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
                   ),
                   Text(
-                    '₱${deliveryData.invoice?.totalAmount ?? 0}',
+                    _formatTotalAmount(deliveryData),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
@@ -207,5 +207,33 @@ class CustomerTile extends StatelessWidget {
     }
 
     return latestTime;
+  }
+
+  int _getInvoiceCount(DeliveryDataEntity deliveryData) {
+    if (deliveryData.invoices != null && deliveryData.invoices!.isNotEmpty) {
+      return deliveryData.invoices!.length;
+    } else if (deliveryData.invoice != null) {
+      return 1;
+    }
+    return 0;
+  }
+
+  String _formatTotalAmount(DeliveryDataEntity deliveryData) {
+    double totalAmount = 0.0;
+    
+    // Calculate total from all invoices if available
+    if (deliveryData.invoices != null && deliveryData.invoices!.isNotEmpty) {
+      totalAmount = deliveryData.invoices!.fold<double>(
+        0.0, 
+        (sum, invoice) => sum + (invoice.totalAmount ?? 0.0),
+      );
+    } else if (deliveryData.invoice?.totalAmount != null) {
+      // Fallback to single invoice
+      totalAmount = deliveryData.invoice!.totalAmount!;
+    }
+    
+    // Format with commas and currency symbol
+    final formatter = NumberFormat('#,##0.00');
+    return '₱${formatter.format(totalAmount)}';
   }
 }
