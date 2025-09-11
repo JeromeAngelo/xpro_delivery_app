@@ -61,6 +61,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
+            final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = MediaQuery.of(context).size.height;
+
         return MultiBlocProvider(
           providers: [
             BlocProvider(create: (_) => sl<GeneralUserBloc>()),
@@ -126,9 +129,9 @@ class MyApp extends StatelessWidget {
                   ), // Prevent text scaling
                 ),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minWidth: 600,
-                    minHeight: 400,
+                  constraints:  BoxConstraints(
+                    minWidth: screenWidth < 600 ? screenWidth : 600,
+                  minHeight: screenHeight < 800 ? screenHeight : 800
                   ),
                   child: child!,
                 ),

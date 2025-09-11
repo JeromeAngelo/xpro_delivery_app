@@ -628,7 +628,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
           final roleName = userRoleRecord.data['name']?.toString();
           debugPrint('👤 User role for performance: $roleName');
 
-          if (roleName == 'Helper' || roleName == 'Driver') {
+          if (roleName == 'Helper' || roleName == 'Team Leader') {
             debugPrint(
               '🔄 Creating user performance record for $roleName user: ${record.id}',
             );
@@ -673,12 +673,12 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
           final roleName = userRoleRecord.data['name']?.toString();
           debugPrint('👤 User role: $roleName');
 
-          if (roleName == 'Helper' || roleName == 'Driver') {
+          if (roleName == 'Helper' || roleName == 'Team Leader') {
             debugPrint('🔄 Creating personnel record for $roleName user');
 
             // Map user roles to personnel roles
             String personnelRole;
-            if (roleName == 'Driver') {
+            if (roleName == 'Team Leader') {
               personnelRole = 'team_leader';
             } else if (roleName == 'Helper') {
               personnelRole = 'helper';
