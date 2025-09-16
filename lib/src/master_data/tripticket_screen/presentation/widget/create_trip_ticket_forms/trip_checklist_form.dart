@@ -90,7 +90,6 @@ class ChecklistForm extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Show selected checklists chips
-        selectedChecklistsWidget,
 
         // Dropdown to add more checklists
         AppDropdownField<ChecklistModel>(
@@ -106,6 +105,8 @@ class ChecklistForm extends StatelessWidget {
           },
           //    helperText: 'Select checklists for this trip',
         ),
+
+        selectedChecklistsWidget,
       ],
     );
   }

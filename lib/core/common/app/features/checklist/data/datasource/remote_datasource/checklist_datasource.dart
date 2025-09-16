@@ -46,33 +46,34 @@ class ChecklistDatasourceImpl implements ChecklistDatasource {
 
   ChecklistDatasourceImpl({required PocketBase pocketBaseClient})
     : _pocketBaseClient = pocketBaseClient;
-@override
+
+    @override
 Future<List<ChecklistModel>> getAllChecklists() async {
   try {
     debugPrint('🔄 Fetching all checklists');
 
     final records = await _pocketBaseClient
         .collection('checklist')
-        .getFullList(expand: 'trip', sort: '-created');
+        .getFullList(expand: 'trip', sort: '-created'); // latest first
 
     debugPrint('✅ Successfully fetched ${records.length} checklists');
 
     List<ChecklistModel> checklists = [];
-    
+
     for (var record in records) {
       try {
         // Process trip data if available
         TripModel? tripModel;
         String? tripId;
         String? tripNumberId;
-        
+
         if (record.expand['trip'] != null) {
           final tripData = record.expand['trip'];
           if (tripData is List && tripData!.isNotEmpty) {
             final tripRecord = tripData[0];
             tripId = tripRecord.id;
             tripNumberId = tripRecord.data['tripNumberId'];
-            
+
             tripModel = TripModel(
               id: tripRecord.id,
               collectionId: tripRecord.collectionId,
@@ -81,18 +82,19 @@ Future<List<ChecklistModel>> getAllChecklists() async {
               isAccepted: tripRecord.data['isAccepted'] ?? false,
               isEndTrip: tripRecord.data['isEndTrip'] ?? false,
             );
-            
-            debugPrint('✅ Found trip ID: $tripId (Number: $tripNumberId) for checklist: ${record.id}');
+
+            debugPrint(
+              '✅ Found trip ID: $tripId (Number: $tripNumberId) for checklist: ${record.id}',
+            );
           } else if (tripData is String) {
-            // If we only have the trip ID, try to fetch the trip details
             tripId = tripData as String?;
             try {
               final tripRecord = await _pocketBaseClient
                   .collection('tripticket')
                   .getOne(tripId!);
-                  
+
               tripNumberId = tripRecord.data['tripNumberId'];
-              
+
               tripModel = TripModel(
                 id: tripRecord.id,
                 collectionId: tripRecord.collectionId,
@@ -101,15 +103,16 @@ Future<List<ChecklistModel>> getAllChecklists() async {
                 isAccepted: tripRecord.data['isAccepted'] ?? false,
                 isEndTrip: tripRecord.data['isEndTrip'] ?? false,
               );
-              
-              debugPrint('✅ Fetched trip details - Number: $tripNumberId for checklist: ${record.id}');
+
+              debugPrint(
+                '✅ Fetched trip details - Number: $tripNumberId for checklist: ${record.id}',
+              );
             } catch (e) {
               debugPrint('⚠️ Could not fetch trip details: $e');
             }
           }
         }
 
-        // Create the checklist model with trip data
         final checklistModel = ChecklistModel(
           id: record.id,
           objectName: record.data['objectName'] ?? '',
@@ -121,12 +124,11 @@ Future<List<ChecklistModel>> getAllChecklists() async {
           tripModel: tripModel,
           tripId: tripId,
         );
-        
+
         checklists.add(checklistModel);
         debugPrint('✅ Processed checklist: ${record.id} with trip: $tripId');
       } catch (e) {
         debugPrint('❌ Error processing checklist record: ${e.toString()}');
-        // Add a minimal model to avoid breaking the list
         checklists.add(ChecklistModel(
           id: record.id,
           objectName: record.data['objectName'] ?? '',
@@ -136,7 +138,18 @@ Future<List<ChecklistModel>> getAllChecklists() async {
       }
     }
 
-    return checklists;
+    // ✅ Deduplicate by objectName (latest first because of sort: '-created')
+    final uniqueChecklists = <String, ChecklistModel>{};
+    for (var checklist in checklists) {
+      uniqueChecklists.putIfAbsent(checklist.objectName ?? '', () => checklist);
+    }
+
+    debugPrint(
+      '✨ Unique checklists count: ${uniqueChecklists.values.length} '
+      'from original: ${checklists.length}',
+    );
+
+    return uniqueChecklists.values.toList();
   } catch (e) {
     debugPrint('❌ Error fetching all checklists: ${e.toString()}');
     throw ServerException(
