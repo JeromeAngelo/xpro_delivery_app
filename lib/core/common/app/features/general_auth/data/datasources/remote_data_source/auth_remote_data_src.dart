@@ -241,6 +241,8 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
   @override
   Future<void> signOut() async {
     try {
+            await _ensureAuthenticated();
+
       debugPrint('🚪 Signing out user');
       _pocketBaseClient.authStore.clear();
 

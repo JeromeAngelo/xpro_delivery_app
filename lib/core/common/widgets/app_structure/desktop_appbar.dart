@@ -1,4 +1,3 @@
-// ignore_for_file: unused_local_variable
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +7,11 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/pr
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/presentation/bloc/auth_event.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/presentation/bloc/auth_state.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/provider/theme_provider.dart';
+
+import '../../app/features/notfication/domain/entity/notification_entity.dart';
+import '../../app/features/notfication/presentation/bloc/notification_bloc.dart';
+import '../../app/features/notfication/presentation/bloc/notification_event.dart';
+import '../../app/features/notfication/presentation/bloc/notification_state.dart';
 
 class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onThemeToggle;
@@ -146,15 +150,124 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
               // Theme Toggle with Choices
               _buildThemeSelector(context),
 
-              // Notifications
-              IconButton(
-                icon: Icon(
-                  Icons.notifications_outlined,
-                  color: Theme.of(context).colorScheme.surface,
+             // Notifications
+BlocBuilder<NotificationBloc, NotificationState>(
+  builder: (context, state) {
+    int unreadCount = 0;
+    List<NotificationEntity> notifications = [];
+
+    if (state is NotificationLoaded) {
+      unreadCount = state.unreadCount;
+      notifications = state.notifications;
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        PopupMenuButton<int>(
+          icon: Icon(
+            Icons.notifications_outlined,
+            color: unreadCount > 0
+                ? Colors.red // 🔴 red if there’s unread notifications
+                : Theme.of(context).colorScheme.surface,
+          ),
+          tooltip: 'Notifications',
+          offset: const Offset(0, 40),
+          onSelected: (int value) {
+            // optional: handle click
+          },
+          itemBuilder: (context) {
+            if (notifications.isEmpty) {
+              return [
+                const PopupMenuItem<int>(
+                  enabled: false,
+                  child: Text('No notifications'),
                 ),
-                onPressed: onNotificationTap,
-                tooltip: 'Notifications',
+              ];
+            }
+
+            return notifications
+    .take(5) // show latest 5
+    .map((notif) {
+      // Create descriptive message
+      final message =
+          "The Delivery Team set status of ${notif.status ?? 'Unknown'} "
+          "in the ${notif.delivery?.customer!.name ?? 'delivery'}";
+
+      return PopupMenuItem<int>(
+        value: notif.hashCode,
+        child: ListTile(
+          leading: Icon(
+            notif.isRead ?? false
+                ? Icons.notifications_none
+                : Icons.notifications_active,
+            color: notif.isRead ?? false ? Colors.grey : Colors.red,
+            size: 22,
+          ),
+          title: Text(
+            message,
+            style: TextStyle(
+              fontWeight: notif.isRead ?? false
+                  ? FontWeight.normal
+                  : FontWeight.bold,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: notif.body != null
+              ? Text(
+                  notif.body!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                )
+              : null,
+          onTap: () {
+            // Dispatch markAsRead event
+            context.read<NotificationBloc>().add(
+                  MarkAsReadEvent(notif.id!),
+                );
+            // Optionally navigate to details page
+            // context.go('/delivery/${notif.delivery?.id}');
+          },
+        ),
+      );
+    })
+    .toList();
+
+          },
+        ),
+
+        // 🔴 small badge showing count (like Facebook/IG)
+        if (unreadCount > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
               ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  },
+),
+
 
               // Enhanced User Profile Section
               _buildUserProfileSection(

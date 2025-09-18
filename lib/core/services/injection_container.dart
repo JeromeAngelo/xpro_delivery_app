@@ -200,6 +200,18 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/inv
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/invoice_preset_group/domain/usecases/get_all_unassigned_invoices.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/invoice_preset_group/domain/usecases/search_preset_group_by_ref_id.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/invoice_preset_group/presentation/bloc/invoice_preset_group_bloc.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/data/datasources/remote_datasource/notification_remote_datasource.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/data/repo/notification_repo_impl.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/domain/repo/notification_repo.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/domain/usecases/create_notification.dart'
+    show CreateNotificationUseCase;
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/domain/usecases/delete_notification.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/domain/usecases/get_unread_notification.dart'
+    show GetUnreadNotificationsUseCase;
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/domain/usecases/mark_all_as_read.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/domain/usecases/mark_as_read.dart'
+    show MarkAsReadUseCase;
+import 'package:xpro_delivery_admin_app/core/common/app/features/notfication/presentation/bloc/notification_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/otp/data/datasource/remote_data_source/otp_remote_datasource.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/otp/data/repo/otp_repo_impl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/otp/domain/repo/otp_repo.dart';
@@ -233,7 +245,8 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip
 import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/domain/usecase/get_personnel_trips_by_trip_id.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/presentation/bloc/personnel_trip_bloc.dart';
 
-import '../common/app/features/Delivery_Team/personels/domain/usecase/get_personel_by_id.dart' show GetPersonelById;
+import '../common/app/features/Delivery_Team/personels/domain/usecase/get_personel_by_id.dart'
+    show GetPersonelById;
 import '../common/app/features/Trip_Ticket/cancelled_invoices/data/datasources/remote_datasource/cancelled_invoice_remote_datasource.dart';
 import '../common/app/features/Trip_Ticket/cancelled_invoices/data/repo/cancelled_invoice_repo_impl.dart';
 import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/repo/cancelled_invoice_repo.dart';
@@ -255,6 +268,8 @@ import '../common/app/features/Trip_Ticket/delivery_receipt/data/repo/delivery_r
 import '../common/app/features/Trip_Ticket/delivery_receipt/domain/repo/delivery_receipt_repo.dart';
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/filter_trips_by_user.dart';
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/fiter_trips_by_data_range.dart';
+import '../common/app/features/notfication/domain/usecases/get_all_notification.dart';
+import 'notification_service.dart';
 
 final sl = GetIt.instance;
 final pb = PocketBase('https://delivery-app.winganmarketing.com');
@@ -287,9 +302,9 @@ Future<void> init() async {
   await initCancelledInvoiceData();
   await initDeliveryReceipt();
   await initPersonnelTrip();
+  await initNotification();
+  // Providers
 }
-
-
 
 Future<void> initGeneralAuth() async {
   //BLoC
@@ -414,7 +429,8 @@ Future<void> initPersonels() async {
       createPersonel: sl(),
       updatePersonel: sl(),
       deletePersonel: sl(),
-      deleteAllPersonels: sl(), getPersonelById: sl(),
+      deleteAllPersonels: sl(),
+      getPersonelById: sl(),
     ),
   );
 
@@ -748,7 +764,8 @@ Future<void> initCustomerData() async {
       deleteCustomerData: sl(),
       deleteAllCustomerData: sl(),
       addCustomerToDelivery: sl(),
-      getCustomersByDeliveryId: sl(), getAllUnassignedCustomerData: sl(),
+      getCustomersByDeliveryId: sl(),
+      getAllUnassignedCustomerData: sl(),
     ),
   );
 
@@ -856,7 +873,8 @@ Future<void> initDeliveryData() async {
       getDeliveryDataByTripId: sl(),
       getDeliveryDataById: sl(),
       deleteDeliveryData: sl(),
-      getAllDeliveryDataWithTrips: sl(), addDeliveryDataToTrip: sl(),
+      getAllDeliveryDataWithTrips: sl(),
+      addDeliveryDataToTrip: sl(),
     ),
   );
 
@@ -1004,5 +1022,39 @@ Future<void> initPersonnelTrip() async {
   // Data sources
   sl.registerLazySingleton<PersonnelTripRemoteDataSource>(
     () => PersonnelTripRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+}
+
+Future<void> initNotification() async {
+  sl.registerLazySingleton(
+    () => NotificationBloc(
+      getAllNotifications: sl(),
+      getUnreadNotifications: sl(),
+      markAsRead: sl(),
+      markAllAsRead: sl(),
+      createNotification: sl(),
+      deleteNotification: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetAllNotificationsUseCase(sl()));
+  sl.registerLazySingleton(() => GetUnreadNotificationsUseCase(sl()));
+  sl.registerLazySingleton(() => MarkAsReadUseCase(sl()));
+  sl.registerLazySingleton(() => MarkAllAsReadUseCase(sl()));
+  sl.registerLazySingleton(() => CreateNotificationUseCase(sl()));
+  sl.registerLazySingleton(() => DeleteNotificationUseCase(sl()));
+
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepoImpl(sl()),
+  );
+
+  sl.registerLazySingleton<NotificationRemoteDatasource>(
+    () => NotificationRemoteDatasourceImpl(pocketBaseClient: sl()),
+  );
+
+
+  // Realtime service
+  sl.registerLazySingleton(
+    () => NotificationRealtimeService(pb, sl<NotificationBloc>()),
   );
 }

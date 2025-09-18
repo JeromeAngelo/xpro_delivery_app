@@ -8,6 +8,11 @@ import 'package:xpro_delivery_admin_app/core/common/widgets/reusable_widgets/def
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/common/app/features/notfication/domain/entity/notification_entity.dart';
+import '../../../../core/common/app/features/notfication/presentation/bloc/notification_bloc.dart';
+import '../../../../core/common/app/features/notfication/presentation/bloc/notification_event.dart';
+import '../../../../core/common/app/features/notfication/presentation/bloc/notification_state.dart';
+
 class MainScreenView extends StatefulWidget {
   const MainScreenView({super.key});
 
@@ -78,18 +83,122 @@ class _MainScreenViewState extends State<MainScreenView> {
           // Replace the existing desktop icon button with this:
           
 
-          IconButton(
-            icon: Icon(
-              Icons.notifications,
-              color: Theme.of(context).colorScheme.surface,
-            ),
-            onPressed: () {
-              // Handle notifications
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications coming soon')),
-              );
-            },
+         BlocBuilder<NotificationBloc, NotificationState>(
+  builder: (context, state) {
+    int unreadCount = 0;
+    List<NotificationEntity> notifications = [];
+
+    if (state is NotificationLoaded) {
+      unreadCount = state.unreadCount;
+      notifications = state.notifications;
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        PopupMenuButton<int>(
+          icon: Icon(
+            Icons.notifications_outlined,
+            color: unreadCount > 0
+                ? Colors.red // 🔴 red if there’s unread notifications
+                : Theme.of(context).colorScheme.surface,
           ),
+          tooltip: 'Notifications',
+          offset: const Offset(0, 40),
+          onSelected: (int value) {
+            // optional: handle click
+          },
+          itemBuilder: (context) {
+            if (notifications.isEmpty) {
+              return [
+                const PopupMenuItem<int>(
+                  enabled: false,
+                  child: Text('No notifications'),
+                ),
+              ];
+            }
+
+            return notifications
+    .take(5) // show latest 5
+    .map((notif) {
+      // Create descriptive message
+      final message =
+          "The Delivery Team set status of ${notif.status ?? 'Unknown'} "
+          "in the ${notif.delivery?.customer!.name ?? 'delivery'}";
+
+      return PopupMenuItem<int>(
+        value: notif.hashCode,
+        child: ListTile(
+          leading: Icon(
+            notif.isRead ?? false
+                ? Icons.notifications_none
+                : Icons.notifications_active,
+            color: notif.isRead ?? false ? Colors.grey : Colors.red,
+            size: 22,
+          ),
+          title: Text(
+            message,
+            style: TextStyle(
+              fontWeight: notif.isRead ?? false
+                  ? FontWeight.normal
+                  : FontWeight.bold,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: notif.body != null
+              ? Text(
+                  notif.body!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                )
+              : null,
+          onTap: () {
+            // Dispatch markAsRead event
+            context.read<NotificationBloc>().add(
+                  MarkAsReadEvent(notif.id!),
+                );
+            // Optionally navigate to details page
+            // context.go('/delivery/${notif.delivery?.id}');
+          },
+        ),
+      );
+    })
+    .toList();
+
+          },
+        ),
+
+        // 🔴 small badge showing count (like Facebook/IG)
+        if (unreadCount > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  },
+),
           BlocBuilder<GeneralUserBloc, GeneralUserState>(
             builder: (context, state) {
               debugPrint('🏠 MainScreen - Auth state: ${state.runtimeType}');

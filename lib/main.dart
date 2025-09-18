@@ -32,6 +32,8 @@ import 'package:xpro_delivery_admin_app/core/services/auth_interceptor.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 
+import 'core/common/app/features/notfication/presentation/bloc/notification_bloc.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -61,7 +63,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
-            final screenWidth = MediaQuery.of(context).size.width;
+        final screenWidth = MediaQuery.of(context).size.width;
         final screenHeight = MediaQuery.of(context).size.height;
 
         return MultiBlocProvider(
@@ -94,6 +96,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => sl<CancelledInvoiceBloc>()),
             BlocProvider(create: (_) => sl<DeliveryReceiptBloc>()),
             BlocProvider(create: (_) => sl<PersonnelTripBloc>()),
+            BlocProvider(create: (_) => sl<NotificationBloc>()),
           ],
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
@@ -129,9 +132,9 @@ class MyApp extends StatelessWidget {
                   ), // Prevent text scaling
                 ),
                 child: ConstrainedBox(
-                  constraints:  BoxConstraints(
+                  constraints: BoxConstraints(
                     minWidth: screenWidth < 600 ? screenWidth : 600,
-                  minHeight: screenHeight < 800 ? screenHeight : 800
+                    minHeight: screenHeight < 800 ? screenHeight : 800,
                   ),
                   child: child!,
                 ),
