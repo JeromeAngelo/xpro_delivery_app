@@ -22,7 +22,7 @@ class MainScreenView extends StatefulWidget {
 
 class _MainScreenViewState extends State<MainScreenView> {
   // Theme mode state
- 
+
   final GlobalKey _themeSelection = GlobalKey();
 
   @override
@@ -31,8 +31,10 @@ class _MainScreenViewState extends State<MainScreenView> {
     // Check authentication state when main screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final currentState = context.read<GeneralUserBloc>().state;
-      debugPrint('🏠 MainScreen initState - Current auth state: ${currentState.runtimeType}');
-      
+      debugPrint(
+        '🏠 MainScreen initState - Current auth state: ${currentState.runtimeType}',
+      );
+
       // If user is not authenticated, don't do anything - let the app handle it
       if (currentState is UserAuthenticated) {
         debugPrint('✅ User is authenticated: ${currentState.user.email}');
@@ -43,7 +45,6 @@ class _MainScreenViewState extends State<MainScreenView> {
   }
 
   // Load saved theme mode preference
- 
 
   @override
   Widget build(BuildContext context) {
@@ -81,128 +82,141 @@ class _MainScreenViewState extends State<MainScreenView> {
         ),
         actions: [
           // Replace the existing desktop icon button with this:
-          
+          BlocBuilder<NotificationBloc, NotificationState>(
+            builder: (context, state) {
+              int unreadCount = 0;
+              List<NotificationEntity> notifications = [];
 
-         BlocBuilder<NotificationBloc, NotificationState>(
-  builder: (context, state) {
-    int unreadCount = 0;
-    List<NotificationEntity> notifications = [];
+              if (state is NotificationLoaded) {
+                unreadCount = state.unreadCount;
+                notifications = state.notifications;
+              }
 
-    if (state is NotificationLoaded) {
-      unreadCount = state.unreadCount;
-      notifications = state.notifications;
-    }
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  PopupMenuButton<int>(
+                    icon: Icon(
+                      Icons.notifications_outlined,
+                      color:
+                          unreadCount > 0
+                              ? Colors
+                                  .red // 🔴 red if there’s unread notifications
+                              : Theme.of(context).colorScheme.surface,
+                    ),
+                    tooltip: 'Notifications',
+                    offset: const Offset(0, 40),
+                    onSelected: (int value) {
+                      // optional: handle click
+                    },
+                    itemBuilder: (context) {
+                      if (notifications.isEmpty) {
+                        return [
+                          const PopupMenuItem<int>(
+                            enabled: false,
+                            child: Text('No notifications'),
+                          ),
+                        ];
+                      }
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        PopupMenuButton<int>(
-          icon: Icon(
-            Icons.notifications_outlined,
-            color: unreadCount > 0
-                ? Colors.red // 🔴 red if there’s unread notifications
-                : Theme.of(context).colorScheme.surface,
-          ),
-          tooltip: 'Notifications',
-          offset: const Offset(0, 40),
-          onSelected: (int value) {
-            // optional: handle click
-          },
-          itemBuilder: (context) {
-            if (notifications.isEmpty) {
-              return [
-                const PopupMenuItem<int>(
-                  enabled: false,
-                  child: Text('No notifications'),
-                ),
-              ];
-            }
+                      return notifications
+                          .take(5) // show latest 5
+                          .map((notif) {
+                            // Create descriptive message
+                            final statusText =
+                                notif.status ??
+                                (notif.trip?.tripNumberId != null
+                                    ? notif.trip!.tripNumberId
+                                    : 'unknown');
+                            // Create descriptive message
+                            final message =
+                                "The Delivery Team set status of $statusText "
+                                "in the ${notif.delivery?.customer?.name ?? 'delivery'}";
 
-            return notifications
-    .take(5) // show latest 5
-    .map((notif) {
-      // Create descriptive message
-      final message =
-          "The Delivery Team set status of ${notif.status ?? 'Unknown'} "
-          "in the ${notif.delivery?.customer!.name ?? 'delivery'}";
-
-      return PopupMenuItem<int>(
-        value: notif.hashCode,
-        child: ListTile(
-          leading: Icon(
-            notif.isRead ?? false
-                ? Icons.notifications_none
-                : Icons.notifications_active,
-            color: notif.isRead ?? false ? Colors.grey : Colors.red,
-            size: 22,
-          ),
-          title: Text(
-            message,
-            style: TextStyle(
-              fontWeight: notif.isRead ?? false
-                  ? FontWeight.normal
-                  : FontWeight.bold,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: notif.body != null
-              ? Text(
-                  notif.body!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
+                            return PopupMenuItem<int>(
+                              value: notif.hashCode,
+                              child: ListTile(
+                                leading: Icon(
+                                  notif.isRead ?? false
+                                      ? Icons.notifications_none
+                                      : Icons.notifications_active,
+                                  color:
+                                      notif.isRead ?? false
+                                          ? Colors.grey
+                                          : Colors.red,
+                                  size: 22,
+                                ),
+                                title: Text(
+                                  message,
+                                  style: TextStyle(
+                                    fontWeight:
+                                        notif.isRead ?? false
+                                            ? FontWeight.normal
+                                            : FontWeight.bold,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle:
+                                    notif.body != null
+                                        ? Text(
+                                          notif.body!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        )
+                                        : null,
+                                onTap: () {
+                                  // Dispatch markAsRead event
+                                  context.read<NotificationBloc>().add(
+                                    MarkAsReadEvent(notif.id!),
+                                  );
+                                  // Optionally navigate to details page
+                                  // context.go('/delivery/${notif.delivery?.id}');
+                                },
+                              ),
+                            );
+                          })
+                          .toList();
+                    },
                   ),
-                )
-              : null,
-          onTap: () {
-            // Dispatch markAsRead event
-            context.read<NotificationBloc>().add(
-                  MarkAsReadEvent(notif.id!),
-                );
-            // Optionally navigate to details page
-            // context.go('/delivery/${notif.delivery?.id}');
-          },
-        ),
-      );
-    })
-    .toList();
 
-          },
-        ),
-
-        // 🔴 small badge showing count (like Facebook/IG)
-        if (unreadCount > 0)
-          Positioned(
-            right: 6,
-            top: 6,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-              child: Text(
-                unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
+                  // 🔴 small badge showing count (like Facebook/IG)
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
-      ],
-    );
-  },
-),
           BlocBuilder<GeneralUserBloc, GeneralUserState>(
             builder: (context, state) {
               debugPrint('🏠 MainScreen - Auth state: ${state.runtimeType}');
-              
+
               if (state is UserAuthenticated) {
                 // Get the user's name or email
                 final userName = state.user.name ?? state.user.email ?? 'User';
