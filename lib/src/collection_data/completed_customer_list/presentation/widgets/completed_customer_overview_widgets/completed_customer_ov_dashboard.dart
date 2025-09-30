@@ -21,18 +21,17 @@ class CompletedCustomerDashboard extends StatelessWidget {
     }
 
     // Calculate dashboard metrics
-    final totalCollections = collections.length;
-    final totalAmount = collections.fold<double>(
-      0,
-      (sum, collection) => sum + (collection.totalAmount ?? 0),
-    );
+// Calculate dashboard metrics
+final totalCollections = collections.length;
 
-    // Calculate unique customers and trips
-    final uniqueCustomers = collections
-        .where((collection) => collection.customer?.id != null)
-        .map((collection) => collection.customer!.id!)
-        .toSet()
-        .length;
+final totalAmount = collections.fold<double>(
+  0,
+  (sum, collection) => sum + (collection.totalAmount ?? 0),
+);
+
+
+
+    
 
     final uniqueTrips = collections
         .where((collection) => collection.trip?.id != null)
@@ -43,10 +42,7 @@ class CompletedCustomerDashboard extends StatelessWidget {
     // Calculate average collection amount
     final averageAmount = totalCollections > 0 ? totalAmount / totalCollections : 0.0;
 
-    // Calculate collections by delivery status
-    final completedDeliveries = collections
-        .where((collection) => collection.deliveryData != null)
-        .length;
+   
 
     // Format currency
     final currencyFormatter = NumberFormat.currency(
@@ -74,13 +70,7 @@ class CompletedCustomerDashboard extends StatelessWidget {
           iconColor: Colors.green,
         ),
 
-        // Unique Customers Served
-        DashboardInfoItem(
-          icon: Icons.people,
-          value: uniqueCustomers.toString(),
-          label: 'Customers Served',
-          iconColor: Colors.orange,
-        ),
+       
 
         // Unique Trips
         DashboardInfoItem(
@@ -98,13 +88,7 @@ class CompletedCustomerDashboard extends StatelessWidget {
           iconColor: Colors.indigo,
         ),
 
-        // Completed Deliveries
-        DashboardInfoItem(
-          icon: Icons.check_circle,
-          value: completedDeliveries.toString(),
-          label: 'Completed Deliveries',
-          iconColor: Colors.teal,
-        ),
+       
       ],
       crossAxisCount: 3,
       childAspectRatio: 3.0,

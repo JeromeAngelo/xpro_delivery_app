@@ -357,6 +357,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           'id': customerRecord.id,
           'collectionId': customerRecord.collectionId,
           'collectionName': customerRecord.collectionName,
+          'refId':customerRecord.data['refID'],
           ...customerRecord.data,
         });
       }

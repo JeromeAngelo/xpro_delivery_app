@@ -174,6 +174,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
         endDate: event.endDate,
         isAccepted: event.isAccepted,
         isEndTrip: event.isEndTrip,
+        name: event.name,
         deliveryTeamId: event.deliveryTeamId,
         vehicleId: event.vehicleId,
         personnelId: event.personnelId,

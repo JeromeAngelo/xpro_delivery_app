@@ -33,6 +33,7 @@ class SearchTripTicketsParams extends Equatable {
   final String? deliveryTeamId;
   final String? vehicleId;
   final String? personnelId;
+  final String? name;
 
   const SearchTripTicketsParams({
     this.tripNumberId,
@@ -40,6 +41,7 @@ class SearchTripTicketsParams extends Equatable {
     this.endDate,
     this.isAccepted,
     this.isEndTrip,
+    this.name,
     this.deliveryTeamId,
     this.vehicleId,
     this.personnelId,
@@ -50,6 +52,7 @@ class SearchTripTicketsParams extends Equatable {
     tripNumberId,
     startDate,
     endDate,
+    name,
     isAccepted,
     isEndTrip,
     deliveryTeamId,

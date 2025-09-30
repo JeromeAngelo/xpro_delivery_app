@@ -130,14 +130,14 @@ class _CompletedCustomerListScreenState
                     ? completedCustomers.length
                     : startIndex + _itemsPerPage;
 
-            final paginatedCustomers =
+            final List<CollectionEntity> paginatedCustomers =
                 startIndex < completedCustomers.length
                     ? completedCustomers.sublist(startIndex, endIndex)
                     : [];
 
             return CompletedCustomerDataTable(
               collections:
-                  paginatedCustomers as List<CollectionEntity>,
+                  paginatedCustomers ,
               isLoading: false,
               currentPage: _currentPage,
               totalPages: _totalPages,

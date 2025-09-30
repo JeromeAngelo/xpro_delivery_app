@@ -111,7 +111,8 @@ class _TripTicketScreenViewState extends State<TripTicketScreenView> {
                         (trip.tripNumberId?.toLowerCase().contains(query) ??
                             false) ||
                         (trip.user?.name?.toLowerCase().contains(query) ??
-                            false);
+                            false) ||
+                        (trip.name?.toLowerCase().contains(query) ?? false);
                   }).toList();
             }
 

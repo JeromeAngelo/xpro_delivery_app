@@ -25,6 +25,8 @@ class SearchTripTicketsEvent extends TripEvent {
   final String? tripNumberId;
   final DateTime? startDate;
   final DateTime? endDate;
+    final String? name;
+
   final bool? isAccepted;
   final bool? isEndTrip;
   final String? deliveryTeamId;
@@ -35,6 +37,7 @@ class SearchTripTicketsEvent extends TripEvent {
     this.tripNumberId,
     this.startDate,
     this.endDate,
+    this.name,
     this.isAccepted,
     this.isEndTrip,
     this.deliveryTeamId,
@@ -49,6 +52,7 @@ class SearchTripTicketsEvent extends TripEvent {
     endDate,
     isAccepted,
     isEndTrip,
+    name,
     deliveryTeamId,
     vehicleId,
     personnelId,

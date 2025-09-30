@@ -17,6 +17,8 @@ class CollectionEntity extends Equatable {
   final CustomerDataEntity? customer;
   final InvoiceDataEntity? invoice;
 
+  final List<InvoiceDataEntity>? invoices;
+
   final String? status;
 
   final double? totalAmount;
@@ -33,6 +35,7 @@ class CollectionEntity extends Equatable {
     this.trip,
     this.status,
     this.customer,
+    this.invoices,
     this.invoice,
     this.totalAmount,
     this.created,

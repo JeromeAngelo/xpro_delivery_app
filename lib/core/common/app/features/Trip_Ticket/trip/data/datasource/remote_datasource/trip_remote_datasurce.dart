@@ -26,6 +26,8 @@ abstract class TripRemoteDatasurce {
     DateTime? startDate,
     DateTime? endDate,
     bool? isAccepted,
+    String? name,
+
     bool? isEndTrip,
     String? deliveryTeamId,
     String? vehicleId,
@@ -252,10 +254,10 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       tripData['isAccepted'] = false;
       tripData['isEndTrip'] = false;
 
-       // Add deliveryDate field
-    if (trip.deliveryDate != null) {
-      tripData['deliveryDate'] = trip.deliveryDate!.toIso8601String();
-    }
+      // Add deliveryDate field
+      if (trip.deliveryDate != null) {
+        tripData['deliveryDate'] = trip.deliveryDate!.toIso8601String();
+      }
 
       // Generate QR code (using trip number as the QR code value)
       tripData['qrCode'] = tripNumberId;
@@ -639,16 +641,24 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
     bool? isEndTrip,
     String? deliveryTeamId,
     String? vehicleId,
+    String? name,
     String? personnelId,
   }) async {
     try {
       debugPrint('🔍 Searching for trip tickets with filters');
 
+
       List<String> filters = [];
 
+
+if (name != null) {
+        filters.add('name ~ "$name"');
+      }
       if (tripNumberId != null) {
         filters.add('tripNumberId ~ "$tripNumberId"');
       }
+
+       
       if (startDate != null) {
         filters.add('created >= "${startDate.toIso8601String()}"');
       }
@@ -843,7 +853,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         }
       }
 
-       // Parse dates properly
+      // Parse dates properly
       DateTime? deliveryDate;
       if (record.data['deliveryDate'] != null) {
         try {
@@ -1059,7 +1069,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       debugPrint(
         '✅ Final mapping - Using ${cancelledInvoiceModels.length} cancelled invoice models',
       );
-      
+
       // Debug vehicle mapping
       if (vehicleModel != null) {
         debugPrint(

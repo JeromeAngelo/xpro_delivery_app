@@ -11,7 +11,6 @@ import '../../../../delivery_data/data/model/delivery_data_model.dart';
 import '../../../../invoice_data/data/model/invoice_data_model.dart';
 import '../../model/collection_model.dart';
 
-
 abstract class CollectionRemoteDataSource {
   /// Load collections by trip ID from remote
   Future<List<CollectionModel>> getCollectionsByTripId(String tripId);
@@ -23,19 +22,18 @@ abstract class CollectionRemoteDataSource {
   Future<bool> deleteCollection(String collectionId);
 
   /// Load all collections
-Future<List<CollectionModel>> getAllCollections();
+  Future<List<CollectionModel>> getAllCollections();
 
   /// Filter collections by date range using created field
   Future<List<CollectionModel>> filterCollectionsByDate({
     required DateTime startDate,
     required DateTime endDate,
   });
-
 }
 
 class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
   const CollectionRemoteDataSourceImpl({required PocketBase pocketBaseClient})
-      : _pocketBaseClient = pocketBaseClient;
+    : _pocketBaseClient = pocketBaseClient;
 
   final PocketBase _pocketBaseClient;
   static const String _authTokenKey = 'auth_token';
@@ -50,7 +48,9 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
         return;
       }
 
-      debugPrint('⚠️ PocketBase client not authenticated, attempting to restore from storage');
+      debugPrint(
+        '⚠️ PocketBase client not authenticated, attempting to restore from storage',
+      );
 
       // Try to restore authentication from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
@@ -63,7 +63,7 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
         // Restore the auth store with token only
         // The PocketBase client will handle the record validation
         _pocketBaseClient.authStore.save(authToken, null);
-        
+
         debugPrint('✅ Authentication restored from storage');
       } else {
         debugPrint('❌ No stored authentication found');
@@ -82,39 +82,38 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
   }
 
   @override
-Future<List<CollectionModel>> getAllCollections() async {
-  try {
-    debugPrint('🔄 Fetching all collections');
-    
-    // Ensure PocketBase client is authenticated
-    await _ensureAuthenticated();
+  Future<List<CollectionModel>> getAllCollections() async {
+    try {
+      debugPrint('🔄 Fetching all collections');
 
-    final records = await _pocketBaseClient
-        .collection('deliveryCollection')
-        .getFullList(
-          expand: 'deliveryData,trip,customer,invoice',
-          sort: '-created',
-        );
+      // Ensure PocketBase client is authenticated
+      await _ensureAuthenticated();
 
-    debugPrint('✅ Retrieved ${records.length} collections from API');
+      final records = await _pocketBaseClient
+          .collection('deliveryCollection')
+          .getFullList(
+            expand: 'deliveryData,trip,customer,invoice,invoices',
+            sort: '-created',
+          );
 
-    List<CollectionModel> collections = [];
+      debugPrint('✅ Retrieved ${records.length} collections from API');
 
-    for (var record in records) {
-      collections.add(_processCollectionRecord(record));
+      List<CollectionModel> collections = [];
+
+      for (var record in records) {
+        collections.add(_processCollectionRecord(record));
+      }
+
+      debugPrint('✨ Successfully processed ${collections.length} collections');
+      return collections;
+    } catch (e) {
+      debugPrint('❌ Failed to fetch all collections: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to load all collections: ${e.toString()}',
+        statusCode: '500',
+      );
     }
-
-    debugPrint('✨ Successfully processed ${collections.length} collections');
-    return collections;
-  } catch (e) {
-    debugPrint('❌ Failed to fetch all collections: ${e.toString()}');
-    throw ServerException(
-      message: 'Failed to load all collections: ${e.toString()}',
-      statusCode: '500',
-    );
   }
-}
-
 
   @override
   Future<List<CollectionModel>> getCollectionsByTripId(String tripId) async {
@@ -134,7 +133,7 @@ Future<List<CollectionModel>> getAllCollections() async {
           .collection('deliveryCollection')
           .getFullList(
             filter: 'trip = "$actualTripId"',
-            expand: 'deliveryData,trip,customer,invoice',
+            expand: 'deliveryData,trip,customer,invoices',
             sort: '-created',
           );
 
@@ -164,10 +163,7 @@ Future<List<CollectionModel>> getAllCollections() async {
 
       final record = await _pocketBaseClient
           .collection('deliveryCollection')
-          .getOne(
-            collectionId,
-            expand: 'deliveryData,trip,customer,invoice',
-          );
+          .getOne(collectionId, expand: 'deliveryData,trip,customer,invoices');
 
       debugPrint('✅ Retrieved collection from API: ${record.id}');
 
@@ -210,9 +206,9 @@ Future<List<CollectionModel>> getAllCollections() async {
     // Process delivery data
     DeliveryDataModel? deliveryDataModel;
     if (record.expand['deliveryData'] != null) {
-      final deliveryDataData = record.expand['deliveryData'];
-      if (deliveryDataData is List && deliveryDataData!.isNotEmpty) {
-        final deliveryDataRecord = deliveryDataData[0];
+        final deliveryDataData = record.expand['deliveryData'];
+  if (deliveryDataData is List && deliveryDataData!.isNotEmpty) {
+    final deliveryDataRecord = deliveryDataData[0];
         deliveryDataModel = DeliveryDataModel.fromJson({
           'id': deliveryDataRecord.id,
           'collectionId': deliveryDataRecord.collectionId,
@@ -222,8 +218,12 @@ Future<List<CollectionModel>> getAllCollections() async {
         debugPrint('✅ Processed delivery data: ${deliveryDataModel.id}');
       }
     } else if (record.data['deliveryData'] != null) {
-      deliveryDataModel = DeliveryDataModel(id: record.data['deliveryData'].toString());
-      debugPrint('📋 Using delivery data ID reference: ${deliveryDataModel.id}');
+      deliveryDataModel = DeliveryDataModel(
+        id: record.data['deliveryData'].toString(),
+      );
+      debugPrint(
+        '📋 Using delivery data ID reference: ${deliveryDataModel.id}',
+      );
     }
 
     // Process trip data
@@ -241,7 +241,9 @@ Future<List<CollectionModel>> getAllCollections() async {
           'isAccepted': tripRecord.data['isAccepted'],
           'isEndTrip': tripRecord.data['isEndTrip'],
         });
-        debugPrint('✅ Processed trip: ${tripModel.id} - ${tripModel.tripNumberId}');
+        debugPrint(
+          '✅ Processed trip: ${tripModel.id} - ${tripModel.tripNumberId}',
+        );
       }
     } else if (record.data['trip'] != null) {
       tripModel = TripModel(id: record.data['trip'].toString());
@@ -260,11 +262,36 @@ Future<List<CollectionModel>> getAllCollections() async {
           'collectionName': customerRecord.collectionName,
           ...customerRecord.data,
         });
-        debugPrint('✅ Processed customer: ${customerModel.id} - ${customerModel.name}');
+        debugPrint(
+          '✅ Processed customer: ${customerModel.id} - ${customerModel.name}',
+        );
       }
     } else if (record.data['customer'] != null) {
       customerModel = CustomerDataModel(id: record.data['customer'].toString());
       debugPrint('📋 Using customer ID reference: ${customerModel.id}');
+    }
+    // Process invoices (multiple relation)
+    List<InvoiceDataModel> invoicesList = [];
+    if (record.expand['invoices'] != null) {
+      final invoicesData = record.expand['invoices'];
+      if (invoicesData is List) {
+        invoicesList =
+            invoicesData!.map((invoice) {
+              return InvoiceDataModel.fromJson({
+                'id': invoice.id,
+                'collectionId': invoice.collectionId,
+                'collectionName': invoice.collectionName,
+                ...invoice.data,
+                'expand': invoice.expand,
+              });
+            }).toList();
+      }
+    } else if (record.data['invoices'] != null &&
+        record.data['invoices'] is List) {
+      invoicesList =
+          (record.data['invoices'] as List)
+              .map((id) => InvoiceDataModel(id: id.toString()))
+              .toList();
     }
 
     // Process invoice data
@@ -279,7 +306,9 @@ Future<List<CollectionModel>> getAllCollections() async {
           'collectionName': invoiceRecord.collectionName,
           ...invoiceRecord.data,
         });
-        debugPrint('✅ Processed invoice: ${invoiceModel.id} - Amount: ${invoiceModel.totalAmount}');
+        debugPrint(
+          '✅ Processed invoice: ${invoiceModel.id} - Amount: ${invoiceModel.totalAmount}',
+        );
       }
     } else if (record.data['invoice'] != null) {
       invoiceModel = InvoiceDataModel(id: record.data['invoice'].toString());
@@ -298,13 +327,23 @@ Future<List<CollectionModel>> getAllCollections() async {
       }
     }
 
-    // Fallback to invoice totalAmount if collection amount is null/0
-    if ((totalAmount == null || totalAmount == 0) && invoiceModel?.totalAmount != null) {
-      totalAmount = invoiceModel!.totalAmount;
-      debugPrint('🔄 Using invoice totalAmount as fallback: $totalAmount');
-    }
+   // Fallback to invoices totalAmount if collection amount is null/0
+if ((totalAmount == null || totalAmount == 0) && invoicesList.isNotEmpty) {
+  final invoicesTotal = invoicesList.fold<double>(
+    0,
+    (sum, invoice) => sum + (invoice.totalAmount ?? 0),
+  );
 
-    debugPrint('💰 Final totalAmount for collection ${record.id}: $totalAmount');
+  if (invoicesTotal > 0) {
+    totalAmount = invoicesTotal;
+    debugPrint('🔄 Using invoices totalAmount as fallback: $totalAmount');
+  }
+}
+
+
+    debugPrint(
+      '💰 Final totalAmount for collection ${record.id}: $totalAmount',
+    );
 
     // Parse dates safely
     DateTime? parseDate(String? dateString) {
@@ -325,6 +364,8 @@ Future<List<CollectionModel>> getAllCollections() async {
       deliveryData: deliveryDataModel,
       trip: tripModel,
       customer: customerModel,
+            invoices: invoicesList,
+
       invoice: invoiceModel,
       status: record.data['status'],
       created: parseDate(record.created),
@@ -335,13 +376,15 @@ Future<List<CollectionModel>> getAllCollections() async {
     debugPrint('📊 Collection summary:');
     debugPrint('   - ID: ${collection.id}');
     debugPrint('   - Total Amount: ${collection.totalAmount}');
-    debugPrint('   - Customer: ${collection.customer!.name ?? "null"}');
-    debugPrint('   - Invoice: ${collection.invoice!.id ?? "null"}');
-    debugPrint('   - Trip: ${collection.trip!.tripNumberId ?? "null"}');
+  debugPrint('   - Customer: ${collection.customer?.name ?? "null"}');
+debugPrint('   - Invoice: ${collection.invoice?.id ?? "null"}');
+debugPrint('   - Trip: ${collection.trip?.tripNumberId ?? "null"}');
+
 
     return collection;
   }
-   @override
+
+  @override
   Future<List<CollectionModel>> filterCollectionsByDate({
     required DateTime startDate,
     required DateTime endDate,
@@ -356,19 +399,22 @@ Future<List<CollectionModel>> getAllCollections() async {
       debugPrint('📅 End Date: $formattedEndDate');
 
       // Create filter query for date range
-      final filter = 'created >= "$formattedStartDate" && created <= "$formattedEndDate"';
-      
+      final filter =
+          'created >= "$formattedStartDate" && created <= "$formattedEndDate"';
+
       debugPrint('🔍 Filter query: $filter');
 
       final records = await _pocketBaseClient
           .collection('deliveryCollection')
           .getFullList(
             filter: filter,
-            expand: 'deliveryData,trip,customer,invoice',
+            expand: 'deliveryData,trip,customer,invoices',
             sort: '-created',
           );
 
-      debugPrint('✅ Retrieved ${records.length} collections from API for date range');
+      debugPrint(
+        '✅ Retrieved ${records.length} collections from API for date range',
+      );
 
       List<CollectionModel> collections = [];
 
@@ -382,7 +428,9 @@ Future<List<CollectionModel>> getAllCollections() async {
         }
       }
 
-      debugPrint('✨ Successfully processed ${collections.length} collections for date range');
+      debugPrint(
+        '✨ Successfully processed ${collections.length} collections for date range',
+      );
       return collections;
     } catch (e) {
       debugPrint('❌ Failed to filter collections by date: ${e.toString()}');
@@ -393,14 +441,14 @@ Future<List<CollectionModel>> getAllCollections() async {
     }
   }
 
-   /// Helper method to format DateTime for PocketBase queries
+  /// Helper method to format DateTime for PocketBase queries
   String _formatDateForPocketBase(DateTime date) {
     // Ensure the date is in UTC and formatted properly for PocketBase
     final utcDate = date.toUtc();
-    
+
     // Format: YYYY-MM-DD HH:MM:SS.sssZ
     final formattedDate = utcDate.toIso8601String();
-    
+
     debugPrint('🕐 Formatted date: $date -> $formattedDate');
     return formattedDate;
   }
@@ -409,7 +457,7 @@ Future<List<CollectionModel>> getAllCollections() async {
   // Map<String, DateTime> _createDayRange(DateTime date) {
   //   final startOfDay = DateTime(date.year, date.month, date.day, 0, 0, 0);
   //   final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
-    
+
   //   return {
   //     'start': startOfDay,
   //     'end': endOfDay,

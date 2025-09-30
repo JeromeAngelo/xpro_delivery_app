@@ -66,7 +66,6 @@ class CompletedCustomerDataTable extends StatelessWidget {
       columns: const [
         DataColumn(label: Text('Delivery #')),
         DataColumn(label: Text('Store Name')),
-        DataColumn(label: Text('Collection Name')),
         DataColumn(label: Text('Trip ID')),
         DataColumn(label: Text('Total Amount')),
         DataColumn(label: Text('Completed At')),
@@ -77,26 +76,23 @@ class CompletedCustomerDataTable extends StatelessWidget {
             return DataRow(
               cells: [
                 DataCell(
-                  Text(collection.deliveryData?.deliveryNumber ?? 'N/A'),
+                  Text(collection.deliveryData!.deliveryNumber ?? 'N/A'),
                   onTap: () => _navigateToCollectionData(context, collection),
                 ),
                 DataCell(
-                  Text(collection.customer?.name ?? 'N/A'),
+                  Text(collection.customer!.name ?? 'N/A'),
                   onTap: () => _navigateToCollectionData(context, collection),
                 ),
-                DataCell(
-                  Text(collection.collectionName ?? 'N/A'),
-                  onTap: () => _navigateToCollectionData(context, collection),
-                ),
+
                 DataCell(
                   InkWell(
                     onTap: () {
-                      if (collection.trip?.id != null) {
+                      if (collection.trip!.id != null) {
                         context.go('/collections/${collection.trip!.id}');
                       }
                     },
                     child: Text(
-                      collection.trip?.tripNumberId ?? 'N/A',
+                      collection.trip!.tripNumberId ?? 'N/A',
                       style: const TextStyle(
                         color: Colors.blue,
                         decoration: TextDecoration.underline,
@@ -162,9 +158,9 @@ class CompletedCustomerDataTable extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Filter options coming soon')),
         );
-      }, 
-      dataLength: '${collections.length}', 
-      onDeleted: () {  },
+      },
+      dataLength: '${collections.length}',
+      onDeleted: () {},
     );
   }
 
@@ -200,16 +196,22 @@ class CompletedCustomerDataTable extends StatelessWidget {
                     'Delivery Number',
                     collection.deliveryData?.deliveryNumber ?? 'N/A',
                   ),
-                  
+
                   const SizedBox(height: 16),
                   const Text(
                     'Customer Information',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
-                  
-                  _buildDetailRow('Store Name', collection.customer?.name ?? 'N/A'),
-                  _buildDetailRow('Owner Name', collection.customer?.ownerName ?? 'N/A'),
+
+                  _buildDetailRow(
+                    'Store Name',
+                    collection.customer?.name ?? 'N/A',
+                  ),
+                  _buildDetailRow(
+                    'Owner Name',
+                    collection.customer?.ownerName ?? 'N/A',
+                  ),
                   _buildDetailRow(
                     'Contact',
                     collection.customer?.contactNumber ?? 'N/A',
@@ -218,28 +220,34 @@ class CompletedCustomerDataTable extends StatelessWidget {
                     'Municipality',
                     collection.customer?.municipality ?? 'N/A',
                   ),
-                  _buildDetailRow('Province', collection.customer?.province ?? 'N/A'),
-                  
+                  _buildDetailRow(
+                    'Province',
+                    collection.customer?.province ?? 'N/A',
+                  ),
+
                   const SizedBox(height: 16),
                   const Text(
                     'Trip Information',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
-                  
-                  _buildDetailRow('Trip ID', collection.trip?.tripNumberId ?? 'N/A'),
+
+                  _buildDetailRow(
+                    'Trip ID',
+                    collection.trip?.tripNumberId ?? 'N/A',
+                  ),
                   _buildDetailRow(
                     'Trip Status',
                     collection.trip?.isEndTrip == true ? 'Completed' : 'Active',
                   ),
-                  
+
                   const SizedBox(height: 16),
                   const Text(
                     'Collection Details',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   _buildDetailRow(
                     'Total Amount',
                     collection.totalAmount != null
@@ -269,7 +277,7 @@ class CompletedCustomerDataTable extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   collection.invoice != null
                       ? Column(
                         children: [
@@ -280,13 +288,17 @@ class CompletedCustomerDataTable extends StatelessWidget {
                           _buildDetailRow(
                             'Invoice Amount',
                             collection.invoice?.totalAmount != null
-                                ? currencyFormatter.format(collection.invoice!.totalAmount!)
+                                ? currencyFormatter.format(
+                                  collection.invoice!.totalAmount!,
+                                )
                                 : 'N/A',
                           ),
                           _buildDetailRow(
                             'Invoice Date',
                             collection.invoice?.created != null
-                                ? DateFormat('MMM dd, yyyy').format(collection.invoice!.created!)
+                                ? DateFormat(
+                                  'MMM dd, yyyy',
+                                ).format(collection.invoice!.created!)
                                 : 'N/A',
                           ),
                         ],
