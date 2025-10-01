@@ -4,19 +4,18 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/models/update_timeline_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';
+
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/data/model/end_trip_checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/model/end_trip_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/data/models/otp_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/model/checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/model/end_trip_checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/model/end_trip_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
-import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
 
 import '../../../../../../../enums/mismatched_personnel_reason_code.dart';
+import '../../../../otp/intransit_otp/data/models/otp_models.dart';
 
 @Entity()
 class TripModel extends TripEntity {
@@ -31,10 +30,8 @@ class TripModel extends TripEntity {
     super.collectionId,
     super.collectionName,
     super.tripNumberId,
-    UpdateTimelineModel? timelineModel,
     List<PersonelModel>? personelsList,
     List<ChecklistModel>? checklistItems,
-    List<VehicleModel>? vehicleList,
     List<EndTripChecklistModel>? endTripChecklistItems,
     List<DeliveryTeamModel>? deliveryTeamList,
     List<TripUpdateModel>? tripUpdateList,
@@ -62,10 +59,8 @@ class TripModel extends TripEntity {
   }) : super(
          tripUpdates: tripUpdateList,
         
-         timeline: timelineModel,
          personels: personelsList,
          checklist: checklistItems,
-         vehicle: vehicleList,
        
          endTripChecklist: endTripChecklistItems,
          deliveryData: deliveryDataList,
@@ -150,22 +145,7 @@ class TripModel extends TripEntity {
       }
     }
 
-    // Handle Vehicle
-    final vehicleData = expandedData?['vehicle'] ?? json['vehicle'];
-    List<VehicleModel> vehicleList = [];
-    if (vehicleData != null) {
-      if (vehicleData is List) {
-        vehicleList =
-            vehicleData.map((vehicle) {
-              if (vehicle is String) {
-                return VehicleModel(id: vehicle);
-              }
-              return VehicleModel.fromJson(vehicle);
-            }).toList();
-      } else if (vehicleData is Map<String, dynamic>) {
-        vehicleList = [VehicleModel.fromJson(vehicleData)];
-      }
-    }
+   
 
     // Handle Checklist
     final checklistData = expandedData?['checklist'] ?? json['checklist'];
@@ -281,7 +261,6 @@ class TripModel extends TripEntity {
       totalTripDistance: json['totalTripDistance']?.toString(),
       personelsList: personelsList,
       deliveryVehicle: deliveryVehicleModel,
-      vehicleList: vehicleList,
       checklistItems: checklistItems,
       endTripChecklistItems: endTripList,
       tripUpdateList: tripUpdatesList,
@@ -353,7 +332,6 @@ class TripModel extends TripEntity {
       'user': user.target?.id,
       'deliveryVehicle': deliveryVehicle.target?.id,
       'personels': personels.map((p) => p.id).toList(),
-      'vehicle': vehicle.map((v) => v.id).toList(),
       'mismatchedPersonnelReasonCode': reasonSelectionString,
       'endTripChecklist': endTripChecklist.map((e) => e.id).toList(),
       'deliveryData': deliveryData.map((d) => d.id).toList(),
@@ -384,7 +362,6 @@ class TripModel extends TripEntity {
   MismatchedPersonnelReasonCode? mismatchedPersonnelReasonCode,
     List<PersonelModel>? personelsList,
     List<ChecklistModel>? checklistItems,
-    List<VehicleModel>? vehicleList,
   String? name,
     List<EndTripChecklistModel>? endTripChecklistItems,
     List<TripUpdateModel>? tripUpdateList,
@@ -412,7 +389,6 @@ class TripModel extends TripEntity {
       qrCode: qrCode ?? this.qrCode,
       personelsList: personelsList ?? personels.toList(),
       checklistItems: checklistItems ?? checklist.toList(),
-      vehicleList: vehicleList ?? vehicle.toList(),
       allowMismatchedPersonnels: allowMismatchedPersonnels ?? allowMismatchedPersonnels,
       mismatchedPersonnelReasonCode: mismatchedPersonnelReasonCode ?? this.mismatchedPersonnelReasonCode,
       endTripChecklistItems: endTripChecklistItems ?? endTripChecklist.toList(),

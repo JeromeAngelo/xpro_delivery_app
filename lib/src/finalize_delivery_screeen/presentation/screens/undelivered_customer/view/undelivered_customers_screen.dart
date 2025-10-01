@@ -11,8 +11,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelle
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_state.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/undelivered_customer_dashboard.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/undelivered_customer_list_tile.dart';
 

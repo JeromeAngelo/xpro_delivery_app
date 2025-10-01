@@ -192,7 +192,7 @@ class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
 
   bool _isValidDeliveryTeam(DeliveryTeamModel team) {
     return team.tripId != null &&
-        team.vehicle.isNotEmpty &&
+        team.deliveryVehicle.target!.id != null &&
         team.personels.isNotEmpty;
   }
 
@@ -212,7 +212,7 @@ class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
 
       // Copy personnel and vehicles
       teamCopy.personels.addAll(team.personels);
-      teamCopy.vehicle.addAll(team.vehicle);
+      teamCopy.deliveryVehicle.target!.id = team.deliveryVehicle.target!.id;
 
       // Clean up data
       await _cleanupPersonnelData(teamCopy);
@@ -230,7 +230,7 @@ class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
         debugPrint('Team ID: ${storedTeam.id}');
         debugPrint('Trip ID: ${storedTeam.tripId}');
         debugPrint('Personnel count: ${storedTeam.personels.length}');
-        debugPrint('Vehicle count: ${storedTeam.vehicle.length}');
+        debugPrint('Vehicle count: ${storedTeam.deliveryVehicle.target!.id}');
 
         // Verify personnel details
         storedTeam.personels.forEach(

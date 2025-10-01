@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/domain/entity/collection_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_state.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/domain/entity/collection_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/collection_dashboard_screen.dart';
 
 import '../widget/final_collection_list.dart';

@@ -5,22 +5,21 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/model/end_trip_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/data/models/otp_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/data/model/customer_data_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/model/checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/model/end_trip_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/data/model/customer_data_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
-import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
 
 import '../../../../../delivery_team/delivery_team/data/models/delivery_team_model.dart';
 import '../../../../../delivery_team/personels/data/models/personel_models.dart';
-import '../../../../../delivery_team/vehicle/data/model/vehicle_model.dart';
-import '../../../../delivery_update/data/models/delivery_update_model.dart';
-import '../../../../invoice_data/data/model/invoice_data_model.dart';
-import '../../../../../end_trip_checklist/data/model/end_trip_checklist_model.dart';
+import '../../../../../otp/intransit_otp/data/models/otp_models.dart';
+import '../../../../../delivery_data/delivery_update/data/models/delivery_update_model.dart';
+import '../../../../../delivery_data/invoice_data/data/model/invoice_data_model.dart';
+import '../../../../../checklists/end_trip_checklist/data/model/end_trip_checklist_model.dart';
 
 
 abstract class TripLocalDatasource {
@@ -31,7 +30,6 @@ abstract class TripLocalDatasource {
   Future<void> autoSaveTrip(TripModel trip);
   Future<void> saveDeliveryTeam(DeliveryTeamModel deliveryTeam);
   Future<void> savePersonnel(List<PersonelModel> personnel);
-  Future<void> saveVehicles(List<VehicleModel> vehicles);
   Future<String> calculateTotalTripDistance(String tripId);
   Future<void> saveChecklist(List<ChecklistModel> checklist);
   Future<String?> getTrackingId();
@@ -138,7 +136,6 @@ Future<(TripModel, String)> acceptTrip(String inputTripId) async {
     collectionName: 'deliveryTeam',
     personels: [], // Will be populated from remote data
     checklist: checklistItems,
-    vehicleList: [], // Will be populated from remote data
     activeDeliveries: 0,
     totalDelivered: 0,
     undeliveredCustomers: 0,
@@ -192,7 +189,6 @@ Future<(TripModel, String)> acceptTrip(String inputTripId) async {
     deliveryDataList: const [], // Will be populated from remote
     personelsList: const [], // Will be populated from remote
     checklistItems: checklistItems,
-    vehicleList: const [], // Will be populated from remote
     created: DateTime.now(),
     updated: DateTime.now(),
     isAccepted: true,
@@ -288,15 +284,7 @@ Future<void> syncRemoteTripData(TripModel remoteTripData) async {
       debugPrint('✅ Synced ${remoteTripData.personels.length} personnel');
     }
 
-    // Sync vehicles
-    if (remoteTripData.vehicle.isNotEmpty) {
-      final vehicleBox = _store.box<VehicleModel>();
-      for (final vehicle in remoteTripData.vehicle) {
-        vehicle.tripId = localTrip.id;
-        vehicleBox.put(vehicle);
-      }
-      debugPrint('✅ Synced ${remoteTripData.vehicle.length} vehicles');
-    }
+   
 
     // Sync delivery team
     if (remoteTripData.deliveryTeam.target != null) {
@@ -313,7 +301,6 @@ Future<void> syncRemoteTripData(TripModel remoteTripData) async {
     final updatedTrip = localTrip.copyWith(
       deliveryDataList: remoteTripData.deliveryData,
       personelsList: remoteTripData.personels,
-      vehicleList: remoteTripData.vehicle,
     );
 
     // Set up relationships
@@ -323,7 +310,6 @@ Future<void> syncRemoteTripData(TripModel remoteTripData) async {
     
     updatedTrip.deliveryData.addAll(remoteTripData.deliveryData);
     updatedTrip.personels.addAll(remoteTripData.personels);
-    updatedTrip.vehicle.addAll(remoteTripData.vehicle);
 
     // Save updated trip
     _tripBox.put(updatedTrip);
@@ -356,17 +342,7 @@ Future<TripModel> getCompleteTripData() async {
       PersonelModel_.tripId.equals(trip.id ?? '')
     ).build().find();
     
-    // Load vehicles
-    final vehicleBox = _store.box<VehicleModel>();
-    final vehicleList = vehicleBox.query(
-      VehicleModel_.tripId.equals(trip.id ?? '')
-    ).build().find();
-    
-    // Load delivery vehicles
-    final deliveryVehicleBox = _store.box<DeliveryVehicleModel>();
-    final deliveryVehicleList = deliveryVehicleBox.query(
-      DeliveryVehicleModel_.tripId.equals(trip.id ?? '')
-    ).build().find();
+   
     
     // Load delivery team
     final deliveryTeamBox = _store.box<DeliveryTeamModel>();
@@ -377,15 +353,12 @@ Future<TripModel> getCompleteTripData() async {
     debugPrint('📊 Complete trip data loaded:');
     debugPrint('   🚛 Delivery Data: ${deliveryDataList.length}');
     debugPrint('   👥 Personnel: ${personnelList.length}');
-    debugPrint('   🚗 Vehicles: ${vehicleList.length}');
-    debugPrint('   🚚 Delivery Vehicles: ${deliveryVehicleList.length}');
     debugPrint('   👨‍💼 Delivery Team: ${deliveryTeam?.id ?? 'None'}');
     
     // Create complete trip model
     final completeTrip = trip.copyWith(
       deliveryDataList: deliveryDataList,
       personelsList: personnelList,
-      vehicleList: vehicleList,
     );
     
     // Set up relationships
@@ -395,7 +368,6 @@ Future<TripModel> getCompleteTripData() async {
     
     completeTrip.deliveryData.addAll(deliveryDataList);
     completeTrip.personels.addAll(personnelList);
-    completeTrip.vehicle.addAll(vehicleList);
     
     return completeTrip;
     
@@ -517,15 +489,7 @@ Future<void> autoSaveTrip(TripModel trip) async {
       debugPrint('✅ Saved ${trip.personels.length} personnel');
     }
 
-    // Save vehicles
-    if (trip.vehicle.isNotEmpty) {
-      final vehicleBox = _store.box<VehicleModel>();
-      for (final vehicle in trip.vehicle) {
-        vehicle.tripId = trip.id;
-        vehicleBox.put(vehicle);
-      }
-      debugPrint('✅ Saved ${trip.vehicle.length} vehicles');
-    }
+   
 
     // Save checklist items
     if (trip.checklist.isNotEmpty) {
@@ -697,12 +661,7 @@ Future<void> autoSaveTrip(TripModel trip) async {
     personnelBox.putMany(personnel);
   }
 
-  @override
-  Future<void> saveVehicles(List<VehicleModel> vehicles) async {
-    debugPrint('💾 Saving ${vehicles.length} vehicles to local storage');
-    final vehicleBox = _store.box<VehicleModel>();
-    vehicleBox.putMany(vehicles);
-  }
+  
 
   @override
   Future<String> calculateTotalTripDistance(String tripId) async {
@@ -796,7 +755,6 @@ Future<void> autoSaveTrip(TripModel trip) async {
       _store.box<TripModel>().removeAll();
       _store.box<DeliveryTeamModel>().removeAll();
       _store.box<PersonelModel>().removeAll();
-      _store.box<VehicleModel>().removeAll();
       _store.box<ChecklistModel>().removeAll();
       _store.box<DeliveryUpdateModel>().removeAll();
       _store.box<EndTripChecklistModel>().removeAll();

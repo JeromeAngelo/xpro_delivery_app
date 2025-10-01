@@ -13,11 +13,13 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_upd
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/screens/delivery_list_screen.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/screens/update_timeline_view.dart';
+
+import '../../../../core/utils/route_utils.dart';
 
 class DeliveryAndTimeline extends StatefulWidget {
   const DeliveryAndTimeline({super.key});
@@ -50,6 +52,8 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
     _authBloc = context.read<AuthBloc>();
     _customerBloc = context.read<DeliveryDataBloc>();
     _tripUpdatesBloc = context.read<TripUpdatesBloc>();
+        RouteUtils.saveCurrentRoute('/delivery-and-timeline');
+
   }
 
   void _setupDataListeners() {

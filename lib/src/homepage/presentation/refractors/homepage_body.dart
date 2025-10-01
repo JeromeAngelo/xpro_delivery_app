@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/delivery_timline_tile.dart';
 import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/trip_summary_tile.dart';
 

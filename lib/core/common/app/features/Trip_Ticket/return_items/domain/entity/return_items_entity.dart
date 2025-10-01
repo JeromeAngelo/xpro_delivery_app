@@ -3,8 +3,8 @@ import 'package:objectbox/objectbox.dart';
 
 import '../../../../../../../enums/product_return_reason.dart';
 import '../../../delivery_data/data/model/delivery_data_model.dart';
-import '../../../invoice_data/data/model/invoice_data_model.dart';
-import '../../../invoice_items/data/model/invoice_items_model.dart' show InvoiceItemsModel;
+import '../../../../delivery_data/invoice_data/data/model/invoice_data_model.dart';
+import '../../../../delivery_data/invoice_items/data/model/invoice_items_model.dart' show InvoiceItemsModel;
 import '../../../trip/data/models/trip_models.dart';
 
 @Entity()

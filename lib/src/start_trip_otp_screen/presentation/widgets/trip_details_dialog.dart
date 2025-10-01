@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 
 class TripDetailsDialog extends StatefulWidget {
   const TripDetailsDialog({super.key});

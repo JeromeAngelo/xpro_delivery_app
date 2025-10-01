@@ -3,10 +3,9 @@ import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/entity/delivery_team_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/model/checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 
 @Entity()
@@ -26,7 +25,6 @@ class DeliveryTeamModel extends DeliveryTeamEntity {
     String? collectionName,
     List<PersonelModel>? personels,
     List<ChecklistModel>? checklist,
-    List<VehicleModel>? vehicleList,
     DeliveryVehicleModel? deliveryVehicleModel,
     TripModel? tripModel,
     int? activeDeliveries,
@@ -42,7 +40,6 @@ class DeliveryTeamModel extends DeliveryTeamEntity {
          collectionName: collectionName ?? '',
          personels: personels ?? [],
          checklist: checklist ?? [],
-         vehicle: vehicleList ?? [],
          trip: tripModel,
          deliveryVehicle: deliveryVehicleModel,
          activeDeliveries: activeDeliveries ?? 0,
@@ -133,20 +130,7 @@ factory DeliveryTeamModel.fromJson(dynamic json) {
       }).toList() ??
       [];
 
-  // Handle vehicle expanded data
-  final vehicleList =
-      (expandedData?['vehicle'] as List?)?.map((vehicle) {
-        if (vehicle is RecordModel) {
-          return VehicleModel.fromJson({
-            'id': vehicle.id,
-            'collectionId': vehicle.collectionId,
-            'collectionName': vehicle.collectionName,
-            ...vehicle.data,
-          });
-        }
-        return VehicleModel.fromJson(vehicle as DataMap);
-      }).toList() ??
-      [];
+ 
 
   return DeliveryTeamModel(
     id: json['id']?.toString(),
@@ -156,7 +140,6 @@ factory DeliveryTeamModel.fromJson(dynamic json) {
     personels: personelsList,
     deliveryVehicleModel: deliveryVehicleModel, // FIXED: Properly assign the model
     checklist: checklistItems,
-    vehicleList: vehicleList,
     activeDeliveries: int.tryParse(
       json['activeDeliveries']?.toString() ?? '0',
     ),
@@ -185,7 +168,6 @@ factory DeliveryTeamModel.fromJson(dynamic json) {
     String? collectionName,
     List<PersonelModel>? personels,
     List<ChecklistModel>? checklist,
-    List<VehicleModel>? vehicleList,
     DeliveryVehicleModel? deliveryVehicleModel,
     TripModel? tripModel,
     int? activeDeliveries,
@@ -201,7 +183,6 @@ factory DeliveryTeamModel.fromJson(dynamic json) {
       collectionName: collectionName ?? this.collectionName,
       personels: personels ?? this.personels.toList(),
       checklist: checklist ?? this.checklist.toList(),
-      vehicleList: vehicleList ?? vehicle.toList(),
       tripModel: tripModel ?? trip.target,
       activeDeliveries: activeDeliveries ?? this.activeDeliveries,
       deliveryVehicleModel: deliveryVehicleModel ?? deliveryVehicle.target,

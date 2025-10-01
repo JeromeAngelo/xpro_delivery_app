@@ -2,18 +2,16 @@ import 'package:equatable/equatable.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/models/update_timeline_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/data/model/end_trip_checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/model/end_trip_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/data/models/otp_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/model/checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/model/end_trip_checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/model/end_trip_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
-import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
 
 import '../../../../../../../enums/mismatched_personnel_reason_code.dart';
+import '../../../../otp/intransit_otp/data/models/otp_models.dart';
 
 @Entity()
 class TripEntity extends Equatable {
@@ -25,11 +23,9 @@ class TripEntity extends Equatable {
   String? collectionName;
   String? tripNumberId;
   String? name;
-  final ToOne<UpdateTimelineModel> timeline = ToOne<UpdateTimelineModel>();
   final ToOne<DeliveryTeamModel> deliveryTeam = ToOne<DeliveryTeamModel>();
   final ToMany<PersonelModel> personels = ToMany<PersonelModel>();
   final ToMany<ChecklistModel> checklist = ToMany<ChecklistModel>();
-  final ToMany<VehicleModel> vehicle = ToMany<VehicleModel>();
 
   final ToMany<EndTripChecklistModel> endTripChecklist =
       ToMany<EndTripChecklistModel>();
@@ -62,12 +58,10 @@ class TripEntity extends Equatable {
     this.tripNumberId,
     this.name,
     this.deliveryDate,
-    UpdateTimelineModel? timeline,
     DeliveryTeamModel? deliveryTeam,
     List<PersonelModel>? personels,
     List<ChecklistModel>? checklist,
     List<TripUpdateModel>? tripUpdates,
-    List<VehicleModel>? vehicle,
     List<EndTripChecklistModel>? endTripChecklist,
     OtpModel? otp,
     EndTripOtpModel? endTripOtp,
@@ -87,11 +81,9 @@ class TripEntity extends Equatable {
     this.created,
     this.updated,
   }) {
-    if (timeline != null) this.timeline.target = timeline;
     if (deliveryTeam != null) this.deliveryTeam.target = deliveryTeam;
     if (personels != null) this.personels.addAll(personels);
     if (checklist != null) this.checklist.addAll(checklist);
-    if (vehicle != null) this.vehicle.addAll(vehicle);
     if (deliveryVehicle != null) this.deliveryVehicle.target = deliveryVehicle;
 
     if (user != null) this.user.target = user;
@@ -110,13 +102,11 @@ class TripEntity extends Equatable {
   List<Object?> get props => [
     id,
     tripNumberId,
-    timeline.target?.id,
     deliveryTeam.target?.id,
     user.target?.id,
     deliveryVehicle.target?.id,
     totalTripDistance,
     personels,
-    vehicle,
     checklist,
     endTripChecklist,
     tripUpdates,

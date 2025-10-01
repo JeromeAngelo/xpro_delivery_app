@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 
 class DefaultDrawer extends StatefulWidget {
   const DefaultDrawer({super.key});
@@ -126,7 +126,7 @@ class _DefaultDrawerState extends State<DefaultDrawer> {
               children: [
                 Text('Server Address'),
                 Text(
-                  'https://delivery-app.pockethost.io/v1/',
+                  'https://delivery-app.winganmarketing.com',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

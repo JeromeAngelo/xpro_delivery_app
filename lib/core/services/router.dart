@@ -9,8 +9,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/src/app_logs/view/app_logs_screen_view.dart';
-import 'package:x_pro_delivery_app/src/auth/data/models/auth_models.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/view/auth_screen_view.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
+import 'package:x_pro_delivery_app/src/auth/view/auth_screen_view.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/view/checklist_and_delivery_view.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/view/delivery_and_timeline_view.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/add_delivery_status_dialog.dart';
@@ -44,8 +44,8 @@ import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_cus
 import '../../src/summary_trip/presentation/specific_screens/customers_undelivered_screen.dart';
 import '../../src/transaction_screen/presentation/view/transaction_view.dart';
 import '../../src/user_performance/view/user_performance_screen.dart';
-import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
-import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_event.dart';
+import '../common/app/features/delivery_data/invoice_items/presentation/bloc/invoice_items_bloc.dart';
+import '../common/app/features/delivery_data/invoice_items/presentation/bloc/invoice_items_event.dart';
 
 final router = GoRouter(
   initialLocation: '/',

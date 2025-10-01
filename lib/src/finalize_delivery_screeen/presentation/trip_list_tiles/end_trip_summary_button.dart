@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/domain/entity/end_checklist_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/domain/entity/end_checklist_entity.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
 class EndTripSummaryButton extends StatelessWidget {
   final List<EndChecklistEntity> checklists;

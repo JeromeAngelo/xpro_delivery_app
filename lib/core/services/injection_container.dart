@@ -8,6 +8,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_i
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/data/repo/logs_repo_impl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/repo/logs_repo.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/presentation/bloc/logs_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/intransit_otp/data/datasource/local_datasource/otp_local_datasource.dart' show OtpLocalDatasource, OtpLocalDatasourceImpl;
 import 'package:x_pro_delivery_app/core/services/app_logger.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/local_datasource/delivery_team_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/remote_datasource/delivery_team_datasource.dart';
@@ -28,29 +29,21 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/person
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/domain/usecase/load_personels_by_trip_Id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/domain/usecase/set_role.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/presentation/bloc/personel_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/datasource/local_datasource/vehicle_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/datasource/remote_datasource/vehicle_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/repo/vehicle_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/domain/repo/vehicle_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/domain/usecase/get_vehicle.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/domain/usecase/load_vehicle_by_delivery_team_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/domain/usecase/load_vehicle_by_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/presentation/bloc/vehicle_bloc.dart';
 
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/datasource/remote_datasource/delivery_update_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/datasource/local_datasource/delivery_update_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/models/delivery_update_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/data/repo/delivery_update_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/repo/delivery_update_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/check_end_delivery_status.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/complete_delivery_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/create_delivery_status.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/get_delivery_update.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/itialized_pending_status.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/update_delivery_status.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/domain/usecase/update_queue_remarks.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
+
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/datasource/remote_datasource/delivery_update_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/datasource/local_datasource/delivery_update_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/models/delivery_update_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/repo/delivery_update_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/repo/delivery_update_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/check_end_delivery_status.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/complete_delivery_usecase.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/create_delivery_status.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/get_delivery_update.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/itialized_pending_status.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/update_delivery_status.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/update_queue_remarks.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/datasource/local_datasource/trip_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/datasource/remote_datasource/trip_remote_datasurce.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
@@ -76,71 +69,54 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_upd
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/usecases/create_trip_updates.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/usecases/get_trip_updates.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/data_source/local_datasource/update_timeline_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/data_source/remote_datasource/update_timeline_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/models/update_timeline_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/data/repo/update_timeline_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/domain/repo/update_timeline_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/domain/usecase/load_update_timeline.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/domain/usecase/set_update_timeline.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/update_timeline/presentation/bloc/update_timeline_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/datasource/local_datasource/checklist_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/datasource/remote_datasource/checklist_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/repo/checklist_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/domain/repo/checklist_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/domain/usecase/check_Item.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/domain/usecase/load_Checklist.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/domain/usecase/load_checklist_by_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/presentation/bloc/checklist_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/data/datasources/local_datasource/end_trip_checklist_local_data_src.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/data/datasources/remote_datasource/end_trip_checklist_remote_data_src.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/data/model/end_trip_checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/data/repo/end_trip_checklist_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/domain/repo/end_trip_checklist_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/domain/usecase/check_end_trip_checklist.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/domain/usecase/generate_end_trip_checklist.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/domain/usecase/load_end_trip_checklist.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/datasources/local_datasource/end_trip_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/datasources/remote_datasource/end_trip_otp_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/model/end_trip_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/data/repo/end_trip_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/domain/repo/end_trip_otp_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/domain/usecases/end_otp_verify.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/domain/usecases/get_end_trip_generated.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/domain/usecases/load_end_trip_otp_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/domain/usecases/load_end_trip_otp_by_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_otp/presentation/bloc/end_trip_otp_bloc.dart';
 
-import 'package:x_pro_delivery_app/core/common/app/features/otp/data/datasource/local_datasource/otp_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/data/datasource/remote_data_source/otp_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/data/models/otp_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/data/repo/otp_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/repo/otp_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/usecases/get_generated_otp.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/usecases/load_otp_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/usecases/load_otp_by_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/usecases/verify_in_transit.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/domain/usecases/veryfy_in_end_delivery.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/presentation/bloc/otp_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/datasource/local_datasource/checklist_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/datasource/remote_datasource/checklist_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/model/checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/repo/checklist_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/domain/repo/checklist_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/domain/usecase/check_Item.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/domain/usecase/load_Checklist.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/domain/usecase/load_checklist_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/presentation/bloc/checklist_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/datasources/local_datasource/end_trip_checklist_local_data_src.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/datasources/remote_datasource/end_trip_checklist_remote_data_src.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/model/end_trip_checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/repo/end_trip_checklist_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/domain/repo/end_trip_checklist_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/domain/usecase/check_end_trip_checklist.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/domain/usecase/generate_end_trip_checklist.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/domain/usecase/load_end_trip_checklist.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/datasources/local_datasource/end_trip_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/datasources/remote_datasource/end_trip_otp_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/model/end_trip_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/repo/end_trip_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/repo/end_trip_otp_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/end_otp_verify.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/get_end_trip_generated.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/load_end_trip_otp_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/load_end_trip_otp_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_bloc.dart';
+
+
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/data/model/cancelled_invoice_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart'
     show CancelledInvoiceBloc;
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/data/datasources/remote_datasource/customer_data_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/data/repo/customer_data_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/repo/customer_data_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/add_customer_to_delivery.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/create_customer_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/delete_all_customer_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/delete_customer_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/get_all_customer_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/get_customer_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/get_customer_data_by_delivery_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/domain/usecases/update_customer_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/customer_data/presentation/bloc/customer_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/data/datasources/remote_datasource/customer_data_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/data/repo/customer_data_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/repo/customer_data_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/add_customer_to_delivery.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/create_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/delete_all_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/delete_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/get_all_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/get_customer_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/get_customer_data_by_delivery_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/update_customer_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/presentation/bloc/customer_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/datasource/local_datasource/delivery_data_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/datasource/remote_datasource/delivery_data_remote_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
@@ -152,60 +128,60 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_delivery_data_by_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_delivery_data_by_trip_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/datasource/local_datasource/delivery_receipt_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/datasource/remote_datasource/delivery_receipt_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/model/delivery_receipt_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/data/repo/delivery_receipt_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/repo/delivery_receipt_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/create_delivery_receipt.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/delete_delivery_receipt.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/generate_pdf.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/get_delivery_receipt_by_delivery_data_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/domain/usecases/get_delivery_receipt_by_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/datasource/remote_datasource/delivery_vehicle_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/repo/delivery_vehicle_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/repo/delivery_vehicle_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/usecases/load_all_delivery_vehicle.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/usecases/load_delivery_vehicle_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/usecases/load_delivery_vehicle_by_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/data/datasources/remote_datasource/invoice_data_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/data/repo/invoice_data_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/repo/invoice_data_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/add_invoice_data_to_delivery.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/add_invoice_data_to_invoice_status.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_all_invoice_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_customer_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_delivery_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/domain/usecase/get_invoice_data_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/data/datasource/local_datasource/invoice_items_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/data/datasource/remote_datasource/invoice_items_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/data/model/invoice_items_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/data/repo/invoice_items_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/repo/invoice_items_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/usecases/get_all_invoice_items.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/usecases/get_invoice_item_by_invoice_data_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/domain/usecases/update_invoice_item_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/datasource/local_datasource/delivery_receipt_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/datasource/remote_datasource/delivery_receipt_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/model/delivery_receipt_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/repo/delivery_receipt_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/repo/delivery_receipt_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/usecases/create_delivery_receipt.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/usecases/delete_delivery_receipt.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/usecases/generate_pdf.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/usecases/get_delivery_receipt_by_delivery_data_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/usecases/get_delivery_receipt_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/data/datasource/remote_datasource/delivery_vehicle_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/data/repo/delivery_vehicle_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/domain/repo/delivery_vehicle_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/domain/usecases/load_all_delivery_vehicle.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/domain/usecases/load_delivery_vehicle_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/domain/usecases/load_delivery_vehicle_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/data/datasources/remote_datasource/invoice_data_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/data/repo/invoice_data_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/repo/invoice_data_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/usecase/add_invoice_data_to_delivery.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/usecase/add_invoice_data_to_invoice_status.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/usecase/get_all_invoice_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/usecase/get_invoice_data_by_customer_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/usecase/get_invoice_data_by_delivery_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/usecase/get_invoice_data_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/presentation/bloc/invoice_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/data/datasource/local_datasource/invoice_items_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/data/datasource/remote_datasource/invoice_items_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/data/model/invoice_items_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/data/repo/invoice_items_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/domain/repo/invoice_items_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/domain/usecases/get_all_invoice_items.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/domain/usecases/get_invoice_item_by_invoice_data_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/domain/usecases/update_invoice_item_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/core/services/objectbox.dart';
 import 'package:x_pro_delivery_app/core/services/sync_service.dart';
-import 'package:x_pro_delivery_app/src/auth/data/datasources/local_datasource/auth_local_data_source.dart';
-import 'package:x_pro_delivery_app/src/auth/data/datasources/remote_data_source/auth_remote_data_src.dart';
-import 'package:x_pro_delivery_app/src/auth/data/repo/auth_repo_impl.dart';
-import 'package:x_pro_delivery_app/src/auth/domain/repo/auth_repo.dart';
-import 'package:x_pro_delivery_app/src/auth/domain/usecases/get_user_by_id.dart';
-import 'package:x_pro_delivery_app/src/auth/domain/usecases/get_user_trip.dart';
-import 'package:x_pro_delivery_app/src/auth/domain/usecases/load_user.dart';
-import 'package:x_pro_delivery_app/src/auth/domain/usecases/refresh_data.dart';
-import 'package:x_pro_delivery_app/src/auth/domain/usecases/sign_in.dart';
-import 'package:x_pro_delivery_app/src/auth/domain/usecases/sync_trip_data.dart';
-import 'package:x_pro_delivery_app/src/auth/domain/usecases/sync_user_data.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/local_datasource/auth_local_data_source.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/remote_data_source/auth_remote_data_src.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/repo/auth_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/repo/auth_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/get_user_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/get_user_trip.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/load_user.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/refresh_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/sign_in.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/sync_trip_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/sync_user_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/data/repo/onboarding_repo_impl.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/domain/repo/onboarding_repo.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/domain/usecases/cache_firstimer.dart';
@@ -228,31 +204,31 @@ import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/de
 import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_trip_id.dart'
     show LoadCancelledInvoicesByTripId;
 
-import '../common/app/features/Trip_Ticket/collection/data/datasource/local_datasource/collection_local_datasource.dart';
-import '../common/app/features/Trip_Ticket/collection/data/datasource/remote_datasource/collection_remote_datasource.dart'
+import '../common/app/features/Trip_Ticket/delivery_collection/data/datasource/local_datasource/collection_local_datasource.dart';
+import '../common/app/features/Trip_Ticket/delivery_collection/data/datasource/remote_datasource/collection_remote_datasource.dart'
     show CollectionRemoteDataSource, CollectionRemoteDataSourceImpl;
-import '../common/app/features/Trip_Ticket/collection/data/repo/collection_repo_impl.dart'
+import '../common/app/features/Trip_Ticket/delivery_collection/data/repo/collection_repo_impl.dart'
     show CollectionRepoImpl;
-import '../common/app/features/Trip_Ticket/collection/domain/repo/collection_repo.dart'
+import '../common/app/features/Trip_Ticket/delivery_collection/domain/repo/collection_repo.dart'
     show CollectionRepo;
-import '../common/app/features/Trip_Ticket/collection/domain/usecases/delete_collection.dart'
+import '../common/app/features/Trip_Ticket/delivery_collection/domain/usecases/delete_collection.dart'
     show DeleteCollection;
-import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_id.dart';
-import '../common/app/features/Trip_Ticket/collection/domain/usecases/get_collection_by_trip_id.dart';
+import '../common/app/features/Trip_Ticket/delivery_collection/domain/usecases/get_collection_by_id.dart';
+import '../common/app/features/Trip_Ticket/delivery_collection/domain/usecases/get_collection_by_trip_id.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_completed.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloaded.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloading.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/sync_delivery_data_by_trip_id.dart';
-import '../common/app/features/Trip_Ticket/delivery_update/domain/usecase/bulk_update_delivery_status.dart';
-import '../common/app/features/Trip_Ticket/delivery_update/domain/usecase/get_bulk_delivery_status_choices.dart';
-import '../common/app/features/Trip_Ticket/delivery_update/domain/usecase/pin_arrived_location.dart';
-import '../common/app/features/Trip_Ticket/invoice_data/domain/usecase/set_invoice_unloaded.dart';
-import '../common/app/features/Trip_Ticket/invoice_status/data/datasources/local_datasource/invoice_status_local_datasource.dart';
-import '../common/app/features/Trip_Ticket/invoice_status/data/datasources/remote_datasource/invoice_status_remote_datasource.dart';
-import '../common/app/features/Trip_Ticket/invoice_status/data/repo/invoice_status_repo_impl.dart';
-import '../common/app/features/Trip_Ticket/invoice_status/domain/repo/invoice_status_repo.dart';
-import '../common/app/features/Trip_Ticket/invoice_status/domain/usecase/get_invoice_status_by_invoice_id.dart';
-import '../common/app/features/Trip_Ticket/invoice_status/presentation/bloc/invoice_status_bloc.dart';
+import '../common/app/features/delivery_data/delivery_update/domain/usecase/bulk_update_delivery_status.dart';
+import '../common/app/features/delivery_data/delivery_update/domain/usecase/get_bulk_delivery_status_choices.dart';
+import '../common/app/features/delivery_data/delivery_update/domain/usecase/pin_arrived_location.dart';
+import '../common/app/features/delivery_data/invoice_data/domain/usecase/set_invoice_unloaded.dart';
+import '../common/app/features/delivery_data/invoice_status/data/datasources/local_datasource/invoice_status_local_datasource.dart';
+import '../common/app/features/delivery_data/invoice_status/data/datasources/remote_datasource/invoice_status_remote_datasource.dart';
+import '../common/app/features/delivery_data/invoice_status/data/repo/invoice_status_repo_impl.dart';
+import '../common/app/features/delivery_data/invoice_status/domain/repo/invoice_status_repo.dart';
+import '../common/app/features/delivery_data/invoice_status/domain/usecase/get_invoice_status_by_invoice_id.dart';
+import '../common/app/features/delivery_data/invoice_status/presentation/bloc/invoice_status_bloc.dart';
 import '../common/app/features/Trip_Ticket/return_items/data/datasource/local_datasource/return_items_local_datasource.dart';
 import '../common/app/features/Trip_Ticket/return_items/data/datasource/remote_datasource/return_items_remote_datasource.dart';
 import '../common/app/features/Trip_Ticket/return_items/data/repo/return_items_repo_impl.dart';
@@ -273,18 +249,28 @@ import '../common/app/features/app_logs/data/datasource/remote_datasource/logs_r
 import '../common/app/features/app_logs/domain/usecases/get_unsynced_logs.dart';
 import '../common/app/features/app_logs/domain/usecases/mark_logs_as_synced.dart';
 import '../common/app/features/app_logs/domain/usecases/sync_logs_to_remote.dart';
+import '../common/app/features/otp/intransit_otp/data/datasource/remote_data_source/otp_remote_datasource.dart';
+import '../common/app/features/otp/intransit_otp/data/models/otp_models.dart';
+import '../common/app/features/otp/intransit_otp/data/repo/otp_repo_impl.dart';
+import '../common/app/features/otp/intransit_otp/domain/repo/otp_repo.dart';
+import '../common/app/features/otp/intransit_otp/domain/usecases/get_generated_otp.dart';
+import '../common/app/features/otp/intransit_otp/domain/usecases/load_otp_by_id.dart';
+import '../common/app/features/otp/intransit_otp/domain/usecases/load_otp_by_trip_id.dart';
+import '../common/app/features/otp/intransit_otp/domain/usecases/verify_in_transit.dart';
+import '../common/app/features/otp/intransit_otp/domain/usecases/veryfy_in_end_delivery.dart';
+import '../common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
 import '../common/app/features/sync_data/cubit/sync_cubit.dart';
-import '../common/app/features/user_performance/data/datasources/local_datasource/user_performance_local_datasource.dart';
-import '../common/app/features/user_performance/data/datasources/remote_datasource/user_performance_remote_datasource.dart';
-import '../common/app/features/user_performance/data/model/user_performance_model.dart';
-import '../common/app/features/user_performance/data/repo/user_performance_repo_impl.dart';
-import '../common/app/features/user_performance/domain/repo/user_performance_repo.dart';
-import '../common/app/features/user_performance/domain/usecases/calculate_delivery_accuracy.dart';
-import '../common/app/features/user_performance/domain/usecases/load_user_performance_by_user_id.dart';
-import '../common/app/features/user_performance/presentation/bloc/user_performance_bloc.dart';
+import '../common/app/features/users/user_performance/data/datasources/local_datasource/user_performance_local_datasource.dart';
+import '../common/app/features/users/user_performance/data/datasources/remote_datasource/user_performance_remote_datasource.dart';
+import '../common/app/features/users/user_performance/data/model/user_performance_model.dart';
+import '../common/app/features/users/user_performance/data/repo/user_performance_repo_impl.dart';
+import '../common/app/features/users/user_performance/domain/repo/user_performance_repo.dart';
+import '../common/app/features/users/user_performance/domain/usecases/calculate_delivery_accuracy.dart';
+import '../common/app/features/users/user_performance/domain/usecases/load_user_performance_by_user_id.dart';
+import '../common/app/features/users/user_performance/presentation/bloc/user_performance_bloc.dart';
 
 final sl = GetIt.instance;
-final pb = PocketBase('https://delivery-app.pockethost.io/');
+final pb = PocketBase('https://delivery-app.winganmarketing.com');
 
 Future<void> init() async {
   final objectBoxStore = await ObjectBoxStore.create();
@@ -299,13 +285,11 @@ Future<void> init() async {
   await initUserPerformance();
   await initOnboarding();
   await initChecklist();
-  await initGetVehicle();
   await initPersonel(); // Add this
   await initDeliveryTeam(); // Add this
   await initTrip();
 
   await initDeliveryUpdate();
-  await initUpdateTimeline();
   await initOtp();
   await initEndTripOtp();
 
@@ -457,33 +441,7 @@ Future<void> initChecklist() async {
   );
 }
 
-Future<void> initGetVehicle() async {
-  final objectBoxStore = await ObjectBoxStore.create();
 
-  sl.registerFactory(
-    () => VehicleBloc(
-      getVehicle: sl(),
-      loadVehicleByTripId: sl(),
-      loadVehicleByDeliveryTeam: sl(),
-    ),
-  );
-
-  sl.registerLazySingleton(() => GetVehicle(sl()));
-
-  sl.registerLazySingleton(() => LoadVehicleByDeliveryTeam(sl()));
-
-  sl.registerLazySingleton(() => LoadVehicleByTripId(sl()));
-
-  sl.registerLazySingleton<VehicleRepo>(() => VehicleRepoImpl(sl(), sl()));
-
-  sl.registerLazySingleton<VehicleRemoteDatasource>(
-    () => VehicleRemoteDatasourceImpl(pocketBaseClient: sl()),
-  );
-
-  sl.registerLazySingleton<VehicleLocalDatasource>(
-    () => VehicleLocalDatasourceImpl(objectBoxStore.store.box<VehicleModel>()),
-  );
-}
 
 Future<void> initPersonel() async {
   final objectBoxStore = await ObjectBoxStore.create();
@@ -525,7 +483,6 @@ Future<void> initDeliveryTeam() async {
       loadDeliveryTeam: sl(),
       tripBloc: sl(),
       personelBloc: sl(),
-      vehicleBloc: sl(),
       loadDeliveryTeamById: sl(),
       checklistBloc: sl(),
       deliveryVehicleBloc: sl(),
@@ -671,30 +628,7 @@ Future<void> initDeliveryUpdate() async {
   );
 }
 
-Future<void> initUpdateTimeline() async {
-  final objectBoxStore = await ObjectBoxStore.create();
 
-  sl.registerFactory(
-    () => UpdateTimelineBloc(loadUpdateTimeline: sl(), setDeliveryUpdate: sl()),
-  );
-
-  sl.registerLazySingleton(() => LoadUpdateTimeline(sl()));
-  sl.registerLazySingleton(() => SetUpdateTimeline(sl()));
-
-  sl.registerLazySingleton<UpdateTimelineRepo>(
-    () => UpdateTimelineRepoImpl(sl(), sl()),
-  );
-
-  sl.registerLazySingleton<UpdateTimelineDatasource>(
-    () => UpdateTimelineDatasourceImpl(pocketBaseClient: sl()),
-  );
-
-  sl.registerLazySingleton<UpdateTimelineLocalDatasource>(
-    () => UpdateTimelineLocalDatasourceImpl(
-      objectBoxStore.store.box<UpdateTimelineModel>(),
-    ),
-  );
-}
 
 Future<void> initOtp() async {
   final objectBoxStore = await ObjectBoxStore.create();

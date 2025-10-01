@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/presentation/bloc/end_trip_checklist_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/presentation/bloc/end_trip_checklist_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 
 class EndTripButton extends StatelessWidget {
   final bool isEnabled;

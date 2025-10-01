@@ -4,11 +4,11 @@ import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 
 import '../../../../../../../../enums/invoice_status.dart';
-import '../../../../delivery_update/data/models/delivery_update_model.dart';
+import '../../../../../delivery_data/delivery_update/data/models/delivery_update_model.dart';
 import '../../../../trip/data/models/trip_models.dart';
-import '../../../../customer_data/data/model/customer_data_model.dart';
-import '../../../../invoice_data/data/model/invoice_data_model.dart';
-import '../../../../invoice_items/data/model/invoice_items_model.dart';
+import '../../../../../delivery_data/customer_data/data/model/customer_data_model.dart';
+import '../../../../../delivery_data/invoice_data/data/model/invoice_data_model.dart';
+import '../../../../../delivery_data/invoice_items/data/model/invoice_items_model.dart';
 
 abstract class DeliveryDataLocalDataSource {
 

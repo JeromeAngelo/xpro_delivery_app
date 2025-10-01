@@ -4,8 +4,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/pre
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/default_drawer.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/final_screen/presentation/widget/confirmation_dialog.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/screen/summary_undeliverable_screen.dart';
 

@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/user_performance/presentation/bloc/user_performance_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/user_performance/presentation/bloc/user_performance_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/user_performance/presentation/bloc/user_performance_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/user_performance/presentation/bloc/user_performance_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/user_performance/presentation/bloc/user_performance_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/user_performance/presentation/bloc/user_performance_state.dart';
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/user_performance/widgets/delivery_accuracy_chart.dart';
 import 'package:x_pro_delivery_app/src/user_performance/widgets/performance_summary.dart';
 

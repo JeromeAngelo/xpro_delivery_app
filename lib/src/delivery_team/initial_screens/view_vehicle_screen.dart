@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/entity/delivery_team_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/domain/enitity/delivery_vehicle_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/domain/enitity/delivery_vehicle_entity.dart';
 import 'package:x_pro_delivery_app/src/delivery_team/presentation/widget/empty_screen_message.dart';
 
 class ViewVehicleScreen extends StatefulWidget {

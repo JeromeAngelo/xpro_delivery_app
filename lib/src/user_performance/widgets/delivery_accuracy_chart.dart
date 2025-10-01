@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/user_performance/domain/entity/user_performance_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/user_performance/domain/entity/user_performance_entity.dart';
 
 class DeliveryAccuracyChart extends StatelessWidget {
   final UserPerformanceEntity userPerformance;

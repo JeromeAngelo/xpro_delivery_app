@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/presentation/bloc/otp_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/presentation/bloc/otp_event.dart';
+
+
+import '../../../../core/common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
+import '../../../../core/common/app/features/otp/intransit_otp/presentation/bloc/otp_event.dart';
 class ConfirmButtonOtp extends StatelessWidget {
   final String enteredOtp;
   final String generatedOtp;

@@ -7,7 +7,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 
-import '../../../../../Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
+import '../../../../delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
 import '../../../../../Trip_Ticket/trip/data/models/trip_models.dart';
 import '../../../../personels/data/models/personel_models.dart';
 import '../../models/delivery_team_model.dart';

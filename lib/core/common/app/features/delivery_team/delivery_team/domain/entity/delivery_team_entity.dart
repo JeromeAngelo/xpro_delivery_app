@@ -1,10 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/data/model/vehicle_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/data/model/checklist_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/model/checklist_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
 
 @Entity()
 class DeliveryTeamEntity extends Equatable {
@@ -16,7 +15,6 @@ class DeliveryTeamEntity extends Equatable {
   String? collectionName;
   final ToMany<PersonelModel> personels = ToMany<PersonelModel>();
   final ToMany<ChecklistModel> checklist = ToMany<ChecklistModel>();
-  final ToMany<VehicleModel> vehicle = ToMany<VehicleModel>();
   final ToOne<TripModel> trip = ToOne<TripModel>();
   final ToOne<DeliveryVehicleModel> deliveryVehicle =
       ToOne<DeliveryVehicleModel>();
@@ -34,7 +32,6 @@ class DeliveryTeamEntity extends Equatable {
     DeliveryVehicleModel? deliveryVehicle,
     List<PersonelModel>? personels,
     List<ChecklistModel>? checklist,
-    List<VehicleModel>? vehicle,
     TripModel? trip,
     this.activeDeliveries,
     this.totalDelivered,
@@ -45,7 +42,6 @@ class DeliveryTeamEntity extends Equatable {
   }) {
     if (personels != null) this.personels.addAll(personels);
     if (checklist != null) this.checklist.addAll(checklist);
-    if (vehicle != null) this.vehicle.addAll(vehicle);
     if (trip != null) this.trip.target = trip;
     if(deliveryVehicle != null) this.deliveryVehicle.target = deliveryVehicle;
   }
@@ -57,7 +53,6 @@ class DeliveryTeamEntity extends Equatable {
     collectionName,
     personels,
     checklist,
-    vehicle,
     trip,
     activeDeliveries,
     deliveryVehicle,
@@ -76,7 +71,6 @@ class DeliveryTeamEntity extends Equatable {
       collectionName: '',
       personels: const [],
       checklist: const [],
-      vehicle: const [],
       trip: null,
       deliveryVehicle: null,
       activeDeliveries: 0,

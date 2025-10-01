@@ -10,8 +10,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delive
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/end_trip_checklist/presentation/bloc/end_trip_checklist_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart'
     show DeliveryDataEntity;
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
@@ -19,26 +19,26 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery
 
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
 import 'package:x_pro_delivery_app/core/services/objectbox.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/src/auth/presentation/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 
 import '../common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
 import '../common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
-import '../common/app/features/Trip_Ticket/collection/presentation/bloc/collections_bloc.dart';
-import '../common/app/features/Trip_Ticket/collection/presentation/bloc/collections_event.dart';
-import '../common/app/features/Trip_Ticket/customer_data/presentation/bloc/customer_data_bloc.dart';
-import '../common/app/features/Trip_Ticket/customer_data/presentation/bloc/customer_data_event.dart';
+import '../common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import '../common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_event.dart';
+import '../common/app/features/delivery_data/customer_data/presentation/bloc/customer_data_bloc.dart';
+import '../common/app/features/delivery_data/customer_data/presentation/bloc/customer_data_event.dart';
 import '../common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
-import '../common/app/features/Trip_Ticket/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
-import '../common/app/features/Trip_Ticket/delivery_vehicle_data/presentation/bloc/delivery_vehicle_event.dart';
-import '../common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_bloc.dart';
-import '../common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_event.dart';
-import '../common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_state.dart';
-import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_bloc.dart';
-import '../common/app/features/Trip_Ticket/invoice_items/presentation/bloc/invoice_items_event.dart';
-import '../common/app/features/user_performance/presentation/bloc/user_performance_bloc.dart';
-import '../common/app/features/user_performance/presentation/bloc/user_performance_event.dart';
+import '../common/app/features/delivery_team/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
+import '../common/app/features/delivery_team/delivery_vehicle_data/presentation/bloc/delivery_vehicle_event.dart';
+import '../common/app/features/delivery_data/invoice_data/presentation/bloc/invoice_data_bloc.dart';
+import '../common/app/features/delivery_data/invoice_data/presentation/bloc/invoice_data_event.dart';
+import '../common/app/features/delivery_data/invoice_data/presentation/bloc/invoice_data_state.dart';
+import '../common/app/features/delivery_data/invoice_items/presentation/bloc/invoice_items_bloc.dart';
+import '../common/app/features/delivery_data/invoice_items/presentation/bloc/invoice_items_event.dart';
+import '../common/app/features/users/user_performance/presentation/bloc/user_performance_bloc.dart';
+import '../common/app/features/users/user_performance/presentation/bloc/user_performance_event.dart';
 
 class SyncService {
   final store = sl<ObjectBoxStore>();
@@ -472,7 +472,6 @@ Future<void> onConnectionRestored() async {
       store.deliveryUpdateBox.removeAll();
       store.endTripChecklistBox.removeAll();
       store.tripUpdatesBox.removeAll();
-      store.vehicleBox.removeAll();
       store.personelBox.removeAll();
 
       // Check authentication sources

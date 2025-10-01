@@ -6,8 +6,8 @@ import 'package:x_pro_delivery_app/objectbox.g.dart';
 import '../../../../../../../../enums/product_return_reason.dart';
 import '../../../../trip/data/models/trip_models.dart';
 import '../../../../delivery_data/data/model/delivery_data_model.dart';
-import '../../../../invoice_items/data/model/invoice_items_model.dart';
-import '../../../../invoice_data/data/model/invoice_data_model.dart';
+import '../../../../../delivery_data/invoice_items/data/model/invoice_items_model.dart';
+import '../../../../../delivery_data/invoice_data/data/model/invoice_data_model.dart';
 
 abstract class ReturnItemsLocalDataSource {
   // Sync return items by trip ID

@@ -8,15 +8,13 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delive
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/presentation/bloc/personel_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/vehicle/presentation/bloc/vehicle_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklist/presentation/bloc/checklist_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/presentation/bloc/checklist_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
 
 class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with OfflineFirstMixin<DeliveryTeamEvent, DeliveryTeamState> {
   final TripBloc _tripBloc;
   final PersonelBloc _personelBloc;
-  final VehicleBloc _vehicleBloc;
   final DeliveryVehicleBloc _deliveryVehicleBloc;
   final ChecklistBloc _checklistBloc;
   final LoadDeliveryTeam _loadDeliveryTeam;
@@ -28,7 +26,6 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
   DeliveryTeamBloc({
     required TripBloc tripBloc,
     required PersonelBloc personelBloc,
-    required VehicleBloc vehicleBloc,
     required ChecklistBloc checklistBloc,
     required DeliveryVehicleBloc deliveryVehicleBloc,
     required LoadDeliveryTeam loadDeliveryTeam,
@@ -37,7 +34,6 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
     required ConnectivityProvider connectivity,
   }) : _tripBloc = tripBloc,
        _personelBloc = personelBloc,
-       _vehicleBloc = vehicleBloc,
        _deliveryVehicleBloc = deliveryVehicleBloc,
        _checklistBloc = checklistBloc,
        _loadDeliveryTeam = loadDeliveryTeam,
@@ -69,7 +65,6 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
               deliveryTeam: deliveryTeam,
               tripState: _tripBloc.state,
               personelState: _personelBloc.state,
-              vehicleState: _vehicleBloc.state,
               checklistState: _checklistBloc.state,
               deliveryVehicleState: _deliveryVehicleBloc.state,
             );
@@ -87,7 +82,6 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
               deliveryTeam: deliveryTeam,
               tripState: _tripBloc.state,
               personelState: _personelBloc.state,
-              vehicleState: _vehicleBloc.state,
               checklistState: _checklistBloc.state,
               deliveryVehicleState: _deliveryVehicleBloc.state,
             );
@@ -127,7 +121,6 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
         deliveryTeam: deliveryTeam,
         tripState: _tripBloc.state,
         personelState: _personelBloc.state,
-        vehicleState: _vehicleBloc.state,
         checklistState: _checklistBloc.state,
         deliveryVehicleState: _deliveryVehicleBloc.state,
       );
@@ -157,7 +150,6 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
               deliveryTeam: deliveryTeam,
               tripState: _tripBloc.state,
               personelState: _personelBloc.state,
-              vehicleState: _vehicleBloc.state,
               checklistState: _checklistBloc.state,
               deliveryVehicleState: _deliveryVehicleBloc.state,
             );
@@ -175,7 +167,6 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
               deliveryTeam: deliveryTeam,
               tripState: _tripBloc.state,
               personelState: _personelBloc.state,
-              vehicleState: _vehicleBloc.state,
               checklistState: _checklistBloc.state,
               deliveryVehicleState: _deliveryVehicleBloc.state,
             );
@@ -215,7 +206,6 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
         deliveryTeam: deliveryTeam,
         tripState: _tripBloc.state,
         personelState: _personelBloc.state,
-        vehicleState: _vehicleBloc.state,
         checklistState: _checklistBloc.state,
         deliveryVehicleState: _deliveryVehicleBloc.state,
       );
