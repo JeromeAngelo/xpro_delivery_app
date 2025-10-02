@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/entity/cancelled_invoice_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
@@ -166,9 +164,9 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
         leading: BackButton(
           onPressed: () => context.go('/finalize-deliveries'),
         ),
-        title: BlocBuilder<TripBloc, TripState>(
+        title: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
-            if (state is TripLoaded) {
+            if (state is UserTripLoaded) {
               return Text(
                 'Trip #${state.trip.tripNumberId}',
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(

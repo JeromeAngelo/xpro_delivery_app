@@ -48,7 +48,7 @@ actualTripId = tripId;
 debugPrint('🎯 Extracted trip ID: $actualTripId');
 
 // If actualTripId looks like a tripNumberId (starts with TRIP-), 
-// we need to find the actual PocketBase record ID
+// // we need to find the actual PocketBase record ID
 String pocketBaseTripId = actualTripId;
 
     if (actualTripId.startsWith('TRIP-')) {
@@ -233,10 +233,10 @@ DeliveryTeamModel _processDeliveryTeamRecord(RecordModel record) {
     tripModel = TripModel(id: record.data['tripTicket'].toString());
   }
 
-  debugPrint('📊 Final processing results:');
-  debugPrint('   👥 Personels: ${personelsList.length}');
-  debugPrint('   🚛 Delivery Vehicle: ${deliveryVehicleModel?.plateNo ?? "null"}');
-  debugPrint('   🎫 Trip: ${tripModel?.tripNumberId ?? "null"}');
+  // debugPrint('📊 Final processing results:');
+  // debugPrint('   👥 Personels: ${personelsList.length}');
+  // debugPrint('   🚛 Delivery Vehicle: ${deliveryVehicleModel?.plateNo ?? "null"}');
+  // debugPrint('   🎫 Trip: ${tripModel?.tripNumberId ?? "null"}');
 
   // FIXED: Safe type conversion for numeric fields
   return DeliveryTeamModel(

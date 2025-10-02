@@ -101,7 +101,7 @@ class CancelledInvoiceRemoteDataSourceImpl
         debugPrint('🔍 Trip ID appears to be tripNumberId, finding PocketBase record ID...');
         try {
           final tripResults = await _pocketBaseClient.collection('tripticket').getFullList(
-            filter: 'tripNumberId = "$actualTripId"',
+            filter: 'id = "$actualTripId"',
           );
           
           if (tripResults.isNotEmpty) {

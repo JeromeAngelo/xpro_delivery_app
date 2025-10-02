@@ -130,8 +130,7 @@ class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
         if (_isValidDeliveryTeam(team)) {
           final existingTeam = uniqueTeams[team.pocketbaseId];
           if (existingTeam == null ||
-              (team.updated?.isAfter(existingTeam.updated ?? DateTime(0)) ??
-                  false)) {
+              (team.updated!.isAfter(existingTeam.updated ?? DateTime(0)))) {
             uniqueTeams[team.pocketbaseId] = team;
           }
         }
@@ -190,11 +189,16 @@ class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
     }
   }
 
-  bool _isValidDeliveryTeam(DeliveryTeamModel team) {
-    return team.tripId != null &&
-        team.deliveryVehicle.target!.id != null &&
-        team.personels.isNotEmpty;
-  }
+bool _isValidDeliveryTeam(DeliveryTeamModel team) {
+  final hasTrip = team.tripId != null && team.tripId!.isNotEmpty;
+  final hasVehicle = team.deliveryVehicle.target != null &&
+      team.deliveryVehicle.target!.id != 0;
+  final hasPersonnel = team.personels.isNotEmpty;
+
+  return hasTrip && hasVehicle && hasPersonnel;
+}
+
+
 
   @override
   Future<void> cacheDeliveryTeam(DeliveryTeamModel team) async {
@@ -211,8 +215,11 @@ class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
       );
 
       // Copy personnel and vehicles
-      teamCopy.personels.addAll(team.personels);
-      teamCopy.deliveryVehicle.target!.id = team.deliveryVehicle.target!.id;
+     teamCopy.personels.addAll(team.personels);
+if (team.deliveryVehicle.target != null) {
+  teamCopy.deliveryVehicle.target = team.deliveryVehicle.target;
+}
+     // teamCopy.deliveryVehicle.target?.id = team.deliveryVehicle.target?.id;
 
       // Clean up data
       await _cleanupPersonnelData(teamCopy);
@@ -223,20 +230,20 @@ class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
       _cachedDeliveryTeam = teamCopy;
 
       // Verify storage immediately after saving
-      final storedTeam = _deliveryTeamBox.get(savedId);
-      if (storedTeam != null) {
-        debugPrint('✅ Storage verification successful');
-        debugPrint('📊 Final stored team details:');
-        debugPrint('Team ID: ${storedTeam.id}');
-        debugPrint('Trip ID: ${storedTeam.tripId}');
-        debugPrint('Personnel count: ${storedTeam.personels.length}');
-        debugPrint('Vehicle count: ${storedTeam.deliveryVehicle.target!.id}');
+     _deliveryTeamBox.get(savedId);
+      // if (storedTeam != null) {
+      //   debugPrint('✅ Storage verification successful');
+      //   debugPrint('📊 Final stored team details:');
+      //   debugPrint('Team ID: ${storedTeam.id}');
+      //   debugPrint('Trip ID: ${storedTeam.tripId}');
+      //   debugPrint('Personnel count: ${storedTeam.personels.length}');
+      //   debugPrint('Vehicle count: ${storedTeam.deliveryVehicle.target!.id}');
 
-        // Verify personnel details
-        storedTeam.personels.forEach(
-          (p) => debugPrint('   👤 ${p.name} (${p.id})'),
-        );
-      }
+      //   // Verify personnel details
+      //   for (var p in storedTeam.personels) {
+      //     debugPrint('   👤 ${p.name} (${p.id})');
+      //   }
+      // }
     } catch (e) {
       debugPrint('❌ Cache failed: ${e.toString()}');
       throw CacheException(message: e.toString());

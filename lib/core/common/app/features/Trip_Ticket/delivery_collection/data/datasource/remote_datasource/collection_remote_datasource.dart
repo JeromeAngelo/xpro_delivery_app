@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart' show PocketBase, RecordModel;
@@ -30,42 +29,42 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
   Future<List<CollectionModel>> getCollectionsByTripId(String tripId) async {
     try {
       // Extract trip ID if we received a JSON object
-      String actualTripId;
-      if (tripId.startsWith('{')) {
-        final tripData = jsonDecode(tripId);
-        actualTripId = tripData['id'];
-      } else {
-        actualTripId = tripId;
-      }
+      // String actualTripId;
+      // if (tripId.startsWith('{')) {
+      //   final tripData = jsonDecode(tripId);
+      //   actualTripId = tripData['id'];
+      // } else {
+      //   actualTripId = tripId;
+      // }
 
-      debugPrint('🔄 Fetching collections for trip ID: $actualTripId');
+      // debugPrint('🔄 Fetching collections for trip ID: $actualTripId');
 
-      // If actualTripId looks like a tripNumberId (starts with TRIP-), 
-      // we need to find the actual PocketBase record ID
-      String pocketBaseTripId = actualTripId;
+      // // If actualTripId looks like a tripNumberId (starts with TRIP-), 
+      // // we need to find the actual PocketBase record ID
+      // String pocketBaseTripId = actualTripId;
       
-      if (actualTripId.startsWith('TRIP-')) {
-        debugPrint('🔍 Trip ID appears to be tripNumberId, finding PocketBase record ID...');
-        try {
-          final tripResults = await _pocketBaseClient.collection('tripticket').getFullList(
-            filter: 'tripNumberId = "$actualTripId"',
-          );
+      // if (actualTripId.startsWith('TRIP-')) {
+      //   debugPrint('🔍 Trip ID appears to be tripNumberId, finding PocketBase record ID...');
+      //   try {
+      //     final tripResults = await _pocketBaseClient.collection('tripticket').getFullList(
+      //       filter: 'id = "$actualTripId"',
+      //     );
           
-          if (tripResults.isNotEmpty) {
-            pocketBaseTripId = tripResults.first.id;
-            debugPrint('✅ Found PocketBase trip ID: $pocketBaseTripId for tripNumberId: $actualTripId');
-          } else {
-            debugPrint('⚠️ No trip found with tripNumberId: $actualTripId');
-          }
-        } catch (e) {
-          debugPrint('⚠️ Failed to resolve tripNumberId: $e');
-        }
-      }
+      //     if (tripResults.isNotEmpty) {
+      //       pocketBaseTripId = tripResults.first.id;
+      //       debugPrint('✅ Found PocketBase trip ID: $pocketBaseTripId for tripNumberId: $actualTripId');
+      //     } else {
+      //       debugPrint('⚠️ No trip found with tripNumberId: $actualTripId');
+      //     }
+      //   } catch (e) {
+      //     debugPrint('⚠️ Failed to resolve tripNumberId: $e');
+      //   }
+      // }
 
       final records = await _pocketBaseClient
           .collection('deliveryCollection')
           .getFullList(
-            filter: 'trip = "$pocketBaseTripId"',
+            filter: 'trip = "$tripId"',
             expand: 'deliveryData,trip,customer,invoice,invoices,invoices.products,invoices.customer',
             sort: '-created',
           );
@@ -287,12 +286,12 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
     );
 
     debugPrint('✅ Successfully processed collection: ${collection.id}');
-    debugPrint('📊 Collection summary:');
-    debugPrint('   - ID: ${collection.id}');
-    debugPrint('   - Total Amount: ${collection.totalAmount}');
-    debugPrint('   - Customer: ${collection.customer.target!.name ?? "null"}');
-    debugPrint('   - Invoice: ${collection.invoice.target!.id ?? "null"}');
-    debugPrint('   - Trip: ${collection.trip.target!.tripNumberId ?? "null"}');
+    // debugPrint('📊 Collection summary:');
+    // debugPrint('   - ID: ${collection.id}');
+    // debugPrint('   - Total Amount: ${collection.totalAmount}');
+    // debugPrint('   - Customer: ${collection.customer.target!.name ?? "null"}');
+    // debugPrint('   - Invoice: ${collection.invoice.target!.id ?? "null"}');
+    // debugPrint('   - Trip: ${collection.trip.target!.tripNumberId ?? "null"}');
 
     return collection;
   }
