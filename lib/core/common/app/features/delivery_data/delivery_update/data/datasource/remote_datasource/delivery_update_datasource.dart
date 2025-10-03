@@ -35,7 +35,11 @@ abstract class DeliveryUpdateDatasource {
     required bool isAssigned,
     required String image,
   });
-  Future<void> updateQueueRemarks(String statusId, String remarks, String image);
+  Future<void> updateQueueRemarks(
+    String statusId,
+    String remarks,
+    String image,
+  );
   Future<void> pinArrivedLocation(String deliveryId);
 }
 
@@ -44,71 +48,68 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
     : _pocketBaseClient = pocketBaseClient;
 
   final PocketBase _pocketBaseClient;
-@override
-Future<void> updateQueueRemarks(
-  String statusId,
-  String remarks,
-  String image,
-) async {
-  try {
-    debugPrint('📝 Updating queue remarks for status: $statusId');
-    final files = <MultipartFile>[];
+  @override
+  Future<void> updateQueueRemarks(
+    String statusId,
+    String remarks,
+    String image,
+  ) async {
+    try {
+      debugPrint('📝 Updating queue remarks for status: $statusId');
+      final files = <MultipartFile>[];
 
-    // 🔽 Process image if provided
-    if (image.isNotEmpty) {
-      try {
-        final imageFile = File(image);
-        if (await imageFile.exists()) {
-          debugPrint('📸 Processing status update image...');
+      // 🔽 Process image if provided
+      if (image.isNotEmpty) {
+        try {
+          final imageFile = File(image);
+          if (await imageFile.exists()) {
+            debugPrint('📸 Processing status update image...');
 
-          final compressedImageBytes = await _compressImageToSmallSize(image);
-          if (compressedImageBytes != null) {
-            files.add(
-              MultipartFile.fromBytes(
-                'image',
-                compressedImageBytes,
-                filename: 'status_update_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
-              ),
-            );
-            debugPrint(
-              '✅ Added compressed image (${compressedImageBytes.length} bytes)',
-            );
-          } else {
-            // fallback to original if compression fails
-            final originalBytes = await imageFile.readAsBytes();
-            files.add(
-              MultipartFile.fromBytes(
-                'image',
-                originalBytes,
-                filename: 'status_update_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
-              ),
-            );
-            debugPrint(
-              '⚠️ Using original image (compression failed): ${originalBytes.length} bytes',
-            );
+            final compressedImageBytes = await _compressImageToSmallSize(image);
+            if (compressedImageBytes != null) {
+              files.add(
+                MultipartFile.fromBytes(
+                  'image',
+                  compressedImageBytes,
+                  filename:
+                      'status_update_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+                ),
+              );
+              debugPrint(
+                '✅ Added compressed image (${compressedImageBytes.length} bytes)',
+              );
+            } else {
+              // fallback to original if compression fails
+              final originalBytes = await imageFile.readAsBytes();
+              files.add(
+                MultipartFile.fromBytes(
+                  'image',
+                  originalBytes,
+                  filename:
+                      'status_update_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+                ),
+              );
+              debugPrint(
+                '⚠️ Using original image (compression failed): ${originalBytes.length} bytes',
+              );
+            }
           }
+        } catch (e) {
+          debugPrint('⚠️ Error processing image: $e');
         }
-      } catch (e) {
-        debugPrint('⚠️ Error processing image: $e');
       }
+
+      // 🔽 Perform update call to PocketBase (deliveryUpdate collection)
+      await _pocketBaseClient
+          .collection('deliveryUpdate')
+          .update(statusId, body: {'remarks': remarks}, files: files);
+
+      debugPrint('✅ Queue remarks successfully updated for status $statusId');
+    } catch (e) {
+      debugPrint('❌ Failed to update queue remarks: $e');
+      throw ServerException(message: e.toString(), statusCode: '404');
     }
-  
-    // 🔽 Perform update call to PocketBase (deliveryUpdate collection)
-    await _pocketBaseClient.collection('deliveryUpdate').update(
-      statusId,
-      body: {
-        'remarks': remarks,
-      },
-      files: files,
-    );
-
-    debugPrint('✅ Queue remarks successfully updated for status $statusId');
-  } catch (e) {
-    debugPrint('❌ Failed to update queue remarks: $e');
-    throw ServerException(message: e.toString(), statusCode: '404');
   }
-}
-
 
   @override
   Future<List<DeliveryUpdateModel>> getDeliveryStatusChoices(
@@ -149,11 +150,15 @@ Future<void> updateQueueRemarks(
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
       if (latestStatus == 'waiting for customer') {
-        final allowedTitles = ['unloading', 'mark as undelivered', 'invoices in queue'];
+        final allowedTitles = [
+          'unloading',
+          'mark as undelivered',
+          'invoices in queue',
+        ];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
 
-       if (latestStatus == 'invoices in queue') {
+      if (latestStatus == 'invoices in queue') {
         final allowedTitles = ['unloading', 'mark as undelivered'];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
@@ -177,7 +182,7 @@ Future<void> updateQueueRemarks(
           'unloading',
           'mark as undelivered',
           'waiting for customer',
-          'invoices in queue'
+          'invoices in queue',
         ];
         return _filterStatusChoices(allStatuses, allowedTitles);
       }
@@ -289,7 +294,7 @@ Future<void> updateQueueRemarks(
               'invoices in queue',
               'mark as undelivered',
             ]);
-          }  else if (latestStatus == 'invoices in queue') {
+          } else if (latestStatus == 'invoices in queue') {
             filteredStatuses = _filterStatusChoices(allStatuses, [
               'unloading',
               'mark as undelivered',
@@ -304,10 +309,10 @@ Future<void> updateQueueRemarks(
             ]);
           } else if (latestStatus == 'arrived') {
             filteredStatuses = _filterStatusChoices(allStatuses, [
-               'unloading',
-          'mark as undelivered',
-          'waiting for customer',
-          'invoices in queue'
+              'unloading',
+              'mark as undelivered',
+              'waiting for customer',
+              'invoices in queue',
             ]);
           } else if (latestStatus == 'mark as undelivered' ||
               latestStatus == 'end delivery') {
@@ -410,6 +415,28 @@ Future<void> updateQueueRemarks(
           );
 
       debugPrint('✅ Successfully updated customer status');
+
+      // 🔍 Get the deliveryData to extract trip info
+      final deliveryDataRecord = await _pocketBaseClient
+          .collection('deliveryData')
+          .getOne(customerId);
+
+      final tripId = deliveryDataRecord.data['trip'];
+      debugPrint('📦 Found trip for notification: $tripId');
+
+      await _pocketBaseClient
+          .collection('notifications')
+          .create(
+            body: {
+              'delivery': deliveryDataRecord.id,
+              'status': deliveryUpdateRecord.id,
+              'trip': tripId,
+              'type': 'deliveryUpdate',
+              'created': currentTime,
+            },
+          );
+
+          debugPrint('✅ Successfully created notification');
     } catch (e) {
       debugPrint('❌ Operation failed: ${e.toString()}');
       throw ServerException(
