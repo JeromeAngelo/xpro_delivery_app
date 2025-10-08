@@ -492,6 +492,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       collectionId: record.collectionId,
       collectionName: record.collectionName,
       deliveryNumber: record.data['deliveryNumber'],
+      refID: record.data['refID'],
       pinLang: record.data['pinLang'] != null ? double.tryParse(record.data['pinLang'].toString()) : null,
       pinLong: record.data['pinLong'] != null ? double.tryParse(record.data['pinLong'].toString()) : null,
       customer: customerModel,

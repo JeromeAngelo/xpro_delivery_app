@@ -29,7 +29,7 @@ class _SpecificTripCollectionState extends State<SpecificTripCollection> {
     // Load trip details
     context.read<TripBloc>().add(GetTripTicketByIdEvent(widget.tripId));
     // Load completed customers for this trip
-    context.read<CollectionsBloc>().add(GetCollectionByIdEvent(widget.tripId));
+    context.read<CollectionsBloc>().add(GetCollectionsByTripIdEvent(widget.tripId));
   }
 
   @override
@@ -110,7 +110,7 @@ class _SpecificTripCollectionState extends State<SpecificTripCollection> {
                       tooltip: 'Refresh',
                       onPressed: () {
                         context.read<TripBloc>().add(GetTripTicketByIdEvent(widget.tripId));
-                        context.read<CollectionsBloc>().add(GetCollectionByIdEvent(widget.tripId));
+                        context.read<CollectionsBloc>().add(GetCollectionsByTripIdEvent(widget.tripId));
                       },
                     ),
                     IconButton(
@@ -174,7 +174,7 @@ class _SpecificTripCollectionState extends State<SpecificTripCollection> {
                                     ElevatedButton.icon(
                                       onPressed: () {
                                         context.read<CollectionsBloc>().add(
-                                          GetCollectionByIdEvent(widget.tripId),
+                                          GetCollectionsByTripIdEvent(widget.tripId),
                                         );
                                       },
                                       icon: const Icon(Icons.refresh),
@@ -236,7 +236,7 @@ class _SpecificTripCollectionState extends State<SpecificTripCollection> {
                                     ElevatedButton.icon(
                                       onPressed: () {
                                         context.read<CollectionsBloc>().add(
-                                          GetCollectionByIdEvent(widget.tripId),
+                                          GetCollectionsByTripIdEvent(widget.tripId),
                                         );
                                       },
                                       icon: const Icon(Icons.refresh),
@@ -248,7 +248,7 @@ class _SpecificTripCollectionState extends State<SpecificTripCollection> {
                             );
                           }
 
-                          if (completedState is CollectionsLoaded) {
+                          if (completedState is CollectionLoadedByTrip) {
                             return CollectionCompletedCustomersTable(
                               tripId: widget.tripId,
                               completedCustomers: completedState.collections,

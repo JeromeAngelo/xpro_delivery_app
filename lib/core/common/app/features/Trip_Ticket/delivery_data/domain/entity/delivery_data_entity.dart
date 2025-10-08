@@ -19,6 +19,7 @@ class DeliveryDataEntity extends Equatable {
   final List<DeliveryUpdateEntity> deliveryUpdates;
   final List<InvoiceItemsEntity>? invoiceItems;
   final String? deliveryNumber;
+  final String? refID;
   final double? pinLang;
   final double? pinLong;
   // Standard fields
@@ -34,6 +35,7 @@ class DeliveryDataEntity extends Equatable {
     this.invoice,
     this.deliveryNumber,
     this.pinLang,
+    this.refID,
     this.pinLong,
     this.invoices,
     this.invoiceItems,
@@ -56,6 +58,7 @@ class DeliveryDataEntity extends Equatable {
     invoices,
     trip,
     deliveryUpdates,
+    refID,
     hasTrip,
     created,
     updated,

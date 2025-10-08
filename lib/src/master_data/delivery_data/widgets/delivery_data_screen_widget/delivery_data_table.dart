@@ -68,6 +68,7 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
         DataColumn(label: Text('Trip', style: headerStyle)),
         DataColumn(label: Text('Status', style: headerStyle)),
         DataColumn(label: Text('Items', style: headerStyle)),
+        DataColumn(label: Text('Reference ID', style: headerStyle)),
         DataColumn(label: Text('Created', style: headerStyle)),
         DataColumn(label: Text('Actions', style: headerStyle)),
       ],
@@ -240,6 +241,10 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
               '${delivery.invoiceItems?.length ?? 0}',
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            Text(delivery.refID ?? 'N/A'),
             onTap: () => _navigateToDeliveryDetails(context, delivery),
           ),
           DataCell(

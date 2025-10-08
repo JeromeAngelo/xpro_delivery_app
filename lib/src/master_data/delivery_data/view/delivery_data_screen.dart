@@ -123,6 +123,10 @@ class _DeliveryDataScreenState extends State<DeliveryDataScreen> {
                               query,
                             ) ??
                             false) ||
+                            (delivery.refID?.toLowerCase().contains(
+                              query,
+                            ) ??
+                            false) ||
                         (delivery.trip?.tripNumberId?.toLowerCase().contains(
                               query,
                             ) ??

@@ -23,6 +23,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
     List<InvoiceDataModel>? invoices,
     super.pinLang,
     super.pinLong,
+    super.refID,
     super.deliveryNumber,
     super.hasTrip,
     super.created,
@@ -216,6 +217,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
       id: json['id']?.toString(),
       collectionId: json['collectionId']?.toString(),
       collectionName: json['collectionName']?.toString(),
+      refID: json['refID']?.toString(),
       hasTrip: json['hasTrip'] as bool,
       deliveryNumber: json['deliveryNumber']?.toString(),
       pinLang: json['pinLang'] != null ? double.tryParse(json['pinLang'].toString()) : null,
@@ -242,6 +244,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
       'invoice': invoice?.id,
       'pinLang': pinLang,
       'pinLong': pinLong,
+      'refID': refID,
       'invoices': invoices?.map((invoice) => invoice.id).toList(),
       'invoiceItems':
           invoiceItems?.map((item) => item.id).toList(), // Add this line
@@ -261,6 +264,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
     List<InvoiceDataModel>? invoices,
     TripModel? trip,
     List<DeliveryUpdateModel>? deliveryUpdates,
+    String? refID,
     List<InvoiceItemsModel>? invoiceItems,
     String? deliveryNumber,
     double? pinLang,
@@ -350,6 +354,7 @@ class DeliveryDataModel extends DeliveryDataEntity {
       created: created ?? this.created,
       updated: updated ?? this.updated,
       pinLang: pinLang ?? this.pinLang,
+      refID: refID ?? this.refID,
       pinLong: pinLong ?? this.pinLong,
       objectBoxId: objectBoxId,
     );

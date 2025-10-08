@@ -30,14 +30,20 @@ class CollectionsLoaded extends CollectionsState {
   List<Object?> get props => [collections, isFromCache];
 }
 
+class CollectionLoadedByTrip extends CollectionsState {
+  final String tripId;
+  final List<CollectionEntity> collections;
+  const CollectionLoadedByTrip(this.tripId, {required this.collections});
+
+  @override
+  List<Object?> get props => [tripId];
+}
+
 class CollectionLoaded extends CollectionsState {
   final CollectionEntity collection;
   final bool isFromCache;
 
-  const CollectionLoaded({
-    required this.collection,
-    this.isFromCache = false,
-  });
+  const CollectionLoaded({required this.collection, this.isFromCache = false});
 
   @override
   List<Object?> get props => [collection, isFromCache];
@@ -56,10 +62,7 @@ class CollectionsError extends CollectionsState {
   final String message;
   final String? errorCode;
 
-  const CollectionsError({
-    required this.message,
-    this.errorCode,
-  });
+  const CollectionsError({required this.message, this.errorCode});
 
   @override
   List<Object?> get props => [message, errorCode];
@@ -78,10 +81,7 @@ class CollectionsOffline extends CollectionsState {
   final List<CollectionEntity> collections;
   final String message;
 
-  const CollectionsOffline({
-    required this.collections,
-    required this.message,
-  });
+  const CollectionsOffline({required this.collections, required this.message});
 
   @override
   List<Object?> get props => [collections, message];
@@ -116,5 +116,3 @@ class CollectionsFilteredByDate extends CollectionsState {
   @override
   List<Object?> get props => [collections, startDate, endDate, isFromCache];
 }
-
-

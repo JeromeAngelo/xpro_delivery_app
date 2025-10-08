@@ -1,7 +1,6 @@
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/collection/domain/entity/collection_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/invoice_data/presentation/bloc/invoice_data_event.dart';
-
 import 'package:xpro_delivery_admin_app/core/common/widgets/app_structure/data_table_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,7 +35,7 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
       title: 'Collection Invoices',
       columns: const [
         DataColumn(label: Text('Collection Name')),
-        DataColumn(label: Text('Invoice Number')),
+        DataColumn(label: Text('Invoice Numbers')),
         DataColumn(label: Text('Delivery Number')),
         DataColumn(label: Text('Date')),
         DataColumn(label: Text('Total Amount')),
@@ -44,87 +43,101 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
         DataColumn(label: Text('Status')),
         DataColumn(label: Text('Actions')),
       ],
-      rows:
-          collections.map((collection) {
-            return DataRow(
-              cells: [
-                DataCell(
-                  Text(collection.collectionName ?? 'N/A'),
-                  onTap: () => _navigateToCollectionDetails(context, collection),
-                ),
-                DataCell(
-                  Text(collection.invoice?.refId ?? 'N/A'),
-                  onTap: () => _navigateToInvoiceDetails(context, collection),
-                ),
-                DataCell(
-                  Text(collection.deliveryData?.deliveryNumber ?? 'N/A'),
-                  onTap: () => _navigateToCollectionDetails(context, collection),
-                ),
-                DataCell(
-                  Text(_formatDate(collection.created)),
-                  onTap: () => _navigateToCollectionDetails(context, collection),
-                ),
-                DataCell(
-                  Text(_formatAmount(collection.totalAmount)),
-                  onTap: () => _navigateToCollectionDetails(context, collection),
-                ),
-                DataCell(
-                  Text(_formatAmount(collection.invoice?.totalAmount)),
-                  onTap: () => _navigateToCollectionDetails(context, collection),
-                ),
-                
-                DataCell(
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.visibility, color: Colors.blue),
-                        tooltip: 'View Collection Details',
-                        onPressed:
-                            () => _navigateToCollectionDetails(context, collection),
-                      ),
-                      if (collection.invoice != null)
-                        IconButton(
-                          icon: const Icon(Icons.receipt, color: Colors.green),
-                          tooltip: 'View Invoice',
-                          onPressed: () => _navigateToInvoiceDetails(context, collection),
-                        ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.picture_as_pdf,
-                          color: Colors.red,
-                        ),
-                        tooltip: 'View PDF',
-                        onPressed: () {
-                          // View PDF functionality
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'PDF viewer for ${collection.collectionName ?? 'collection'} coming soon',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.print, color: Colors.purple),
-                        tooltip: 'Print Collection Receipt',
-                        onPressed: () {
-                          // Print functionality
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Printing receipt for ${collection.collectionName ?? 'collection'}...',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+      rows: collections.map((collection) {
+        final invoices = collection.invoices ?? [];
+
+        // Join invoice numbers for display (or N/A)
+        final invoiceNumbers = invoices.isNotEmpty
+            ? invoices.map((inv) => inv.name ?? 'N/A').join(', ')
+            : 'N/A';
+
+        // Compute confirmed total amount (sum of all invoices)
+        final confirmedTotal = invoices.fold<double>(
+          0.0,
+          (sum, inv) => sum + (inv.totalAmount ?? 0),
+        );
+
+        return DataRow(
+          cells: [
+            DataCell(
+              Text(collection.collectionName ?? 'N/A'),
+              onTap: () => _navigateToCollectionDetails(context, collection),
+            ),
+            DataCell(
+              Text(invoiceNumbers),
+              onTap: () {
+                if (invoices.isNotEmpty) {
+                  _navigateToMultipleInvoices(context, invoices);
+                }
+              },
+            ),
+            DataCell(
+              Text(collection.deliveryData?.deliveryNumber ?? 'N/A'),
+              onTap: () => _navigateToCollectionDetails(context, collection),
+            ),
+            DataCell(
+              Text(_formatDate(collection.created)),
+              onTap: () => _navigateToCollectionDetails(context, collection),
+            ),
+            DataCell(
+              Text(_formatAmount(collection.totalAmount)),
+              onTap: () => _navigateToCollectionDetails(context, collection),
+            ),
+            DataCell(
+              Text(_formatAmount(confirmedTotal)),
+              onTap: () => _navigateToCollectionDetails(context, collection),
+            ),
+            DataCell(
+              Text(collection.status ?? 'Completed'),
+            ),
+            DataCell(
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.visibility, color: Colors.blue),
+                    tooltip: 'View Collection Details',
+                    onPressed: () =>
+                        _navigateToCollectionDetails(context, collection),
                   ),
-                ),
-              ],
-            );
-          }).toList(),
+                  if (invoices.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.receipt, color: Colors.green),
+                      tooltip: 'View Invoices',
+                      onPressed: () =>
+                          _navigateToMultipleInvoices(context, invoices),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                    tooltip: 'View PDF',
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'PDF viewer for ${collection.collectionName ?? 'collection'} coming soon',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.print, color: Colors.purple),
+                    tooltip: 'Print Collection Receipt',
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Printing receipt for ${collection.collectionName ?? 'collection'}...',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }).toList(),
       currentPage: currentPage,
       totalPages: totalPages,
       onPageChanged: onPageChanged,
@@ -132,11 +145,10 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
       errorMessage: errorMessage,
       onRetry: onRetry,
       onFiltered: () {
-        // Show filter dialog for collections
         _showFilterDialog(context);
-      }, 
-      dataLength: '${collections.length}', 
-      onDeleted: () {  },
+      },
+      dataLength: '${collections.length}',
+      onDeleted: () {},
     );
   }
 
@@ -151,20 +163,27 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
     return formatter.format(amount);
   }
 
-  void _navigateToCollectionDetails(BuildContext context, CollectionEntity collection) {
+  void _navigateToCollectionDetails(
+      BuildContext context, CollectionEntity collection) {
     if (collection.id != null) {
-      // Navigate to collection details screen
       context.go('/collections/${collection.id}');
     }
   }
 
-  void _navigateToInvoiceDetails(BuildContext context, CollectionEntity collection) {
-    if (collection.invoice?.id != null) {
-      // First, dispatch the event to load the invoice data
-      context.read<InvoiceDataBloc>().add(GetInvoiceDataByIdEvent(collection.invoice!.id!));
+  void _navigateToMultipleInvoices(
+      BuildContext context, List<dynamic> invoices) {
+    // Navigate to a page showing a list of invoices
+    // Example route: /invoices?ids=[...]
+    final ids = invoices.map((inv) => inv.id).join(',');
+    context.go('/invoices?ids=$ids');
 
-      // Then navigate to the specific invoice screen
-      context.go('/invoice/${collection.invoice!.id}');
+    // Optionally dispatch event for each invoice
+    for (final inv in invoices) {
+      if (inv.id != null) {
+        context
+            .read<InvoiceDataBloc>()
+            .add(GetInvoiceDataByIdEvent(inv.id!));
+      }
     }
   }
 
@@ -179,19 +198,14 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Collection Name Filter
                 TextField(
                   decoration: const InputDecoration(
                     labelText: 'Collection Name',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (value) {
-                    // Handle collection name filter
-                  },
+                  onChanged: (value) {},
                 ),
                 const SizedBox(height: 16),
-
-                // Date Range Filter
                 Row(
                   children: [
                     Expanded(
@@ -202,10 +216,6 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
                           suffixIcon: Icon(Icons.calendar_today),
                         ),
                         readOnly: true,
-                        onTap: () async {
-                          // Show date picker
-                          // Handle selected date
-                        },
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -217,17 +227,11 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
                           suffixIcon: Icon(Icons.calendar_today),
                         ),
                         readOnly: true,
-                        onTap: () async {
-                          // Show date picker
-                          // Handle selected date
-                        },
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-
-                // Amount Range Filter
                 Row(
                   children: [
                     Expanded(
@@ -238,9 +242,6 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
                           prefixText: '₱ ',
                         ),
                         keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          // Handle min amount filter
-                        },
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -252,9 +253,6 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
                           prefixText: '₱ ',
                         ),
                         keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          // Handle max amount filter
-                        },
                       ),
                     ),
                   ],
@@ -265,22 +263,16 @@ class CompletedCustomerInvoiceTable extends StatelessWidget {
           actions: <Widget>[
             TextButton(
               child: const Text('Clear'),
-              onPressed: () {
-                // Clear all filters
-                Navigator.of(dialogContext).pop();
-              },
+              onPressed: () => Navigator.of(dialogContext).pop(),
             ),
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
+              onPressed: () => Navigator.of(dialogContext).pop(),
             ),
             TextButton(
               child: const Text('Apply'),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                // Apply filters
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Filters applied')),
                 );

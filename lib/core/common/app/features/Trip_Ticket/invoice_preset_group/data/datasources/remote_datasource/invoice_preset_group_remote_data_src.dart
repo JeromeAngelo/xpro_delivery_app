@@ -332,7 +332,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
           if (customerRecord != null) {
             updateData.addAll({
               'storeName': customerRecord.data['name'] ?? '',
-              'refID': customerRecord.data['refID'] ?? '',
+            //  'refID': customerRecord.data['refID'] ?? '',
               'province': customerRecord.data['province'] ?? '',
               'municipality': customerRecord.data['municipality'] ?? '',
               'barangay': customerRecord.data['barangay'] ?? '',
@@ -370,7 +370,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
           if (customerRecord != null) {
             newDeliveryData.addAll({
               'storeName': customerRecord.data['name'] ?? '',
-              'refID': customerRecord.data['refID'] ?? '',
+              'refID': presetGroupRecord.data['refID'] ?? '',
               'province': customerRecord.data['province'] ?? '',
               'municipality': customerRecord.data['municipality'] ?? '',
               'barangay': customerRecord.data['barangay'] ?? '',

@@ -1,3 +1,4 @@
+// ignore_for_file: unused_local_variable
 
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/collection/domain/entity/collection_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_bloc.dart';
@@ -9,6 +10,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../../../core/common/app/features/Trip_Ticket/collection/presentation/bloc/collections_state.dart';
+
 class CollectionCompletedCustomersTable extends StatefulWidget {
   final String tripId;
   final List<CollectionEntity> completedCustomers;
@@ -18,7 +21,7 @@ class CollectionCompletedCustomersTable extends StatefulWidget {
     super.key,
     required this.tripId,
     required this.completedCustomers,
-    this.isLoading = false,
+    required this.isLoading,
   });
 
   @override
@@ -42,153 +45,167 @@ class _CollectionCompletedCustomersTableState
 
   @override
   Widget build(BuildContext context) {
-    // Filter customers based on search query
-    List<CollectionEntity> filteredCustomers = widget.completedCustomers;
-    if (_searchQuery.isNotEmpty) {
-      filteredCustomers =
-          filteredCustomers.where((customer) {
-            final query = _searchQuery.toLowerCase();
-            return (customer.customer!.name?.toLowerCase().contains(query) ??
-                    false) ||
-                (customer.customer!.id?.toLowerCase().contains(query) ??
-                    false) ||
-                (customer.customer!.ownerName?.toLowerCase().contains(query) ?? false);
-          }).toList();
-    }
+    return BlocBuilder<CollectionsBloc, CollectionsState>(
+      builder: (context, state) {
+        // Filter customers based on search query
+        List<CollectionEntity> collections = [];
+        bool loading = widget.isLoading;
+        String? errorMessage;
 
-    // Calculate total pages
-    _totalPages = (filteredCustomers.length / _itemsPerPage).ceil();
-    if (_totalPages == 0) _totalPages = 1;
+        if (state is CollectionsLoading) {
+          loading = true;
+        } else if (state is CollectionLoadedByTrip &&
+            state.tripId == widget.tripId) {
+          collections = state.collections;
+          loading = false;
+        } else if (state is CollectionsError) {
+          errorMessage = state.message;
+          loading = false;
+        }
 
-    // Paginate customers
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex =
-        startIndex + _itemsPerPage > filteredCustomers.length
-            ? filteredCustomers.length
-            : startIndex + _itemsPerPage;
-
-    final paginatedCustomers =
-        startIndex < filteredCustomers.length
-            ? filteredCustomers.sublist(startIndex, endIndex)
-            : [];
-
-    // Format currency
-    final currencyFormatter = NumberFormat.currency(
-      symbol: '₱',
-      decimalDigits: 2,
-    );
-
-    return DataTableLayout(
-      title: 'Completed Customers',
-      searchBar: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search by store name, delivery number, or owner...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon:
-              _searchQuery.isNotEmpty
-                  ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      setState(() {
-                        _searchController.clear();
-                        _searchQuery = '';
-                      });
-                    },
-                  )
-                  : null,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-        },
-      ),
-      onCreatePressed: null, // No create button for collections view
-      columns: const [
-        DataColumn(label: Text('Delivery #')),
-        DataColumn(label: Text('Store Name')),
-        DataColumn(label: Text('Owner')),
-        DataColumn(label: Text('Mode of Payment')),
-        DataColumn(label: Text('Amount')),
-        DataColumn(label: Text('Completed At')),
-        DataColumn(label: Text('Actions')),
-      ],
-      rows:
-          paginatedCustomers.map((customer) {
-            return DataRow(
-              cells: [
-                DataCell(
-                  Text(customer.deliveryNumber ?? 'N/A'),
-                  onTap: () => _navigateToCustomerData(context, customer),
-                ),
-                DataCell(
-                  Text(customer.storeName ?? 'N/A'),
-                  onTap: () => _navigateToCustomerData(context, customer),
-                ),
-                DataCell(
-                  Text(customer.ownerName ?? 'N/A'),
-                  onTap: () => _navigateToCustomerData(context, customer),
-                ),
-                DataCell(_buildModeOfPaymentChip(customer.modeOfPayment)),
-                DataCell(
-                  Text(
-                    customer.totalAmount != null
-                        ? currencyFormatter.format(customer.totalAmount)
-                        : 'N/A',
-                  ),
-                  onTap: () => _navigateToCustomerData(context, customer),
-                ),
-                DataCell(
-                  Text(
-                    customer.timeCompleted != null
-                        ? DateFormat(
-                          'MMM dd, yyyy hh:mm a',
-                        ).format(customer.timeCompleted!)
-                        : 'N/A',
-                  ),
-                  onTap: () => _navigateToCustomerData(context, customer),
-                ),
-                DataCell(
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.visibility, color: Colors.blue),
-                        tooltip: 'View Details',
+        // Format currency
+        final currencyFormatter = NumberFormat.currency(
+          symbol: '₱',
+          decimalDigits: 2,
+        );
+        return DataTableLayout(
+          title: 'Completed Customers',
+          searchBar: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search by store name, delivery number, or owner...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon:
+                  _searchQuery.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.clear),
                         onPressed: () {
-                          // View customer details
-                          _showCustomerDetailsDialog(context, customer);
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
                         },
+                      )
+                      : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
+          onCreatePressed: null, // No create button for collections view
+          columns: const [
+            //  DataColumn(label: Text('Delivery #')),
+            DataColumn(label: Text('Store Name')),
+            DataColumn(label: Text('Owner')),
+            DataColumn(label: Text('Invoices')), // ✅ added
+         //   DataColumn(label: Text('Mode of Payment')),
+            DataColumn(label: Text('Amount')),
+            DataColumn(label: Text('Completed At')),
+            DataColumn(label: Text('Actions')),
+          ],
+          rows:
+              collections.map((customer) {
+                final deliveryData = customer.deliveryData;
+              //  final customerData = customer.customer;
+
+                return DataRow(
+                  cells: [
+                    DataCell(
+                      Text(deliveryData!.deliveryNumber ?? 'N/A'),
+                      onTap: () => _navigateToCustomerData(context, customer),
+                    ),
+                    DataCell(
+                      Text(deliveryData.customer!.name ?? 'N/A'),
+                      onTap: () => _navigateToCustomerData(context, customer),
+                    ),
+                    DataCell(
+                      Text(_formatInvoiceNumbers(customer)), // ✅ added
+                      onTap: () => _navigateToCustomerData(context, customer),
+                    ),
+
+                    //DataCell(_buildModeOfPaymentChip(customer. ?? 'N/A')),
+                    DataCell(
+                      Text(
+                        customer.totalAmount != null
+                            ? currencyFormatter.format(customer.totalAmount)
+                            : 'N/A',
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.print, color: Colors.green),
-                        tooltip: 'Print Receipt',
-                        onPressed: () {
-                          // Print receipt
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Printing receipt...'),
+                      onTap: () => _navigateToCustomerData(context, customer),
+                    ),
+                    DataCell(
+                      Text(
+                        customer.created != null
+                            ? DateFormat(
+                              'MMM dd, yyyy hh:mm a',
+                            ).format(customer.created!)
+                            : 'N/A',
+                      ),
+                      onTap: () => _navigateToCustomerData(context, customer),
+                    ),
+                    DataCell(
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.visibility,
+                              color: Colors.blue,
                             ),
-                          );
-                        },
+                            tooltip: 'View Details',
+                            onPressed: () {
+                              // View customer details
+                              _showCustomerDetailsDialog(context, customer);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.print, color: Colors.green),
+                            tooltip: 'Print Receipt',
+                            onPressed: () {
+                              // Print receipt
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Printing receipt...'),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
-      currentPage: _currentPage,
-      totalPages: _totalPages,
-      onPageChanged: (page) {
-        setState(() {
-          _currentPage = page;
-        });
+                    ),
+                  ],
+                );
+              }).toList(),
+          currentPage: _currentPage,
+          totalPages: _totalPages,
+          onPageChanged: (page) {
+            setState(() {
+              _currentPage = page;
+            });
+          },
+          isLoading: widget.isLoading,
+          onFiltered: () {},
+          dataLength: '${collections.length}',
+          onDeleted: () {},
+        );
       },
-      isLoading: widget.isLoading,
-      onFiltered: () {}, dataLength: '${filteredCustomers.length}', onDeleted: () {  },
     );
+  }
+
+  String _formatInvoiceNumbers(CollectionEntity collections) {
+    if (collections.invoices != null && collections.invoices!.isNotEmpty) {
+      if (collections.invoices!.length == 1) {
+        return collections.invoices!.first.name ?? 'N/A';
+      } else {
+        return '${collections.invoices!.length} invoices';
+      }
+    } else if (collections.invoice?.name != null) {
+      return collections.invoice!.name!;
+    }
+    return 'N/A';
   }
 
   // Format mode of payment from enum to readable text
@@ -263,17 +280,26 @@ class _CollectionCompletedCustomersTableState
                     'Delivery Number',
                     customer.deliveryData!.deliveryNumber ?? 'N/A',
                   ),
-                  _buildDetailRow('Owner Name', customer.customer!.name ?? 'N/A'),
+                  _buildDetailRow(
+                    'Owner Name',
+                    customer.customer!.name ?? 'N/A',
+                  ),
                   _buildDetailRow(
                     'Contact',
                     customer.customer!.contactNumber ?? 'N/A',
                   ),
-                  _buildDetailRow('Address', customer.customer!.province ?? 'N/A'),
+                  _buildDetailRow(
+                    'Address',
+                    customer.customer!.province ?? 'N/A',
+                  ),
                   _buildDetailRow(
                     'Municipality',
                     customer.customer!.municipality ?? 'N/A',
                   ),
-                  _buildDetailRow('Province', customer.customer!.province ?? 'N/A'),
+                  _buildDetailRow(
+                    'Province',
+                    customer.customer!.province ?? 'N/A',
+                  ),
                   _buildDetailRow(
                     'Mode of Payment',
                     _formatModeOfPayment(customer.customer!.paymentMode),
@@ -292,8 +318,6 @@ class _CollectionCompletedCustomersTableState
                         ? currencyFormatter.format(customer.totalAmount)
                         : 'N/A',
                   ),
-
-                 
                 ],
               ),
             ),
@@ -316,62 +340,62 @@ class _CollectionCompletedCustomersTableState
     );
   }
 
-  Widget _buildModeOfPaymentChip(String? modeOfPaymentStr) {
-    // Default values
-    Color backgroundColor = Colors.grey[100]!;
-    Color textColor = Colors.grey[800]!;
-    String label = 'N/A';
-    IconData icon = Icons.help_outline;
+  // Widget _buildModeOfPaymentChip(String? modeOfPaymentStr) {
+  //   // Default values
+  //   Color backgroundColor = Colors.grey[100]!;
+  //   Color textColor = Colors.grey[800]!;
+  //   String label = 'N/A';
+  //   IconData icon = Icons.help_outline;
 
-    if (modeOfPaymentStr != null) {
-      String paymentMode = _formatModeOfPayment(modeOfPaymentStr);
+  //   if (modeOfPaymentStr != null) {
+  //     String paymentMode = _formatModeOfPayment(modeOfPaymentStr);
 
-      switch (paymentMode) {
-        case 'Cash On Delivery':
-          backgroundColor = Colors.green[100]!;
-          textColor = Colors.green[800]!;
-          label = 'COD';
-          icon = Icons.payments;
-          break;
-        case 'Bank Transfer':
-          backgroundColor = Colors.blue[100]!;
-          textColor = Colors.blue[800]!;
-          label = 'Bank';
-          icon = Icons.account_balance;
-          break;
-        case 'Cheque':
-          backgroundColor = Colors.purple[100]!;
-          textColor = Colors.purple[800]!;
-          label = 'Cheque';
-          icon = Icons.money;
-          break;
-        case 'E-Wallet':
-          backgroundColor = Colors.orange[100]!;
-          textColor = Colors.orange[800]!;
-          label = 'E-Wallet';
-          icon = Icons.account_balance_wallet;
-          break;
-        default:
-          label = paymentMode;
-      }
-    }
+  //     switch (paymentMode) {
+  //       case 'Cash On Delivery':
+  //         backgroundColor = Colors.green[100]!;
+  //         textColor = Colors.green[800]!;
+  //         label = 'COD';
+  //         icon = Icons.payments;
+  //         break;
+  //       case 'Bank Transfer':
+  //         backgroundColor = Colors.blue[100]!;
+  //         textColor = Colors.blue[800]!;
+  //         label = 'Bank';
+  //         icon = Icons.account_balance;
+  //         break;
+  //       case 'Cheque':
+  //         backgroundColor = Colors.purple[100]!;
+  //         textColor = Colors.purple[800]!;
+  //         label = 'Cheque';
+  //         icon = Icons.money;
+  //         break;
+  //       case 'E-Wallet':
+  //         backgroundColor = Colors.orange[100]!;
+  //         textColor = Colors.orange[800]!;
+  //         label = 'E-Wallet';
+  //         icon = Icons.account_balance_wallet;
+  //         break;
+  //       default:
+  //         label = paymentMode;
+  //     }
+  //   }
 
-    return Chip(
-      avatar: Icon(icon, size: 16, color: textColor),
-      label: Text(
-        label,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      backgroundColor: backgroundColor,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
-  }
+  //   return Chip(
+  //     avatar: Icon(icon, size: 16, color: textColor),
+  //     label: Text(
+  //       label,
+  //       style: TextStyle(
+  //         color: textColor,
+  //         fontSize: 12,
+  //         fontWeight: FontWeight.bold,
+  //       ),
+  //     ),
+  //     backgroundColor: backgroundColor,
+  //     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+  //     visualDensity: VisualDensity.compact,
+  //     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  //   );
+  // }
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -397,9 +421,7 @@ class _CollectionCompletedCustomersTableState
     CollectionEntity customer,
   ) {
     if (customer.id != null) {
-      context.read<CollectionsBloc>().add(
-        GetCollectionByIdEvent(customer.id!),
-      );
+      context.read<CollectionsBloc>().add(GetCollectionByIdEvent(customer.id!));
 
       context.go('/completed-customers/:{$customer.id}');
     }

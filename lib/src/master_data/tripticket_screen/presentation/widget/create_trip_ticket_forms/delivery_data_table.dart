@@ -136,6 +136,14 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
                     ),
                   ),
                 ),
+                 DataColumn(
+                  label: Text(
+                    'Reference ID',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
               ];
 
               if (state is DeliveryDataLoading) {
@@ -279,6 +287,7 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
                               : _formatDate(delivery.invoice?.documentDate),
                         ),
                       ),
+                      DataCell(Text(delivery.refID ?? 'N/A')),
                     ],
                   );
                 },

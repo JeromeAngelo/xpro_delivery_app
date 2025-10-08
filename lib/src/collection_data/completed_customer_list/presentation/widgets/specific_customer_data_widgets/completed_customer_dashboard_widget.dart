@@ -19,12 +19,22 @@ class CompletedCustomerDashboardWidget extends StatelessWidget {
     if (isLoading) {
       return _buildLoadingSkeleton(context);
     }
-    
+
     // Format currency
     final currencyFormatter = NumberFormat.currency(
       symbol: '₱',
       decimalDigits: 2,
     );
+
+    // final invoices = collection.invoices ?? [];
+    // final invoiceNumbers =
+    //     invoices.isNotEmpty
+    //         ? invoices.map((inv) => inv.refId ?? 'N/A').join(', ')
+    //         : 'N/A';
+    // final totalInvoiceAmount = invoices.fold<double>(
+    //   0.0,
+    //   (sum, inv) => sum + (inv.totalAmount ?? 0),
+    // );
 
     // Format date
     final dateFormatter = DateFormat('MMM dd, yyyy hh:mm a');
@@ -67,30 +77,7 @@ class CompletedCustomerDashboardWidget extends StatelessWidget {
           label: 'Collection Amount',
           iconColor: Colors.purple,
         ),
-        DashboardInfoItem(
-          icon: Icons.receipt,
-          value: collection.invoice?.refId ?? 'N/A',
-          label: 'Invoice Number',
-          iconColor: Colors.cyan,
-        ),
-        DashboardInfoItem(
-          icon: Icons.monetization_on,
-          value:
-              collection.invoice?.totalAmount != null
-                  ? currencyFormatter.format(collection.invoice!.totalAmount!)
-                  : 'N/A',
-          label: 'Invoice Amount',
-          iconColor: Colors.teal,
-        ),
-        DashboardInfoItem(
-          icon: Icons.verified,
-          value:
-              collection.invoice?.totalAmount != null
-                  ? currencyFormatter.format(collection.invoice!.totalAmount!)
-                  : 'N/A',
-          label: 'Confirmed Amount',
-          iconColor: Colors.deepPurple,
-        ),
+
         DashboardInfoItem(
           icon: Icons.local_shipping,
           value: collection.trip?.tripNumberId ?? 'N/A',
@@ -126,10 +113,11 @@ class CompletedCustomerDashboardWidget extends StatelessWidget {
   }
 
   String _buildAddressString(CollectionEntity collection) {
-    final addressParts = [
-      collection.customer?.municipality,
-      collection.customer?.province,
-    ].where((part) => part != null && part.isNotEmpty).toList();
+    final addressParts =
+        [
+          collection.customer?.municipality,
+          collection.customer?.province,
+        ].where((part) => part != null && part.isNotEmpty).toList();
 
     return addressParts.isNotEmpty ? addressParts.join(', ') : 'N/A';
   }
@@ -137,9 +125,7 @@ class CompletedCustomerDashboardWidget extends StatelessWidget {
   Widget _buildLoadingSkeleton(BuildContext context) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -158,9 +144,9 @@ class CompletedCustomerDashboardWidget extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Grid of skeleton items
             GridView.count(
               crossAxisCount: 3,
@@ -202,7 +188,7 @@ class CompletedCustomerDashboardWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            
+
             // Content placeholder
             Expanded(
               child: Column(
@@ -219,7 +205,7 @@ class CompletedCustomerDashboardWidget extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Label placeholder
                   Container(
                     width: 100,

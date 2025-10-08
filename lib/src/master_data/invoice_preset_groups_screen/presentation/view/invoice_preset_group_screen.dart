@@ -89,11 +89,7 @@ class _InvoicePresetGroupScreenState extends State<InvoicePresetGroupScreen> {
                   _searchQuery = value;
                 });
                 // If search query is not empty, search for preset groups
-                if (value.isNotEmpty) {
-                  context.read<InvoicePresetGroupBloc>().add(
-                    SearchPresetGroupByRefIdEvent(value),
-                  );
-                } else {
+                if(value.isNotEmpty) {
                   // If search query is empty, load all preset groups
                   context.read<InvoicePresetGroupBloc>().add(
                     const GetAllInvoicePresetGroupsEvent(),
@@ -177,12 +173,7 @@ class _InvoicePresetGroupScreenState extends State<InvoicePresetGroupScreen> {
                   _searchQuery = value;
                   _currentPage = 1; // Reset to first page when searching
                 });
-                // If search query is not empty, search for preset groups
-                if (value.isNotEmpty) {
-                  context.read<InvoicePresetGroupBloc>().add(
-                    SearchPresetGroupByRefIdEvent(value),
-                  );
-                } else {
+                if(value.isNotEmpty) {
                   // If search query is empty, load all preset groups
                   context.read<InvoicePresetGroupBloc>().add(
                     const GetAllInvoicePresetGroupsEvent(),
@@ -236,11 +227,7 @@ class _InvoicePresetGroupScreenState extends State<InvoicePresetGroupScreen> {
                   _currentPage = 1; // Reset to first page when searching
                 });
                 // If search query is not empty, search for preset groups
-                if (value.isNotEmpty) {
-                  context.read<InvoicePresetGroupBloc>().add(
-                    SearchPresetGroupByRefIdEvent(value),
-                  );
-                } else {
+                 if(value.isNotEmpty) {
                   // If search query is empty, load all preset groups
                   context.read<InvoicePresetGroupBloc>().add(
                     const GetAllInvoicePresetGroupsEvent(),

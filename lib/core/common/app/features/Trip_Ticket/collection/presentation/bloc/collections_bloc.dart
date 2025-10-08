@@ -97,7 +97,7 @@ class CollectionsBloc extends Bloc<CollectionsEvent, CollectionsState> {
         debugPrint('✅ BLoC: Successfully loaded ${collections.length} collections');
         
         if (collections.isEmpty) {
-          emit(CollectionsEmpty(event.tripId));
+          emit(CollectionLoadedByTrip(event.tripId, collections: collections ));
         } else {
           final newState = CollectionsLoaded(
             collections: collections,
