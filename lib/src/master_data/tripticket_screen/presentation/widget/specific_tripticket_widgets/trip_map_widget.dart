@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip_coordinates_update/domain/entity/trip_coordinates_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
@@ -237,66 +239,49 @@ class _TripMapWidgetState extends State<TripMapWidget>
     return validCoordinates;
   }
 
-  List<LatLng> _createOrderedRoutePoints() {
-    // Create a list to hold all chronological points with their timestamps
-    List<_TimestampedPoint> timestampedPoints = [];
+  
+List<LatLng> _createOrderedRoutePoints() {
+  // 1. Filter valid trip coordinates
+  final validCoordinates = widget.tripCoordinates.where((coord) =>
+      coord.latitude != null &&
+      coord.longitude != null &&
+      coord.latitude! != 0.0 &&
+      coord.longitude! != 0.0).toList();
 
-    // 1. Add trip coordinates with their timestamps
-    final validCoordinates = widget.tripCoordinates.where((coord) => 
-      coord.latitude != null && coord.longitude != null &&
-      coord.latitude! != 0.0 && coord.longitude! != 0.0
-    ).toList();
-
-    for (final coord in validCoordinates) {
-      timestampedPoints.add(_TimestampedPoint(
-        point: LatLng(coord.latitude!, coord.longitude!),
-        timestamp: coord.created ?? DateTime.now(),
-        type: 'coordinate',
-      ));
+  // 2. Sort coordinates by creation time (chronologically)
+  validCoordinates.sort((a, b) {
+    if (a.created != null && b.created != null) {
+      return a.created!.compareTo(b.created!);
     }
+    if (a.created != null) return -1;
+    if (b.created != null) return 1;
+    return 0;
+  });
 
-    // 2. Add delivery locations with their timestamps
-    final validDeliveries = widget.deliveryData.where((delivery) => 
-      delivery.pinLang != null && delivery.pinLong != null &&
-      delivery.pinLang! != 0.0 && delivery.pinLong! != 0.0
-    ).toList();
+  // 3. Map coordinates to LatLng
+  List<LatLng> orderedPoints = validCoordinates
+      .map((coord) => LatLng(coord.latitude!, coord.longitude!))
+      .toList();
 
-    for (final delivery in validDeliveries) {
-      timestampedPoints.add(_TimestampedPoint(
-        point: LatLng(delivery.pinLang!, delivery.pinLong!),
-        timestamp: delivery.created ?? DateTime.now(),
-        type: 'delivery',
-      ));
+  // 4. Add current truck location (if it's not the same as the last coordinate)
+  if (widget.trip != null &&
+      widget.trip!.latitude != null &&
+      widget.trip!.longitude != null &&
+      widget.trip!.latitude! != 0.0 &&
+      widget.trip!.longitude! != 0.0) {
+    final truckLocation = LatLng(widget.trip!.latitude!, widget.trip!.longitude!);
+
+    if (orderedPoints.isEmpty ||
+        orderedPoints.last.latitude != truckLocation.latitude ||
+        orderedPoints.last.longitude != truckLocation.longitude) {
+      orderedPoints.add(truckLocation);
     }
-
-    // 3. Sort all points chronologically by creation time
-    timestampedPoints.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-    // 4. Extract the ordered LatLng points
-    List<LatLng> orderedPoints = timestampedPoints.map((tp) => tp.point).toList();
-
-    // 5. Add current truck location as the final point if available
-    if (widget.trip != null &&
-        widget.trip!.latitude != null &&
-        widget.trip!.longitude != null &&
-        widget.trip!.latitude! != 0.0 &&
-        widget.trip!.longitude! != 0.0) {
-      final truckLocation = LatLng(
-        widget.trip!.latitude!,
-        widget.trip!.longitude!,
-      );
-
-      // Only add if it's different from the last point
-      if (orderedPoints.isEmpty ||
-          orderedPoints.last.latitude != truckLocation.latitude ||
-          orderedPoints.last.longitude != truckLocation.longitude) {
-        orderedPoints.add(truckLocation);
-      }
-    }
-
-    debugPrint('🗺️ Created route with ${orderedPoints.length} chronologically ordered points');
-    return orderedPoints;
   }
+
+  debugPrint('🗺️ Created TRIP ROUTE with ${orderedPoints.length} points');
+  return orderedPoints;
+}
+
 
   // Street View functionality methods
   /// Toggles the street view mode on/off
