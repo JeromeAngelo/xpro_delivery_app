@@ -37,10 +37,10 @@ class _DeliveryUsersListViewState extends State<AllUsersView> {
         '📱 AllUsersView initState - Current state: ${currentState.runtimeType}',
       );
 
-      // Trigger loading for appropriate states
+      // Trigger loading ONLY for appropriate states
+      // DO NOT trigger when UserAuthenticated - this preserves auth state!
       if (currentState is GeneralUserInitial ||
-          currentState is GeneralUserError ||
-          currentState is UserAuthenticated) {
+          currentState is GeneralUserError) {
         debugPrint(
           '🔄 Triggering GetAllUsersEvent from initState - State: ${currentState.runtimeType}',
         );
@@ -49,12 +49,15 @@ class _DeliveryUsersListViewState extends State<AllUsersView> {
         debugPrint('✅ Users already loaded, skipping API call');
       } else if (currentState is GeneralUserLoading) {
         debugPrint('⏳ Users currently loading, skipping API call');
+      } else if (currentState is UserAuthenticated) {
+        debugPrint('✅ User authenticated, triggering GetAllUsersEvent');
+        // Still trigger the event, but the state should maintain auth info
+        context.read<GeneralUserBloc>().add(const GetAllUsersEvent());
       } else {
         debugPrint(
           '⚠️ Unexpected state in initState: ${currentState.runtimeType}',
         );
-        // Trigger loading anyway for unexpected states
-        context.read<GeneralUserBloc>().add(const GetAllUsersEvent());
+        // For unexpected states, show error instead of triggering
       }
     });
   }
@@ -136,19 +139,30 @@ class _DeliveryUsersListViewState extends State<AllUsersView> {
             // Handle UserAuthenticated state - this might be the "unknown state"
             if (state is UserAuthenticated) {
               debugPrint(
-                '📱 BlocBuilder: UserAuthenticated state - showing loading, initState will handle data loading',
+                '📱 BlocBuilder: UserAuthenticated state - showing loading and triggering data load',
               );
 
-              // Don't trigger events during build - let initState handle it
-              // Just show loading state
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading users...'),
-                  ],
+              // Show loading while we fetch users
+              return SafeArea(
+                child: SingleChildScrollView(
+                  child: DeliveryUserDataTable(
+                    users: [],
+                    isLoading: true,
+                    currentPage: _currentPage,
+                    totalPages: _totalPages,
+                    onPageChanged: (page) {
+                      setState(() {
+                        _currentPage = page;
+                      });
+                    },
+                    searchController: _searchController,
+                    searchQuery: _searchQuery,
+                    onSearchChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
                 ),
               );
             }

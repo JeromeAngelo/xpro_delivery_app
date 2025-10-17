@@ -60,6 +60,11 @@ class _TripTicketSpecificTripViewState
   bool _isDeliveryDataLoading = true;
   String? _coordinatesErrorMessage;
   String? _deliveryDataErrorMessage;
+  
+  // Add timeout timers
+  Timer? _coordinatesLoadingTimer;
+  Timer? _deliveryDataLoadingTimer;
+  Timer? _mapLoadingTimer;
 
   // Customer pagination state
   int _customerCurrentPage = 1;
@@ -86,6 +91,12 @@ class _TripTicketSpecificTripViewState
 
   void _loadTripCoordinatesForMap() {
     debugPrint('🔄 Loading trip coordinates for map...');
+    
+    // Cancel any existing timer
+    _coordinatesLoadingTimer?.cancel();
+    
+    if (!mounted) return;
+    
     setState(() {
       _isCoordinatesLoading = true;
       _coordinatesErrorMessage = null;
@@ -95,6 +106,17 @@ class _TripTicketSpecificTripViewState
     context.read<TripCoordinatesUpdateBloc>().add(
       GetTripCoordinatesByTripIdEvent(widget.tripId),
     );
+    
+    // Set timeout - if loading doesn't complete in 10 seconds, force stop loading
+    _coordinatesLoadingTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted && _isCoordinatesLoading) {
+        debugPrint('⏱️ Coordinates loading timeout - forcing completion');
+        setState(() {
+          _isCoordinatesLoading = false;
+          _coordinatesErrorMessage = 'Loading timeout - using cached data';
+        });
+      }
+    });
   }
 
   @override
@@ -126,6 +148,12 @@ class _TripTicketSpecificTripViewState
   // Update the _loadTripUpdatesForMap method
   void _loadTripUpdatesForMap() {
     debugPrint('🔄 Loading trip updates for map...');
+    
+    // Cancel any existing timer
+    _mapLoadingTimer?.cancel();
+    
+    if (!mounted) return;
+    
     setState(() {
       _isMapLoading = true;
       _mapErrorMessage = null;
@@ -133,6 +161,17 @@ class _TripTicketSpecificTripViewState
 
     // Load trip updates
     context.read<TripUpdatesBloc>().add(GetTripUpdatesEvent(widget.tripId));
+    
+    // Set timeout - if loading doesn't complete in 10 seconds, force stop loading
+    _mapLoadingTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted && _isMapLoading) {
+        debugPrint('⏱️ Trip updates loading timeout - forcing completion');
+        setState(() {
+          _isMapLoading = false;
+          _mapErrorMessage = 'Loading timeout - using cached data';
+        });
+      }
+    });
   }
 
   // Update the _startMapRefreshTimer method
@@ -156,6 +195,9 @@ class _TripTicketSpecificTripViewState
   @override
   void dispose() {
     _mapRefreshTimer?.cancel();
+    _coordinatesLoadingTimer?.cancel();
+    _deliveryDataLoadingTimer?.cancel();
+    _mapLoadingTimer?.cancel();
     _customerSearchController.dispose();
     super.dispose();
   }
@@ -480,6 +522,11 @@ class _TripTicketSpecificTripViewState
   Widget _buildTripMapWidget(TripEntity trip) {
     return BlocConsumer<DeliveryDataBloc, DeliveryDataState>(
       listener: (context, deliveryState) {
+        // Cancel timeout timer when we get a response
+        _deliveryDataLoadingTimer?.cancel();
+        
+        if (!mounted) return;
+        
         if (deliveryState is DeliveryDataByTripLoaded && deliveryState.tripId == widget.tripId) {
           setState(() {
             _deliveryData = deliveryState.deliveryData;
@@ -498,11 +545,27 @@ class _TripTicketSpecificTripViewState
             _isDeliveryDataLoading = true;
             _deliveryDataErrorMessage = null;
           });
+          
+          // Set timeout for delivery data loading
+          _deliveryDataLoadingTimer = Timer(const Duration(seconds: 10), () {
+            if (mounted && _isDeliveryDataLoading) {
+              debugPrint('⏱️ Delivery data loading timeout - forcing completion');
+              setState(() {
+                _isDeliveryDataLoading = false;
+                _deliveryDataErrorMessage = 'Loading timeout - using cached data';
+              });
+            }
+          });
         }
       },
       builder: (context, deliveryState) {
         return BlocConsumer<TripUpdatesBloc, TripUpdatesState>(
           listener: (context, state) {
+            // Cancel timeout timer when we get a response
+            _mapLoadingTimer?.cancel();
+            
+            if (!mounted) return;
+            
             if (state is TripUpdatesError) {
               setState(() {
                 _mapErrorMessage = state.message;
@@ -513,8 +576,15 @@ class _TripTicketSpecificTripViewState
               setState(() {
                 _tripUpdates = state.updates;
                 _isMapLoading = false;
+                _mapErrorMessage = null;
               });
               debugPrint('✅ Loaded ${_tripUpdates.length} trip updates');
+            } else if (state is TripUpdatesLoading) {
+              if (!mounted) return;
+              setState(() {
+                _isMapLoading = true;
+                _mapErrorMessage = null;
+              });
             }
           },
           builder: (context, updatesState) {
@@ -523,6 +593,11 @@ class _TripTicketSpecificTripViewState
               TripCoordinatesUpdateState
             >(
               listener: (context, state) {
+                // Cancel timeout timer when we get a response
+                _coordinatesLoadingTimer?.cancel();
+                
+                if (!mounted) return;
+                
                 if (state is TripCoordinatesUpdateError) {
                   setState(() {
                     _coordinatesErrorMessage = state.message;
@@ -533,6 +608,7 @@ class _TripTicketSpecificTripViewState
                   setState(() {
                     _tripCoordinates = state.coordinates;
                     _isCoordinatesLoading = false;
+                    _coordinatesErrorMessage = null;
                   });
                   debugPrint(
                     '✅ Loaded ${_tripCoordinates.length} trip coordinates',
@@ -541,8 +617,15 @@ class _TripTicketSpecificTripViewState
                   setState(() {
                     _tripCoordinates = [];
                     _isCoordinatesLoading = false;
+                    _coordinatesErrorMessage = null;
                   });
                   debugPrint('ℹ️ No trip coordinates found');
+                } else if (state is TripCoordinatesUpdateLoading) {
+                  if (!mounted) return;
+                  setState(() {
+                    _isCoordinatesLoading = true;
+                    _coordinatesErrorMessage = null;
+                  });
                 }
               },
               builder: (context, coordinatesState) {

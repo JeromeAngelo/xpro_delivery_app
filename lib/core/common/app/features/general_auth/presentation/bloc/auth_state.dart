@@ -28,11 +28,12 @@ class UserUnauthenticated extends GeneralUserState {
 
 class AllUsersLoaded extends GeneralUserState {
   final List<GeneralUserEntity> users;
+  final GeneralUserEntity? authenticatedUser;
 
-  const AllUsersLoaded(this.users);
+  const AllUsersLoaded(this.users, {this.authenticatedUser});
 
   @override
-  List<Object> get props => [users];
+  List<Object> get props => [users, if (authenticatedUser != null) authenticatedUser!];
 }
 
 class GeneralUserLoaded extends GeneralUserState {

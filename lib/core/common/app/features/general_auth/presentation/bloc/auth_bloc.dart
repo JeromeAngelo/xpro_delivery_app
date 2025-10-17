@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/domain/entity/users_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/domain/usecases/create_users.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/domain/usecases/delete_all_users.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/domain/usecases/delete_users.dart';
@@ -21,6 +22,9 @@ class GeneralUserBloc extends Bloc<GeneralUserEvent, GeneralUserState> {
   final DeleteAllUsers _deleteAllUsers;
   final SignIn _signIn;
   final SignOut _signOut;
+
+  // Store the currently authenticated user
+  GeneralUserEntity? _authenticatedUser;
 
   GeneralUserBloc({
     required GetAllUsers getAllUsers,
@@ -69,6 +73,7 @@ class GeneralUserBloc extends Bloc<GeneralUserEvent, GeneralUserState> {
       },
       (user) {
         debugPrint('✅ Sign in successful for: ${user.email}');
+        _authenticatedUser = user; // Store authenticated user
         emit(UserAuthenticated(user));
       },
     );
@@ -90,6 +95,7 @@ class GeneralUserBloc extends Bloc<GeneralUserEvent, GeneralUserState> {
       },
       (_) {
         debugPrint('✅ Sign out successful');
+        _authenticatedUser = null; // Clear authenticated user
         emit(const UserSignOutSuccess());
         emit(const UserUnauthenticated());
       },
@@ -111,7 +117,8 @@ class GeneralUserBloc extends Bloc<GeneralUserEvent, GeneralUserState> {
       },
       (users) {
         debugPrint('✅ BLOC: Successfully retrieved ${users.length} users');
-        emit(AllUsersLoaded(users));
+        debugPrint('🔐 BLOC: Authenticated user: ${_authenticatedUser?.email ?? "none"}');
+        emit(AllUsersLoaded(users, authenticatedUser: _authenticatedUser));
       },
     );
   }

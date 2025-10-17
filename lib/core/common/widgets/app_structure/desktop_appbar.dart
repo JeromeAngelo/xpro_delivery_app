@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/domain/entity/users_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/presentation/bloc/auth_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/presentation/bloc/auth_event.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/presentation/bloc/auth_state.dart';
@@ -53,9 +54,11 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
         bool isLoading = false;
         bool hasError = false;
         String? errorMessage;
+        GeneralUserEntity? currentUser;
 
         // Comprehensive state checking
         if (state is UserAuthenticated) {
+          currentUser = state.user;
           userName =
               state.user.name ?? state.user.email?.split('@')[0] ?? 'User';
           userEmail = state.user.email;
@@ -65,7 +68,26 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
           debugPrint(
             '🔐 Desktop AppBar: User authenticated - ${state.user.email}',
           );
+        } else if (state is AllUsersLoaded) {
+          // Get authenticated user from AllUsersLoaded state
+          currentUser = state.authenticatedUser;
+          if (currentUser != null) {
+            userName =
+                currentUser.name ?? currentUser.email?.split('@')[0] ?? 'User';
+            userEmail = currentUser.email;
+            userAvatar = currentUser.profilePic;
+            userRole = currentUser.role?.name;
+            isAuthenticated = true;
+            debugPrint(
+              '✅ Desktop AppBar: User authenticated (AllUsersLoaded) - ${currentUser.email}',
+            );
+          } else {
+            userName = 'Guest';
+            isAuthenticated = false;
+            debugPrint('⚠️ Desktop AppBar: AllUsersLoaded but no authenticated user');
+          }
         } else if (state is GeneralUserLoaded) {
+          currentUser = state.user;
           userName =
               state.user.name ?? state.user.email?.split('@')[0] ?? 'User';
           userEmail = state.user.email;
@@ -73,6 +95,15 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
           userRole = state.user.role?.name;
           isAuthenticated = true;
           debugPrint('✅ Desktop AppBar: User loaded - ${state.user.email}');
+        } else if (state is UserByIdLoaded) {
+          currentUser = state.user;
+          userName =
+              state.user.name ?? state.user.email?.split('@')[0] ?? 'User';
+          userEmail = state.user.email;
+          userAvatar = state.user.profilePic;
+          userRole = state.user.role?.name;
+          isAuthenticated = true;
+          debugPrint('✅ Desktop AppBar: User by ID loaded - ${state.user.email}');
         } else if (state is GeneralUserLoading) {
           isLoading = true;
           userName = 'Loading...';

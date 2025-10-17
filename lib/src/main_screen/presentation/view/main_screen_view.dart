@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/domain/entity/users_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/presentation/bloc/auth_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/presentation/bloc/auth_event.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/general_auth/presentation/bloc/auth_state.dart';
@@ -217,9 +218,25 @@ class _MainScreenViewState extends State<MainScreenView> {
             builder: (context, state) {
               debugPrint('🏠 MainScreen - Auth state: ${state.runtimeType}');
 
+              // Extract user info from various authenticated states
+              GeneralUserEntity? currentUser;
+              
               if (state is UserAuthenticated) {
+                currentUser = state.user;
+              } else if (state is AllUsersLoaded) {
+                // Get authenticated user from AllUsersLoaded state
+                currentUser = state.authenticatedUser;
+                debugPrint('✅ User is authenticated (AllUsersLoaded state): ${currentUser?.email ?? "unknown"}');
+              } else if (state is GeneralUserLoaded) {
+                currentUser = state.user;
+              } else if (state is UserByIdLoaded) {
+                currentUser = state.user;
+              }
+
+              // Show user profile if we have current user
+              if (currentUser != null) {
                 // Get the user's name or email
-                final userName = state.user.name ?? state.user.email ?? 'User';
+                final userName = currentUser.name ?? currentUser.email ?? 'User';
                 final firstLetter =
                     userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
 
@@ -267,7 +284,7 @@ class _MainScreenViewState extends State<MainScreenView> {
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(state.user.email ?? 'n/a'),
+                                Text(currentUser!.email ?? 'N/A'),
                               ],
                             ),
                           ),
@@ -348,20 +365,20 @@ class _MainScreenViewState extends State<MainScreenView> {
                                       leading: const Icon(Icons.person),
                                       title: const Text('Name'),
                                       subtitle: Text(
-                                        state.user.name ?? 'Not set',
+                                        currentUser!.name ?? 'Not set',
                                       ),
                                     ),
                                     ListTile(
                                       leading: const Icon(Icons.email),
                                       title: const Text('Email'),
                                       subtitle: Text(
-                                        state.user.email ?? 'Not set',
+                                        currentUser.email ?? 'Not set',
                                       ),
                                     ),
                                     // ListTile(
                                     //   leading: const Icon(Icons.badge),
                                     //   title: const Text('Role'),
-                                    //   subtitle: Text(state.user.role ?? 'User'),
+                                    //   subtitle: Text(currentUser?.role ?? 'User'),
                                     // ),
                                   ],
                                 ),

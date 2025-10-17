@@ -243,6 +243,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
     required String deliveryId,
   }) async {
     try {
+      final startTime = DateTime.now();
       debugPrint(
         '🔄 Adding customer and all their invoices from preset group $presetGroupId to delivery $deliveryId',
       );
@@ -263,14 +264,16 @@ class InvoicePresetGroupRemoteDataSourceImpl
 
       debugPrint('✅ Found ${invoicesData.length} invoices in preset group');
 
-      // 2. Group invoices by customer ID
+      // 2. Group invoices by customer ID and extract customer IDs in one pass
       Map<String, List<RecordModel>> invoicesByCustomer = {};
+      Set<String> customerIds = {};
 
       for (var invoiceData in invoicesData) {
         final invoiceRecord = invoiceData as RecordModel;
         final customerId = invoiceRecord.data['customer']?.toString();
 
         if (customerId != null && customerId.isNotEmpty) {
+          customerIds.add(customerId);
           if (!invoicesByCustomer.containsKey(customerId)) {
             invoicesByCustomer[customerId] = [];
           }
@@ -282,164 +285,262 @@ class InvoicePresetGroupRemoteDataSourceImpl
         '✅ Found ${invoicesByCustomer.length} different customers in preset group',
       );
 
-      // 3. Process each customer separately
-      for (var customerEntry in invoicesByCustomer.entries) {
-        final customerId = customerEntry.key;
-        final customerInvoicesInGroup = customerEntry.value;
-
-        debugPrint(
-          '🔄 Processing customer $customerId with ${customerInvoicesInGroup.length} invoices from preset group',
-        );
-
-        // Get ONLY invoices for this customer that are also inside the preset group
-        final allInvoiceIds = customerInvoicesInGroup.map((invoice) => invoice.id).toList();
-        
-        debugPrint(
-          '✅ Using ${allInvoiceIds.length} invoices for customer $customerId from preset group $presetGroupId',
-        );
-        debugPrint('📦 Invoice IDs to attach: $allInvoiceIds');
-
-
-        // 4. Get customer data for enrichment
-        RecordModel? customerRecord;
-        try {
-          customerRecord = await _pocketBaseClient
-              .collection('customerData')
-              .getOne(customerId);
-          debugPrint('✅ Found customer: ${customerRecord.data['name']}');
-        } catch (e) {
-          debugPrint('⚠️ Could not fetch customer data for ID $customerId: $e');
-        }
-
-        // 5. Check if delivery already exists or create/update
-        String actualDeliveryId = deliveryId;
-
-        try {
-          // Try to get existing delivery
-          await _pocketBaseClient.collection('deliveryData').getOne(deliveryId);
-
-          debugPrint('✅ Found existing delivery: $deliveryId');
-
-          // Update existing delivery with customer and all their invoices
-          final updateData = <String, dynamic>{
-            'customer': customerId,
-            'invoices':
-                List<String>.from(allInvoiceIds), // Multiple relation - all customer invoices
-            'updated': DateTime.now().toIso8601String(),
-          };
-
-          // Add enriched customer data if available
-          if (customerRecord != null) {
-            updateData.addAll({
-              'storeName': customerRecord.data['name'] ?? '',
-            //  'refID': customerRecord.data['refID'] ?? '',
-              'province': customerRecord.data['province'] ?? '',
-              'municipality': customerRecord.data['municipality'] ?? '',
-              'barangay': customerRecord.data['barangay'] ?? '',
-              'paymentMode': customerRecord.data['paymentMode'] ?? '',
-              'ownerName': customerRecord.data['ownerName'] ?? '',
-              'contactNumber': customerRecord.data['contactNumber'] ?? '',
-            });
-          }
-
-          await _pocketBaseClient
-              .collection('deliveryData')
-              .update(deliveryId, body: updateData);
-
-          debugPrint(
-            '✅ Updated existing delivery with ${allInvoiceIds.length} invoices',
-          );
-        } catch (e) {
-          // Delivery doesn't exist, create new one
-          debugPrint('📝 Delivery not found, creating new delivery');
-
-          final deliveryNumber = _generateDeliveryNumber();
-
-          final newDeliveryData = <String, dynamic>{
-            'deliveryNumber': deliveryNumber,
-            'customer': customerId,
-            'invoices':
-                allInvoiceIds, // Multiple relation - all customer invoices
-            'hasTrip': false,
-            'invoiceStatus': 'truck',
-            'created': DateTime.now().toIso8601String(),
-            'updated': DateTime.now().toIso8601String(),
-          };
-
-          // Add enriched customer data if available
-          if (customerRecord != null) {
-            newDeliveryData.addAll({
-              'storeName': customerRecord.data['name'] ?? '',
-              'refID': presetGroupRecord.data['refID'] ?? '',
-              'province': customerRecord.data['province'] ?? '',
-              'municipality': customerRecord.data['municipality'] ?? '',
-              'barangay': customerRecord.data['barangay'] ?? '',
-              'paymentMode': customerRecord.data['paymentMode'] ?? '',
-              'ownerName': customerRecord.data['ownerName'] ?? '',
-              'contactNumber': customerRecord.data['contactNumber'] ?? '',
-            });
-          }
-
-          final newDelivery = await _pocketBaseClient
-              .collection('deliveryData')
-              .create(body: newDeliveryData);
-
-          // Update the actual delivery ID to use the newly created one
-          actualDeliveryId = newDelivery.id;
-
-          debugPrint(
-            '✅ Created new delivery ${newDelivery.id} with ${allInvoiceIds.length} invoices',
-          );
-        }
-
-        // 6. Update all customer invoices to reference the delivery and create individual invoice status records
-        debugPrint(
-          '🔄 Creating individual invoiceStatus records for ${allInvoiceIds.length} invoices...',
-        );
-
-        for (int i = 0; i < allInvoiceIds.length; i++) {
-          final invoiceId = allInvoiceIds[i];
-
-          debugPrint(
-            '📝 Processing invoice ${i + 1}/${allInvoiceIds.length}: $invoiceId',
-          );
-
-          // Update invoice to reference the delivery
-          await _pocketBaseClient
-              .collection('invoiceData')
-              .update(
-                invoiceId,
-                body: {
-                  'deliveryData': actualDeliveryId,
-                  'customer': customerId,
-                },
-              );
-
-          // Create individual invoice status record for this invoice
-          await addInvoiceDataToInvoiceStatus(invoiceId: invoiceId);
-
-          debugPrint('✅ Created invoiceStatus record for invoice $invoiceId');
-        }
-
-        debugPrint(
-          '✅ Successfully created ${allInvoiceIds.length} individual invoiceStatus records',
-        );
-
-        // 7. Collect all invoice items for the invoices and add to delivery
-        await _addInvoiceItemsToDelivery(actualDeliveryId, allInvoiceIds);
-
-        debugPrint(
-          '✅ Successfully added customer $customerId and ${allInvoiceIds.length} invoices to delivery $actualDeliveryId',
-        );
-      }
-
+      // 3. Fetch ALL customer data in parallel (batch operation)
       debugPrint(
-        '✅ Completed processing all customers in preset group $presetGroupId',
+        '🔄 Fetching ${customerIds.length} customer records in parallel...',
+      );
+      final customerFutures =
+          customerIds.map((customerId) {
+            return _pocketBaseClient
+                .collection('customerData')
+                .getOne(customerId)
+                .catchError((e) {
+                  debugPrint(
+                    '⚠️ Could not fetch customer data for ID $customerId: $e',
+                  );
+                  // ignore: invalid_return_type_for_catch_error
+                  return null;
+                });
+          }).toList();
+
+      final customerRecords = await Future.wait(customerFutures);
+      final Map<String, RecordModel?> customerMap = {};
+      int index = 0;
+      for (var customerId in customerIds) {
+        customerMap[customerId] = customerRecords[index];
+        index++;
+      }
+      debugPrint('✅ Fetched customer data in parallel');
+
+      // 4. Process each customer in parallel
+      debugPrint(
+        '🔄 Processing ${invoicesByCustomer.length} customers in parallel...',
+      );
+
+      final customerProcessingFutures =
+          invoicesByCustomer.entries.map((customerEntry) async {
+            final customerId = customerEntry.key;
+            final customerInvoicesInGroup = customerEntry.value;
+
+            debugPrint(
+              '🔄 Processing customer $customerId with ${customerInvoicesInGroup.length} invoices',
+            );
+
+            final allInvoiceIds =
+                customerInvoicesInGroup.map((invoice) => invoice.id).toList();
+            final customerRecord = customerMap[customerId];
+
+            // 5. Check if delivery exists or create new one
+            String actualDeliveryId = deliveryId;
+
+            try {
+              // Try to get existing delivery
+              await _pocketBaseClient
+                  .collection('deliveryData')
+                  .getOne(deliveryId);
+
+              // Update existing delivery
+              final updateData = <String, dynamic>{
+                'customer': customerId,
+                'invoices': List<String>.from(allInvoiceIds),
+                'updated': DateTime.now().toIso8601String(),
+              };
+
+              if (customerRecord != null) {
+                updateData.addAll({
+                  'storeName': customerRecord.data['name'] ?? '',
+                  'province': customerRecord.data['province'] ?? '',
+                  'municipality': customerRecord.data['municipality'] ?? '',
+                  'barangay': customerRecord.data['barangay'] ?? '',
+                  'paymentMode': customerRecord.data['paymentMode'] ?? '',
+                  'ownerName': customerRecord.data['ownerName'] ?? '',
+                  'contactNumber': customerRecord.data['contactNumber'] ?? '',
+                });
+              }
+
+              await _pocketBaseClient
+                  .collection('deliveryData')
+                  .update(deliveryId, body: updateData);
+
+              debugPrint(
+                '✅ Updated existing delivery with ${allInvoiceIds.length} invoices',
+              );
+            } catch (e) {
+              // Create new delivery
+              final deliveryNumber = _generateDeliveryNumber();
+
+              final newDeliveryData = <String, dynamic>{
+                'deliveryNumber': deliveryNumber,
+                'customer': customerId,
+                'invoices': allInvoiceIds,
+                'hasTrip': false,
+                'invoiceStatus': 'truck',
+                'created': DateTime.now().toIso8601String(),
+                'updated': DateTime.now().toIso8601String(),
+              };
+
+              if (customerRecord != null) {
+                newDeliveryData.addAll({
+                  'storeName': customerRecord.data['name'] ?? '',
+                  'refID': presetGroupRecord.data['refID'] ?? '',
+                  'province': customerRecord.data['province'] ?? '',
+                  'municipality': customerRecord.data['municipality'] ?? '',
+                  'barangay': customerRecord.data['barangay'] ?? '',
+                  'paymentMode': customerRecord.data['paymentMode'] ?? '',
+                  'ownerName': customerRecord.data['ownerName'] ?? '',
+                  'contactNumber': customerRecord.data['contactNumber'] ?? '',
+                });
+              }
+
+              final newDelivery = await _pocketBaseClient
+                  .collection('deliveryData')
+                  .create(body: newDeliveryData);
+
+              actualDeliveryId = newDelivery.id;
+              debugPrint('✅ Created new delivery ${newDelivery.id}');
+            }
+
+            // 6. Process all invoices in parallel - MAJOR PERFORMANCE BOOST
+            debugPrint(
+              '🔄 Processing ${allInvoiceIds.length} invoices in parallel...',
+            );
+
+            final invoiceProcessingFutures =
+                allInvoiceIds.map((invoiceId) async {
+                  // Update invoice and create status in parallel
+                  await Future.wait([
+                    // Update invoice data
+                    _pocketBaseClient
+                        .collection('invoiceData')
+                        .update(
+                          invoiceId,
+                          body: {
+                            'deliveryData': actualDeliveryId,
+                            'customer': customerId,
+                          },
+                        ),
+                    // Create invoice status (optimized version without extra query)
+                    _createInvoiceStatusOptimized(
+                      invoiceId: invoiceId,
+                      customerId: customerId,
+                    ),
+                  ]);
+                }).toList();
+
+            await Future.wait(invoiceProcessingFutures);
+            debugPrint(
+              '✅ Processed ${allInvoiceIds.length} invoices in parallel',
+            );
+
+            // 7. Collect invoice items (optimized with single query)
+            await _addInvoiceItemsToDeliveryOptimized(
+              actualDeliveryId,
+              allInvoiceIds,
+            );
+
+            debugPrint(
+              '✅ Completed customer $customerId with ${allInvoiceIds.length} invoices',
+            );
+          }).toList();
+
+      // Wait for all customers to be processed
+      await Future.wait(customerProcessingFutures);
+
+      final duration = DateTime.now().difference(startTime);
+      debugPrint(
+        '✅ Completed processing all customers in preset group $presetGroupId in ${duration.inSeconds}s',
       );
     } catch (e) {
       debugPrint('❌ Failed to add invoices to delivery: ${e.toString()}');
       throw ServerException(
         message: 'Failed to add invoices to delivery: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
+
+  /// Optimized version of creating invoice status without fetching invoice again
+  Future<void> _createInvoiceStatusOptimized({
+    required String invoiceId,
+    required String customerId,
+  }) async {
+    try {
+      // Create invoice status directly without fetching invoice
+      await _pocketBaseClient
+          .collection('invoiceStatus')
+          .create(
+            body: {
+              'invoiceData': invoiceId,
+              'customerData': customerId,
+              'status': 'assigned',
+              'tripStatus': 'pending',
+            },
+          );
+
+      // Update invoice with status reference in a single query
+      final records = await _pocketBaseClient
+          .collection('invoiceStatus')
+          .getList(
+            page: 1,
+            perPage: 1,
+            filter: 'invoiceData = "$invoiceId" && status = "assigned"',
+            sort: '-created',
+          );
+
+      if (records.items.isNotEmpty) {
+        final createdStatusId = records.items.first.id;
+        await _pocketBaseClient
+            .collection('invoiceData')
+            .update(invoiceId, body: {'invoiceStatus': createdStatusId});
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to create invoice status for $invoiceId: $e');
+      // Don't throw - continue processing other invoices
+    }
+  }
+
+  /// Optimized version using single query with OR filter
+  Future<void> _addInvoiceItemsToDeliveryOptimized(
+    String deliveryId,
+    List<String> invoiceIds,
+  ) async {
+    try {
+      if (invoiceIds.isEmpty) return;
+
+      debugPrint(
+        '🔄 Collecting invoice items for ${invoiceIds.length} invoices (optimized)...',
+      );
+
+      // Build OR filter for all invoices in one query
+      final filterParts = invoiceIds.map((id) => 'invoice = "$id"').toList();
+      final filter = filterParts.join(' || ');
+
+      // Single query to get ALL invoice items at once
+      final invoiceItemsResult = await _pocketBaseClient
+          .collection('invoiceItems')
+          .getFullList(filter: filter, sort: 'created');
+
+      final allInvoiceItemIds =
+          invoiceItemsResult.map((item) => item.id).toList();
+
+      debugPrint(
+        '✅ Collected ${allInvoiceItemIds.length} invoice items in single query',
+      );
+
+      // Update delivery with all items
+      if (allInvoiceItemIds.isNotEmpty) {
+        await _pocketBaseClient
+            .collection('deliveryData')
+            .update(deliveryId, body: {'invoiceItems': allInvoiceItemIds});
+
+        debugPrint(
+          '✅ Added ${allInvoiceItemIds.length} invoice items to delivery',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to add invoice items: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to add invoice items: ${e.toString()}',
         statusCode: '500',
       );
     }
@@ -531,64 +632,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
     );
   }
 
-  // Helper method to collect all invoice items for the given invoices and add to delivery
-  Future<void> _addInvoiceItemsToDelivery(
-    String deliveryId,
-    List<String> invoiceIds,
-  ) async {
-    try {
-      debugPrint(
-        '🔄 Collecting invoice items for ${invoiceIds.length} invoices...',
-      );
-
-      List<String> allInvoiceItemIds = [];
-
-      // For each invoice, find all its invoice items
-      for (int i = 0; i < invoiceIds.length; i++) {
-        final invoiceId = invoiceIds[i];
-        debugPrint(
-          '📝 Finding invoice items for invoice ${i + 1}/${invoiceIds.length}: $invoiceId',
-        );
-
-        // Query invoice items where invoice matches this invoice ID
-        final invoiceItemsResult = await _pocketBaseClient
-            .collection('invoiceItems')
-            .getFullList(filter: 'invoice = "$invoiceId"', sort: 'created');
-
-        // Collect the invoice item IDs
-        final invoiceItemIds =
-            invoiceItemsResult.map((item) => item.id).toList();
-        allInvoiceItemIds.addAll(invoiceItemIds);
-
-        debugPrint(
-          '✅ Found ${invoiceItemIds.length} invoice items for invoice $invoiceId',
-        );
-      }
-
-      debugPrint(
-        '✅ Collected total of ${allInvoiceItemIds.length} invoice items from all invoices',
-      );
-
-      // Update the delivery to include all invoice items
-      if (allInvoiceItemIds.isNotEmpty) {
-        await _pocketBaseClient
-            .collection('deliveryData')
-            .update(deliveryId, body: {'invoiceItems': allInvoiceItemIds});
-
-        debugPrint(
-          '✅ Added ${allInvoiceItemIds.length} invoice items to delivery $deliveryId',
-        );
-      } else {
-        debugPrint('ℹ️ No invoice items found for any of the invoices');
-      }
-    } catch (e) {
-      debugPrint('❌ Failed to add invoice items to delivery: ${e.toString()}');
-      throw ServerException(
-        message: 'Failed to add invoice items to delivery: ${e.toString()}',
-        statusCode: '500',
-      );
-    }
-  }
+  
 
   @override
   Future<List<InvoicePresetGroupModel>> searchPresetGroupByRefId(
