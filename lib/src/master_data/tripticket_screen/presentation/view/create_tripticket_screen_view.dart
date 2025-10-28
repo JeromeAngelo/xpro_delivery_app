@@ -131,8 +131,13 @@ class _CreateTripTicketScreenViewState
     }
 
     // Check if more than 2 helpers are selected
-    if (_selectedHelpers.length > 2) {
+    if (_selectedHelpers.length > 3) {
       CoreUtils.showSnackBar(context, 'Maximum of 2 helpers allowed');
+      return;
+    }
+
+     if (_deliveryDate == null) {
+      CoreUtils.showSnackBar(context, 'Please select a delivery date');
       return;
     }
 

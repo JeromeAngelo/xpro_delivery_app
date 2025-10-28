@@ -45,7 +45,9 @@ class _VehicleSelectionDialogState extends State<VehicleSelectionDialog> {
       final make = vehicle.make?.toLowerCase() ?? '';
       final name = vehicle.name?.toLowerCase() ?? '';
       final query = _searchQuery.toLowerCase();
-      return plateNo.contains(query) || make.contains(query) || name.contains(query);
+      return plateNo.contains(query) ||
+          make.contains(query) ||
+          name.contains(query);
     }).toList();
   }
 
@@ -53,9 +55,7 @@ class _VehicleSelectionDialogState extends State<VehicleSelectionDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 1200,
         height: 700,
@@ -72,6 +72,7 @@ class _VehicleSelectionDialogState extends State<VehicleSelectionDialog> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
                 ),
                 IconButton(
@@ -122,88 +123,115 @@ class _VehicleSelectionDialogState extends State<VehicleSelectionDialog> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(8),
                                 topRight: Radius.circular(8),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Available Vehicles',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
                           Expanded(
-                            child: filteredVehicles.isEmpty
-                                ? const Center(
-                                    child: Text(
-                                      'No vehicles found',
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    itemCount: filteredVehicles.length,
-                                    itemBuilder: (context, index) {
-                                      final vehicle = filteredVehicles[index];
-                                      final isSelected = _selectedVehicle?.id == vehicle.id;
+                            child:
+                                filteredVehicles.isEmpty
+                                    ? Center(
+                                      child: Text(
+                                        'No vehicles found',
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.error,
+                                        ),
+                                      ),
+                                    )
+                                    : ListView.builder(
+                                      itemCount: filteredVehicles.length,
+                                      itemBuilder: (context, index) {
+                                        final vehicle = filteredVehicles[index];
+                                        final isSelected =
+                                            _selectedVehicle?.id == vehicle.id;
 
-                                      return Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        child: Card(
-                                          color: isSelected
-                                              ? Colors.blue.shade50
-                                              : Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                            side: BorderSide(
-                                              color: isSelected
-                                                  ? Colors.blue
-                                                  : Colors.grey.shade300,
-                                              width: isSelected ? 2 : 1,
-                                            ),
+                                        return Container(
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
                                           ),
-                                          child: ListTile(
-                                            leading: CircleAvatar(
-                                              backgroundColor: Colors.blue.withOpacity(0.1),
-                                              child: const Icon(
-                                                Icons.local_shipping,
-                                                color: Colors.blue,
+                                          child: Card(
+                                            color:
+                                                isSelected
+                                                    ? Colors.blue.shade50
+                                                    : Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              side: BorderSide(
+                                                color:
+                                                    isSelected
+                                                        ? Colors.blue
+                                                        : Colors.grey.shade300,
+                                                width: isSelected ? 2 : 1,
                                               ),
                                             ),
-                                            title: Text(
-                                              vehicle.plateNo ?? '${vehicle.make} ${vehicle.name}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: isSelected ? Colors.blue.shade700 : Colors.black,
+                                            child: ListTile(
+                                              leading: CircleAvatar(
+                                                backgroundColor: Colors.blue
+                                                    .withOpacity(0.1),
+                                                child: const Icon(
+                                                  Icons.local_shipping,
+                                                  color: Colors.blue,
+                                                ),
                                               ),
+                                              title: Text(
+                                                vehicle.plateNo ??
+                                                    '${vehicle.make} ${vehicle.name}',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color:
+                                                      isSelected
+                                                          ? Colors.blue.shade700
+                                                          : Colors.black,
+                                                ),
+                                              ),
+                                              subtitle: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Make: ${vehicle.make ?? 'Unknown'}',
+                                                  ),
+                                                  Text(
+                                                    'Model: ${vehicle.name ?? 'Unknown'}',
+                                                  ),
+                                                  if (vehicle.weightCapacity !=
+                                                      null)
+                                                    Text(
+                                                      'Weight: ${vehicle.weightCapacity} kg',
+                                                    ),
+                                                  if (vehicle.volumeCapacity !=
+                                                      null)
+                                                    Text(
+                                                      'Volume: ${vehicle.volumeCapacity} m³',
+                                                    ),
+                                                ],
+                                              ),
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedVehicle = vehicle;
+                                                });
+                                              },
                                             ),
-                                            subtitle: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text('Make: ${vehicle.make ?? 'Unknown'}'),
-                                                Text('Model: ${vehicle.name ?? 'Unknown'}'),
-                                                if (vehicle.weightCapacity != null)
-                                                  Text('Weight: ${vehicle.weightCapacity} kg'),
-                                                if (vehicle.volumeCapacity != null)
-                                                  Text('Volume: ${vehicle.volumeCapacity} m³'),
-                                              ],
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                _selectedVehicle = vehicle;
-                                              });
-                                            },
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                                        );
+                                      },
+                                    ),
                           ),
                         ],
                       ),
@@ -227,7 +255,7 @@ class _VehicleSelectionDialogState extends State<VehicleSelectionDialog> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(8),
                                 topRight: Radius.circular(8),
@@ -244,26 +272,31 @@ class _VehicleSelectionDialogState extends State<VehicleSelectionDialog> {
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.all(16),
-                              child: _selectedVehicle != null
-                                  ? MultiBlocProvider(
-                                      providers: [
-                                        BlocProvider.value(
-                                          value: BlocProvider.of<DeliveryVehicleBloc>(context),
+                              child:
+                                  _selectedVehicle != null
+                                      ? MultiBlocProvider(
+                                        providers: [
+                                          BlocProvider.value(
+                                            value: BlocProvider.of<
+                                              DeliveryVehicleBloc
+                                            >(context),
+                                          ),
+                                          BlocProvider.value(
+                                            value: BlocProvider.of<
+                                              DeliveryDataBloc
+                                            >(context),
+                                          ),
+                                        ],
+                                        child: VehicleCapacityInfo(
+                                          vehicle: _selectedVehicle,
                                         ),
-                                        BlocProvider.value(
-                                          value: BlocProvider.of<DeliveryDataBloc>(context),
+                                      )
+                                      : const Center(
+                                        child: Text(
+                                          'Select a vehicle to view capacity information',
+                                          style: TextStyle(color: Colors.grey),
                                         ),
-                                      ],
-                                      child: VehicleCapacityInfo(
-                                        vehicle: _selectedVehicle,
                                       ),
-                                    )
-                                  : const Center(
-                                      child: Text(
-                                        'Select a vehicle to view capacity information',
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                    ),
                             ),
                           ),
                         ],
@@ -286,20 +319,23 @@ class _VehicleSelectionDialogState extends State<VehicleSelectionDialog> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _selectedVehicle != null
-                      ? () {
-                          // Add the selected vehicle to the list
-                          final updatedList = List<DeliveryVehicleModel>.from(
-                            widget.selectedVehicles,
-                          );
-                          if (!updatedList.contains(_selectedVehicle)) {
-                            updatedList.add(_selectedVehicle!);
+                  onPressed:
+                      _selectedVehicle != null
+                          ? () {
+                            // Add the selected vehicle to the list
+                            final updatedList = List<DeliveryVehicleModel>.from(
+                              widget.selectedVehicles,
+                            );
+                            if (!updatedList.contains(_selectedVehicle)) {
+                              updatedList.add(_selectedVehicle!);
+                            }
+                            widget.onVehiclesChanged(updatedList);
+                            widget.onVehicleSelectedForCapacityCheck(
+                              _selectedVehicle,
+                            );
+                            Navigator.of(context).pop();
                           }
-                          widget.onVehiclesChanged(updatedList);
-                          widget.onVehicleSelectedForCapacityCheck(_selectedVehicle);
-                          Navigator.of(context).pop();
-                        }
-                      : null,
+                          : null,
                   child: const Text('Select Vehicle'),
                 ),
               ],

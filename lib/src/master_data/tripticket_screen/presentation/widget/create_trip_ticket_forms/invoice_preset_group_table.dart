@@ -37,6 +37,10 @@ class _InvoicePresetGroupTableState extends State<InvoicePresetGroupTable> {
 
   @override
   Widget build(BuildContext context) {
+    final headerStyle = TextStyle(
+      fontWeight: FontWeight.bold,
+      color: Colors.black, // or any color you prefer
+    );
     // Add debug print to verify data at build time
     debugPrint(
       '🏗️ Building table with ${widget.presetGroups.length} preset groups',
@@ -73,11 +77,24 @@ class _InvoicePresetGroupTableState extends State<InvoicePresetGroupTable> {
                         isLoading: false,
                         columnBuilder:
                             (context) => [
-                              const DataColumn(label: Text('Select')),
-                              const DataColumn(label: Text('Ref ID')),
-                              const DataColumn(label: Text('Name')),
-                              const DataColumn(label: Text('Invoice Count')),
-                              const DataColumn(label: Text('Created Date')),
+                              DataColumn(
+                                label: Text('Select', style: headerStyle),
+                              ),
+                              DataColumn(
+                                label: Text('Ref ID', style: headerStyle),
+                              ),
+                              DataColumn(
+                                label: Text('Name', style: headerStyle),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Invoice Count',
+                                  style: headerStyle,
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text('Created Date', style: headerStyle),
+                              ),
                             ],
                         rowBuilder: (presetGroup, index) {
                           final isSelected = _selectedPresetGroupIds.contains(

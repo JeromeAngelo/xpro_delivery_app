@@ -27,25 +27,20 @@ class VehicleForm extends StatefulWidget {
 class _VehicleFormState extends State<VehicleForm> {
   DeliveryVehicleModel? _selectedVehicleForCapacityCheck;
 
-
-
-
-
-
-
   void _showVehicleSelectionDialog() {
     showDialog(
       context: context,
-      builder: (context) => VehicleSelectionDialog(
-        availableVehicles: widget.availableVehicles,
-        selectedVehicles: widget.selectedVehicles,
-        onVehiclesChanged: widget.onVehiclesChanged,
-        onVehicleSelectedForCapacityCheck: (vehicle) {
-          setState(() {
-            _selectedVehicleForCapacityCheck = vehicle;
-          });
-        },
-      ),
+      builder:
+          (context) => VehicleSelectionDialog(
+            availableVehicles: widget.availableVehicles,
+            selectedVehicles: widget.selectedVehicles,
+            onVehiclesChanged: widget.onVehiclesChanged,
+            onVehicleSelectedForCapacityCheck: (vehicle) {
+              setState(() {
+                _selectedVehicleForCapacityCheck = vehicle;
+              });
+            },
+          ),
     );
   }
 
@@ -146,9 +141,10 @@ class _VehicleFormState extends State<VehicleForm> {
                               ? 'Select Vehicle'
                               : '${widget.selectedVehicles.length} vehicle(s) selected',
                           style: TextStyle(
-                            color: widget.selectedVehicles.isEmpty
-                                ? Colors.grey
-                                : Colors.black,
+                            color:
+                                widget.selectedVehicles.isEmpty
+                                    ? Colors.grey
+                                    : Colors.black,
                           ),
                         ),
                         Icon(
@@ -242,21 +238,23 @@ class _VehicleFormState extends State<VehicleForm> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: widget.selectedVehicles.map((vehicle) {
-                    return Chip(
-                      label: Text(
-                        vehicle.plateNo ?? '${vehicle.make} ${vehicle.name}',
-                      ),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        final updatedList = List<DeliveryVehicleModel>.from(
-                          widget.selectedVehicles,
+                  children:
+                      widget.selectedVehicles.map((vehicle) {
+                        return Chip(
+                          label: Text(
+                            vehicle.plateNo ??
+                                '${vehicle.make} ${vehicle.name}',
+                          ),
+                          deleteIcon: const Icon(Icons.close, size: 16),
+                          onDeleted: () {
+                            final updatedList = List<DeliveryVehicleModel>.from(
+                              widget.selectedVehicles,
+                            );
+                            updatedList.remove(vehicle);
+                            widget.onVehiclesChanged(updatedList);
+                          },
                         );
-                        updatedList.remove(vehicle);
-                        widget.onVehiclesChanged(updatedList);
-                      },
-                    );
-                  }).toList(),
+                      }).toList(),
                 ),
               ],
             ),

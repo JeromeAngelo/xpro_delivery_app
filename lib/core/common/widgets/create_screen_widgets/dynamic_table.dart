@@ -145,6 +145,7 @@ class _DynamicDataTableState<T> extends State<DynamicDataTable<T>> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

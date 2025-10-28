@@ -58,7 +58,11 @@ class _TeamLeaderSelectionDialogState extends State<TeamLeaderSelectionDialog> {
               children: [
                 const Text(
                   'Select Team Leader',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -70,6 +74,8 @@ class _TeamLeaderSelectionDialogState extends State<TeamLeaderSelectionDialog> {
 
             // Search bar
             TextField(
+              style: TextStyle(color: Theme.of(context).colorScheme.surface),
+
               decoration: InputDecoration(
                 hintText: 'Search team leaders...',
                 prefixIcon: const Icon(Icons.search),
@@ -99,7 +105,8 @@ class _TeamLeaderSelectionDialogState extends State<TeamLeaderSelectionDialog> {
                         itemCount: filteredPersonnel.length,
                         itemBuilder: (context, index) {
                           final personnel = filteredPersonnel[index];
-                          final isSelected = _tempSelectedTeamLeader?.id == personnel.id;
+                          final isSelected =
+                              _tempSelectedTeamLeader?.id == personnel.id;
                           final assignmentStatus =
                               (personnel.isAssigned ?? false)
                                   ? 'Trip Assigned'
@@ -162,7 +169,7 @@ class _TeamLeaderSelectionDialogState extends State<TeamLeaderSelectionDialog> {
                         },
                       ),
             ),
-
+            SizedBox(height: 16),
             // Action buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -175,7 +182,7 @@ class _TeamLeaderSelectionDialogState extends State<TeamLeaderSelectionDialog> {
                   },
                   child: const Text('Clear Selection'),
                 ),
-                
+
                 // Cancel and Confirm buttons
                 Row(
                   children: [
@@ -190,8 +197,8 @@ class _TeamLeaderSelectionDialogState extends State<TeamLeaderSelectionDialog> {
                         Navigator.of(context).pop();
                       },
                       child: Text(
-                        _tempSelectedTeamLeader == null 
-                            ? 'Confirm' 
+                        _tempSelectedTeamLeader == null
+                            ? 'Confirm'
                             : 'Select ${_tempSelectedTeamLeader!.name}',
                       ),
                     ),

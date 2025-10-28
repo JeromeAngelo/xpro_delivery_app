@@ -71,12 +71,16 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
             // Search bar
             TextField(
               decoration: InputDecoration(
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.surface,
+                ),
                 hintText: 'Search personnel...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
+              style: TextStyle(color: Theme.of(context).colorScheme.surface),
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value;
@@ -170,6 +174,7 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
                         },
                       ),
             ),
+            SizedBox(height: 16),
 
             // Action buttons
             Row(

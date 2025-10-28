@@ -51,6 +51,10 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
 
   @override
   Widget build(BuildContext context) {
+    final headerStyle = TextStyle(
+      fontWeight: FontWeight.bold,
+      color: Colors.black, // or any color you prefer
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -96,54 +100,12 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
             builder: (context, state) {
               // Define the table columns once to reuse
               final columns = [
-                DataColumn(
-                  label: Text(
-                    'Select',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Customer',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Invoices',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Total Amount',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'Document Date',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                 DataColumn(
-                  label: Text(
-                    'Reference ID',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
+                DataColumn(label: Text('Select', style: headerStyle)),
+                DataColumn(label: Text('Customer', style: headerStyle)),
+                DataColumn(label: Text('Invoices', style: headerStyle)),
+                DataColumn(label: Text('Total Amount', style: headerStyle)),
+                DataColumn(label: Text('Document Date', style: headerStyle)),
+                DataColumn(label: Text('Reference ID', style: headerStyle)),
               ];
 
               if (state is DeliveryDataLoading) {
@@ -218,42 +180,45 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
                         SizedBox(
                           width: 150,
                           height: 40, // Fixed height for the cell
-                          child: delivery.invoices != null &&
-                                  delivery.invoices!.isNotEmpty
-                              ? delivery.invoices!.length > 1
-                                  ? SingleChildScrollView(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children:
-                                            delivery.invoices!.map((invoice) {
-                                          return Padding(
-                                            padding: const EdgeInsets.only(
-                                              bottom: 2.0,
-                                            ),
-                                            child: Text(
-                                              invoice.name ?? 'N/A',
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    )
-                                  : Text(
-                                      delivery.invoices!.first.name ?? 'N/A',
-                                      style: const TextStyle(fontSize: 12),
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                              : delivery.invoice != null
+                          child:
+                              delivery.invoices != null &&
+                                      delivery.invoices!.isNotEmpty
+                                  ? delivery.invoices!.length > 1
+                                      ? SingleChildScrollView(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children:
+                                              delivery.invoices!.map((invoice) {
+                                                return Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        bottom: 2.0,
+                                                      ),
+                                                  child: Text(
+                                                    invoice.name ?? 'N/A',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                );
+                                              }).toList(),
+                                        ),
+                                      )
+                                      : Text(
+                                        delivery.invoices!.first.name ?? 'N/A',
+                                        style: const TextStyle(fontSize: 12),
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                  : delivery.invoice != null
                                   ? Text(
-                                      delivery.invoice!.name ?? 'N/A',
-                                      style: const TextStyle(fontSize: 12),
-                                      overflow: TextOverflow.ellipsis,
-                                    )
+                                    delivery.invoice!.name ?? 'N/A',
+                                    style: const TextStyle(fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                  )
                                   : const Text('N/A'),
                         ),
                       ),
@@ -309,7 +274,11 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.calculate, color: Colors.blue[700], size: 20),
+                          Icon(
+                            Icons.calculate,
+                            color: Colors.blue[700],
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Total Amount: ${_calculateSelectedDeliveriesTotal()}',
@@ -324,68 +293,64 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
                     ),
                     // Remove button - only show when items are selected
                     if (_selectedDeliveryIds.isNotEmpty)
-                            ElevatedButton.icon(
-                              // In the remove delivery data button's onPressed callback:
-                              onPressed: () {
-                                // Show confirmation dialog before deleting
-                                showDialog(
-                                  context: context,
-                                  builder:
-                                      (dialogContext) => AlertDialog(
-                                        title: const Text('Confirm Deletion'),
-                                        content: const Text(
-                                          'Are you sure you want to delete the selected delivery data? This action cannot be undone.',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed:
-                                                () =>
-                                                    Navigator.of(
-                                                      dialogContext,
-                                                    ).pop(),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.of(dialogContext).pop();
+                      ElevatedButton.icon(
+                        // In the remove delivery data button's onPressed callback:
+                        onPressed: () {
+                          // Show confirmation dialog before deleting
+                          showDialog(
+                            context: context,
+                            builder:
+                                (dialogContext) => AlertDialog(
+                                  title: const Text('Confirm Deletion'),
+                                  content: const Text(
+                                    'Are you sure you want to delete the selected delivery data? This action cannot be undone.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed:
+                                          () =>
+                                              Navigator.of(dialogContext).pop(),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(dialogContext).pop();
 
-                                              // Get the IDs of selected delivery data
-                                              final selectedIds =
-                                                  _selectedDeliveryIds.toList();
+                                        // Get the IDs of selected delivery data
+                                        final selectedIds =
+                                            _selectedDeliveryIds.toList();
 
-                                              // Delete each selected delivery data
-                                              for (final id in selectedIds) {
-                                                context
-                                                    .read<DeliveryDataBloc>()
-                                                    .add(
-                                                      DeleteDeliveryDataEvent(id),
-                                                    );
-                                              }
+                                        // Delete each selected delivery data
+                                        for (final id in selectedIds) {
+                                          context.read<DeliveryDataBloc>().add(
+                                            DeleteDeliveryDataEvent(id),
+                                          );
+                                        }
 
-                                              // Clear selection after deletion
-                                              setState(() {
-                                                _selectedDeliveryIds.clear();
-                                              });
-                                            },
-                                            style: TextButton.styleFrom(
-                                              foregroundColor: Colors.red,
-                                            ),
-                                            child: const Text('Remove'),
-                                          ),
-                                        ],
+                                        // Clear selection after deletion
+                                        setState(() {
+                                          _selectedDeliveryIds.clear();
+                                        });
+                                      },
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.red,
                                       ),
-                                );
-                              },
+                                      child: const Text('Remove'),
+                                    ),
+                                  ],
+                                ),
+                          );
+                        },
 
-                              icon: const Icon(Icons.delete),
-                              label: Text(
-                                'Remove ${_selectedDeliveryIds.length} Selected',
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red[600],
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
+                        icon: const Icon(Icons.delete),
+                        label: Text(
+                          'Remove ${_selectedDeliveryIds.length} Selected',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[600],
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -526,13 +491,13 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
   // Calculate total amount for all deliveries
   String _calculateSelectedDeliveriesTotal() {
     double totalAmount = 0.0;
-    
+
     // Calculate total from all deliveries (not just selected ones)
     for (final delivery in _allDeliveries) {
       if (delivery.invoices != null && delivery.invoices!.isNotEmpty) {
         // Sum all invoices in the delivery
         totalAmount += delivery.invoices!.fold<double>(
-          0.0, 
+          0.0,
           (sum, invoice) => sum + (invoice.totalAmount ?? 0.0),
         );
       } else if (delivery.invoice?.totalAmount != null) {
@@ -540,7 +505,7 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
         totalAmount += delivery.invoice!.totalAmount!;
       }
     }
-    
+
     // Format with commas and currency symbol
     final formatter = NumberFormat('#,##0.00');
     return '₱${formatter.format(totalAmount)}';
