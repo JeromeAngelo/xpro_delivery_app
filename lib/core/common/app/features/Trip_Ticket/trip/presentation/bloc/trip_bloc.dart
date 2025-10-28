@@ -27,6 +27,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_upd
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/services/location_services.dart';
+import 'package:x_pro_delivery_app/core/services/background_service.dart';
+
+import '../../../../../../../services/foreground_location_service.dart';
 
 class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEvent, TripState> {
   TripState? _cachedState;
@@ -318,50 +321,57 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
       },
     );
   }
+Future<void> _onAcceptTrip(
+  AcceptTripEvent event,
+  Emitter<TripState> emit,
+) async {
+  emit(TripAccepting());
+  debugPrint('🔄 BLOC: Starting trip acceptance process for ID: ${event.tripId}');
 
-  Future<void> _onAcceptTrip(
-    AcceptTripEvent event,
-    Emitter<TripState> emit,
-  ) async {
-    emit(TripAccepting());
-    debugPrint(
-      '🔄 BLOC: Starting trip acceptance process for ID: ${event.tripId}',
-    );
+  final result = await _acceptTrip(event.tripId);
+  result.fold(
+    (failure) {
+      debugPrint('❌ BLOC: Trip acceptance failed: ${failure.message}');
+      emit(TripError(failure.message));
+    },
+    (tripData) async {  // ← Make this async
+      final (trip, trackingId) = tripData;
+      debugPrint('✅ BLOC: Trip accepted successfully');
+      debugPrint('   📋 Trip ID: ${trip.id}');
 
-    final result = await _acceptTrip(event.tripId);
-    result.fold(
-      (failure) {
-        debugPrint('❌ BLOC: Trip acceptance failed: ${failure.message}');
-        emit(TripError(failure.message));
-      },
-      (tripData) {
-        final (trip, trackingId) = tripData;
-        debugPrint('✅ BLOC: Trip accepted successfully');
-        debugPrint('   📋 Trip ID: ${trip.id}');
-        debugPrint('   🔢 Trip Number: ${trip.tripNumberId}');
-        debugPrint('   🎯 Tracking ID: $trackingId');
-        debugPrint('   👥 Customers: ${trip.deliveryData.length}');
-        debugPrint('   🚛 Delivery Team: ${trip.deliveryTeam.target?.id}');
+      // Clear any cached states
+      _cachedState = null;
 
-        // Clear any cached states
-        _cachedState = null;
+      emit(TripAccepted(
+        trip: trip,
+        trackingId: trackingId,
+        tripId: event.tripId,
+      ));
 
-        // // Trigger customer and timeline data loading
-        // if (trip.id != null) {
-        //   _customerBloc.add(GetCustomerEvent(trip.id!));
-        // }
-        // _updateTimelineBloc.add(LoadUpdateTimelineEvent());
-
-        emit(
-          TripAccepted(
-            trip: trip,
-            trackingId: trackingId,
-            tripId: event.tripId,
-          ),
+      // ✅ START FOREGROUND LOCATION TRACKING IMMEDIATELY
+      if (trip.id != null) {
+        debugPrint('🚀 BLOC: Starting foreground location tracking for trip: ${trip.id}');
+        
+        final started = await ForegroundLocationService.startTracking(
+          tripId: trip.id!,
+          pocketBaseUrl: 'https://delivery-app.winganmarketing.com',
         );
-      },
-    );
-  }
+
+        if (started) {
+          debugPrint('✅ BLOC: Foreground location tracking started successfully');
+          emit(LocationTrackingStarted(
+            tripId: trip.id!,
+            updateInterval: const Duration(minutes: 1),
+            distanceFilter: 2.0,
+          ));
+        } else {
+          debugPrint('⚠️ BLOC: Failed to start foreground location tracking');
+          emit(const LocationTrackingError('Failed to start background tracking'));
+        }
+      }
+    },
+  );
+}
 
   Future<void> _onCheckEndTripOtpStatus(
     CheckEndTripOtpStatusEvent event,
@@ -396,44 +406,43 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
       (totalDistance) => emit(TripDistanceCalculated(totalDistance)),
     );
   }
+Future<void> _onEndTrip(EndTripEvent event, Emitter<TripState> emit) async {
+  debugPrint('🔄 BLOC: Starting trip end process for ID: ${event.tripId}');
+  emit(TripLoading());
 
-  Future<void> _onEndTrip(EndTripEvent event, Emitter<TripState> emit) async {
-    debugPrint('🔄 BLOC: Starting trip end process for ID: ${event.tripId}');
-    emit(TripLoading());
+  final result = await _endTrip(event.tripId);
 
-    final result = await _endTrip(event.tripId);
+  result.fold(
+    (failure) {
+      debugPrint('❌ BLOC: Trip end failed: ${failure.message}');
+      emit(TripError(failure.message));
+    },
+    (trip) async {  // ← Make this async
+      debugPrint('✅ BLOC: Trip ended successfully');
 
-    result.fold(
-      (failure) {
-        debugPrint('❌ BLOC: Trip end failed: ${failure.message}');
-        emit(TripError(failure.message));
-      },
-      (trip) {
-        debugPrint('✅ BLOC: Trip ended successfully');
-        debugPrint('   📋 Trip ID: ${trip.id}');
-        debugPrint('   🔢 Trip Number: ${trip.tripNumberId}');
-        debugPrint('   ⏰ End Time: ${trip.timeEndTrip}');
+      // Clear any cached states
+      _cachedState = null;
 
-        // Clear any cached states
-        _cachedState = null;
+      // ✅ STOP ALL LOCATION TRACKING
+      await ForegroundLocationService.stopTracking();
+     // await BackgroundLocationTracker.stopTracking();
+      await _stopTracking();
+      debugPrint('🛑 BLOC: All location tracking stopped');
 
-        // Stop location tracking if it's active
-        add(const StopLocationTrackingEvent());
+      // Emit trip ended state
+      emit(TripEnded(trip));
 
-        // Explicitly clear local data and reset state
-        emit(TripEnded(trip));
+      // Clear preferences and reset state
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!isClosed) {
+          _clearTripDataFromPreferences();
+          add(const GetTripEvent());
+        }
+      });
+    },
+  );
+}
 
-        // After a short delay, reset to initial state
-        Future.delayed(const Duration(seconds: 2), () {
-          if (!isClosed) {
-            // Clear any cached trip data from shared preferences
-            _clearTripDataFromPreferences();
-            add(const GetTripEvent());
-          }
-        });
-      },
-    );
-  }
 
   // Helper method to clear trip data from shared preferences
   Future<void> _clearTripDataFromPreferences() async {
@@ -473,11 +482,12 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
     UpdateTripLocationEvent event,
     Emitter<TripState> emit,
   ) async {
-    debugPrint('🔄 BLOC: Updating trip location with distance tracking for ID: ${event.tripId}');
+    debugPrint('🔄 BLOC: Updating trip location for ID: ${event.tripId}');
     debugPrint('📍 Coordinates: Lat: ${event.latitude}, Long: ${event.longitude}');
     debugPrint('🎯 Accuracy: ${event.accuracy?.toStringAsFixed(2) ?? 'Unknown'} meters');
+    debugPrint('📡 Source: ${event.source ?? 'GPS_Enhanced'}');
     
-    // Get current total distance from LocationService
+    // Get current total distance from LocationService (for in-app tracking)
     final currentTotalDistance = LocationService.getTotalDistance();
     debugPrint('📏 BLOC: Current total distance from LocationService: ${currentTotalDistance.toStringAsFixed(3)} km');
 
@@ -496,13 +506,12 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
 
     result.fold(
       (failure) {
-        debugPrint(
-          '❌ BLOC: Failed to update trip location: ${failure.message}',
-        );
+        debugPrint('❌ BLOC: Failed to update trip location: ${failure.message}');
         emit(LocationTrackingError(failure.message));
       },
       (trip) {
         debugPrint('✅ BLOC: Trip location updated successfully');
+        debugPrint('   📏 Total distance: ${currentTotalDistance.toStringAsFixed(3)} km');
         emit(
           TripLocationUpdated(
             trip: trip,
@@ -513,116 +522,126 @@ class TripBloc extends Bloc<TripEvent, TripState> with OfflineFirstMixin<TripEve
       },
     );
   }
+Future<void> _onStartLocationTracking(
+  StartLocationTrackingEvent event,
+  Emitter<TripState> emit,
+) async {
+  debugPrint('🔄 BLOC: Starting location tracking for trip: ${event.tripId}');
 
-  Future<void> _onStartLocationTracking(
-    StartLocationTrackingEvent event,
-    Emitter<TripState> emit,
-  ) async {
-    debugPrint('🔄 BLOC: Starting location tracking for trip: ${event.tripId}');
+  // Stop any existing tracking
+  await _stopTracking();
+  await ForegroundLocationService.stopTracking();
 
-    // Stop any existing tracking
-    await _stopTracking();
-
-    try {
-      // Check if location services are enabled and permissions are granted
-      bool serviceEnabled = await LocationService.enableLocationService();
-      if (!serviceEnabled) {
-        debugPrint('❌ BLOC: Location services are disabled');
-        emit(const LocationTrackingError('Location services are disabled'));
-        return;
-      }
-
-      bool permissionGranted = await LocationService.requestPermission();
-      if (!permissionGranted) {
-        debugPrint('❌ BLOC: Location permissions are denied');
-        emit(const LocationTrackingError('Location permissions are denied'));
-        return;
-      }
-
-      // Store the trip ID being tracked
-      _trackedTripId = event.tripId;
-
-      // Get initial position and update trip (no strict validation)
-      debugPrint('📍 BLOC: Getting initial position...');
-      final initialPosition = await LocationService.getCurrentLocation();
-      
-      debugPrint('✅ BLOC: Initial position obtained - updating trip location');
-      add(
-        UpdateTripLocationEvent(
-          tripId: event.tripId,
-          latitude: initialPosition.latitude,
-          longitude: initialPosition.longitude,
-          accuracy: initialPosition.accuracy,
-          source: 'GPS_Initial_Validated',
-        ),
-      );
-
-      // Start tracking distance using enhanced LocationService
-      _locationSubscription = LocationService.trackDistance().listen((
-        distance,
-      ) async {
-        // When distance is updated, get validated current position and update trip location
-        try {
-          debugPrint('📍 BLOC: Distance update triggered (${distance.toStringAsFixed(2)} km)');
-          
-          // Get current location (no strict validation)
-          final position = await LocationService.getCurrentLocation();
-
-          if (_trackedTripId == event.tripId) {
-            debugPrint('🔄 BLOC: Updating trip location with current position');
-            add(
-              UpdateTripLocationEvent(
-                tripId: event.tripId,
-                latitude: position.latitude,
-                longitude: position.longitude,
-                accuracy: position.accuracy,
-                source: 'GPS_Tracking_Validated',
-              ),
-            );
-
-            debugPrint('📍 BLOC: Location updated successfully');
-            debugPrint('   📏 Distance traveled: ${distance.toStringAsFixed(2)} km');
-            debugPrint('   📍 Position: ${position.latitude}, ${position.longitude}');
-            debugPrint('   🎯 Accuracy: ${position.accuracy} meters');
-          } else {
-            debugPrint('⚠️ BLOC: Trip ID mismatch - skipping location update');
-          }
-        } catch (e) {
-          debugPrint('❌ BLOC: Error getting current location: $e');
-          // Don't emit error state here as this is background tracking
-          // Just log the error and continue
-        }
-      });
-
-      emit(
-        LocationTrackingStarted(
-          tripId: event.tripId,
-          updateInterval: const Duration(
-            minutes: 5,
-          ), // Time-based updates every 5 minutes
-          distanceFilter: 5.0, // Distance-based updates every 5 meters
-        ),
-      );
-
-      debugPrint('✅ BLOC: Location tracking started successfully');
-    } catch (e) {
-      debugPrint('❌ BLOC: Error starting location tracking: $e');
-      emit(LocationTrackingError('Error starting location tracking: $e'));
+  try {
+    // Check if location services are enabled and permissions are granted
+    bool serviceEnabled = await LocationService.enableLocationService();
+    if (!serviceEnabled) {
+      debugPrint('❌ BLOC: Location services are disabled');
+      emit(const LocationTrackingError('Location services are disabled'));
+      return;
     }
+
+    bool permissionGranted = await LocationService.requestPermission();
+    if (!permissionGranted) {
+      debugPrint('❌ BLOC: Location permissions are denied');
+      emit(const LocationTrackingError('Location permissions are denied'));
+      return;
+    }
+
+    // ✅ START FOREGROUND SERVICE (primary tracking method)
+    debugPrint('🚀 BLOC: Starting foreground location service');
+    final foregroundStarted = await ForegroundLocationService.startTracking(
+      tripId: event.tripId,
+      pocketBaseUrl: 'https://delivery-app.winganmarketing.com',
+    );
+
+    if (!foregroundStarted) {
+      debugPrint('⚠️ BLOC: Foreground service failed to start');
+      emit(const LocationTrackingError('Failed to start foreground tracking'));
+      return;
+    }
+
+    // ✅ ALSO START WORKMANAGER (backup tracking)
+   // await Workmanager().initialize(callbackDispatcher);
+    await BackgroundLocationTracker.startTracking(tripId: event.tripId);
+    debugPrint('🚀 BLOC: WorkManager backup tracking started');
+
+    // Store the trip ID being tracked
+    _trackedTripId = event.tripId;
+
+    // ✅ START FOREGROUND LOCATIONSERVICE TRACKING (for in-app distance calculation)
+    debugPrint('📍 BLOC: Getting initial position...');
+    final initialPosition = await LocationService.getCurrentLocation();
+    
+    debugPrint('✅ BLOC: Initial position obtained - updating trip location');
+    add(UpdateTripLocationEvent(
+      tripId: event.tripId,
+      latitude: initialPosition.latitude,
+      longitude: initialPosition.longitude,
+      accuracy: initialPosition.accuracy,
+      source: 'GPS_Initial_Validated',
+    ));
+
+    // Start tracking distance using LocationService (for in-app updates)
+    _locationSubscription = LocationService.trackDistance().listen((distance) async {
+      try {
+        debugPrint('📍 BLOC: Distance update triggered (${distance.toStringAsFixed(2)} km)');
+        
+        final position = await LocationService.getCurrentLocation();
+
+        if (_trackedTripId == event.tripId) {
+          debugPrint('🔄 BLOC: Updating trip location with current position');
+          add(UpdateTripLocationEvent(
+            tripId: event.tripId,
+            latitude: position.latitude,
+            longitude: position.longitude,
+            accuracy: position.accuracy,
+            source: 'GPS_Tracking_Validated',
+          ));
+
+          debugPrint('📍 BLOC: Location updated successfully');
+        }
+      } catch (e) {
+        debugPrint('❌ BLOC: Error getting current location: $e');
+      }
+    });
+
+    emit(LocationTrackingStarted(
+      tripId: event.tripId,
+      updateInterval: const Duration(minutes: 1), // Foreground service interval
+      distanceFilter: 2.0,
+    ));
+
+    debugPrint('✅ BLOC: All location tracking services started successfully');
+  } catch (e) {
+    debugPrint('❌ BLOC: Error starting location tracking: $e');
+    emit(LocationTrackingError('Error starting location tracking: $e'));
   }
+}
 
-  Future<void> _onStopLocationTracking(
-    StopLocationTrackingEvent event,
-    Emitter<TripState> emit,
-  ) async {
-    debugPrint('🔄 BLOC: Stopping location tracking');
 
-    await _stopTracking();
+Future<void> _onStopLocationTracking(
+  StopLocationTrackingEvent event,
+  Emitter<TripState> emit,
+) async {
+  debugPrint('🔄 BLOC: Stopping all location tracking');
 
-    emit(const LocationTrackingStopped());
+  // Stop foreground tracking
+  await ForegroundLocationService.stopTracking();
+  debugPrint('🛑 Foreground location tracking stopped');
 
-    debugPrint('✅ BLOC: Location tracking stopped successfully');
-  }
+  // Stop WorkManager backup tracking
+  // await BackgroundLocationTracker.stopTracking();
+  // debugPrint('🛑 WorkManager tracking stopped');
+
+  // Stop LocationService tracking
+  await _stopTracking();
+  debugPrint('🛑 LocationService tracking stopped');
+
+  emit(const LocationTrackingStopped());
+  debugPrint('✅ BLOC: All location tracking stopped successfully');
+}
+
 
   // Helper method to stop tracking
   Future<void> _stopTracking() async {

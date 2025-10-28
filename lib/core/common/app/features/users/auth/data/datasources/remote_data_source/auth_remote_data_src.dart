@@ -131,7 +131,21 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         debugPrint('   👑 Role: ${roleJson?['name'] ?? 'Unknown'}');
         debugPrint('   🔑 Token: ${authData.token.substring(0, 10)}...');
 
+         // 🕓 NEW STEP — record login event in "authLogs"
+    try {
+      final loginTime = DateTime.now().toUtc().toIso8601String();
+      await _pocketBaseClient.collection('authLogs').create(body: {
+        'user': authData.record.id,  // reference user ID
+        'loginTime': loginTime,       // ISO timestamp
+      });
+      debugPrint('🕓 Login recorded in authLogs: $loginTime');
+    } catch (e) {
+      debugPrint('⚠️ Failed to record login log: $e');
+    }
+
         return LocalUsersModel.fromJson(userData);
+
+       
       } catch (e) {
         debugPrint('⚠️ Error formatting user data: ${e.toString()}');
 
@@ -149,6 +163,8 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         if (roleJson != null) {
           userData['expand'] = {'userRole': roleJson};
         }
+
+        
 
         return LocalUsersModel.fromJson(userData);
       }

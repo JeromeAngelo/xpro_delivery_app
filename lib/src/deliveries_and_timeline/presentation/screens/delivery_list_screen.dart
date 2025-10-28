@@ -243,6 +243,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
 
     if (_currentTripId != null) {
       debugPrint('🔄 DELIVERY: Refreshing data for trip: $_currentTripId');
+        
       _deliveryDataBloc.add(GetDeliveryDataByTripIdEvent(_currentTripId!));
       _loadDeliveryDataForTrip(_currentTripId!);
     } else {

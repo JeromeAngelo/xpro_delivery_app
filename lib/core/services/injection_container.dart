@@ -362,7 +362,7 @@ Future<void> initAuth() async {
   sl.registerLazySingleton(() => RefreshUserData(sl()));
 
   // Repository
-  sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl(), sl()));
+  sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl(), sl(),   sl(),));
 
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSrc>(

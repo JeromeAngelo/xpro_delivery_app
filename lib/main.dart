@@ -2,10 +2,12 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_status/presentation/bloc/invoice_status_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/presentation/bloc/logs_bloc.dart';
@@ -34,16 +36,35 @@ import 'package:x_pro_delivery_app/core/services/router.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/network_status_indicator.dart';
+import 'package:x_pro_delivery_app/core/common/widgets/sync_status_indicator.dart';
 
 import 'core/common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
 import 'core/common/app/features/sync_data/cubit/sync_cubit.dart';
+import 'core/services/background_service.dart';
+import 'core/services/foreground_location_service.dart';
+import 'core/services/offline_sync_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize WorkManager with callback dispatcher for background tasks
+  await Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: false, // Set to true for debugging background tasks
+  );
+  
   final store = await ObjectBoxStore.create();
   await Geolocator.isLocationServiceEnabled();
+  // ✅ ADD THIS: Initialize Foreground Location Service
+  await ForegroundLocationService.initialize();
   sl.registerSingleton<Store>(store.store);
   await init();
+  
+  // Initialize offline sync service for 100% offline capability
+  final pb = sl<PocketBase>();
+  await OfflineSyncService().initialize(pb);
+  debugPrint('✅ Main: Offline sync service initialized');
+  
   runApp(const MyApp());
 }
 
@@ -109,6 +130,7 @@ class MyApp extends StatelessWidget {
                       child: Column(
                         children: [
                           const OfflineBanner(),
+                          const SyncStatusIndicator(),
                           Expanded(child: child!),
                         ],
                       ),

@@ -12,13 +12,13 @@ class LocationService {
 
   // Simple Distance Tracking Constants - All Motion Combined
   static const int _updateIntervalMinutes =
-      5; // Time-based updates every 5 minutes
+      2; // Time-based updates every 2 minutes (more frequent)
   static const int _distanceFilterMeters =
-      10; // Distance-based updates every 5 meters of movement
+      2; // Distance-based updates every 2 meters of movement (more frequent)
   static const double _accuracyThreshold =
       50.0; // Accept readings within 50 meters (relaxed for real-world GPS)
   static const double _minMovementThreshold =
-      10; // Update for any movement ≥ 5 meters (filters GPS noise)
+      2; // Update for any movement ≥ 2 meters (more sensitive)
   static const double _maxRealisticSpeedKmh =
       200.0; // Higher threshold to allow for all types of movement
   static const int _smoothingBufferSize =

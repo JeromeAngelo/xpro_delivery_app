@@ -8,11 +8,14 @@ import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/data
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/remote_data_source/auth_remote_data_src.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/entity/users_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/repo/auth_repo.dart';
+import 'package:x_pro_delivery_app/core/services/offline_sync_service.dart';
 class AuthRepoImpl implements AuthRepo {
   final AuthRemoteDataSrc _remoteDataSrc;
   final AuthLocalDataSrc _localDataSrc;
+   final OfflineSyncService _offlineSync; // ← ADD THIS
+  
 
-  const AuthRepoImpl(this._remoteDataSrc, this._localDataSrc);
+  const AuthRepoImpl(this._remoteDataSrc, this._localDataSrc, this._offlineSync,);
 
  @override
 ResultFuture<LocalUser> signIn({

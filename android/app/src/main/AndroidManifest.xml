@@ -4,6 +4,16 @@
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <!-- Required for Android 10+ if you need background location -->
 <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+<!-- Foreground service permissions -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+<!-- Internet for API updates -->
+<uses-permission android:name="android.permission.INTERNET" />
+
 <!-- Camera permission -->
 <uses-permission android:name="android.permission.CAMERA" />
 <!-- Storage permissions for image_picker (automatically handled) -->
@@ -12,6 +22,10 @@
 <!-- For Android 13+ (API level 33) photo and media permissions -->
 <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+<!-- For Android 13+ notification permission -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:label="XPro Delivery"
         android:name="${applicationName}"
@@ -38,6 +52,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        
+        <!-- Foreground Service for background location tracking -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="location"
+            android:exported="false"
+            android:stopWithTask="false" />
+        
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
