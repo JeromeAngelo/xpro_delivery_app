@@ -58,7 +58,11 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
               children: [
                 const Text(
                   'Select Personnel',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -80,7 +84,7 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              style: TextStyle(color: Theme.of(context).colorScheme.surface),
+              style: TextStyle(color: Colors.black),
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value;

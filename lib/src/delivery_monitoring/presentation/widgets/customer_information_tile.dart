@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:xpro_delivery_admin_app/src/delivery_monitoring/presentation/widgets/delivery_status_icon.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,6 @@ class CustomerInformationTile extends StatelessWidget {
               width: 40,
               height: 5,
               decoration: BoxDecoration(
-               
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
@@ -28,23 +28,29 @@ class CustomerInformationTile extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             deliveryData.customer?.name ?? 'Unknown Store',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             'Delivery #: ${deliveryData.deliveryNumber ?? 'N/A'}',
-            style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            ),
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(),
+          ),
+          const SizedBox(height: 4),
+
+          Text(
+            'Trip Number: ${deliveryData.trip!.tripNumberId ?? 'N/A'}',
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(),
+          ),
+          const SizedBox(height: 4),
+
+          Text(
+            'Route Name ${deliveryData.trip!.name ?? 'N/A'}',
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(),
           ),
           const Divider(height: 32),
-          _buildDetailItem(
-            context,
-            'Trip ID',
-            deliveryData.trip?.tripNumberId ?? 'N/A',
-            Icons.receipt_long,
-          ),
+
           // Customer details
           _buildDetailItem(
             context,
@@ -73,7 +79,7 @@ class CustomerInformationTile extends StatelessWidget {
           _buildDetailItem(
             context,
             'Total Amount',
-            '₱${deliveryData.invoice?.totalAmount ?? 0}',
+            _formatCurrency(deliveryData),
             Icons.attach_money,
           ),
 
@@ -111,8 +117,7 @@ class CustomerInformationTile extends StatelessWidget {
                   ),
                   subtitle: Text(
                     status.subtitle ?? '',
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(),
                   ),
                   trailing: Text(
                     status.time != null ? _formatDateTime(status.time) : '',
@@ -160,6 +165,27 @@ class CustomerInformationTile extends StatelessWidget {
     );
   }
 
+  String _formatCurrency(DeliveryDataEntity delivery) {
+    double totalAmount = 0.0;
+
+    // Calculate total from all invoices if available
+    if (delivery.invoices != null && delivery.invoices!.isNotEmpty) {
+      totalAmount = delivery.invoices!.fold<double>(
+        0.0,
+        (sum, invoice) => sum + (invoice.totalAmount ?? 0.0),
+      );
+    } else if (delivery.invoice?.totalAmount != null) {
+      // Fallback to single invoice
+      totalAmount = delivery.invoice!.totalAmount!;
+    } else {
+      return 'N/A';
+    }
+
+    // Format with commas and currency symbol
+    final formatter = NumberFormat('#,##0.00');
+    return '₱${formatter.format(totalAmount)}';
+  }
+
   String _formatDateTime(dynamic dateTime) {
     if (dateTime == null) return '';
 
@@ -204,8 +230,7 @@ class CustomerInformationTile extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(),
                 ),
                 const SizedBox(height: 2),
                 Text(

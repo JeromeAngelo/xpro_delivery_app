@@ -51,7 +51,7 @@ class CustomerTile extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    deliveryData.trip?.tripNumberId ?? 'Unknown Trip',
+                    deliveryData.trip?.name ?? 'Unknown Trip',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -220,18 +220,18 @@ class CustomerTile extends StatelessWidget {
 
   String _formatTotalAmount(DeliveryDataEntity deliveryData) {
     double totalAmount = 0.0;
-    
+
     // Calculate total from all invoices if available
     if (deliveryData.invoices != null && deliveryData.invoices!.isNotEmpty) {
       totalAmount = deliveryData.invoices!.fold<double>(
-        0.0, 
+        0.0,
         (sum, invoice) => sum + (invoice.totalAmount ?? 0.0),
       );
     } else if (deliveryData.invoice?.totalAmount != null) {
       // Fallback to single invoice
       totalAmount = deliveryData.invoice!.totalAmount!;
     }
-    
+
     // Format with commas and currency symbol
     final formatter = NumberFormat('#,##0.00');
     return '₱${formatter.format(totalAmount)}';

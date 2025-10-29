@@ -74,7 +74,7 @@ class _TeamLeaderSelectionDialogState extends State<TeamLeaderSelectionDialog> {
 
             // Search bar
             TextField(
-              style: TextStyle(color: Theme.of(context).colorScheme.surface),
+              style: TextStyle(color: Colors.black),
 
               decoration: InputDecoration(
                 hintText: 'Search team leaders...',

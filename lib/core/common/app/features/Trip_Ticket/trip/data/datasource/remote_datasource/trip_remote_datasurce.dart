@@ -647,18 +647,15 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
     try {
       debugPrint('🔍 Searching for trip tickets with filters');
 
-
       List<String> filters = [];
 
-
-if (name != null) {
+      if (name != null) {
         filters.add('name ~ "$name"');
       }
       if (tripNumberId != null) {
         filters.add('tripNumberId ~ "$tripNumberId"');
       }
 
-       
       if (startDate != null) {
         filters.add('created >= "${startDate.toIso8601String()}"');
       }

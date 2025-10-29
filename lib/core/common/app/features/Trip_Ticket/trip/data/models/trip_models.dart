@@ -103,6 +103,7 @@ class TripModel extends TripEntity {
           'id': userData.id,
           'collectionId': userData.collectionId,
           'collectionName': userData.collectionName,
+          'name': userData.data['name'],
           ...userData.data
         });
       } else if (userData is Map) {

@@ -396,6 +396,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           'qrCode': tripRecord.data['qrCode'],
           'isAccepted': tripRecord.data['isAccepted'],
           'isEndTrip': tripRecord.data['isEndTrip'],
+          ...tripRecord.data,
         });
       }
     } else if (record.data['trip'] != null) {
