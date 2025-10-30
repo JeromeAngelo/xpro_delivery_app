@@ -107,6 +107,12 @@ class CustomerInformationTile extends StatelessWidget {
                   status.title ?? 'Unknown',
                 );
 
+                // If the status title is "Mark As Undelivered", show remarks instead of subtitle
+                final displaySubtitle =
+                    (status.title?.toLowerCase() == 'mark as undelivered')
+                        ? _humanize(status.remarks)
+                        : (status.subtitle ?? '');
+
                 return ListTile(
                   leading: Icon(statusData.icon, color: statusData.color),
                   title: Text(
@@ -116,7 +122,7 @@ class CustomerInformationTile extends StatelessWidget {
                     ),
                   ),
                   subtitle: Text(
-                    status.subtitle ?? '',
+                    displaySubtitle,
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(),
                   ),
                   trailing: Text(
@@ -163,6 +169,54 @@ class CustomerInformationTile extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _humanize(String? raw) {
+    if (raw == null) return 'N/A';
+    final s = raw.trim();
+    if (s.isEmpty) return 'N/A';
+
+    // Known explicit mappings (add more as needed)
+    final lower = s.toLowerCase();
+    const Map<String, String> explicit = {
+      'storeclose': 'Store Closed',
+      'store_closed': 'Store Closed',
+      'storeclose.': 'Store Closed',
+      'wronginvoice': 'Wrong Invoice',
+      'customerNotAvailable': 'Customer Not Available',
+      'customer_not_available': 'Customer Not Available',
+      'environmentalissues': 'Environmental Issues',
+      'rescheduled': 'Rescheduled',
+      'none': 'None',
+      'mark as undelivered': 'Mark As Undelivered',
+    };
+
+    if (explicit.containsKey(lower)) return explicit[lower]!;
+
+    // Normalize separators and camelCase -> spaces
+    var normalized = s.replaceAll(RegExp(r'[_\-]+'), ' ');
+
+    // Insert spaces before capital letters (camelCase -> words)
+    normalized = normalized.replaceAllMapped(
+      RegExp(r'([a-z0-9])([A-Z])'),
+      (m) => '${m[1]} ${m[2]}',
+    );
+
+    // Collapse multiple spaces
+    normalized = normalized.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    // Title-case each word
+    final words = normalized.split(' ');
+    final titled = words
+        .map((w) {
+          if (w.isEmpty) return w;
+          final lowerW = w.toLowerCase();
+          return lowerW[0].toUpperCase() +
+              (lowerW.length > 1 ? lowerW.substring(1) : '');
+        })
+        .join(' ');
+
+    return titled;
   }
 
   String _formatCurrency(DeliveryDataEntity delivery) {

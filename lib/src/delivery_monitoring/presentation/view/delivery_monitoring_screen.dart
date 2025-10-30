@@ -31,7 +31,9 @@ class _DeliveryMonitoringScreenState extends State<DeliveryMonitoringScreen> {
   void initState() {
     super.initState();
     // Load all delivery data when the screen initializes
-    context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
+    context.read<DeliveryDataBloc>().add(
+      const GetAllDeliveryDataWithTripsEvent(),
+    );
 
     // Set up auto-refresh timer
     _setupAutoRefreshTimer();
@@ -69,7 +71,9 @@ class _DeliveryMonitoringScreenState extends State<DeliveryMonitoringScreen> {
       );
 
       // Refresh delivery data
-      context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
+      context.read<DeliveryDataBloc>().add(
+        const GetAllDeliveryDataWithTripsEvent(),
+      );
     }
   }
 
@@ -128,7 +132,9 @@ class _DeliveryMonitoringScreenState extends State<DeliveryMonitoringScreen> {
             tooltip: 'Refresh',
             onPressed: () {
               // Manually refresh delivery data
-              context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
+              context.read<DeliveryDataBloc>().add(
+                const GetAllDeliveryDataWithTripsEvent(),
+              );
             },
           ),
           const SizedBox(width: 8),
@@ -275,7 +281,10 @@ class _DeliveryMonitoringScreenState extends State<DeliveryMonitoringScreen> {
   }
 
   // Show delivery data details in a dialog
-  void _showDeliveryDataDetails(BuildContext context, DeliveryDataEntity deliveryData) {
+  void _showDeliveryDataDetails(
+    BuildContext context,
+    DeliveryDataEntity deliveryData,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -284,14 +293,14 @@ class _DeliveryMonitoringScreenState extends State<DeliveryMonitoringScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 0,
-          backgroundColor: Colors.transparent,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           child: Container(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.8,
               maxHeight: MediaQuery.of(context).size.height * 0.8,
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -339,7 +348,9 @@ class _DeliveryMonitoringScreenState extends State<DeliveryMonitoringScreen> {
                   // Delivery data information content
                   Flexible(
                     child: SingleChildScrollView(
-                      child: CustomerInformationTile(deliveryData: deliveryData),
+                      child: CustomerInformationTile(
+                        deliveryData: deliveryData,
+                      ),
                     ),
                   ),
                 ],

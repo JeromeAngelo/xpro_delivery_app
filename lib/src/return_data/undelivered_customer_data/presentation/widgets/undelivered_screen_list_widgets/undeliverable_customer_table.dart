@@ -764,44 +764,61 @@ class _UndeliveredCustomerTableState extends State<UndeliveredCustomerTable> {
   }
 
   Widget _buildReasonChip(UndeliverableReason? reason) {
-    if (reason == null) {
-      return Chip(
-        label: const Text('No Reason'),
-        backgroundColor: Colors.grey[300],
-      );
-    }
-
-    Color chipColor;
-    switch (reason) {
-      case UndeliverableReason.customerNotAvailable:
-        chipColor = Colors.orange;
-        break;
-      case UndeliverableReason.environmentalIssues:
-        chipColor = Colors.red;
-        break;
-
-      case UndeliverableReason.none:
-        chipColor = Colors.purple;
-        break;
-      case UndeliverableReason.storeClosed:
-        chipColor = Colors.blue;
-        break;
-      case UndeliverableReason.rescheduled:
-        chipColor = Colors.green;
-        break;
-    }
-
+  if (reason == null) {
     return Chip(
-      label: Text(
-        reason.name,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      backgroundColor: chipColor,
+      label: const Text('No Reason'),
+      backgroundColor: Colors.grey[300],
     );
   }
+
+  // Define chip color and readable label
+  late Color chipColor;
+  late String labelText;
+
+  switch (reason) {
+    case UndeliverableReason.customerNotAvailable:
+      chipColor = Colors.orange;
+      labelText = 'Customer Not Available';
+      break;
+
+    case UndeliverableReason.environmentalIssues:
+      chipColor = Colors.red;
+      labelText = 'Environmental Issues';
+      break;
+
+    case UndeliverableReason.none:
+      chipColor = Colors.purple;
+      labelText = 'No Specific Reason';
+      break;
+
+    case UndeliverableReason.storeClosed:
+      chipColor = Colors.blue;
+      labelText = 'Store Closed';
+      break;
+
+    case UndeliverableReason.rescheduled:
+      chipColor = Colors.green;
+      labelText = 'Rescheduled';
+      break;
+
+    case UndeliverableReason.wrongInvoice:
+      chipColor = Colors.yellow[700] ?? Colors.yellow;
+      labelText = 'Wrong Invoice';
+      break;
+  }
+
+  return Chip(
+    label: Text(
+      labelText,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    backgroundColor: chipColor,
+  );
+}
+
 
   String _formatAddress(CancelledInvoiceEntity cancelledInvoice) {
     final customer = cancelledInvoice.customer;

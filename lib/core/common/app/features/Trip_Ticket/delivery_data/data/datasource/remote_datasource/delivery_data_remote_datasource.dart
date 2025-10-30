@@ -46,7 +46,9 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
         return;
       }
 
-      debugPrint('⚠️ PocketBase client not authenticated, attempting to restore from storage');
+      debugPrint(
+        '⚠️ PocketBase client not authenticated, attempting to restore from storage',
+      );
 
       // Try to restore authentication from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
@@ -59,7 +61,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
         // Restore the auth store with token only
         // The PocketBase client will handle the record validation
         _pocketBaseClient.authStore.save(authToken, null);
-        
+
         debugPrint('✅ Authentication restored from storage');
       } else {
         debugPrint('❌ No stored authentication found');
@@ -139,7 +141,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
   Future<List<DeliveryDataModel>> getAllDeliveryDataWithTrips() async {
     return await _retryWithBackoff(() async {
       debugPrint('🔄 Fetching all delivery data with trips');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 
@@ -148,7 +150,8 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .getFullList(
             filter:
                 'hasTrip = true', // ← ONLY DIFFERENCE: true instead of false
-            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
+            expand:
+                'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
             sort: '-created',
           );
 
@@ -170,7 +173,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
   Future<List<DeliveryDataModel>> getAllDeliveryData() async {
     return await _retryWithBackoff(() async {
       debugPrint('🔄 Fetching all delivery data');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 
@@ -178,7 +181,8 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .collection('deliveryData')
           .getFullList(
             filter: 'hasTrip = false',
-            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
+            expand:
+                'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
             sort: '-created',
           );
 
@@ -202,7 +206,8 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       final result = await _pocketBaseClient
           .collection('deliveryData')
           .getFullList(
-            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
+            expand:
+                'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
             filter: 'trip = "$tripId"',
             sort: '-created',
           );
@@ -230,7 +235,8 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           .collection('deliveryData')
           .getOne(
             id,
-            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
+            expand:
+                'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
           );
 
       debugPrint('✅ Retrieved delivery data with ID: $id');
@@ -300,7 +306,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
   Future<bool> addDeliveryDataToTrip(String tripId) async {
     return await _retryWithBackoff(() async {
       debugPrint('🔄 Adding delivery data to trip ID: $tripId');
-      
+
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
 
@@ -308,10 +314,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
         // Find delivery data records that don't have a trip assigned (hasTrip = false)
         final availableDeliveryData = await _pocketBaseClient
             .collection('deliveryData')
-            .getFullList(
-              filter: 'hasTrip = false',
-              sort: 'created',
-            );
+            .getFullList(filter: 'hasTrip = false', sort: 'created');
 
         if (availableDeliveryData.isEmpty) {
           debugPrint('⚠️ No available delivery data to assign to trip');
@@ -323,17 +326,18 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
 
         // Take the first available delivery data record
         final deliveryDataRecord = availableDeliveryData.first;
-        
-        // Update the delivery data record to assign it to the trip
-        await _pocketBaseClient.collection('deliveryData').update(
-          deliveryDataRecord.id,
-          body: {
-            'trip': tripId,
-            'hasTrip': true,
-          },
-        );
 
-        debugPrint('✅ Successfully added delivery data ${deliveryDataRecord.id} to trip $tripId');
+        // Update the delivery data record to assign it to the trip
+        await _pocketBaseClient
+            .collection('deliveryData')
+            .update(
+              deliveryDataRecord.id,
+              body: {'trip': tripId, 'hasTrip': true},
+            );
+
+        debugPrint(
+          '✅ Successfully added delivery data ${deliveryDataRecord.id} to trip $tripId',
+        );
         return true;
       } catch (e) {
         debugPrint('❌ Failed to add delivery data to trip: ${e.toString()}');
@@ -357,7 +361,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
           'id': customerRecord.id,
           'collectionId': customerRecord.collectionId,
           'collectionName': customerRecord.collectionName,
-          'refId':customerRecord.data['refID'],
+          'refId': customerRecord.data['refID'],
           ...customerRecord.data,
         });
       }
@@ -417,6 +421,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
                 'title': update.data['title'],
                 'subtitle': update.data['subtitle'],
                 'time': update.data['time'],
+                'remarks': update.data['remarks'],
                 'customer': update.data['customer'],
                 'isAssigned': update.data['isAssigned'],
               });
@@ -446,7 +451,8 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
               });
             }).toList();
       }
-    } else if (record.data['invoices'] != null && record.data['invoices'] is List) {
+    } else if (record.data['invoices'] != null &&
+        record.data['invoices'] is List) {
       invoicesList =
           (record.data['invoices'] as List)
               .map((id) => InvoiceDataModel(id: id.toString()))
@@ -494,8 +500,14 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       collectionName: record.collectionName,
       deliveryNumber: record.data['deliveryNumber'],
       refID: record.data['refID'],
-      pinLang: record.data['pinLang'] != null ? double.tryParse(record.data['pinLang'].toString()) : null,
-      pinLong: record.data['pinLong'] != null ? double.tryParse(record.data['pinLong'].toString()) : null,
+      pinLang:
+          record.data['pinLang'] != null
+              ? double.tryParse(record.data['pinLang'].toString())
+              : null,
+      pinLong:
+          record.data['pinLong'] != null
+              ? double.tryParse(record.data['pinLong'].toString())
+              : null,
       customer: customerModel,
       invoice: invoiceModel,
       invoices: invoicesList,
