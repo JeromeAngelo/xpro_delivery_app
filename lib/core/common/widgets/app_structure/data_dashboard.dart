@@ -232,6 +232,7 @@ class DashboardInfoItem {
   final IconData icon;
   final String value;
   final String label;
+  final Function? onTap;
   final Color? iconColor;
   final Color? backgroundColor;
   final double? trend;
@@ -240,6 +241,7 @@ class DashboardInfoItem {
     required this.icon,
     required this.value,
     required this.label,
+    this.onTap,
     this.iconColor,
     this.backgroundColor,
     this.trend,

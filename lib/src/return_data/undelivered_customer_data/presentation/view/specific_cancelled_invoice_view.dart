@@ -154,13 +154,7 @@ class _SpecificCancelledInvoiceViewState
                               context,
                               cancelledInvoice.image,
                             ),
-                        onEditPressed: () {
-                          // Navigate to edit screen
-                          context.go(
-                            '/cancelled-invoices/edit/${widget.cancelledInvoiceId}',
-                          );
-                        },
-                        onDeletePressed: () => _showDeleteDialog(context),
+                       
                       ),
 
                       const SizedBox(height: 24),
@@ -312,37 +306,5 @@ class _SpecificCancelledInvoiceViewState
     );
   }
 
-  void _showDeleteDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Delete Cancelled Invoice'),
-          content: const Text(
-            'Are you sure you want to delete this cancelled invoice? This action cannot be undone.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                // Add delete functionality here
-                context.read<CancelledInvoiceBloc>().add(
-                  DeleteCancelledInvoiceEvent(widget.cancelledInvoiceId),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  
 }

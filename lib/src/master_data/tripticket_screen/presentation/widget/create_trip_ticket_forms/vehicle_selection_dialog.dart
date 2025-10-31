@@ -87,6 +87,7 @@ class _VehicleSelectionDialogState extends State<VehicleSelectionDialog> {
             SizedBox(
               width: 500,
               child: TextField(
+                style:  const TextStyle(color: Colors.black),
                 decoration: InputDecoration(
                   hintText: 'Search vehicles...',
                   prefixIcon: const Icon(Icons.search),

@@ -64,7 +64,7 @@ class CancelledInvoiceDashboardWidget extends StatelessWidget {
       // Cancellation Reason
       DashboardInfoItem(
         icon: Icons.cancel,
-        value: cancelledInvoice.reason?.name ?? 'No Reason',
+        value: _humanize(cancelledInvoice.reason?.name),
         label: 'Cancellation Reason',
         iconColor: Colors.red,
       ),
@@ -102,6 +102,45 @@ class CancelledInvoiceDashboardWidget extends StatelessWidget {
       ),
     ];
   }
+
+  
+
+/// Converts machine text (e.g., "storeClose", "wrongInvoice") into readable form
+  String _humanize(String? raw) {
+    if (raw == null) return 'N/A';
+    final s = raw.trim();
+    if (s.isEmpty) return 'N/A';
+
+    final lower = s.toLowerCase();
+
+    // Explicit known mappings
+    const Map<String, String> explicit = {
+      'storeclose': 'Store Closed',
+      'store_closed': 'Store Closed',
+      'wronginvoice': 'Wrong Invoice',
+      'customernotavailable': 'Customer Not Available',
+      'environmentalissues': 'Environmental Issues',
+      'rescheduled': 'Rescheduled',
+      'none': 'None',
+    };
+
+    if (explicit.containsKey(lower)) return explicit[lower]!;
+
+    // Normalize underscores and camelCase
+    var normalized = s.replaceAll(RegExp(r'[_\-]+'), ' ');
+    normalized = normalized.replaceAllMapped(
+      RegExp(r'([a-z0-9])([A-Z])'),
+      (m) => '${m[1]} ${m[2]}',
+    );
+    normalized = normalized.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    final words = normalized.split(' ');
+    return words
+        .map((w) =>
+            w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+        .join(' ');
+  }
+  
 
   String _formatCurrency(double amount) {
     return '₱${amount.toStringAsFixed(2)}';

@@ -16,7 +16,6 @@ import 'package:xpro_delivery_admin_app/src/users/presentation/widgets/create_&_
 import 'package:xpro_delivery_admin_app/src/users/presentation/widgets/create_&_update_user_widgets/user_role_drop_down.dart';
 import 'package:xpro_delivery_admin_app/src/users/presentation/widgets/create_&_update_user_widgets/user_status_drop_down.dart';
 
-
 class CreateUserView extends StatefulWidget {
   const CreateUserView({super.key});
 
@@ -41,36 +40,40 @@ class _CreateUserViewState extends State<CreateUserView> {
   bool _createAnother =
       false; // Track whether to create another user after this one
 
- @override
+  @override
   void initState() {
     super.initState();
     // Load delivery users when the screen initializes
     // Only load if not already loading or loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      
+
       final currentState = context.read<GeneralUserBloc>().state;
-      debugPrint('📱 AllUsersView initState - Current state: ${currentState.runtimeType}');
-      
+      debugPrint(
+        '📱 AllUsersView initState - Current state: ${currentState.runtimeType}',
+      );
+
       // Trigger loading for appropriate states
-      if (currentState is GeneralUserInitial || 
-          currentState is GeneralUserError || 
+      if (currentState is GeneralUserInitial ||
+          currentState is GeneralUserError ||
           currentState is UserAuthenticated) {
-        debugPrint('🔄 Triggering GetAllUsersEvent from initState - State: ${currentState.runtimeType}');
+        debugPrint(
+          '🔄 Triggering GetAllUsersEvent from initState - State: ${currentState.runtimeType}',
+        );
         context.read<GeneralUserBloc>().add(const GetAllUsersEvent());
       } else if (currentState is AllUsersLoaded) {
         debugPrint('✅ Users already loaded, skipping API call');
       } else if (currentState is GeneralUserLoading) {
         debugPrint('⏳ Users currently loading, skipping API call');
       } else {
-        debugPrint('⚠️ Unexpected state in initState: ${currentState.runtimeType}');
+        debugPrint(
+          '⚠️ Unexpected state in initState: ${currentState.runtimeType}',
+        );
         // Trigger loading anyway for unexpected states
         context.read<GeneralUserBloc>().add(const GetAllUsersEvent());
       }
     });
   }
-
-   
 
   @override
   void dispose() {
@@ -227,7 +230,7 @@ class _CreateUserViewState extends State<CreateUserView> {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  context.go('/users');
+                  context.go('/all-users');
                 }
               },
               onSave: () => _createUser(createAnother: false),
