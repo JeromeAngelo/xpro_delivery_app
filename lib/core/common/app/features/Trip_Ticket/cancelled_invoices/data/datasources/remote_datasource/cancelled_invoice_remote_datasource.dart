@@ -621,17 +621,21 @@ class CancelledInvoiceRemoteDataSourceImpl
       }
     }
 
-    // Process image URL
-    String? imageUrl;
-    if (record.data['image'] != null &&
-        record.data['image'].toString().isNotEmpty) {
-      final baseUrl = _pocketBaseClient.baseUrl;
-      final collectionId = record.collectionId;
-      final recordId = record.id;
-      final filename = record.data['image'];
-      imageUrl = '$baseUrl/api/files/$collectionId/$recordId/$filename';
-      debugPrint('📷 Processed image URL: $imageUrl');
-    }
+   // Process image URL
+String? imageUrl;
+if (record.data['image'] != null && record.data['image'].toString().isNotEmpty) {
+  final baseUrl = _pocketBaseClient.baseUrl;
+  final collectionName = record.collectionName;
+  final recordId = record.id;
+
+  // 🧹 Clean filename (remove any brackets)
+  final rawFilename = record.data['image'].toString();
+  final filename = rawFilename.replaceAll(RegExp(r'[\[\]]'), '');
+
+  imageUrl = '$baseUrl/api/files/$collectionName/$recordId/$filename';
+  debugPrint('📷 Fixed image URL: $imageUrl');
+}
+
 
     final cancelledInvoice = CancelledInvoiceModel(
       id: record.id,

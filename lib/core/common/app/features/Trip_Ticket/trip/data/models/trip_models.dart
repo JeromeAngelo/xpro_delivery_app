@@ -49,6 +49,7 @@ class TripModel extends TripEntity {
     super.isEndTrip,
     super.timeEndTrip,
     super.deliveryDate,
+    super.expectedReturnDate,
     super.created,
     super.name,
     super.updated,
@@ -313,6 +314,9 @@ class TripModel extends TripEntity {
           deliveryDate: json['deliveryDate'] != null
           ? _parseDateTime(json['deliveryDate'])
           : null,
+           expectedReturnDate: json['expectedReturnDate'] != null
+          ? _parseDateTime(json['expectedReturnDate'])
+          : null,
       created: json['created'] != null
           ? _parseDateTime(json['created'])
           : null,
@@ -371,6 +375,7 @@ class TripModel extends TripEntity {
       'deliveryTeam': deliveryTeam?.id,
       'timeAccepted': timeAccepted?.toIso8601String(),
       'isEndTrip': isEndTrip,
+      'expectedReturnDate': expectedReturnDate?.toIso8601String(),
       'timeEndTrip': timeEndTrip?.toIso8601String(),
       'deliveryDate': deliveryDate?.toIso8601String(),
       'created': created?.toIso8601String(),
@@ -405,6 +410,7 @@ class TripModel extends TripEntity {
       endTripOtp: entity.endTripOtp,
       deliveryTeam: entity.deliveryTeam,
       timeAccepted: entity.timeAccepted,
+      expectedReturnDate: entity.expectedReturnDate,
       isEndTrip: entity.isEndTrip,
       timeEndTrip: entity.timeEndTrip,
       created: entity.created,
@@ -443,6 +449,7 @@ class TripModel extends TripEntity {
     DateTime? timeEndTrip,
     DateTime? deliveryDate,
     DateTime? created,
+    DateTime? expectedReturnDate,
     DateTime? updated,
     String? qrCode,
     bool? isAccepted,
@@ -473,6 +480,7 @@ class TripModel extends TripEntity {
       endTripOtp: endTripOtp ?? this.endTripOtp,
       deliveryTeam: deliveryTeam ?? this.deliveryTeam,
       timeAccepted: timeAccepted ?? this.timeAccepted,
+      expectedReturnDate: expectedReturnDate ?? this.expectedReturnDate,
       isEndTrip: isEndTrip ?? this.isEndTrip,
       timeEndTrip: timeEndTrip ?? this.timeEndTrip,
       created: created ?? this.created,

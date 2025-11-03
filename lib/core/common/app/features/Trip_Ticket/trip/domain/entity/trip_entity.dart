@@ -51,6 +51,7 @@ class TripEntity extends Equatable {
   DateTime? timeEndTrip;
   DateTime? timeAccepted;
    DateTime? deliveryDate;
+   DateTime? expectedReturnDate;
   DateTime? created;
   DateTime? updated;
   String? qrCode;
@@ -83,6 +84,7 @@ class TripEntity extends Equatable {
     this.timeEndTrip,
     this.isEndTrip,
     this.timeAccepted,
+    this.expectedReturnDate,
     this.isAccepted,
     this.qrCode,
     this.created,
@@ -122,6 +124,7 @@ class TripEntity extends Equatable {
     cancelledInvoice,
     deliveryCollection,
     deliveryDate,
+    expectedReturnDate,
     otp?.id,
     endTripOtp?.id,
     timeEndTrip,

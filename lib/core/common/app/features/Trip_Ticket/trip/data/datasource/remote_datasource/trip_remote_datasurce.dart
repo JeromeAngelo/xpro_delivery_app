@@ -13,6 +13,8 @@ import 'package:xpro_delivery_admin_app/core/errors/exceptions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../../../../otp/data/models/otp_models.dart';
+
 abstract class TripRemoteDatasurce {
   // Get all trip tickets
   Future<List<TripModel>> getAllTripTickets();
@@ -257,6 +259,12 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       // Add deliveryDate field
       if (trip.deliveryDate != null) {
         tripData['deliveryDate'] = trip.deliveryDate!.toIso8601String();
+      }
+
+      // Add deliveryDate field
+      if (trip.expectedReturnDate != null) {
+        tripData['expectedReturnDate'] =
+            trip.expectedReturnDate!.toIso8601String();
       }
 
       // Generate QR code (using trip number as the QR code value)
@@ -713,7 +721,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
           .getOne(
             tripId,
             expand:
-                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
+                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData,otp',
           );
 
       debugPrint('✅ Trip ticket found: ${record.id}');
@@ -835,292 +843,326 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
   }
 
   // Helper method to map a record to a TripModel
-  TripModel _mapRecordToTripModel(RecordModel record) {
-    try {
-      debugPrint('🔄 Mapping record to TripModel: ${record.id}');
+    TripModel _mapRecordToTripModel(RecordModel record) {
+      try {
+        debugPrint('🔄 Mapping record to TripModel: ${record.id}');
 
-      // Parse dates properly
-      DateTime? timeAccepted;
-      if (record.data['timeAccepted'] != null) {
-        try {
-          timeAccepted = DateTime.parse(record.data['timeAccepted']);
-          debugPrint('✅ Parsed timeAccepted: $timeAccepted');
-        } catch (e) {
-          debugPrint('❌ Failed to parse timeAccepted: ${e.toString()}');
+        // Parse dates properly
+        DateTime? timeAccepted;
+        if (record.data['timeAccepted'] != null) {
+          try {
+            timeAccepted = DateTime.parse(record.data['timeAccepted']);
+            debugPrint('✅ Parsed timeAccepted: $timeAccepted');
+          } catch (e) {
+            debugPrint('❌ Failed to parse timeAccepted: ${e.toString()}');
+          }
         }
-      }
 
-      // Parse dates properly
-      DateTime? deliveryDate;
-      if (record.data['deliveryDate'] != null) {
-        try {
-          deliveryDate = DateTime.parse(record.data['deliveryDate']);
-          debugPrint('✅ Parsed timeAccepted: $timeAccepted');
-        } catch (e) {
-          debugPrint('❌ Failed to parse timeAccepted: ${e.toString()}');
+        DateTime? expectedReturnDate;
+        if (record.data['expectedReturnDate'] != null) {
+          try {
+            expectedReturnDate = DateTime.parse(
+              record.data['expectedReturnDate'],
+            );
+            debugPrint('✅ Parsed expectedReturnDate: $expectedReturnDate');
+          } catch (e) {
+            debugPrint('❌ Failed to parse expectedReturnDate: ${e.toString()}');
+          }
         }
-      }
 
-      DateTime? timeEndTrip;
-      if (record.data['timeEndTrip'] != null) {
-        try {
-          timeEndTrip = DateTime.parse(record.data['timeEndTrip']);
-          debugPrint('✅ Parsed timeEndTrip: $timeEndTrip');
-        } catch (e) {
-          debugPrint('❌ Failed to parse timeEndTrip: ${e.toString()}');
+        // Parse dates properly
+        DateTime? deliveryDate;
+        if (record.data['deliveryDate'] != null) {
+          try {
+            deliveryDate = DateTime.parse(record.data['deliveryDate']);
+            debugPrint('✅ Parsed timeAccepted: $deliveryDate');
+          } catch (e) {
+            debugPrint('❌ Failed to parse timeAccepted: ${e.toString()}');
+          }
         }
-      }
 
-      // Handle user data - Use helper function to map expanded data
-      final userJsonData = _mapExpandedItem(record.expand['user']);
-      GeneralUserModel? usersModel;
-
-      if (userJsonData != null) {
-        debugPrint(
-          '✅ Found user data: ${userJsonData['name']} (${userJsonData['id']})',
-        );
-        try {
-          usersModel = GeneralUserModel.fromJson(userJsonData);
-          debugPrint('✅ Successfully processed user: ${usersModel.name}');
-        } catch (e) {
-          debugPrint('❌ Error processing user data: $e');
+        DateTime? timeEndTrip;
+        if (record.data['timeEndTrip'] != null) {
+          try {
+            timeEndTrip = DateTime.parse(record.data['timeEndTrip']);
+            debugPrint('✅ Parsed timeEndTrip: $timeEndTrip');
+          } catch (e) {
+            debugPrint('❌ Failed to parse timeEndTrip: ${e.toString()}');
+          }
         }
-      } else {
-        // Check if we have a raw user ID that failed to expand
-        final rawUserId = record.data['user'];
-        if (rawUserId != null && rawUserId.toString().isNotEmpty) {
-          debugPrint('⚠️ Found raw user ID but expand failed: $rawUserId');
-          usersModel = GeneralUserModel(id: rawUserId.toString());
+
+        // Handle user data - Use helper function to map expanded data
+        final userJsonData = _mapExpandedItem(record.expand['user']);
+        GeneralUserModel? usersModel;
+
+        if (userJsonData != null) {
+          debugPrint(
+            '✅ Found user data: ${userJsonData['name']} (${userJsonData['id']})',
+          );
+          try {
+            usersModel = GeneralUserModel.fromJson(userJsonData);
+            debugPrint('✅ Successfully processed user: ${usersModel.name}');
+          } catch (e) {
+            debugPrint('❌ Error processing user data: $e');
+          }
         } else {
-          debugPrint(
-            '⚠️ No user data found in record (raw field is also null/empty)',
-          );
+          // Check if we have a raw user ID that failed to expand
+          final rawUserId = record.data['user'];
+          if (rawUserId != null && rawUserId.toString().isNotEmpty) {
+            debugPrint('⚠️ Found raw user ID but expand failed: $rawUserId');
+            usersModel = GeneralUserModel(id: rawUserId.toString());
+          } else {
+            debugPrint(
+              '⚠️ No user data found in record (raw field is also null/empty)',
+            );
+          }
         }
-      }
 
-      // Handle delivery vehicle - Use helper function to map expanded data
-      final vehicleJsonData = _mapExpandedItem(
-        record.expand['deliveryVehicle'],
-      );
-      DeliveryVehicleModel? vehicleModel;
+        // Handle delivery vehicle - Use helper function to map expanded data
+        final vehicleJsonData = _mapExpandedItem(
+          record.expand['deliveryVehicle'],
+        );
+        DeliveryVehicleModel? vehicleModel;
 
-      if (vehicleJsonData != null) {
+        if (vehicleJsonData != null) {
+          debugPrint(
+            '✅ Found vehicle data: ${vehicleJsonData['name']} - ${vehicleJsonData['plateNo']} - ${vehicleJsonData['type']}',
+          );
+
+          try {
+            vehicleModel = DeliveryVehicleModel.fromJson(vehicleJsonData);
+            debugPrint(
+              '✅ Successfully processed vehicle: ${vehicleModel.name} - ${vehicleModel.plateNo} - ${vehicleModel.type}',
+            );
+          } catch (e) {
+            debugPrint('❌ Error processing vehicle data: $e');
+          }
+        } else {
+          debugPrint('⚠️ No vehicle data found in record');
+        }
+
+        // Handle delivery vehicle - Use helper function to map expanded data
+        final otpJsonData = _mapExpandedItem(record.expand['otp']);
+        OtpModel? otpData;
+
+        if (otpJsonData != null) {
+          debugPrint(
+            '✅ Found OTP data: ${otpJsonData['otpCode']} - ${otpJsonData['otpType']}',
+          );
+
+          try {
+            otpData = OtpModel.fromJson(otpJsonData);
+            debugPrint(
+              '✅ Successfully processed OTP: ${otpData.trip!.id} - ${otpData.otpCode} - ${otpData.otpType} - ',
+            );
+          } catch (e) {
+            debugPrint('❌ Error processing OTP data: $e');
+          }
+        } else {
+          debugPrint('⚠️ No OTP data found in record');
+        }
+
+        // Handle delivery data - New relationship
+        final deliveryDataList = record.expand['deliveryData'];
+        List<DeliveryDataModel> deliveryDataModels = [];
+
+        if (deliveryDataList != null) {
+          debugPrint('✅ Found delivery data: ${deliveryDataList.runtimeType}');
+
+          try {
+            for (var dataItem in deliveryDataList) {
+              deliveryDataModels.add(
+                DeliveryDataModel.fromJson({
+                  'id': dataItem.id,
+                  'collectionId': dataItem.collectionId,
+                  'collectionName': dataItem.collectionName,
+                  ...dataItem.data,
+                }),
+              );
+            }
+            debugPrint(
+              '✅ Processed ${deliveryDataModels.length} delivery data items',
+            );
+          } catch (e) {
+            debugPrint('❌ Error processing delivery data: $e');
+          }
+        } else {
+          debugPrint('⚠️ No delivery data found in record');
+        }
+
+        // Handle delivery collection data - Map to CollectionModel objects
+        final deliveryCollectionList = record.expand['deliveryCollection'];
+        List<collection.CollectionModel> deliveryCollectionModels = [];
+
         debugPrint(
-          '✅ Found vehicle data: ${vehicleJsonData['name']} - ${vehicleJsonData['plateNo']} - ${vehicleJsonData['type']}',
+          '📊 Raw deliveryCollection from expand: $deliveryCollectionList',
+        );
+        debugPrint(
+          '📊 DeliveryCollection type: ${deliveryCollectionList?.runtimeType}',
         );
 
-        try {
-          vehicleModel = DeliveryVehicleModel.fromJson(vehicleJsonData);
-          debugPrint(
-            '✅ Successfully processed vehicle: ${vehicleModel.name} - ${vehicleModel.plateNo} - ${vehicleModel.type}',
-          );
-        } catch (e) {
-          debugPrint('❌ Error processing vehicle data: $e');
-        }
-      } else {
-        debugPrint('⚠️ No vehicle data found in record');
-      }
+        if (deliveryCollectionList != null) {
+          debugPrint('📊 Processing delivery collection data');
 
-      // Handle delivery data - New relationship
-      final deliveryDataList = record.expand['deliveryData'];
-      List<DeliveryDataModel> deliveryDataModels = [];
-
-      if (deliveryDataList != null) {
-        debugPrint('✅ Found delivery data: ${deliveryDataList.runtimeType}');
-
-        try {
-          for (var dataItem in deliveryDataList) {
-            deliveryDataModels.add(
-              DeliveryDataModel.fromJson({
-                'id': dataItem.id,
-                'collectionId': dataItem.collectionId,
-                'collectionName': dataItem.collectionName,
-                ...dataItem.data,
-              }),
-            );
-          }
-          debugPrint(
-            '✅ Processed ${deliveryDataModels.length} delivery data items',
-          );
-        } catch (e) {
-          debugPrint('❌ Error processing delivery data: $e');
-        }
-      } else {
-        debugPrint('⚠️ No delivery data found in record');
-      }
-
-      // Handle delivery collection data - Map to CollectionModel objects
-      final deliveryCollectionList = record.expand['deliveryCollection'];
-      List<collection.CollectionModel> deliveryCollectionModels = [];
-
-      debugPrint(
-        '📊 Raw deliveryCollection from expand: $deliveryCollectionList',
-      );
-      debugPrint(
-        '📊 DeliveryCollection type: ${deliveryCollectionList?.runtimeType}',
-      );
-
-      if (deliveryCollectionList != null) {
-        debugPrint('📊 Processing delivery collection data');
-
-        try {
-          debugPrint(
-            '📊 DeliveryCollection is a list with ${deliveryCollectionList.length} items',
-          );
-
-          for (var collectionItem in deliveryCollectionList) {
+          try {
             debugPrint(
-              '📊 Processing collection item type: ${collectionItem.runtimeType}',
+              '📊 DeliveryCollection is a list with ${deliveryCollectionList.length} items',
             );
 
-            try {
-              // Handle RecordModel objects from PocketBase expand
-              final itemMap = {
-                'id': collectionItem.id,
-                'collectionId': collectionItem.collectionId,
-                'collectionName': collectionItem.collectionName,
-                'created': collectionItem.created,
-                'updated': collectionItem.updated,
-                ...Map<String, dynamic>.from(collectionItem.data),
-              };
-              final collectionModel = collection.CollectionModel.fromJson(
-                itemMap,
+            for (var collectionItem in deliveryCollectionList) {
+              debugPrint(
+                '📊 Processing collection item type: ${collectionItem.runtimeType}',
               );
-              deliveryCollectionModels.add(collectionModel);
-              debugPrint('✅ Mapped collection item: ${collectionItem.id}');
-            } catch (e) {
-              debugPrint('❌ Error mapping collection item: $e');
-              debugPrint('❌ Item type: ${collectionItem.runtimeType}');
-              debugPrint('❌ Item data: $collectionItem');
+
+              try {
+                // Handle RecordModel objects from PocketBase expand
+                final itemMap = {
+                  'id': collectionItem.id,
+                  'collectionId': collectionItem.collectionId,
+                  'collectionName': collectionItem.collectionName,
+                  'created': collectionItem.created,
+                  'updated': collectionItem.updated,
+                  ...Map<String, dynamic>.from(collectionItem.data),
+                };
+                final collectionModel = collection.CollectionModel.fromJson(
+                  itemMap,
+                );
+                deliveryCollectionModels.add(collectionModel);
+                debugPrint('✅ Mapped collection item: ${collectionItem.id}');
+              } catch (e) {
+                debugPrint('❌ Error mapping collection item: $e');
+                debugPrint('❌ Item type: ${collectionItem.runtimeType}');
+                debugPrint('❌ Item data: $collectionItem');
+              }
             }
-          }
 
-          debugPrint(
-            '✅ Successfully mapped ${deliveryCollectionModels.length} delivery collection items',
-          );
-        } catch (e) {
-          debugPrint('❌ Error processing delivery collection data: $e');
-        }
-      } else {
-        debugPrint('⚠️ No delivery collection found in record expand');
-      }
-
-      debugPrint(
-        '✅ Final mapping - Using ${deliveryCollectionModels.length} delivery collection models',
-      );
-
-      // Handle cancelled invoice data - Map to CancelledInvoiceModel objects
-      final cancelledInvoiceList = record.expand['cancelledInvoice'];
-      List<CancelledInvoiceModel> cancelledInvoiceModels = [];
-
-      debugPrint('📊 Raw cancelledInvoice from expand: $cancelledInvoiceList');
-      debugPrint(
-        '📊 CancelledInvoice type: ${cancelledInvoiceList?.runtimeType}',
-      );
-
-      if (cancelledInvoiceList != null) {
-        debugPrint('📊 Processing cancelled invoice data');
-
-        try {
-          debugPrint(
-            '📊 CancelledInvoice is a list with ${cancelledInvoiceList.length} items',
-          );
-
-          for (var invoiceItem in cancelledInvoiceList) {
             debugPrint(
-              '📊 Processing cancelled invoice item type: ${invoiceItem.runtimeType}',
+              '✅ Successfully mapped ${deliveryCollectionModels.length} delivery collection items',
             );
-
-            try {
-              // Handle RecordModel objects from PocketBase expand
-              final itemMap = {
-                'id': invoiceItem.id,
-                'collectionId': invoiceItem.collectionId,
-                'collectionName': invoiceItem.collectionName,
-                'created': invoiceItem.created,
-                'updated': invoiceItem.updated,
-                ...Map<String, dynamic>.from(invoiceItem.data),
-              };
-              final cancelledInvoiceModel = CancelledInvoiceModel.fromJson(
-                itemMap,
-              );
-              cancelledInvoiceModels.add(cancelledInvoiceModel);
-              debugPrint('✅ Mapped cancelled invoice item: ${invoiceItem.id}');
-            } catch (e) {
-              debugPrint('❌ Error mapping cancelled invoice item: $e');
-              debugPrint('❌ Item type: ${invoiceItem.runtimeType}');
-              debugPrint('❌ Item data: $invoiceItem');
-            }
+          } catch (e) {
+            debugPrint('❌ Error processing delivery collection data: $e');
           }
-
-          debugPrint(
-            '✅ Successfully mapped ${cancelledInvoiceModels.length} cancelled invoice items',
-          );
-        } catch (e) {
-          debugPrint('❌ Error processing cancelled invoice data: $e');
+        } else {
+          debugPrint('⚠️ No delivery collection found in record expand');
         }
-      } else {
-        debugPrint('⚠️ No cancelled invoice found in record expand');
-      }
 
-      debugPrint(
-        '✅ Final mapping - Using ${cancelledInvoiceModels.length} cancelled invoice models',
-      );
-
-      // Debug vehicle mapping
-      if (vehicleModel != null) {
         debugPrint(
-          '🚗 Vehicle data mapped for TripModel: ${vehicleModel.name} (${vehicleModel.plateNo})',
+          '✅ Final mapping - Using ${deliveryCollectionModels.length} delivery collection models',
         );
-      } else {
-        debugPrint('⚠️ No vehicle data available for TripModel mapping');
+
+        // Handle cancelled invoice data - Map to CancelledInvoiceModel objects
+        final cancelledInvoiceList = record.expand['cancelledInvoice'];
+        List<CancelledInvoiceModel> cancelledInvoiceModels = [];
+
+        debugPrint('📊 Raw cancelledInvoice from expand: $cancelledInvoiceList');
+        debugPrint(
+          '📊 CancelledInvoice type: ${cancelledInvoiceList?.runtimeType}',
+        );
+
+        if (cancelledInvoiceList != null) {
+          debugPrint('📊 Processing cancelled invoice data');
+
+          try {
+            debugPrint(
+              '📊 CancelledInvoice is a list with ${cancelledInvoiceList.length} items',
+            );
+
+            for (var invoiceItem in cancelledInvoiceList) {
+              debugPrint(
+                '📊 Processing cancelled invoice item type: ${invoiceItem.runtimeType}',
+              );
+
+              try {
+                // Handle RecordModel objects from PocketBase expand
+                final itemMap = {
+                  'id': invoiceItem.id,
+                  'collectionId': invoiceItem.collectionId,
+                  'collectionName': invoiceItem.collectionName,
+                  'created': invoiceItem.created,
+                  'updated': invoiceItem.updated,
+                  ...Map<String, dynamic>.from(invoiceItem.data),
+                };
+                final cancelledInvoiceModel = CancelledInvoiceModel.fromJson(
+                  itemMap,
+                );
+                cancelledInvoiceModels.add(cancelledInvoiceModel);
+                debugPrint('✅ Mapped cancelled invoice item: ${invoiceItem.id}');
+              } catch (e) {
+                debugPrint('❌ Error mapping cancelled invoice item: $e');
+                debugPrint('❌ Item type: ${invoiceItem.runtimeType}');
+                debugPrint('❌ Item data: $invoiceItem');
+              }
+            }
+
+            debugPrint(
+              '✅ Successfully mapped ${cancelledInvoiceModels.length} cancelled invoice items',
+            );
+          } catch (e) {
+            debugPrint('❌ Error processing cancelled invoice data: $e');
+          }
+        } else {
+          debugPrint('⚠️ No cancelled invoice found in record expand');
+        }
+
+        debugPrint(
+          '✅ Final mapping - Using ${cancelledInvoiceModels.length} cancelled invoice models',
+        );
+
+        // Debug vehicle mapping
+        if (vehicleModel != null) {
+          debugPrint(
+            '🚗 Vehicle data mapped for TripModel: ${vehicleModel.name} (${vehicleModel.plateNo})',
+          );
+        } else {
+          debugPrint('⚠️ No vehicle data available for TripModel mapping');
+        }
+
+        final mappedData = {
+          'id': record.id,
+          'collectionId': record.collectionId,
+          'collectionName': record.collectionName,
+          ...record.data,
+          'customers': _mapExpandedList(record.expand['customers']),
+          'deliveryTeam': _mapExpandedItem(record.expand['deliveryTeam']),
+          'personels': _mapExpandedList(record.expand['personels']),
+          'deliveryVehicle': vehicleModel?.toJson(),
+          'otp': otpData?.toJson(),
+          // Updated: Changed to single vehicle model
+          'deliveryData':
+              deliveryDataModels
+                  .map((model) => model.toJson())
+                  .toList(), // Added: Map delivery data
+          'checklist': _mapExpandedList(record.expand['checklist']),
+          'cancelledInvoice':
+              cancelledInvoiceModels.map((model) => model.toJson()).toList(),
+          'deliveryCollection':
+              deliveryCollectionModels.map((model) => model.toJson()).toList(),
+
+          'trip_update_list': _mapExpandedList(record.expand['trip_update_list']),
+          'user': usersModel?.toJson(),
+          'created': record.created,
+          'updated': record.updated,
+          'timeAccepted': timeAccepted?.toIso8601String(),
+          'timeEndTrip': timeEndTrip?.toIso8601String(),
+          'name': record.data['name'],
+          'longitude': record.data['longitude'],
+          'latitude': record.data['latitude'],
+          'volumeRate': record.data['volumeRate'],
+          'weightRate': record.data['weightRate'],
+          'averageFillRate': record.data['averageFillRate'],
+          'deliveryDate': deliveryDate?.toIso8601String(),
+          'expectedReturnDate': expectedReturnDate,
+        };
+
+        return TripModel.fromJson(mappedData);
+      } catch (e) {
+        debugPrint('❌ Error mapping record to TripModel: $e');
+        throw ServerException(
+          message: 'Failed to map record to TripModel: $e',
+          statusCode: '500',
+        );
       }
-
-      final mappedData = {
-        'id': record.id,
-        'collectionId': record.collectionId,
-        'collectionName': record.collectionName,
-        ...record.data,
-        'customers': _mapExpandedList(record.expand['customers']),
-        'deliveryTeam': _mapExpandedItem(record.expand['deliveryTeam']),
-        'personels': _mapExpandedList(record.expand['personels']),
-        'deliveryVehicle': vehicleModel?.toJson(),
-
-        // Updated: Changed to single vehicle model
-        'deliveryData':
-            deliveryDataModels
-                .map((model) => model.toJson())
-                .toList(), // Added: Map delivery data
-        'checklist': _mapExpandedList(record.expand['checklist']),
-        'cancelledInvoice':
-            cancelledInvoiceModels.map((model) => model.toJson()).toList(),
-        'deliveryCollection':
-            deliveryCollectionModels.map((model) => model.toJson()).toList(),
-
-        'trip_update_list': _mapExpandedList(record.expand['trip_update_list']),
-        'user': usersModel?.toJson(),
-        'created': record.created,
-        'updated': record.updated,
-        'timeAccepted': timeAccepted?.toIso8601String(),
-        'timeEndTrip': timeEndTrip?.toIso8601String(),
-        'name': record.data['name'],
-        'longitude': record.data['longitude'],
-        'latitude': record.data['latitude'],
-        'volumeRate': record.data['volumeRate'],
-        'weightRate': record.data['weightRate'],
-        'averageFillRate': record.data['averageFillRate'],
-        'deliveryDate': deliveryDate?.toIso8601String(),
-      };
-
-      return TripModel.fromJson(mappedData);
-    } catch (e) {
-      debugPrint('❌ Error mapping record to TripModel: $e');
-      throw ServerException(
-        message: 'Failed to map record to TripModel: $e',
-        statusCode: '500',
-      );
     }
-  }
 
   // Helper method to map expanded list items
   List<Map<String, dynamic>> _mapExpandedList(dynamic records) {

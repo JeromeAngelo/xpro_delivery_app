@@ -62,6 +62,7 @@ class _CreateTripTicketScreenViewState
   List<PersonelModel> _selectedHelpers = [];
   List<ChecklistModel> _selectedChecklists = [];
   DateTime? _deliveryDate;
+  DateTime? _expectedReturnDate;
   bool _isLoading = false;
   String? _errorMessage;
   bool _hasNavigated = false;
@@ -132,12 +133,17 @@ class _CreateTripTicketScreenViewState
 
     // Check if more than 2 helpers are selected
     if (_selectedHelpers.length > 3) {
-      CoreUtils.showSnackBar(context, 'Maximum of 2 helpers allowed');
+      CoreUtils.showSnackBar(context, 'Maximum of 4 helpers allowed');
       return;
     }
 
-     if (_deliveryDate == null) {
+    if (_deliveryDate == null) {
       CoreUtils.showSnackBar(context, 'Please select a delivery date');
+      return;
+    }
+
+    if (_deliveryDate == null) {
+      CoreUtils.showSnackBar(context, 'Please select a expected return date');
       return;
     }
 
@@ -166,6 +172,7 @@ class _CreateTripTicketScreenViewState
       deliveryDataList: _selectedDeliveries,
       personelsList: allPersonnel,
       deliveryDate: _deliveryDate,
+      expectedReturnDate: _expectedReturnDate,
       checklistItems: _selectedChecklists,
     );
 
@@ -429,61 +436,110 @@ class _CreateTripTicketScreenViewState
   }
 
   Widget _buildDeliveryDateForm() {
-    return Row(
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Delivery Date',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
+        // Delivery Date Section
+        Expanded(
+          child: _buildDatePickerField(
+            label: 'Delivery Date',
+            date: _deliveryDate,
+            onPickDate: (picked) {
+              setState(() => _deliveryDate = picked);
+            },
+            onClear: () {
+              setState(() => _deliveryDate = null);
+            },
           ),
         ),
 
-        SizedBox(width: 115),
-        GestureDetector(
-          onTap: () async {
-            final DateTime? pickedDate = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime.now(),
-              lastDate: DateTime(2050),
-            );
-            if (pickedDate != null) {
-              setState(() {
-                _deliveryDate = pickedDate;
-              });
-            }
-          },
-          child: Container(
-            height: 40,
-            width: 200,
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-              borderRadius: BorderRadius.circular(5),
+        const SizedBox(width: 24),
+
+        // Expected Return Date Section
+        Expanded(
+          child: _buildDatePickerField(
+            label: 'Expected Return Date',
+            date: _expectedReturnDate,
+            onPickDate: (picked) {
+              setState(() => _expectedReturnDate = picked);
+            },
+            onClear: () {
+              setState(() => _expectedReturnDate = null);
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Reusable date picker field widget
+Widget _buildDatePickerField({
+  required String label,
+  required DateTime? date,
+  required ValueChanged<DateTime> onPickDate,
+  required VoidCallback onClear,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            child: Center(
-              child: Text(
-                _deliveryDate != null
-                    ? DateFormat('MM/dd/yyyy').format(_deliveryDate!)
-                    : 'Set Delivery Date',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.outline,
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: date ?? DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2050),
+                );
+                if (pickedDate != null) onPickDate(pickedDate);
+              },
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Center(
+                  child: Text(
+                    date != null
+                        ? DateFormat('MM/dd/yyyy').format(date)
+                        : 'Select $label',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        IconButton(
-          onPressed: () {
-            setState(() {
-              _deliveryDate = null;
-            });
-          },
-          icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.error),
-          tooltip: 'Reset Delivery Date',
-        ),
-      ],
-    );
-  }
+          IconButton(
+            onPressed: onClear,
+            icon: Icon(
+              Icons.clear,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            tooltip: 'Clear $label',
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 }

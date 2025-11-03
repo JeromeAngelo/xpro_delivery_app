@@ -37,7 +37,7 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
       return DateFormat('MM/dd/yyyy hh:mm a').format(date);
     }
 
-     String dateFormat(DateTime? date) {
+    String dateFormat(DateTime? date) {
       if (date == null) return 'Not set';
       return DateFormat('MM/dd/yyyy').format(date);
     }
@@ -244,6 +244,16 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
               icon: Icons.play_circle_filled,
               value: dateFormat(widget.trip?.deliveryDate),
               label: 'Delivery Date',
+            ),
+            DashboardInfoItem(
+              icon: Icons.date_range,
+              value: dateFormat(widget.trip?.expectedReturnDate),
+              label: 'Expected Return Date',
+            ),
+            DashboardInfoItem(
+              icon: Icons.local_shipping,
+              value: formatDate(widget.trip?.otp?.verifiedAt),
+              label: 'Dispatch Time',
             ),
             DashboardInfoItem(
               icon: Icons.play_circle_filled,

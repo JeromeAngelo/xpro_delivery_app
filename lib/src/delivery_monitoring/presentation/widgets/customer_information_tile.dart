@@ -1,15 +1,25 @@
 import 'package:intl/intl.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/entity/cancelled_invoice_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:xpro_delivery_admin_app/src/delivery_monitoring/presentation/widgets/delivery_status_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class CustomerInformationTile extends StatelessWidget {
-  const CustomerInformationTile({super.key, required this.deliveryData});
+  const CustomerInformationTile({
+    super.key,
+    required this.deliveryData,
+    this.cancelledInvoice,
+  });
   final DeliveryDataEntity deliveryData;
+  final CancelledInvoiceEntity? cancelledInvoice;
 
   @override
   Widget build(BuildContext context) {
+    // Check if the delivery has a "Mark As Undelivered" status
+    final hasMarkAsUndelivered = deliveryData.deliveryUpdates.any(
+      (update) => (update.title?.toLowerCase() ?? '') == 'mark as undelivered',
+    );
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -46,7 +56,7 @@ class CustomerInformationTile extends StatelessWidget {
           const SizedBox(height: 4),
 
           Text(
-            'Route Name ${deliveryData.trip!.name ?? 'N/A'}',
+            'Route Name: ${deliveryData.trip!.name ?? 'N/A'}',
             style: Theme.of(context).textTheme.titleMedium!.copyWith(),
           ),
           const Divider(height: 32),
@@ -148,6 +158,22 @@ class CustomerInformationTile extends StatelessWidget {
                 icon: const Icon(Icons.visibility),
                 label: const Text('View Trip Details'),
               ),
+              // New button for "Mark As Undelivered"
+              if (hasMarkAsUndelivered && cancelledInvoice?.id != null) ...[
+                // const SizedBox(height: 12),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      context.go(
+                        '/undeliverable-customers/${cancelledInvoice!.id}',
+                      );
+                    },
+                    icon: const Icon(Icons.receipt_long),
+                    label: const Text('View Cancelled Invoice'),
+                  ),
+                ),
+              ],
+
               ElevatedButton.icon(
                 onPressed: () {
                   if (deliveryData.customer?.id != null) {
