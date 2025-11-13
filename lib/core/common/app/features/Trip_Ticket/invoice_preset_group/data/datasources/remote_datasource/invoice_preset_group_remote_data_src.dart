@@ -408,18 +408,21 @@ class InvoicePresetGroupRemoteDataSourceImpl
             // Process in batches of 10 to avoid overwhelming the server
             const batchSize = 10;
             for (var i = 0; i < allInvoiceIds.length; i += batchSize) {
-              final end = (i + batchSize < allInvoiceIds.length) 
-                  ? i + batchSize 
-                  : allInvoiceIds.length;
+              final end =
+                  (i + batchSize < allInvoiceIds.length)
+                      ? i + batchSize
+                      : allInvoiceIds.length;
               final batchIds = allInvoiceIds.sublist(i, end);
 
               // Process batch in parallel
               await Future.wait(
-                batchIds.map((invoiceId) => _processInvoiceSuperFast(
-                  invoiceId: invoiceId,
-                  customerId: customerId,
-                  deliveryId: actualDeliveryId,
-                )),
+                batchIds.map(
+                  (invoiceId) => _processInvoiceSuperFast(
+                    invoiceId: invoiceId,
+                    customerId: customerId,
+                    deliveryId: actualDeliveryId,
+                  ),
+                ),
               );
 
               debugPrint(
@@ -465,33 +468,43 @@ class InvoicePresetGroupRemoteDataSourceImpl
     required String deliveryId,
   }) async {
     try {
-      // OPTIMIZATION: PocketBase returns the created record with its ID!
-      // So we can get the status ID immediately without an extra query
+      debugPrint('🚀 Creating invoiceStatus for invoice: $invoiceId');
+
+      // STEP 1: Create invoiceStatus linked to invoice, customer, and delivery
       final statusRecord = await _pocketBaseClient
           .collection('invoiceStatus')
           .create(
             body: {
               'invoiceData': invoiceId,
               'customerData': customerId,
+              // ✅ Ensure field name matches your PocketBase schema exactly
+              'deliveryData': [
+                deliveryId,
+              ], // <-- FIX: must be an array if it's a relation
               'status': 'assigned',
               'tripStatus': 'pending',
             },
           );
 
-      // Now update invoice with BOTH deliveryData and invoiceStatus in ONE query
+      debugPrint('✅ Created invoiceStatus with ID: ${statusRecord.id}');
+
+      // STEP 2: Update invoiceData to point to delivery & status record
       await _pocketBaseClient
           .collection('invoiceData')
           .update(
             invoiceId,
             body: {
-              'deliveryData': deliveryId,
+              'deliveryData': [
+                deliveryId,
+              ], // <-- same here, use array for relation field
               'customer': customerId,
-              'invoiceStatus': statusRecord.id, // Use the returned ID directly!
+              'invoiceStatus': [statusRecord.id], // <-- also array if relation
             },
           );
+
+      debugPrint('✅ Updated invoiceData $invoiceId successfully');
     } catch (e) {
-      debugPrint('⚠️ Failed to process invoice $invoiceId: $e');
-      // Don't throw - continue processing other invoices
+      debugPrint('❌ Failed to process invoice $invoiceId: $e');
     }
   }
 
@@ -512,11 +525,12 @@ class InvoicePresetGroupRemoteDataSourceImpl
       // Process in smaller batches to avoid filter length issues
       // PocketBase has issues with very long OR filters
       const batchSize = 5; // Process 5 invoices at a time
-      
+
       for (var i = 0; i < invoiceIds.length; i += batchSize) {
-        final end = (i + batchSize < invoiceIds.length) 
-            ? i + batchSize 
-            : invoiceIds.length;
+        final end =
+            (i + batchSize < invoiceIds.length)
+                ? i + batchSize
+                : invoiceIds.length;
         final batchIds = invoiceIds.sublist(i, end);
 
         // Build OR filter for this batch
@@ -548,13 +562,17 @@ class InvoicePresetGroupRemoteDataSourceImpl
                     filter: 'invoice = "$invoiceId"',
                     sort: 'created',
                   );
-              
+
               final itemIds = individualResult.map((item) => item.id).toList();
               allInvoiceItemIds.addAll(itemIds);
-              
-              debugPrint('✅ Collected ${itemIds.length} items for invoice $invoiceId');
+
+              debugPrint(
+                '✅ Collected ${itemIds.length} items for invoice $invoiceId',
+              );
             } catch (individualError) {
-              debugPrint('⚠️ Could not fetch items for invoice $invoiceId: $individualError');
+              debugPrint(
+                '⚠️ Could not fetch items for invoice $invoiceId: $individualError',
+              );
               // Continue with other invoices
             }
           }
@@ -594,6 +612,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
 
   Future<bool> addInvoiceDataToInvoiceStatus({
     required String invoiceId,
+    required String deliveryDataId, // 👈 Added parameter
     String? invoiceStatusId,
   }) async {
     try {
@@ -601,8 +620,9 @@ class InvoicePresetGroupRemoteDataSourceImpl
       final statusId = invoiceStatusId ?? _generateFixedLengthId(15);
 
       debugPrint('🔄 Adding invoice $invoiceId to invoice status $statusId');
+      debugPrint('📦 Linking invoice to deliveryData: $deliveryDataId');
 
-      // First get the invoice data to extract the customer information
+      // 1️⃣ Get invoice data to extract customer info
       final invoiceRecord = await _pocketBaseClient
           .collection('invoiceData')
           .getOne(invoiceId);
@@ -610,42 +630,33 @@ class InvoicePresetGroupRemoteDataSourceImpl
       final customerId = invoiceRecord.data['customer']?.toString();
       debugPrint('🔍 Found customer ID: $customerId for invoice $invoiceId');
 
-      // Create a new invoice status record with customer data
-      await _pocketBaseClient
+      // 2️⃣ Create a new invoice status record
+      final newStatus = await _pocketBaseClient
           .collection('invoiceStatus')
           .create(
             body: {
-              // Don't specify the ID field - let PocketBase generate it
               'invoiceData': invoiceId,
               'customerData': customerId,
+              'deliveryData': deliveryDataId, // 👈 NEW FIELD
               'status': 'assigned',
               'tripStatus': 'pending',
             },
           );
 
-      debugPrint('✅ Created new invoice status with invoice data');
+      debugPrint('✅ Created new invoiceStatus record: ${newStatus.id}');
 
-      // Update the invoice data to reference this status
-      // Since we let PocketBase generate the ID, we need to fetch the created record
-      final records = await _pocketBaseClient
-          .collection('invoiceStatus')
-          .getList(
-            page: 1,
-            filter: 'invoiceData = "$invoiceId" && status = "assigned"',
-            sort: '-created',
-          );
+      // 3️⃣ Update the invoice to reference this invoiceStatus record
+      await _pocketBaseClient
+          .collection('invoiceData')
+          .update(invoiceId, body: {'invoiceStatus': newStatus.id});
 
-      if (records.items.isNotEmpty) {
-        final createdStatusId = records.items.first.id;
+      debugPrint(
+        '✅ Updated invoice $invoiceId with new status ID: ${newStatus.id}',
+      );
+      debugPrint(
+        '✅ Successfully linked invoice to deliveryData $deliveryDataId',
+      );
 
-        await _pocketBaseClient
-            .collection('invoiceData')
-            .update(invoiceId, body: {'invoiceStatus': createdStatusId});
-
-        debugPrint('✅ Updated invoice with new status ID: $createdStatusId');
-      }
-
-      debugPrint('✅ Successfully added invoice to invoice status');
       return true;
     } catch (e) {
       debugPrint('❌ Failed to add invoice to invoice status: ${e.toString()}');
@@ -667,8 +678,6 @@ class InvoicePresetGroupRemoteDataSourceImpl
       ),
     );
   }
-
-  
 
   @override
   Future<List<InvoicePresetGroupModel>> searchPresetGroupByRefId(

@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/delivery_team/data/models/delivery_team_model.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/data/models/personel_models.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
@@ -329,21 +330,64 @@ class TripModel extends TripEntity {
   }
 
   // Helper method for safe date parsing
-  static DateTime? _parseDateTime(dynamic value) {
-    if (value == null) return null;
-    
-    // If value is already a DateTime, return it directly
-    if (value is DateTime) {
-      return value;
+static DateTime? _parseDateTime(dynamic value) {
+  if (value == null) return null;
+
+  // ✅ If it's already a DateTime
+  if (value is DateTime) return value;
+
+  try {
+    // ✅ Handle epoch timestamps (seconds or milliseconds)
+    if (value is int) {
+      // If timestamp is too large, assume it's milliseconds
+      if (value > 9999999999) {
+        return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true).toLocal();
+      } else {
+        return DateTime.fromMillisecondsSinceEpoch(value * 1000, isUtc: true).toLocal();
+      }
     }
-    
+
+    // ✅ Convert to string for flexible parsing
+    final strValue = value.toString().trim();
+
+    // ✅ Common formats to try if ISO parsing fails
+    final possibleFormats = [
+      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+      "yyyy-MM-dd'T'HH:mm:ss'Z'",
+      "yyyy-MM-dd HH:mm:ss",
+      "yyyy/MM/dd HH:mm:ss",
+      "MM/dd/yyyy HH:mm:ss",
+      "MM/dd/yyyy",
+      "yyyy-MM-dd",
+    ];
+
+    // ✅ Try direct ISO8601 parse first (fast path)
     try {
-      return DateTime.parse(value.toString());
-    } catch (e) {
-      debugPrint('⚠️ TripModel date parsing failed: $e for value: ${value.toString()}');
-      return null;
+      final parsed = DateTime.parse(strValue);
+      return parsed.isUtc ? parsed.toLocal() : parsed;
+    } catch (_) {
+      // continue with custom formats
     }
+
+    // ✅ Try parsing with known formats
+    for (final format in possibleFormats) {
+      try {
+        final parsed = DateFormat(format).parseUtc(strValue);
+        return parsed.toLocal();
+      } catch (_) {
+        continue;
+      }
+    }
+
+    // ❌ If all failed, log and return null
+    debugPrint('⚠️ Date parsing failed for value: $strValue');
+    return null;
+  } catch (e) {
+    debugPrint('❌ _parseDateTime() error: $e for value: $value');
+    return null;
   }
+}
+
 
   DataMap toJson() {
     return {

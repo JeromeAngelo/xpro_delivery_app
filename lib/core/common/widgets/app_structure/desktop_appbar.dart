@@ -84,7 +84,9 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
           } else {
             userName = 'Guest';
             isAuthenticated = false;
-            debugPrint('⚠️ Desktop AppBar: AllUsersLoaded but no authenticated user');
+            debugPrint(
+              '⚠️ Desktop AppBar: AllUsersLoaded but no authenticated user',
+            );
           }
         } else if (state is GeneralUserLoaded) {
           currentUser = state.user;
@@ -103,7 +105,9 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
           userAvatar = state.user.profilePic;
           userRole = state.user.role?.name;
           isAuthenticated = true;
-          debugPrint('✅ Desktop AppBar: User by ID loaded - ${state.user.email}');
+          debugPrint(
+            '✅ Desktop AppBar: User by ID loaded - ${state.user.email}',
+          );
         } else if (state is GeneralUserLoading) {
           isLoading = true;
           userName = 'Loading...';
@@ -223,8 +227,8 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
                               .map((notif) {
                                 final statusText =
                                     notif.status ??
-                                    (notif.trip?.tripNumberId != null
-                                        ? notif.trip!.tripNumberId
+                                    (notif.trip?.id != null
+                                        ? notif.trip!.id
                                         : 'unknown');
                                 // Create descriptive message
                                 final message =

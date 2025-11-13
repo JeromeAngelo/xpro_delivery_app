@@ -244,63 +244,66 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       return _processDeliveryDataRecord(record);
     }, 'getDeliveryDataById');
   }
+@override
+Future<bool> deleteDeliveryData(String id) async {
+  try {
+    debugPrint('🔄 Deleting delivery data with ID: $id');
 
-  @override
-  Future<bool> deleteDeliveryData(String id) async {
+    // Step 1: Fetch the deliveryData record to check relationships
+    final record = await _pocketBaseClient
+        .collection('deliveryData')
+        .getOne(id);
+
+    debugPrint('📦 Found delivery data record: ${record.id}');
+
+    // Step 2: Delete all invoiceStatus records referencing this deliveryData
     try {
-      debugPrint('🔄 Deleting delivery data with ID: $id');
+      final invoiceStatusRecords = await _pocketBaseClient
+          .collection('invoiceStatus')
+          .getFullList(filter: 'deliveryData = "$id"');
 
-      // First, get the delivery data to check its relationships
-      final record = await _pocketBaseClient
-          .collection('deliveryData')
-          .getOne(id);
-
-      // Get the invoice ID from the delivery data
-      final invoiceId = record.data['invoice'];
-
-      if (invoiceId != null && invoiceId != '') {
-        debugPrint(
-          '🔍 Found invoice ID: $invoiceId in delivery data, checking for invoiceStatus records',
-        );
-
-        // Find any invoiceStatus records that reference this invoice
-        try {
-          final invoiceStatusRecords = await _pocketBaseClient
+      if (invoiceStatusRecords.isNotEmpty) {
+        for (var statusRecord in invoiceStatusRecords) {
+          debugPrint('🗑️ Deleting invoiceStatus record: ${statusRecord.id}');
+          await _pocketBaseClient
               .collection('invoiceStatus')
-              .getFullList(filter: 'invoiceData = "$invoiceId"');
-
-          // Delete each invoiceStatus record that references this invoice
-          for (var statusRecord in invoiceStatusRecords) {
-            debugPrint('🗑️ Deleting invoiceStatus record: ${statusRecord.id}');
-            await _pocketBaseClient
-                .collection('invoiceStatus')
-                .delete(statusRecord.id);
-          }
-
-          debugPrint(
-            '✅ Deleted ${invoiceStatusRecords.length} invoiceStatus records',
-          );
-        } catch (e) {
-          // Just log the error but continue with deleting the delivery data
-          debugPrint(
-            '⚠️ Error while deleting invoiceStatus records: ${e.toString()}',
-          );
+              .delete(statusRecord.id);
         }
+        debugPrint('✅ Deleted ${invoiceStatusRecords.length} invoiceStatus records linked to deliveryData: $id');
+      } else {
+        debugPrint('ℹ️ No invoiceStatus records found referencing deliveryData: $id');
       }
-
-      // Delete the delivery data
-      await _pocketBaseClient.collection('deliveryData').delete(id);
-
-      debugPrint('✅ Successfully deleted delivery data with ID: $id');
-      return true;
     } catch (e) {
-      debugPrint('❌ Failed to delete delivery data: ${e.toString()}');
-      throw ServerException(
-        message: 'Failed to delete delivery data: ${e.toString()}',
-        statusCode: e is ServerException ? e.statusCode : '500',
-      );
+      debugPrint('⚠️ Error while deleting invoiceStatus records: ${e.toString()}');
+      // Continue even if deleting related statuses fails
     }
+
+    // Step 3: Optionally, delete related invoice by its ID (if present)
+    final invoiceId = record.data['invoice'];
+    if (invoiceId != null && invoiceId.toString().isNotEmpty) {
+      debugPrint('🧾 Deleting linked invoice record: $invoiceId');
+      try {
+        await _pocketBaseClient.collection('invoiceData').delete(invoiceId);
+        debugPrint('✅ Deleted invoice record: $invoiceId');
+      } catch (e) {
+        debugPrint('⚠️ Failed to delete linked invoice record: ${e.toString()}');
+      }
+    }
+
+    // Step 4: Delete the main deliveryData record
+    await _pocketBaseClient.collection('deliveryData').delete(id);
+    debugPrint('✅ Successfully deleted delivery data with ID: $id');
+
+    return true;
+  } catch (e) {
+    debugPrint('❌ Failed to delete delivery data: ${e.toString()}');
+    throw ServerException(
+      message: 'Failed to delete delivery data: ${e.toString()}',
+      statusCode: e is ServerException ? e.statusCode : '500',
+    );
   }
+}
+
 
   @override
   Future<bool> addDeliveryDataToTrip(String tripId) async {

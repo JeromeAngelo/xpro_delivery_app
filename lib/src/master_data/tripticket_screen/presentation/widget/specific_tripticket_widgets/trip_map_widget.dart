@@ -1,5 +1,6 @@
 // ignore_for_file: unused_element
 
+import 'dart:convert';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip_coordinates_update/domain/entity/trip_coordinates_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Helper class to track points with timestamps for chronological ordering
 class _TimestampedPoint {
@@ -60,54 +62,194 @@ class _TripMapWidgetState extends State<TripMapWidget>
   late Animation<double> _heightAnimation;
   bool isActivityLogExpanded = false;
   final ScrollController _horizontalScrollController = ScrollController();
-  bool _isSatelliteView = false; // Add this line
+  bool _isSatelliteView = false;
   
   // Street View functionality
   bool _isStreetViewMode = false;
   LatLng? _streetViewPosition;
   bool _isDraggingStreetViewIcon = false;
 
+  // Cached data for performance optimization
+  List<Marker>? _cachedCoordinateMarkers;
+  List<Marker>? _cachedDeliveryMarkers;
+  List<Marker>? _cachedUpdateMarkers;
+  List<LatLng>? _cachedRoutePoints;
+  List<TripCoordinatesEntity>? _cachedOrderedCoordinates;
+  String? _lastCacheKey;
+
+  // Persistent cache for offline fallback
+  Map<String, dynamic>? _persistentCachedData;
+  bool _isLoadingFromCache = false;
+
+  // Generate a cache key based on current data
+  String _generateCacheKey() {
+    return '${widget.tripId}_'
+        '${widget.tripCoordinates.length}_'
+        '${widget.deliveryData.length}_'
+        '${widget.tripUpdates.length}_'
+        '${widget.trip?.latitude}_${widget.trip?.longitude}';
+  }
+
+  // Save map data to persistent cache
+  Future<void> _saveToPersistentCache() async {
+    try {
+      if (widget.trip == null) return;
+      
+      final prefs = await SharedPreferences.getInstance();
+      final cacheData = {
+        'tripId': widget.tripId,
+        'timestamp': DateTime.now().toIso8601String(),
+        'latitude': widget.trip!.latitude,
+        'longitude': widget.trip!.longitude,
+        'coordinates': widget.tripCoordinates
+            .where((c) => c.latitude != null && c.longitude != null)
+            .map((c) => {
+                  'lat': c.latitude,
+                  'lng': c.longitude,
+                  'created': c.created?.toIso8601String(),
+                })
+            .toList(),
+        'deliveries': widget.deliveryData
+            .where((d) => d.pinLang != null && d.pinLong != null)
+            .map((d) => {
+                  'lat': d.pinLang,
+                  'lng': d.pinLong,
+                  'name': d.customer?.name,
+                  'deliveryNumber': d.deliveryNumber,
+                })
+            .toList(),
+      };
+
+      await prefs.setString(
+        'trip_map_cache_${widget.tripId}',
+        jsonEncode(cacheData),
+      );
+      
+      debugPrint('✅ Map data cached for trip ${widget.tripId}');
+    } catch (e) {
+      debugPrint('⚠️ Failed to save map cache: $e');
+    }
+  }
+
+  // Load map data from persistent cache
+  Future<bool> _loadFromPersistentCache() async {
+    try {
+      setState(() {
+        _isLoadingFromCache = true;
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString('trip_map_cache_${widget.tripId}');
+
+      if (cachedJson == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No cached map data available for this trip'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return false;
+      }
+
+      final cacheData = jsonDecode(cachedJson) as Map<String, dynamic>;
+      final cachedTime = DateTime.parse(cacheData['timestamp'] as String);
+      final age = DateTime.now().difference(cachedTime);
+
+      if (mounted) {
+        setState(() {
+          _persistentCachedData = cacheData;
+          _isLoadingFromCache = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Loaded cached map data from ${age.inHours}h ${age.inMinutes % 60}m ago',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      debugPrint('✅ Loaded map data from cache (age: ${age.inHours}h)');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Failed to load from cache: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingFromCache = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load cached data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  // Clear persistent cache
+  Future<void> _clearPersistentCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('trip_map_cache_${widget.tripId}');
+      
+      if (mounted) {
+        setState(() {
+          _persistentCachedData = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cached map data cleared'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+      
+      debugPrint('🗑️ Cleared cached map data for trip ${widget.tripId}');
+    } catch (e) {
+      debugPrint('⚠️ Failed to clear cache: $e');
+    }
+  }
+
+  // Check if cache needs to be invalidated
+  void _updateCacheIfNeeded() {
+    final currentKey = _generateCacheKey();
+    if (_lastCacheKey != currentKey) {
+      _cachedCoordinateMarkers = null;
+      _cachedDeliveryMarkers = null;
+      _cachedUpdateMarkers = null;
+      _cachedRoutePoints = null;
+      _cachedOrderedCoordinates = null;
+      _lastCacheKey = currentKey;
+    }
+  }
+
   List<Marker> _createCoordinateMarkers() {
+    // Return cached markers if available
+    if (_cachedCoordinateMarkers != null) {
+      return _cachedCoordinateMarkers!;
+    }
+
     final orderedCoordinates = _getOrderedCoordinates();
     List<Marker> markers = [];
 
     // Only show start and end markers, not intermediate points
     if (orderedCoordinates.isNotEmpty) {
-      // Start marker
+      // Start marker - optimized with RepaintBoundary
       markers.add(Marker(
         point: LatLng(orderedCoordinates.first.latitude!, orderedCoordinates.first.longitude!),
         width: 30,
         height: 30,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.green,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.play_arrow,
-            size: 16,
-            color: Colors.white,
-          ),
-        ),
-      ));
-
-      // End marker (only if different from start)
-      if (orderedCoordinates.length > 1) {
-        markers.add(Marker(
-          point: LatLng(orderedCoordinates.last.latitude!, orderedCoordinates.last.longitude!),
-          width: 30,
-          height: 30,
+        child: RepaintBoundary(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.red,
+              color: Colors.green,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: [
@@ -119,19 +261,56 @@ class _TripMapWidgetState extends State<TripMapWidget>
               ],
             ),
             child: const Icon(
-              Icons.flag,
+              Icons.play_arrow,
               size: 16,
               color: Colors.white,
+            ),
+          ),
+        ),
+      ));
+
+      // End marker (only if different from start)
+      if (orderedCoordinates.length > 1) {
+        markers.add(Marker(
+          point: LatLng(orderedCoordinates.last.latitude!, orderedCoordinates.last.longitude!),
+          width: 30,
+          height: 30,
+          child: RepaintBoundary(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.flag,
+                size: 16,
+                color: Colors.white,
+              ),
             ),
           ),
         ));
       }
     }
 
+    // Cache the markers
+    _cachedCoordinateMarkers = markers;
     return markers;
   }
 
   List<Marker> _createDeliveryMarkers() {
+    // Return cached markers if available
+    if (_cachedDeliveryMarkers != null) {
+      return _cachedDeliveryMarkers!;
+    }
+
     List<Marker> markers = [];
 
     for (int i = 0; i < widget.deliveryData.length; i++) {
@@ -145,38 +324,40 @@ class _TripMapWidgetState extends State<TripMapWidget>
           point: LatLng(delivery.pinLang!, delivery.pinLong!),
           width: 40,
           height: 40,
-          child: GestureDetector(
-            onTap: () => _showDeliveryInfo(delivery),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.purple,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                  Text(
-                    '${i + 1}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
+          child: RepaintBoundary(
+            child: GestureDetector(
+              onTap: () => _showDeliveryInfo(delivery),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.purple,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    Text(
+                      '${i + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -184,6 +365,8 @@ class _TripMapWidgetState extends State<TripMapWidget>
       }
     }
 
+    // Cache the markers
+    _cachedDeliveryMarkers = markers;
     return markers;
   }
 
@@ -216,6 +399,11 @@ class _TripMapWidgetState extends State<TripMapWidget>
   }
 
   List<TripCoordinatesEntity> _getOrderedCoordinates() {
+    // Return cached coordinates if available
+    if (_cachedOrderedCoordinates != null) {
+      return _cachedOrderedCoordinates!;
+    }
+
     // Filter out coordinates with null latitude or longitude
     final validCoordinates =
         widget.tripCoordinates
@@ -236,11 +424,18 @@ class _TripMapWidgetState extends State<TripMapWidget>
       return 0;
     });
 
+    // Cache the result
+    _cachedOrderedCoordinates = validCoordinates;
     return validCoordinates;
   }
 
   
 List<LatLng> _createOrderedRoutePoints() {
+  // Return cached route points if available
+  if (_cachedRoutePoints != null) {
+    return _cachedRoutePoints!;
+  }
+
   // 1. Filter valid trip coordinates
   final validCoordinates = widget.tripCoordinates.where((coord) =>
       coord.latitude != null &&
@@ -279,6 +474,9 @@ List<LatLng> _createOrderedRoutePoints() {
   }
 
   debugPrint('🗺️ Created TRIP ROUTE with ${orderedPoints.length} points');
+  
+  // Cache the result
+  _cachedRoutePoints = orderedPoints;
   return orderedPoints;
 }
 
@@ -407,16 +605,38 @@ List<LatLng> _createOrderedRoutePoints() {
       end: widget.height,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
+    // Update cache on init
+    _updateCacheIfNeeded();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        isMapReady = true;
-      });
+      if (mounted) {
+        setState(() {
+          isMapReady = true;
+        });
+        
+        // Save to persistent cache when map data is successfully loaded
+        if (widget.trip != null && widget.tripCoordinates.isNotEmpty) {
+          _saveToPersistentCache();
+        }
+      }
     });
   }
 
   @override
   void didUpdateWidget(TripMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    
+    // Check if data has changed and invalidate cache if needed
+    _updateCacheIfNeeded();
+    
+    // Save to persistent cache when data updates successfully
+    if (widget.trip != null && 
+        widget.tripCoordinates.isNotEmpty &&
+        (oldWidget.tripCoordinates.length != widget.tripCoordinates.length ||
+         oldWidget.trip?.latitude != widget.trip?.latitude)) {
+      _saveToPersistentCache();
+    }
+    
     if (oldWidget.height != widget.height) {
       _heightAnimation = Tween<double>(
         begin: oldWidget.height,
@@ -429,6 +649,13 @@ List<LatLng> _createOrderedRoutePoints() {
   @override
   void dispose() {
     _controller.dispose();
+    _horizontalScrollController.dispose();
+    // Clear caches
+    _cachedCoordinateMarkers = null;
+    _cachedDeliveryMarkers = null;
+    _cachedUpdateMarkers = null;
+    _cachedRoutePoints = null;
+    _cachedOrderedCoordinates = null;
     super.dispose();
   }
 
@@ -468,30 +695,36 @@ List<LatLng> _createOrderedRoutePoints() {
     // Check if we have valid coordinates
     final hasValidCoordinates = lat != 0.0 && lng != 0.0;
 
-    // Prepare markers for trip updates with valid coordinates
-    final updateMarkers =
-        widget.tripUpdates
-            .where(
-              (update) =>
-                  update.latitude != null &&
-                  update.longitude != null &&
-                  update.latitude!.isNotEmpty &&
-                  update.longitude!.isNotEmpty,
-            )
-            .map((update) {
-              final updateLat = double.tryParse(update.latitude!) ?? 0.0;
-              final updateLng = double.tryParse(update.longitude!) ?? 0.0;
-              if (updateLat == 0.0 || updateLng == 0.0) return null;
+    // Prepare markers for trip updates with valid coordinates (with caching)
+    List<Marker> updateMarkers;
+    if (_cachedUpdateMarkers != null) {
+      updateMarkers = _cachedUpdateMarkers!;
+    } else {
+      updateMarkers =
+          widget.tripUpdates
+              .where(
+                (update) =>
+                    update.latitude != null &&
+                    update.longitude != null &&
+                    update.latitude!.isNotEmpty &&
+                    update.longitude!.isNotEmpty,
+              )
+              .map((update) {
+                final updateLat = double.tryParse(update.latitude!) ?? 0.0;
+                final updateLng = double.tryParse(update.longitude!) ?? 0.0;
+                if (updateLat == 0.0 || updateLng == 0.0) return null;
 
-              return Marker(
-                point: LatLng(updateLat, updateLng),
-                width: 30,
-                height: 30,
-                child: _buildUpdateMarker(update),
-              );
-            })
-            .whereType<Marker>() // Filter out null markers
-            .toList();
+                return Marker(
+                  point: LatLng(updateLat, updateLng),
+                  width: 30,
+                  height: 30,
+                  child: RepaintBoundary(child: _buildUpdateMarker(update)),
+                );
+              })
+              .whereType<Marker>() // Filter out null markers
+              .toList();
+      _cachedUpdateMarkers = updateMarkers;
+    }
 
     // Add markers for trip coordinates
     final coordinateMarkers = _createCoordinateMarkers();
@@ -934,9 +1167,10 @@ List<LatLng> _createOrderedRoutePoints() {
 
   Widget _buildMap(LatLng center, List<Marker> markers) {
     try {
-      // Combine all markers (coordinates, deliveries, street view)
+      // Combine all markers (coordinates, deliveries, street view) - use cached versions
       final allMarkers = List<Marker>.from(markers);
-      allMarkers.addAll(_createDeliveryMarkers());
+      final deliveryMarkers = _createDeliveryMarkers(); // This will use cache
+      allMarkers.addAll(deliveryMarkers);
       
       if (_streetViewPosition != null) {
         allMarkers.add(
@@ -967,46 +1201,52 @@ List<LatLng> _createOrderedRoutePoints() {
         );
       }
 
-      return FlutterMap(
-        mapController: mapController,
-        options: MapOptions(
-          initialCenter: center,
-          initialZoom: 14,
-          minZoom: 5,
-          maxZoom: 50,
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.all,
-            pinchMoveWinGestures: 10,
-          ),
-          onTap: _onMapTap,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate:
-                _isSatelliteView
-                    ? 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
-                    : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-            userAgentPackageName: 'com.example.desktop_app',
-          ),
-          // UPDATED: Single polyline for trip coordinates history (chronological order)
-          if (widget.tripCoordinates.length > 1)
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: _createOrderedRoutePoints(),
-                  color: Colors.blue.withOpacity(0.8),
-                  strokeWidth: 4.0,
-                ),
-              ],
+      return RepaintBoundary(
+        child: FlutterMap(
+          mapController: mapController,
+          options: MapOptions(
+            initialCenter: center,
+            initialZoom: 14,
+            minZoom: 5,
+            maxZoom: 50,
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all,
+              pinchMoveWinGestures: 10,
             ),
-          MarkerLayer(markers: allMarkers),
-          RichAttributionWidget(
-            attributions: [
-              TextSourceAttribution('Drag to move map', onTap: () {}),
-            ],
-            alignment: AttributionAlignment.bottomRight,
+            onTap: _onMapTap,
           ),
-        ],
+          children: [
+            TileLayer(
+              urlTemplate:
+                  _isSatelliteView
+                      ? 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
+                      : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+              userAgentPackageName: 'com.example.desktop_app',
+              // Add tile caching and performance options
+              tileProvider: NetworkTileProvider(),
+              maxNativeZoom: 19,
+              keepBuffer: 2,
+            ),
+            // UPDATED: Single polyline for trip coordinates history (chronological order)
+            if (widget.tripCoordinates.length > 1)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: _createOrderedRoutePoints(), // This will use cache
+                    color: Colors.blue.withOpacity(0.8),
+                    strokeWidth: 4.0,
+                  ),
+                ],
+              ),
+            MarkerLayer(markers: allMarkers),
+            RichAttributionWidget(
+              attributions: [
+                TextSourceAttribution('Drag to move map', onTap: () {}),
+              ],
+              alignment: AttributionAlignment.bottomRight,
+            ),
+          ],
+        ),
       );
     } catch (e) {
       debugPrint('❌ Error building map: $e');
@@ -1798,6 +2038,11 @@ List<LatLng> _createOrderedRoutePoints() {
   }
 
   Widget _buildErrorCard(String errorMessage) {
+    // Check if we have cached data to display
+    if (_persistentCachedData != null) {
+      return _buildCachedMapCard();
+    }
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1831,12 +2076,275 @@ List<LatLng> _createOrderedRoutePoints() {
                       style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: widget.onRefresh,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
+                    const SizedBox(height: 24),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: widget.onRefresh,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: _isLoadingFromCache
+                              ? null
+                              : () async {
+                                  final loaded = await _loadFromPersistentCache();
+                                  if (loaded) {
+                                    setState(() {});
+                                  }
+                                },
+                          icon: _isLoadingFromCache
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(Icons.archive),
+                          label: Text(
+                            _isLoadingFromCache
+                                ? 'Loading...'
+                                : 'Load Cached Map',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Tip: Cached map shows previously loaded location data',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build map card from cached data
+  Widget _buildCachedMapCard() {
+    if (_persistentCachedData == null) {
+      return _buildPlaceholderCard();
+    }
+
+    final cachedTime = DateTime.parse(_persistentCachedData!['timestamp'] as String);
+    final age = DateTime.now().difference(cachedTime);
+    
+    final lat = _persistentCachedData!['latitude'] as double?;
+    final lng = _persistentCachedData!['longitude'] as double?;
+
+    // Build markers from cached data
+    List<Marker> markers = [];
+
+    // Add cached coordinates as polyline points and start/end markers
+    final cachedCoordinates = _persistentCachedData!['coordinates'] as List<dynamic>;
+    if (cachedCoordinates.isNotEmpty) {
+      final firstCoord = cachedCoordinates.first as Map<String, dynamic>;
+      final lastCoord = cachedCoordinates.last as Map<String, dynamic>;
+
+      // Start marker
+      markers.add(Marker(
+        point: LatLng(firstCoord['lat'] as double, firstCoord['lng'] as double),
+        width: 30,
+        height: 30,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.green,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+          ),
+          child: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
+        ),
+      ));
+
+      // End marker
+      if (cachedCoordinates.length > 1) {
+        markers.add(Marker(
+          point: LatLng(lastCoord['lat'] as double, lastCoord['lng'] as double),
+          width: 30,
+          height: 30,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+            child: const Icon(Icons.flag, size: 16, color: Colors.white),
+          ),
+        ));
+      }
+    }
+
+    // Add current location marker if available
+    if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+      markers.add(Marker(
+        point: LatLng(lat, lng),
+        width: 40,
+        height: 40,
+        child: Icon(
+          Icons.local_shipping,
+          color: Theme.of(context).primaryColor,
+          size: 40,
+        ),
+      ));
+    }
+
+    final mapCenter = lat != null && lng != null && lat != 0.0 && lng != 0.0
+        ? LatLng(lat, lng)
+        : (cachedCoordinates.isNotEmpty
+            ? LatLng(
+                (cachedCoordinates.first as Map<String, dynamic>)['lat'] as double,
+                (cachedCoordinates.first as Map<String, dynamic>)['lng'] as double,
+              )
+            : const LatLng(0, 0));
+
+    // Build route polyline from cached coordinates
+    final routePoints = cachedCoordinates
+        .map((c) => LatLng(
+              (c as Map<String, dynamic>)['lat'] as double,
+              c['lng'] as double,
+            ))
+        .toList();
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Delivery Route Map (Cached)',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Cached ${age.inHours}h ${age.inMinutes % 60}m ago',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange[900],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'Refresh Map',
+                      onPressed: widget.onRefresh,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Clear Cache',
+                      onPressed: _clearPersistentCache,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange[800], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Showing cached map data. Try refreshing to load the latest location.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.orange[900],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: widget.height,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: mapCenter,
+                    initialZoom: 14,
+                    minZoom: 5,
+                    maxZoom: 50,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                      userAgentPackageName: 'com.example.desktop_app',
+                    ),
+                    if (routePoints.length > 1)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: routePoints,
+                            color: Colors.blue.withOpacity(0.8),
+                            strokeWidth: 4.0,
+                          ),
+                        ],
+                      ),
+                    MarkerLayer(markers: markers),
                   ],
                 ),
               ),
