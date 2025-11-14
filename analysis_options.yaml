@@ -10,6 +10,7 @@
 analyzer:
   errors:
     depend_on_referenced_packages: ignore
+    invalid_return_type_for_catch_error: ignore
     invalid_use_of_visible_for_testing_member: ignore
     must_be_immutable: ignore
     unnecessary_import: ignore
