@@ -13,6 +13,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/usecase/filter_trips_by_user.dart';
 import '../../domain/usecase/fiter_trips_by_data_range.dart';
+import '../../domain/usecase/get_all_active_trips.dart';
 
 class TripBloc extends Bloc<TripEvent, TripState> {
   final GetAllTripTickets _getAllTripTickets;
@@ -24,6 +25,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
   final DeleteAllTripTickets _deleteAllTripTickets;
   final FilterTripsByDateRange _filterTripsByDateRange; // NEW
   final FilterTripsByUser _filterTripsByUser; // NEW
+  final GetAllActiveTripTickets _getAllActiveTripTickets; // NEW
 
   TripBloc({
     required GetAllTripTickets getAllTripTickets,
@@ -35,6 +37,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
     required DeleteAllTripTickets deleteAllTripTickets,
     required FilterTripsByDateRange filterTripsByDateRange, // NEW
     required FilterTripsByUser filterTripsByUser, // NEW
+    required GetAllActiveTripTickets getAllActiveTripTickets, // NEW
   })  : _getAllTripTickets = getAllTripTickets,
         _createTripTicket = createTripTicket,
         _searchTripTickets = searchTripTickets,
@@ -44,6 +47,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
         _deleteAllTripTickets = deleteAllTripTickets,
         _filterTripsByDateRange = filterTripsByDateRange, // NEW
         _filterTripsByUser = filterTripsByUser, // NEW
+        _getAllActiveTripTickets = getAllActiveTripTickets, // NEW
         super(TripInitial()) {
     on<GetAllTripTicketsEvent>(_onGetAllTripTickets);
     on<CreateTripTicketEvent>(_onCreateTripTicket);
@@ -54,6 +58,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
     on<DeleteAllTripTicketsEvent>(_onDeleteAllTripTickets);
     on<FilterTripsByDateRangeEvent>(_onFilterTripsByDateRange); // NEW
     on<FilterTripsByUserEvent>(_onFilterTripsByUser); // NEW
+    on<GetAllActiveTripTicketsEvent>(_onGetAllActiveTripTickets); // NEW
   }
 
 
@@ -134,6 +139,26 @@ class TripBloc extends Bloc<TripEvent, TripState> {
       (trips) {
         debugPrint('✅ BLOC: Successfully retrieved ${trips.length} trip tickets');
         emit(AllTripTicketsLoaded(trips));
+      },
+    );
+  }
+
+    Future<void> _onGetAllActiveTripTickets(
+    GetAllActiveTripTicketsEvent event,
+    Emitter<TripState> emit,
+  ) async {
+    debugPrint('🔄 BLOC: Fetching all trip tickets');
+    emit(TripLoading());
+
+    final result = await _getAllActiveTripTickets();
+    result.fold(
+      (failure) {
+        debugPrint('❌ BLOC: Failed to get all active trip tickets: ${failure.message}');
+        emit(TripError(failure.message));
+      },
+      (trips) {
+        debugPrint('✅ BLOC: Successfully retrieved active ${trips.length} trip tickets');
+        emit(AllActiveTripTicketsLoaded(trips));
       },
     );
   }

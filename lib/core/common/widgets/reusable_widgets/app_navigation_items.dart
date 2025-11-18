@@ -88,11 +88,7 @@ class AppNavigationItems {
             icon: Icons.shopping_bag,
             route: '/product-list',
           ),
-          NavigationItem(
-            title: 'Vehicles',
-            icon: Icons.local_shipping,
-            route: '/vehicle-list',
-          ),
+
           NavigationItem(
             title: 'Personnel',
             icon: Icons.people,
@@ -232,6 +228,32 @@ class AppNavigationItems {
             title: 'All Users',
             icon: Icons.person,
             route: '/all-users',
+          ),
+        ],
+      ),
+    ];
+  }
+
+  static List<NavigationItem> vehicleManagementNavigationItems() {
+    return [
+      NavigationItem(
+        title: 'Dashboard',
+        icon: Icons.dashboard,
+        route: '/main-screen',
+      ),
+      NavigationItem(
+        title: 'Master Data',
+        icon: Icons.storage,
+        children: [
+          NavigationItem(
+            title: 'Map Overview',
+            icon: Icons.map,
+            route: '/vehicle-map',
+          ),
+          NavigationItem(
+            title: 'Vehicles',
+            icon: Icons.local_shipping,
+            route: '/vehicle-list',
           ),
         ],
       ),

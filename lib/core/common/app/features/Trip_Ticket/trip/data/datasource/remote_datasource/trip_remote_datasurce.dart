@@ -19,6 +19,8 @@ abstract class TripRemoteDatasurce {
   // Get all trip tickets
   Future<List<TripModel>> getAllTripTickets();
 
+  Future<List<TripModel>> getAllActiveTripTickets();
+
   // Create a new trip ticket
   Future<TripModel> createTripTicket(TripModel trip);
 
@@ -237,6 +239,51 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
   }
 
   @override
+  Future<List<TripModel>> getAllActiveTripTickets() async {
+    try {
+      debugPrint('🔄 Fetching all trip tickets');
+
+      // Ensure PocketBase client is authenticated
+      await _ensureAuthenticated();
+
+      final records = await _pocketBaseClient
+          .collection('tripticket')
+          .getFullList(
+            expand:
+                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
+            sort: '-created',
+            filter: 'isAccepted = true  && isEndTrip = false',
+          );
+
+      debugPrint('✅ Retrieved ${records.length} trip tickets from API');
+
+      // Debug print for each record
+      for (var record in records) {
+        debugPrint('📄 Trip Record ID: ${record.id}');
+        debugPrint('📄 Trip Number ID: ${record.data['tripNumberId']}');
+        debugPrint('📄 Time Accepted: ${record.data['timeAccepted']}');
+        debugPrint('📄 Time End Trip: ${record.data['timeEndTrip']}');
+        debugPrint('📄 Raw User field: ${record.data['user']}');
+        debugPrint('📄 Expanded User: ${record.expand['user']}');
+        debugPrint('📄 Is Accepted: ${record.data['isAccepted']}');
+        debugPrint('📄 Is End Trip: ${record.data['isEndTrip']}');
+        debugPrint('📄 All expand keys: ${record.expand.keys.toList()}');
+        debugPrint('-----------------------------------');
+      }
+
+      return records.map((record) {
+        return _mapRecordToTripModel(record);
+      }).toList();
+    } catch (e) {
+      debugPrint('❌ Failed to fetch all trip tickets: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to fetch all trip tickets: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
+
+  @override
   Future<TripModel> createTripTicket(TripModel trip) async {
     try {
       debugPrint('🔄 Creating new trip ticket');
@@ -322,6 +369,86 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
 
       final String tripId = tripRecord.id;
       debugPrint('✅ Trip ticket created successfully: $tripId');
+
+      // After: final String tripId = tripRecord.id;
+
+      final String? vehicleId = trip.vehicle?.id;
+
+      if (vehicleId != null) {
+        debugPrint(
+          '🚚 Processing vehicleProfile update for vehicle: $vehicleId',
+        );
+
+        // 1. Check if this vehicle already has a vehicleProfile record
+        RecordModel? existingVehicleProfile;
+
+        try {
+          existingVehicleProfile = await _pocketBaseClient
+              .collection('vehicleProfile')
+              .getFirstListItem('deliveryVehicleData = "$vehicleId"');
+
+          debugPrint(
+            '🔍 Found existing vehicleProfile: ${existingVehicleProfile.id}',
+          );
+        } catch (_) {
+          debugPrint('ℹ️ No existing vehicleProfile found. Will create new.');
+        }
+
+        if (existingVehicleProfile == null) {
+          // ============================================================
+          // CASE 1: No vehicleProfile exists → Create one
+          // ============================================================
+          try {
+            final newProfile = await _pocketBaseClient
+                .collection('vehicleProfile')
+                .create(
+                  body: {
+                    'deliveryVehicleData': vehicleId,
+                    'assignedTrips': [tripId], // create with first trip
+                  },
+                );
+
+            debugPrint(
+              '🆕 Created vehicleProfile ${newProfile.id} with assignedTrips = [$tripId]',
+            );
+          } catch (e) {
+            debugPrint('❌ Failed to create new vehicleProfile: $e');
+          }
+        } else {
+          // ============================================================
+          // CASE 2: Update existing profile → Append new assigned trip
+          // ============================================================
+          try {
+            // Get existing list (expanded or raw)
+            List<dynamic> assigned = [];
+
+            if (existingVehicleProfile.data['assignedTrips'] != null) {
+              assigned = List<String>.from(
+                existingVehicleProfile.data['assignedTrips'],
+              );
+            }
+
+            // Only add if not already included
+            if (!assigned.contains(tripId)) {
+              assigned.add(tripId);
+            }
+
+            // Update the record
+            await _pocketBaseClient
+                .collection('vehicleProfile')
+                .update(
+                  existingVehicleProfile.id,
+                  body: {'assignedTrips': assigned},
+                );
+
+            debugPrint(
+              '♻️ Updated vehicleProfile ${existingVehicleProfile.id} → assignedTrips count: ${assigned.length}',
+            );
+          } catch (e) {
+            debugPrint('❌ Failed to update existing vehicleProfile: $e');
+          }
+        }
+      }
 
       // Find deliveryData items with null trip field
       debugPrint('🔄 Finding deliveryData items with null trip field');

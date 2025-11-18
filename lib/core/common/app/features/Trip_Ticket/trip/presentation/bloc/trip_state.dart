@@ -21,6 +21,15 @@ class AllTripTicketsLoaded extends TripState {
   List<Object?> get props => [trips];
 }
 
+class AllActiveTripTicketsLoaded extends TripState {
+  final List<TripEntity> trips;
+  
+  const AllActiveTripTicketsLoaded(this.trips);
+  
+  @override
+  List<Object?> get props => [trips];
+}
+
 class TripTicketCreated extends TripState {
   final TripEntity trip;
   

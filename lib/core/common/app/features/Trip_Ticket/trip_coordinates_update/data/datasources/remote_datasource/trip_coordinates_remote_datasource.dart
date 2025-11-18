@@ -9,8 +9,12 @@ abstract class TripCoordinatesRemoteDataSource {
   /// Retrieves all trip coordinate updates for a specific trip
   ///
   /// [tripId] The ID of the trip to get coordinates for
+  /// [delayBeforeFetch] Delay in seconds before fetching (default: 3s to ensure server has latest data)
   /// Returns a list of [TripCoordinatesModel] objects
-  Future<List<TripCoordinatesModel>> getTripCoordinatesByTripId(String tripId);
+  Future<List<TripCoordinatesModel>> getTripCoordinatesByTripId(
+    String tripId, {
+    int delayBeforeFetch = 3,
+  });
 }
 
 class TripCoordinatesRemoteDataSourceImpl
@@ -23,8 +27,9 @@ class TripCoordinatesRemoteDataSourceImpl
 
   @override
   Future<List<TripCoordinatesModel>> getTripCoordinatesByTripId(
-    String tripId,
-  ) async {
+    String tripId, {
+    int delayBeforeFetch = 3,
+  }) async {
     try {
       // Extract trip ID if we received a JSON object
       String actualTripId;
@@ -35,7 +40,17 @@ class TripCoordinatesRemoteDataSourceImpl
         actualTripId = tripId;
       }
 
-      debugPrint('🔄 Getting trip coordinates for trip ID: $actualTripId');
+      debugPrint(
+        '🔄 Getting trip coordinates for trip ID: $actualTripId (waiting ${delayBeforeFetch}s for latest data)',
+      );
+
+      // Wait for the specified delay to ensure server has the latest coordinates
+      // This prevents race conditions where the fetch happens before coordinates are persisted
+      await Future.delayed(Duration(seconds: delayBeforeFetch));
+
+      debugPrint(
+        '✅ Delay complete, now fetching coordinates for trip: $actualTripId',
+      );
 
       // Get coordinates using trip ID
       final List<RecordModel> records = await _pocketBaseClient
@@ -108,7 +123,9 @@ class TripCoordinatesRemoteDataSourceImpl
           String strValue = value.toString().trim();
           if (strValue.isEmpty) return null;
 
-          debugPrint('🔍 Attempting to parse date: "$strValue" (type: ${value.runtimeType})');
+          debugPrint(
+            '🔍 Attempting to parse date: "$strValue" (type: ${value.runtimeType})',
+          );
 
           try {
             // Try standard ISO format first
@@ -243,23 +260,27 @@ class TripCoordinatesRemoteDataSourceImpl
         // Create model from record
         DateTime? createdDate;
         DateTime? updatedDate;
-        
+
         try {
-          debugPrint('🔍 Parsing created date: ${record.created} (type: ${record.created.runtimeType})');
+          debugPrint(
+            '🔍 Parsing created date: ${record.created} (type: ${record.created.runtimeType})',
+          );
           createdDate = parseDate(record.created);
         } catch (e) {
           debugPrint('❌ Error parsing created date: $e');
           createdDate = null;
         }
-        
+
         try {
-          debugPrint('🔍 Parsing updated date: ${record.updated} (type: ${record.updated.runtimeType})');
+          debugPrint(
+            '🔍 Parsing updated date: ${record.updated} (type: ${record.updated.runtimeType})',
+          );
           updatedDate = parseDate(record.updated);
         } catch (e) {
           debugPrint('❌ Error parsing updated date: $e');
           updatedDate = null;
         }
-        
+
         coordinates.add(
           TripCoordinatesModel(
             id: record.id,

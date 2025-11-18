@@ -220,13 +220,15 @@ class _MainScreenViewState extends State<MainScreenView> {
 
               // Extract user info from various authenticated states
               GeneralUserEntity? currentUser;
-              
+
               if (state is UserAuthenticated) {
                 currentUser = state.user;
               } else if (state is AllUsersLoaded) {
                 // Get authenticated user from AllUsersLoaded state
                 currentUser = state.authenticatedUser;
-                debugPrint('✅ User is authenticated (AllUsersLoaded state): ${currentUser?.email ?? "unknown"}');
+                debugPrint(
+                  '✅ User is authenticated (AllUsersLoaded state): ${currentUser?.email ?? "unknown"}',
+                );
               } else if (state is GeneralUserLoaded) {
                 currentUser = state.user;
               } else if (state is UserByIdLoaded) {
@@ -236,7 +238,8 @@ class _MainScreenViewState extends State<MainScreenView> {
               // Show user profile if we have current user
               if (currentUser != null) {
                 // Get the user's name or email
-                final userName = currentUser.name ?? currentUser.email ?? 'User';
+                final userName =
+                    currentUser.name ?? currentUser.email ?? 'User';
                 final firstLetter =
                     userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
 
@@ -580,7 +583,7 @@ class _MainScreenViewState extends State<MainScreenView> {
               ),
               _buildActivityCard(
                 context,
-                onTap: () {},
+                onTap: () => context.go('/vehicle-map'),
                 icon: Icons.domain_verification,
                 title: 'Vehicle Management',
                 description: 'Manage Vehicle Account and Access',

@@ -417,7 +417,7 @@ class InvoicePresetGroupRemoteDataSourceImpl
         final results = await Future.wait(futures);
         for (var idx = 0; idx < results.length; idx++) {
           final rec = results[idx];
-          if (rec is RecordModel) invoiceToStatus[batch[idx]] = rec.id;
+          invoiceToStatus[batch[idx]] = rec.id;
         }
         debugPrint(
           '✅ Created ${results.whereType<RecordModel>().length} statuses for batch ${i ~/ statusBatchSize + 1}',
@@ -477,85 +477,6 @@ class InvoicePresetGroupRemoteDataSourceImpl
     }
   }
 
-  /// Ultra-fast invoice items collection with parallel batching
-  Future<void> _addInvoiceItemsToDeliveryOptimizedFast(
-    String deliveryId,
-    List<String> invoiceIds,
-  ) async {
-    try {
-      if (invoiceIds.isEmpty) return;
-
-      debugPrint(
-        '🔄 Collecting invoiceItems for ${invoiceIds.length} invoices...',
-      );
-
-      List<String> allInvoiceItemIds = [];
-      const batchSize = 8; // Query 8 invoices in parallel
-
-      // Query items in parallel batches
-      final itemQueryFutures = <Future<void>>[];
-
-      for (var i = 0; i < invoiceIds.length; i += batchSize) {
-        final end =
-            (i + batchSize < invoiceIds.length)
-                ? i + batchSize
-                : invoiceIds.length;
-        final batchIds = invoiceIds.sublist(i, end);
-
-        // Build OR filter
-        final filterParts = batchIds.map((id) => 'invoice = "$id"').toList();
-        final filter = filterParts.join(' || ');
-
-        itemQueryFutures.add(
-          _pocketBaseClient
-              .collection('invoiceItems')
-              .getFullList(filter: filter, sort: 'created')
-              .then((batchResult) {
-                final batchItemIds =
-                    batchResult.map((item) => item.id).toList();
-                allInvoiceItemIds.addAll(batchItemIds);
-                debugPrint(
-                  '✅ Batch ${i ~/ batchSize + 1}: Collected ${batchItemIds.length} items',
-                );
-              })
-              .catchError((e) {
-                debugPrint(
-                  '⚠️ Batch ${i ~/ batchSize + 1} failed, retrying individually...',
-                );
-                // Fallback: query individually
-                Future.wait(
-                  batchIds.map(
-                    (invoiceId) => _pocketBaseClient
-                        .collection('invoiceItems')
-                        .getFullList(filter: 'invoice = "$invoiceId"')
-                        .then(
-                          (result) => allInvoiceItemIds.addAll(
-                            result.map((item) => item.id),
-                          ),
-                        )
-                        .catchError((_) {}),
-                  ),
-                );
-              }),
-        );
-      }
-
-      await Future.wait(itemQueryFutures);
-
-      debugPrint('✅ Collected ${allInvoiceItemIds.length} total invoiceItems');
-
-      // Update delivery with all items in ONE call
-      if (allInvoiceItemIds.isNotEmpty) {
-        await _pocketBaseClient
-            .collection('deliveryData')
-            .update(deliveryId, body: {'invoiceItems': allInvoiceItemIds});
-
-        debugPrint('✅ Linked ${allInvoiceItemIds.length} items to delivery');
-      }
-    } catch (e) {
-      debugPrint('❌ Error collecting items: ${e.toString()}');
-    }
-  }
 
   String _generateDeliveryNumber() {
     final random = Random();

@@ -268,6 +268,7 @@ import '../common/app/features/Trip_Ticket/delivery_receipt/data/repo/delivery_r
 import '../common/app/features/Trip_Ticket/delivery_receipt/domain/repo/delivery_receipt_repo.dart';
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/filter_trips_by_user.dart';
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/fiter_trips_by_data_range.dart';
+import '../common/app/features/Trip_Ticket/trip/domain/usecase/get_all_active_trips.dart';
 import '../common/app/features/notfication/domain/usecases/get_all_notification.dart';
 import 'notification_service.dart';
 
@@ -715,11 +716,14 @@ Future<void> initTrip() async {
       deleteAllTripTickets: sl(),
       filterTripsByDateRange: sl(),
       filterTripsByUser: sl(),
+      getAllActiveTripTickets: sl()
     ),
   );
 
   // Usecases
   sl.registerLazySingleton(() => GetAllTripTickets(sl()));
+    sl.registerLazySingleton(() => GetAllActiveTripTickets(sl()));
+
   sl.registerLazySingleton(() => CreateTripTicket(sl()));
   sl.registerLazySingleton(() => SearchTripTickets(sl()));
   sl.registerLazySingleton(() => GetTripTicketById(sl()));

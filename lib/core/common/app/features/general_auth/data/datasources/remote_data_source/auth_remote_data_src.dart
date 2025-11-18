@@ -208,6 +208,26 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
         debugPrint('   👑 Role: ${roleJson?['name'] ?? 'Unknown'}');
         debugPrint('   🔑 Token: ${authData.token.substring(0, 10)}...');
 
+        // ======================================================
+        // ✅ NEW FEATURE: Record login in authLogs collection
+        // ======================================================
+        try {
+          await _pocketBaseClient
+              .collection('authLogs')
+              .create(
+                body: {
+                  'user': authData.record!.id,
+                  'loginTime': DateTime.now().toIso8601String(),
+                },
+              );
+
+          debugPrint(
+            '📝 Login recorded in authLogs for user: ${authData.record!.id}',
+          );
+        } catch (logError) {
+          debugPrint('⚠️ Failed to write auth log: $logError');
+        }
+
         return GeneralUserModel.fromJson(userData);
       } catch (e) {
         debugPrint('⚠️ Error formatting user data: ${e.toString()}');
@@ -241,7 +261,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
   @override
   Future<void> signOut() async {
     try {
-            await _ensureAuthenticated();
+      await _ensureAuthenticated();
 
       debugPrint('🚪 Signing out user');
       _pocketBaseClient.authStore.clear();

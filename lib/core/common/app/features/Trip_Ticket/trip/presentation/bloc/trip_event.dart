@@ -12,6 +12,13 @@ class GetAllTripTicketsEvent extends TripEvent {
   List<Object?> get props => [];
 }
 
+class GetAllActiveTripTicketsEvent extends TripEvent {
+  const GetAllActiveTripTicketsEvent();
+  
+  @override
+  List<Object?> get props => [];
+}
+
 class CreateTripTicketEvent extends TripEvent {
   final TripEntity trip;
   

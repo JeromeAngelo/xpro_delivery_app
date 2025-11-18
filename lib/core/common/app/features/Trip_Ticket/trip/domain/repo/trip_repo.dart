@@ -6,6 +6,9 @@ abstract class TripRepo {
 
   /// Get all trip tickets
   ResultFuture<List<TripEntity>> getAllTripTickets();
+
+    ResultFuture<List<TripEntity>> getAllActiveTripTickets();
+
   
   /// Create a new trip ticket
   ResultFuture<TripEntity> createTripTicket(TripEntity trip);

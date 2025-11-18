@@ -172,4 +172,17 @@ ResultFuture<List<TripEntity>> filterTripsByUser({
   }
 }
 
+  @override
+  ResultFuture<List<TripEntity>> getAllActiveTripTickets() async {
+    try {
+      debugPrint('🔄 REPO: Fetching all trip tickets');
+      final remoteTrips = await _remoteDatasource.getAllActiveTripTickets();
+      debugPrint('✅ REPO: Successfully retrieved active ${remoteTrips.length} trip tickets');
+      return Right(remoteTrips);
+    } on ServerException catch (e) {
+      debugPrint('❌ REPO: Server error: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    }
+  }
+
 }
