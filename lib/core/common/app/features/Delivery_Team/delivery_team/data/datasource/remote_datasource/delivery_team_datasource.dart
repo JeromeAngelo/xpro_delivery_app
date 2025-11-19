@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../../../personels/data/models/personel_models.dart';
-import '../../../../vehicle/data/model/vehicle_model.dart';
+import '../../../../../vehicle/delivery_vehicle_data/data/model/vehicle_model.dart';
 import '../../models/delivery_team_model.dart';
 
 

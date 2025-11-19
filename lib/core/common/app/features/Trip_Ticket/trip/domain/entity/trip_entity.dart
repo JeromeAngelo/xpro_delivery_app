@@ -50,12 +50,12 @@ class TripEntity extends Equatable {
   bool? isEndTrip;
   DateTime? timeEndTrip;
   DateTime? timeAccepted;
-   DateTime? deliveryDate;
-   DateTime? expectedReturnDate;
+  DateTime? deliveryDate;
+  DateTime? expectedReturnDate;
   DateTime? created;
   DateTime? updated;
   String? qrCode;
-
+  String? dispatcher;
   TripEntity({
     this.id,
     this.collectionId,
@@ -90,10 +90,11 @@ class TripEntity extends Equatable {
     this.created,
     this.updated,
     this.latitude,
+    this.dispatcher,
     this.longitude,
   }) : personels = personels ?? [],
        checklist = checklist ?? [],
-       
+
        deliveryData =
            deliveryData ?? [], // Added: Initialize delivery data list
 
@@ -128,6 +129,7 @@ class TripEntity extends Equatable {
     otp?.id,
     endTripOtp?.id,
     timeEndTrip,
+    dispatcher,
     isEndTrip,
     qrCode,
     isAccepted,

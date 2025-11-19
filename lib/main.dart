@@ -1,7 +1,7 @@
 import 'package:provider/provider.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/presentation/bloc/personel_bloc.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/presentation/bloc/vehicle_bloc.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/presentation/bloc/vehicle_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/return_product/presentation/bloc/return_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
@@ -25,6 +25,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/presentation/bloc/personnel_trip_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/users_roles/presentation/bloc/bloc/user_roles_bloc.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/vehicle_profile/presentation/bloc/vehicle_profile_bloc.dart'
+    show VehicleProfileBloc;
 import 'package:xpro_delivery_admin_app/core/common/app/provider/theme_provider.dart';
 import 'package:xpro_delivery_admin_app/core/services/injection_container.dart';
 import 'package:xpro_delivery_admin_app/core/services/router.dart';
@@ -82,6 +84,8 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => sl<OtpBloc>()),
             BlocProvider(create: (_) => sl<EndTripOtpBloc>()),
             BlocProvider(create: (_) => sl<VehicleBloc>()),
+            BlocProvider(create: (_) => sl<VehicleProfileBloc>()),
+
             BlocProvider(create: (_) => sl<PersonelBloc>()),
             BlocProvider(create: (_) => sl<TripCoordinatesUpdateBloc>()),
 

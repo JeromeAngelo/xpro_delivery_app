@@ -45,6 +45,7 @@ class TripModel extends TripEntity {
     super.totalTripDistance,
     super.otp,
     super.endTripOtp,
+    super.dispatcher,
     super.deliveryTeam,
     super.timeAccepted,
     super.isEndTrip,
@@ -288,6 +289,7 @@ class TripModel extends TripEntity {
       vehicleModel: vehicleModel, // Updated: Changed from vehicleList to vehicleModel
       deliveryDataList: deliveryDataModels, // Added: Initialize delivery data list
       endTripChecklistItems: endTripList,
+      dispatcher: json['dispatcher']?.toString(),
       cancelledInvoiceList: cancelledInvoiceModels,
       deliveryCollectionList: deliveryCollectionModels,
       tripUpdateList: tripUpdatesList,
@@ -396,6 +398,7 @@ static DateTime? _parseDateTime(dynamic value) {
       'collectionId': collectionId,
       'collectionName': collectionName,
       'tripNumberId': tripNumberId,
+      'dispatcher': dispatcher,
       'personels': personels.map((personel) => personel.id).toList(),
       'checklist': checklist.map((item) => item.id).toList(),
       'deliveryVehicle': vehicle?.id, // Updated: Changed from vehicle.map to vehicle?.id
@@ -453,6 +456,7 @@ static DateTime? _parseDateTime(dynamic value) {
       deliveryDate: entity.deliveryDate,
       endTripOtp: entity.endTripOtp,
       deliveryTeam: entity.deliveryTeam,
+      dispatcher: entity.dispatcher,
       timeAccepted: entity.timeAccepted,
       expectedReturnDate: entity.expectedReturnDate,
       isEndTrip: entity.isEndTrip,
@@ -491,6 +495,7 @@ static DateTime? _parseDateTime(dynamic value) {
     DateTime? timeAccepted,
     bool? isEndTrip,
     DateTime? timeEndTrip,
+    String? dispatcher,
     DateTime? deliveryDate,
     DateTime? created,
     DateTime? expectedReturnDate,
@@ -516,6 +521,7 @@ static DateTime? _parseDateTime(dynamic value) {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       volumeRate: volumeRate ?? this.volumeRate,
+      dispatcher: dispatcher ?? this.dispatcher,
       weightRate: weightRate ?? this.weightRate,
       averageFillRate: averageFillRate ?? this.averageFillRate,
       user: user ?? this.user,

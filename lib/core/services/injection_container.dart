@@ -19,17 +19,17 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/p
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/set_role.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/update_personels.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/presentation/bloc/personel_bloc.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/data/datasource/remote_datasource/vehicle_remote_datasource.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/data/repo/vehicle_repo_impl.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/domain/repo/vehicle_repo.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/create_vehicle.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/delete_all_vehicle.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/delete_vehicle.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/get_vehicle.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/load_vehicle_by_delivery_team_id.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/load_vehicle_by_trip_id.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/domain/usecase/update_vehicle.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/vehicle/presentation/bloc/vehicle_bloc.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/data/datasource/remote_datasource/vehicle_remote_datasource.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/data/repo/vehicle_repo_impl.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/repo/vehicle_repo.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/usecase/create_vehicle.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/usecase/delete_all_vehicle.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/usecase/delete_vehicle.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/usecase/get_vehicle.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/usecase/load_vehicle_by_delivery_team_id.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/usecase/load_vehicle_by_trip_id.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/usecase/update_vehicle.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/presentation/bloc/vehicle_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/resassign_trip_for_cancelled_invoice.dart';
 
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_update/data/datasource/remote_datasource/delivery_update_datasource.dart';
@@ -244,6 +244,10 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip
 import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/domain/usecase/get_personnel_trips_by_personnel_id.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/domain/usecase/get_personnel_trips_by_trip_id.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/personnels_trip/presentation/bloc/personnel_trip_bloc.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/vehicle_profile/data/datasources/remote_datasource/vehicle_profile_remote_datasource.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/vehicle_profile/domain/usecases/delete_vehicle_profile.dart'
+    show DeleteVehicleProfile;
+import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/vehicle_profile/domain/usecases/get_all_vehicle_profiles.dart';
 
 import '../common/app/features/Delivery_Team/personels/domain/usecase/get_personel_by_id.dart'
     show GetPersonelById;
@@ -270,6 +274,12 @@ import '../common/app/features/Trip_Ticket/trip/domain/usecase/filter_trips_by_u
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/fiter_trips_by_data_range.dart';
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/get_all_active_trips.dart';
 import '../common/app/features/notfication/domain/usecases/get_all_notification.dart';
+import '../common/app/features/vehicle/vehicle_profile/data/repo/vehicle_profile_repo_impl.dart';
+import '../common/app/features/vehicle/vehicle_profile/domain/repo/vehicle_profile_repo.dart';
+import '../common/app/features/vehicle/vehicle_profile/domain/usecases/create_vehicle_profile.dart';
+import '../common/app/features/vehicle/vehicle_profile/domain/usecases/get_vehicle_profile_by_id.dart';
+import '../common/app/features/vehicle/vehicle_profile/domain/usecases/update_vehicle_profile.dart';
+import '../common/app/features/vehicle/vehicle_profile/presentation/bloc/vehicle_profile_bloc.dart';
 import 'notification_service.dart';
 
 final sl = GetIt.instance;
@@ -304,6 +314,7 @@ Future<void> init() async {
   await initDeliveryReceipt();
   await initPersonnelTrip();
   await initNotification();
+  await initVehicleProfile();
   // Providers
 }
 
@@ -716,13 +727,13 @@ Future<void> initTrip() async {
       deleteAllTripTickets: sl(),
       filterTripsByDateRange: sl(),
       filterTripsByUser: sl(),
-      getAllActiveTripTickets: sl()
+      getAllActiveTripTickets: sl(),
     ),
   );
 
   // Usecases
   sl.registerLazySingleton(() => GetAllTripTickets(sl()));
-    sl.registerLazySingleton(() => GetAllActiveTripTickets(sl()));
+  sl.registerLazySingleton(() => GetAllActiveTripTickets(sl()));
 
   sl.registerLazySingleton(() => CreateTripTicket(sl()));
   sl.registerLazySingleton(() => SearchTripTickets(sl()));
@@ -921,6 +932,37 @@ Future<void> initDeliveryVehicleData() async {
   );
 }
 
+Future<void> initVehicleProfile() async {
+  // BLoC
+  sl.registerLazySingleton(
+    () => VehicleProfileBloc(
+      getVehicleProfileById: sl(),
+      getVehicleProfiles: sl(),
+      createVehicleProfile: sl(),
+      updateVehicleProfile: sl(),
+      deleteVehicleProfile: sl(),
+    ),
+  );
+
+  // Usecases
+  sl.registerLazySingleton(() => GetVehicleProfileById(sl()));
+  sl.registerLazySingleton(() => GetVehicleProfiles(sl()));
+
+  sl.registerLazySingleton(() => CreateVehicleProfile(sl()));
+  sl.registerLazySingleton(() => UpdateVehicleProfile(sl()));
+  sl.registerLazySingleton(() => DeleteVehicleProfile(sl()));
+
+  // Repository
+  sl.registerLazySingleton<VehicleProfileRepo>(
+    () => VehicleProfileRepoImpl(sl()),
+  );
+
+  // Data sources
+  sl.registerLazySingleton<VehicleProfileRemoteDatasource>(
+    () => VehicleProfileRemoteDatasourceImpl(pocketBaseClient: sl()),
+  );
+}
+
 Future<void> initDeliveryCollectionsData() async {
   sl.registerLazySingleton(
     () => CollectionsBloc(
@@ -1055,7 +1097,6 @@ Future<void> initNotification() async {
   sl.registerLazySingleton<NotificationRemoteDatasource>(
     () => NotificationRemoteDatasourceImpl(pocketBaseClient: sl()),
   );
-
 
   // Realtime service
   sl.registerLazySingleton(

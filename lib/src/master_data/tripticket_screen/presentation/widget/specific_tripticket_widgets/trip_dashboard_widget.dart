@@ -291,6 +291,11 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
               value: widget.trip?.totalTripDistance ?? '0 km',
               label: 'Total Distance in KM',
             ),
+            DashboardInfoItem(
+              icon: Icons.person,
+              value: widget.trip?.dispatcher ?? 'N/A',
+              label: 'Dispatched By',
+            ),
           ],
         ),
       ],

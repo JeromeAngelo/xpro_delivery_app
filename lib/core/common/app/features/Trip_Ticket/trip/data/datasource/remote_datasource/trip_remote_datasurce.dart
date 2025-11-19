@@ -298,6 +298,11 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
       if (trip.name != null && trip.name!.isNotEmpty) {
         tripData['name'] = trip.name;
       }
+
+      // Add dispatcher
+      tripData['dispatcher'] =
+          _pocketBaseClient.authStore.model?.data['name'] ?? 'Unknown';
+      debugPrint('📄 Dispatcher set to: ${tripData['dispatcher']}');
       tripData['created'] = DateTime.now().toIso8601String();
       tripData['updated'] = DateTime.now().toIso8601String();
       tripData['isAccepted'] = false;
@@ -1286,6 +1291,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
 
         'trip_update_list': _mapExpandedList(record.expand['trip_update_list']),
         'user': usersModel?.toJson(),
+        'dispatcher': record.data['dispatcher'],
         'created': record.created,
         'updated': record.updated,
         'timeAccepted': timeAccepted?.toIso8601String(),
