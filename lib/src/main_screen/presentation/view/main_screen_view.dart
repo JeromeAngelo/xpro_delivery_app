@@ -474,6 +474,16 @@ class _MainScreenViewState extends State<MainScreenView> {
                         onTap: () => context.go('/delivery-monitoring'),
                         iconSize: iconSize,
                       ),
+                       _buildCategoryCard(
+                        context,
+                        icon: Icons.map_outlined,
+                        title: 'Vehicle Monitoring',
+                        subtitle: 'View vehicle status and location',
+                        color: Colors.orange,
+                        onTap: () => context.go('/vehicle-map'),
+
+                        iconSize: iconSize,
+                      ),
                       _buildCategoryCard(
                         context,
                         icon: Icons.receipt_long_outlined,
@@ -483,15 +493,7 @@ class _MainScreenViewState extends State<MainScreenView> {
                         onTap: () => context.go('/collections-overview'),
                         iconSize: iconSize,
                       ),
-                      _buildCategoryCard(
-                        context,
-                        icon: Icons.assignment_return,
-                        title: 'Cancelled Deliveries',
-                        subtitle: 'Process and track returned items',
-                        color: Colors.orange,
-                        onTap: () => context.go('/undeliverable-customers'),
-                        iconSize: iconSize,
-                      ),
+                     
                     ],
                   ),
                   const SizedBox(height: 32),
@@ -583,10 +585,11 @@ class _MainScreenViewState extends State<MainScreenView> {
               ),
               _buildActivityCard(
                 context,
-                onTap: () => context.go('/vehicle-map'),
-                icon: Icons.domain_verification,
-                title: 'Vehicle Management',
-                description: 'Manage Vehicle Account and Access',
+                onTap: () => context.go('/undeliverable-customers'),
+
+                icon: Icons.free_cancellation,
+                title: 'Cancelled Deliveries',
+                description: 'Process and Review Cancelled Deliveries',
                 color: Colors.blue,
                 width: isLargeScreen ? 320 : 280,
               ),

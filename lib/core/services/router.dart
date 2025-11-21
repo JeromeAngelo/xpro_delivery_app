@@ -20,6 +20,7 @@ import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presen
 import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/view/trip_ticket_overview_screen.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/view/tripticket_screen_view.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/tripticket_screen/presentation/view/tripticket_specific_trip_view.dart';
+import 'package:xpro_delivery_admin_app/src/vehicle_management/view/specific_vehicle_view/specific_vehicle_view.dart';
 import 'package:xpro_delivery_admin_app/src/vehicle_management/view/vehicle_list_screen/vehicle_list_screen_view.dart';
 import 'package:xpro_delivery_admin_app/src/return_data/return_list_screen/presentation/view/return_list_view.dart';
 import 'package:xpro_delivery_admin_app/src/return_data/undelivered_customer_data/presentation/view/undelivered_customer_list_view.dart';
@@ -159,6 +160,13 @@ final router = GoRouter(
       pageBuilder:
           (context, state) =>
               _createSmoothTransition(const VehicleListScreenView(), state),
+    ),
+     GoRoute(
+      path: '/vehicle-id/:vehicleId',
+      builder: (context, state) {
+        final vehicleId = state.pathParameters['vehicleId']!;
+        return SpecificVehicleView(vehicleId: vehicleId);
+      },
     ),
     GoRoute(
       path: '/personnel-list',

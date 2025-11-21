@@ -468,6 +468,45 @@ static DateTime? _parseDateTime(dynamic value) {
     );
   }
 
+  factory TripModel.empty() {
+  return TripModel(
+    id: '',
+    name: '',
+    collectionId: '',
+    collectionName: '',
+    tripNumberId: '',
+    personelsList: [],
+    checklistItems: [],
+    vehicleModel: null,
+    deliveryDataList: [],
+    endTripChecklistItems: [],
+    tripUpdateList: [],
+    deliveryCollectionList: [],
+    cancelledInvoiceList: [],
+    latitude: null,
+    longitude: null,
+    volumeRate: null,
+    weightRate: null,
+    averageFillRate: null,
+    user: null,
+    totalTripDistance: '',
+    otp: null,
+    endTripOtp: null,
+    deliveryTeam: null,
+    dispatcher: '',
+    timeAccepted: null,
+    expectedReturnDate: null,
+    isEndTrip: false,
+    timeEndTrip: null,
+    deliveryDate: null,
+    created: null,
+    updated: null,
+    qrCode: '',
+    isAccepted: false,
+  );
+}
+
+
   TripModel copyWith({
     String? id,
     String? collectionId,

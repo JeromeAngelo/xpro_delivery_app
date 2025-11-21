@@ -8,6 +8,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/common/app/features/Trip_Ticket/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
+import '../../../../core/common/app/features/Trip_Ticket/delivery_vehicle_data/presentation/bloc/delivery_vehicle_event.dart';
+
 class VehicleDataTable extends StatelessWidget {
   final List<DeliveryVehicleEntity> vehicles;
   final bool isLoading;
@@ -59,12 +62,30 @@ class VehicleDataTable extends StatelessWidget {
           vehicles.map((vehicle) {
             return DataRow(
               cells: [
-                DataCell(Text(vehicle.id ?? 'N/A')),
-                DataCell(Text(vehicle.make ?? 'N/A')),
-                DataCell(Text(vehicle.name ?? 'N/A')),
-                DataCell(Text(vehicle.type ?? 'N/A')),
-                DataCell(Text('${vehicle.volumeCapacity ?? 'N/A'} cm3')),
-                DataCell(Text('${vehicle.weightCapacity ?? 'N/A'} cm3')),
+                DataCell(
+                  Text(vehicle.id ?? 'N/A'),
+                  onTap: () => _navigateToVehicleDetails(context, vehicle),
+                ),
+                DataCell(
+                  Text(vehicle.make ?? 'N/A'),
+                  onTap: () => _navigateToVehicleDetails(context, vehicle),
+                ),
+                DataCell(
+                  Text(vehicle.name ?? 'N/A'),
+                  onTap: () => _navigateToVehicleDetails(context, vehicle),
+                ),
+                DataCell(
+                  Text(vehicle.type ?? 'N/A'),
+                  onTap: () => _navigateToVehicleDetails(context, vehicle),
+                ),
+                DataCell(
+                  Text('${vehicle.volumeCapacity ?? 'N/A'} cm3'),
+                  onTap: () => _navigateToVehicleDetails(context, vehicle),
+                ),
+                DataCell(
+                  Text('${vehicle.weightCapacity ?? 'N/A'} cm3'),
+                  onTap: () => _navigateToVehicleDetails(context, vehicle),
+                ),
 
                 DataCell(Text(_formatDate(vehicle.created))),
                 DataCell(
@@ -77,7 +98,7 @@ class VehicleDataTable extends StatelessWidget {
                           // View vehicle details
                           if (vehicle.id != null) {
                             // Navigate to vehicle details screen
-                            context.go('/vehicle/${vehicle.id}');
+                            _navigateToVehicleDetails(context, vehicle);
                           }
                         },
                       ),
@@ -114,6 +135,21 @@ class VehicleDataTable extends StatelessWidget {
       dataLength: '${vehicles.length}',
       onDeleted: () {},
     );
+  }
+
+  void _navigateToVehicleDetails(
+    BuildContext context,
+    DeliveryVehicleEntity vehicle,
+  ) {
+    if (vehicle.id != null) {
+      // First load the trip data
+      context.read<DeliveryVehicleBloc>().add(
+        LoadDeliveryVehicleByIdEvent(vehicle.id!),
+      );
+
+      // Then navigate to the specific trip view
+      context.go('/vehicle-id/${vehicle.id}');
+    }
   }
 
   String _formatDate(DateTime? date) {
@@ -199,6 +235,4 @@ class VehicleDataTable extends StatelessWidget {
       typeController.dispose();
     });
   }
-
-  
 }

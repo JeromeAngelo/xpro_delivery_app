@@ -114,20 +114,26 @@ class VehicleProfileRemoteDatasourceImpl
   @override
   Future<VehicleProfileModel> getVehicleProfileById(String id) async {
     try {
-      debugPrint('🔄 Fetching Vehicle Profile for deliveryVehicleData ID: $id');
+      debugPrint(
+        '🔄 [VEHICLE PROFILE] Start fetching profile for deliveryVehicleData ID: $id',
+      );
 
       // Query vehicleProfile by deliveryVehicleData field
       final records = await _pocketBaseClient
           .collection('vehicleProfile')
           .getFullList(
             filter: 'deliveryVehicleData="$id"',
-            expand: 'deliveryVehicleData,assignedTrips',
-            // You can expand assignedTrips and deliveryVehicleData if needed
+            expand: 'deliveryVehicleData,assignedTrips,assignedTrips.personels',
+            sort: '-created',
           );
+
+      debugPrint(
+        'ℹ️ [VEHICLE PROFILE] Number of records fetched: ${records.length}',
+      );
 
       if (records.isEmpty) {
         debugPrint(
-          '⚠️ No Vehicle Profile found for deliveryVehicleData ID: $id',
+          '⚠️ [VEHICLE PROFILE] No Vehicle Profile found for deliveryVehicleData ID: $id',
         );
         throw ServerException(
           message: 'Vehicle profile not found for deliveryVehicleData: $id',
@@ -135,9 +141,30 @@ class VehicleProfileRemoteDatasourceImpl
         );
       }
 
-      return _mapRecordToVehicleProfileModel(records.first);
-    } catch (e) {
-      debugPrint('❌ Error fetching vehicle profile: $e');
+      final vehicleProfile = _mapRecordToVehicleProfileModel(records.first);
+
+      debugPrint(
+        '✅ [VEHICLE PROFILE] Successfully mapped VehicleProfileModel:',
+      );
+      debugPrint('   ID: ${vehicleProfile.id}');
+      debugPrint('   Delivery Vehicle ID: ${vehicleProfile.deliveryVehicleId}');
+      debugPrint('   Status: ${vehicleProfile.status?.name}');
+      debugPrint(
+        '   Assigned Trips Count: ${vehicleProfile.assignedTrips?.length ?? 0}',
+      );
+      debugPrint(
+        '   Attachment Files: ${vehicleProfile.attachmentFiles?.join(', ') ?? 'None'}',
+      );
+      debugPrint('   Created At: ${vehicleProfile.created}');
+      debugPrint('   Updated At: ${vehicleProfile.updated}');
+
+      return vehicleProfile;
+    } catch (e, stackTrace) {
+      debugPrint(
+        '❌ [VEHICLE PROFILE] Error fetching vehicle profile for ID: $id',
+      );
+      debugPrint('   Error: $e');
+      debugPrint('   StackTrace: $stackTrace');
       throw ServerException(
         message: 'Failed to fetch vehicle profile: ${e.toString()}',
         statusCode: '500',
@@ -207,7 +234,7 @@ class VehicleProfileRemoteDatasourceImpl
 
       debugPrint('✅ Vehicle profile updated successfully: $profileId');
 
-        return _mapRecordToVehicleProfileModel(updatedRecord);
+      return _mapRecordToVehicleProfileModel(updatedRecord);
     } catch (e) {
       debugPrint('❌ Error updating vehicle profile: $e');
       throw ServerException(
@@ -242,12 +269,12 @@ class VehicleProfileRemoteDatasourceImpl
         }
       }
 
-     // ATTACHMENTS
-List<String> attachmentsList = [];
-final attachmentsData = record.data['attachments'];
-if (attachmentsData != null && attachmentsData is List) {
-  attachmentsList = attachmentsData.map((e) => e.toString()).toList();
-}
+      // ATTACHMENTS
+      List<String> attachmentsList = [];
+      final attachmentsData = record.data['attachments'];
+      if (attachmentsData != null && attachmentsData is List) {
+        attachmentsList = attachmentsData.map((e) => e.toString()).toList();
+      }
 
       // STATUS ENUM
       VehicleStatus status = VehicleStatus.goodCondition;
@@ -285,12 +312,9 @@ if (attachmentsData != null && attachmentsData is List) {
         collectionName: record.collectionName,
         deliveryVehicleData: deliveryVehicle,
         assignedTrips: assignedTripsList,
-        attachments: attachmentsList ,
+        attachments: attachmentsList,
         deliveryVehicleId: record.data['deliveryVehicleData']?.toString(),
-        assignedTripIds:
-            record.data['assignedTrips'] != null
-                ? List<String>.from(record.data['assignedTrips'])
-                : [],
+
         status: status,
         created: created,
         updated: updated,
@@ -339,12 +363,27 @@ if (attachmentsData != null && attachmentsData is List) {
   // HELPER: Map RecordModel to TripModel
   // -----------------------------
   TripModel _mapRecordToTripModel(RecordModel record) {
-    // Use your full Trip mapping helper code here (from your previous implementation)
+    // Map expanded personnels
+    List<Map<String, dynamic>>? personnelsList = [];
+    final personnelsExpand = record.expand['personels'];
+
+    if (personnelsExpand != null) {
+      personnelsList =
+          personnelsExpand
+              .map((p) {
+                return {'id': p.id, ...Map<String, dynamic>.from(p.data)};
+              })
+              .cast<Map<String, dynamic>>()
+              .toList();
+    }
+
     return TripModel.fromJson({
       'id': record.id,
       'collectionId': record.collectionId,
       'collectionName': record.collectionName,
       ...record.data,
+      'personels': personnelsList,
+      'otp': _mapExpandedItem(record.expand['otp']),
       'created': record.created,
       'updated': record.updated,
     });

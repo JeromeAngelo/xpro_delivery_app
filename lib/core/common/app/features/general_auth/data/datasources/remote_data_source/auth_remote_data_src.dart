@@ -980,7 +980,7 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
       debugPrint('🔄 Fetching user by ID: $userId');
 
       // Ensure PocketBase client is authenticated
-      await _ensureAuthenticated();
+     // await _ensureAuthenticated();
 
       // Fetch the user with expanded relations
       final record = await _pocketBaseClient
