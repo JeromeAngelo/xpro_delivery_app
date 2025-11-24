@@ -905,7 +905,7 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () {
                   Navigator.of(context).pop();
                   context.read<GeneralUserBloc>().add(const UserSignOutEvent());
-                  context.go('/login');
+                  context.go('/');
                 },
                 child: const Text('Logout'),
               ),

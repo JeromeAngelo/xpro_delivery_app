@@ -207,10 +207,14 @@ class _DefaultDrawerState extends State<DefaultDrawer> {
                         ),
                         TextButton(
                           onPressed: () {
+                            context.go('/');
+
                             Navigator.pop(context); // Close dialog
                             context.read<GeneralUserBloc>().add(
                               const UserSignOutEvent(),
                             );
+
+                            context.go('/');
                           },
                           child: const Text('Logout'),
                         ),

@@ -19,6 +19,7 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/p
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/set_role.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/update_personels.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/presentation/bloc/personel_bloc.dart';
+import 'package:xpro_delivery_admin_app/core/common/app/features/users_trip_collection/domain/repo/user_trip_collection_repo.dart' show UserTripCollectionRepo;
 import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/data/datasource/remote_datasource/vehicle_remote_datasource.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/data/repo/vehicle_repo_impl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/repo/vehicle_repo.dart';
@@ -274,6 +275,10 @@ import '../common/app/features/Trip_Ticket/trip/domain/usecase/filter_trips_by_u
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/fiter_trips_by_data_range.dart';
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/get_all_active_trips.dart';
 import '../common/app/features/notfication/domain/usecases/get_all_notification.dart';
+import '../common/app/features/users_trip_collection/data/datasources/remote_datasource/users_trip_collection_remote_datasource.dart' show UsersTripCollectionRemoteDataSource, UsersTripCollectionRemoteDataSourceImpl;
+import '../common/app/features/users_trip_collection/data/repo/users_trip_collection_repo_impl.dart';
+import '../common/app/features/users_trip_collection/domain/usecases/get_user_trip_collection_usecase.dart';
+import '../common/app/features/users_trip_collection/presentation/bloc/users_trip_collection_bloc.dart';
 import '../common/app/features/vehicle/vehicle_profile/data/repo/vehicle_profile_repo_impl.dart';
 import '../common/app/features/vehicle/vehicle_profile/domain/repo/vehicle_profile_repo.dart';
 import '../common/app/features/vehicle/vehicle_profile/domain/usecases/create_vehicle_profile.dart';
@@ -315,6 +320,7 @@ Future<void> init() async {
   await initPersonnelTrip();
   await initNotification();
   await initVehicleProfile();
+  await initUsertrips();
   // Providers
 }
 
@@ -363,6 +369,22 @@ Future<void> initUserRoles() async {
     () => UserRolesRemoteDatasourceImpl(pocketBaseClient: sl()),
   );
 }
+
+Future<void> initUsertrips() async {
+    sl.registerLazySingleton(() => UsersTripCollectionBloc(getUserTripCollectionUsecase: sl()));
+
+  sl.registerLazySingleton(() => GetUserTripCollectionUsecase(sl()));
+
+  sl.registerLazySingleton<UserTripCollectionRepo>(
+    () => UsersTripCollectionRepoImpl(sl()),
+  );
+
+  sl.registerLazySingleton<UsersTripCollectionRemoteDataSource>(
+    () => UsersTripCollectionRemoteDataSourceImpl(pocketBaseClient: sl()),
+  );
+}
+
+
 
 Future<void> initDeliveryTeam() async {
   // BLoC

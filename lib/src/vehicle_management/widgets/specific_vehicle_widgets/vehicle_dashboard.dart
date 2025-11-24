@@ -41,33 +41,7 @@ class _VehicleDashboardWidgetState extends State<VehicleDashboardWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Top Actions Panel
-        Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                const Icon(Icons.settings, size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  "Vehicle Actions",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: widget.onEditVehicle,
-                  icon: const Icon(Icons.edit),
-                  label: const Text("Edit Vehicle"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        
 
         // Vehicle Info Dashboard
         DashboardSummary(

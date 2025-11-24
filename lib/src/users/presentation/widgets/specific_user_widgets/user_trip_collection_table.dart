@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/users_trip_collection/domain/entity/user_trip_collection_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/widgets/app_structure/data_table_layout.dart';
@@ -18,7 +19,8 @@ class UserTripCollectionTable extends StatefulWidget {
   });
 
   @override
-  State<UserTripCollectionTable> createState() => _UserTripCollectionTableState();
+  State<UserTripCollectionTable> createState() =>
+      _UserTripCollectionTableState();
 }
 
 class _UserTripCollectionTableState extends State<UserTripCollectionTable> {
@@ -35,127 +37,104 @@ class _UserTripCollectionTableState extends State<UserTripCollectionTable> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter trip collections based on search query
-    List<UserTripCollectionEntity> filteredCollections = widget.tripCollections;
+    // Search filter
+    List<UserTripCollectionEntity> filtered = widget.tripCollections;
     if (_searchQuery.isNotEmpty) {
-      filteredCollections = widget.tripCollections.where((collection) {
-        final query = _searchQuery.toLowerCase();
-        final tripIds = collection.trips.map((trip) => trip.id?.toLowerCase() ?? '').join(' ');
-        final tripNumbers = collection.trips.map((trip) => trip.tripNumberId?.toLowerCase() ?? '').join(' ');
-        
-        return tripIds.contains(query) || 
-               tripNumbers.contains(query) || 
-               (collection.id?.toLowerCase().contains(query) ?? false);
-      }).toList();
+      final q = _searchQuery.toLowerCase();
+      filtered =
+          widget.tripCollections.where((collection) {
+            final tripFields =
+                collection.trips
+                    .map(
+                      (t) =>
+                          '${t.id} ${t.tripNumberId} ${t.name} ${t.vehicle?.name}',
+                    )
+                    .join(' ')
+                    .toLowerCase();
+
+            return tripFields.contains(q) ||
+                (collection.id?.toLowerCase().contains(q) ?? false);
+          }).toList();
     }
 
-    // Calculate total pages
-    final totalPages = (filteredCollections.length / _itemsPerPage).ceil();
-    
-    // Paginate collections
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = startIndex + _itemsPerPage > filteredCollections.length 
-        ? filteredCollections.length 
-        : startIndex + _itemsPerPage;
-    
-    final paginatedCollections = startIndex < filteredCollections.length 
-        ? filteredCollections.sublist(startIndex, endIndex) 
-        : [];
+    // Pagination
+    final totalPages = (filtered.length / _itemsPerPage).ceil();
+    final start = (_currentPage - 1) * _itemsPerPage;
+    final end =
+        (start + _itemsPerPage > filtered.length)
+            ? filtered.length
+            : start + _itemsPerPage;
+
+    final pageItems =
+        start < filtered.length ? filtered.sublist(start, end) : [];
 
     return DataTableLayout(
       title: 'Trip History',
       searchBar: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Search by Trip ID or Number...',
+          hintText: 'Search Trip...',
           prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                    });
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          suffixIcon:
+              _searchQuery.isNotEmpty
+                  ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      setState(() {
+                        _searchQuery = '';
+                        _searchController.clear();
+                      });
+                    },
+                  )
+                  : null,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-            _currentPage = 1; // Reset to first page when searching
-          });
-        },
+        onChanged:
+            (value) => setState(() {
+              _searchQuery = value;
+              _currentPage = 1;
+            }),
       ),
-      onCreatePressed: null, // No create button for history
+      onCreatePressed: null,
       columns: const [
         DataColumn(label: Text('ID')),
         DataColumn(label: Text('Trip Number')),
-        DataColumn(label: Text('Trip Count')),
-        DataColumn(label: Text('Status')),
-        DataColumn(label: Text('Created')),
-        DataColumn(label: Text('Updated')),
+        DataColumn(label: Text('Trip Name')),
+        DataColumn(label: Text('Start Date')),
+        DataColumn(label: Text('End Date')),
+
         DataColumn(label: Text('Actions')),
       ],
-      rows: paginatedCollections.map((collection) {
-        return DataRow(
-          cells: [
-            DataCell(Text(collection.id?.substring(0, 8) ?? 'N/A')),
-            DataCell(
-              collection.trips.isNotEmpty
-                  ? Text(collection.trips.first.tripNumberId ?? 'N/A')
-                  : const Text('N/A')
-            ),
-            DataCell(Text(collection.trips.length.toString())),
-            DataCell(_buildStatusChip(collection.isActive ?? false)),
-            DataCell(Text(_formatDate(collection.created))),
-            DataCell(Text(_formatDate(collection.updated))),
-            DataCell(Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.visibility, color: Colors.blue),
-                  tooltip: 'View Details',
-                  onPressed: () {
-                    // View trip collection details
-                    _showTripDetailsDialog(context, collection);
-                  },
+      rows:
+          pageItems.map((collection) {
+            final hasTrips = collection.trips.isNotEmpty;
+            final firstTrip = hasTrips ? collection.trips.first : null;
+
+            return DataRow(
+              cells: [
+                DataCell(Text(collection.id?.substring(0, 8) ?? 'N/A')),
+                DataCell(Text(firstTrip?.tripNumberId ?? 'N/A')),
+                DataCell(Text(firstTrip?.name ?? 'N/A')),
+                DataCell(Text(_formatDate(firstTrip?.timeAccepted))),
+                DataCell(Text(_formatDate(firstTrip?.timeEndTrip))),
+
+                DataCell(
+                  IconButton(
+                    icon: const Icon(Icons.visibility, color: Colors.blue),
+                    onPressed:
+                        () => _showTripDetailsDialog(context, collection),
+                  ),
                 ),
               ],
-            )),
-          ],
-        );
-      }).toList(),
+            );
+          }).toList(),
       currentPage: _currentPage,
       totalPages: totalPages > 0 ? totalPages : 1,
-      onPageChanged: (page) {
-        setState(() {
-          _currentPage = page;
-        });
-      },
+      onPageChanged: (page) => setState(() => _currentPage = page),
       isLoading: widget.isLoading,
-      onFiltered: () {
-        // Handle filtering
-      },
-      onDeleted: () {
-        // Handle deletion
-      },
-      dataLength: filteredCollections.length.toString(),
-    );
-  }
-
-  Widget _buildStatusChip(bool isActive) {
-    return Chip(
-      label: Text(
-        isActive ? 'Active' : 'Inactive',
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      ),
-      backgroundColor: isActive ? Colors.green : Colors.grey,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      visualDensity: VisualDensity.compact,
+      onFiltered: () {},
+      onDeleted: () {},
+      dataLength: filtered.length.toString(),
     );
   }
 
@@ -164,40 +143,15 @@ class _UserTripCollectionTableState extends State<UserTripCollectionTable> {
     return DateFormat('MMM dd, yyyy hh:mm a').format(date);
   }
 
-  void _showTripDetailsDialog(BuildContext context, UserTripCollectionEntity collection) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Trip Details'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              ...collection.trips.map((trip) => ListTile(
-                title: Text(trip.tripNumberId ?? 'No Trip Number'),
-                subtitle: Text('ID: ${trip.id}'),
-                leading: const Icon(Icons.receipt_long),
-                trailing: trip.isEndTrip == true
-                    ? const Chip(
-                        label: Text('Completed', style: TextStyle(color: Colors.white, fontSize: 12)),
-                        backgroundColor: Colors.green,
-                      )
-                    : const Chip(
-                        label: Text('In Progress', style: TextStyle(color: Colors.white, fontSize: 12)),
-                        backgroundColor: Colors.blue,
-                      ),
-              )),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+  void _showTripDetailsDialog(
+    BuildContext context,
+    UserTripCollectionEntity collection,
+  ) {
+    if (collection.trips.first.id != null) {
+      // First load the trip data
+
+      // Then navigate to the specific trip view
+      context.go('/tripticket/${collection.trips.first.id}');
+    }
   }
 }

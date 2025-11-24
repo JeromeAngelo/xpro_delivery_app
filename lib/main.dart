@@ -32,6 +32,7 @@ import 'package:xpro_delivery_admin_app/core/services/auth_interceptor.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'core/common/app/features/notfication/presentation/bloc/notification_bloc.dart';
+import 'core/common/app/features/users_trip_collection/presentation/bloc/users_trip_collection_bloc.dart';
 import 'core/common/app/features/vehicle/vehicle_profile/presentation/bloc/vehicle_profile_bloc.dart';
 
 Future<void> main() async {
@@ -99,6 +100,8 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => sl<DeliveryReceiptBloc>()),
             BlocProvider(create: (_) => sl<PersonnelTripBloc>()),
             BlocProvider(create: (_) => sl<NotificationBloc>()),
+                        BlocProvider(create: (_) => sl<UsersTripCollectionBloc>()),
+
           ],
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,

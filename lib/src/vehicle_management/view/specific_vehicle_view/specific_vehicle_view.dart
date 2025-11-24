@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -15,8 +13,6 @@ import 'package:xpro_delivery_admin_app/core/common/widgets/reusable_widgets/app
 import '../../widgets/specific_vehicle_widgets/assigned_trips_tbl.dart';
 import '../../widgets/specific_vehicle_widgets/vehicle_dashboard.dart';
 
-
-
 class SpecificVehicleView extends StatefulWidget {
   final String vehicleId;
 
@@ -26,9 +22,9 @@ class SpecificVehicleView extends StatefulWidget {
   State<SpecificVehicleView> createState() => _SpecificVehicleViewState();
 }
 
-class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTickerProviderStateMixin {
+class _SpecificVehicleViewState extends State<SpecificVehicleView>
+    with SingleTickerProviderStateMixin {
   // Timers
- 
 
   // local data
   bool _isProfileLoading = true;
@@ -40,7 +36,8 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
   int _assignedCurrentPage = 1;
   int _assignedTotalPages = 1;
   final int _assignedItemsPerPage = 10;
-  final TextEditingController _assignedSearchController = TextEditingController();
+  final TextEditingController _assignedSearchController =
+      TextEditingController();
   String _assignedSearchQuery = '';
 
   @override
@@ -53,7 +50,7 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
     });
 
     // Start auto-refresh (every 60 seconds)
-   // _startAutoRefreshTimer();
+    // _startAutoRefreshTimer();
   }
 
   void _loadAll() {
@@ -66,32 +63,25 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
 
     // Request vehicle profile by deliveryVehicle id
     // Event name: GetVehicleProfileByIdEvent - assumed to exist
-    context.read<VehicleProfileBloc>().add(GetVehicleProfileByIdEvent(widget.vehicleId));
+    context.read<VehicleProfileBloc>().add(
+      GetVehicleProfileByIdEvent(widget.vehicleId),
+    );
 
     // Request delivery vehicle info by id
     // Event name: LoadDeliveryVehicleByIdEvent - replace if your event name differs
-    context.read<DeliveryVehicleBloc>().add(LoadDeliveryVehicleByIdEvent(widget.vehicleId));
-
-  
-  }
-
- 
-
-
- 
-
-  Future<void> _manualRefresh() async {
-    _loadAll();
+    context.read<DeliveryVehicleBloc>().add(
+      LoadDeliveryVehicleByIdEvent(widget.vehicleId),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final navigationItems = AppNavigationItems.vehicleManagementNavigationItems();
+    final navigationItems =
+        AppNavigationItems.vehicleManagementNavigationItems();
 
     return DesktopLayout(
       navigationItems: navigationItems,
-      currentRoute:
-          '/vehicle-list', // you said you'll edit route later
+      currentRoute: '/vehicle-list', // you said you'll edit route later
       onNavigate: (route) => context.go(route),
       onThemeToggle: () {},
       onNotificationTap: () {},
@@ -101,7 +91,9 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
       child: BlocListener<VehicleProfileBloc, VehicleProfileState>(
         listener: (context, state) {
           // Handle vehicle profile state updates
-          if (state is VehicleProfileByIdLoaded && state.vehicleProfile.deliveryVehicleData?.id == widget.vehicleId) {
+          if (state is VehicleProfileByIdLoaded &&
+              state.vehicleProfile.deliveryVehicleData?.id ==
+                  widget.vehicleId) {
             setState(() {
               _isProfileLoading = false;
               _profileErrorMessage = null;
@@ -124,7 +116,8 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
         child: BlocListener<DeliveryVehicleBloc, DeliveryVehicleState>(
           listener: (context, state) {
             // Handle delivery vehicle state updates
-            if (state is DeliveryVehicleLoaded && state.vehicle.id == widget.vehicleId) {
+            if (state is DeliveryVehicleLoaded &&
+                state.vehicle.id == widget.vehicleId) {
               setState(() {
                 _isVehicleLoading = false;
                 _vehicleErrorMessage = null;
@@ -142,7 +135,6 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
           },
           child: LayoutBuilder(
             builder: (context, constraints) {
-             
               return CustomScrollView(
                 slivers: [
                   SliverAppBar(
@@ -160,9 +152,9 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
                     ),
                     actions: [
                       IconButton(
-                        icon: const Icon(Icons.refresh),
-                        tooltip: 'Refresh',
-                        onPressed: _manualRefresh,
+                        icon: const Icon(Icons.edit),
+                        tooltip: 'Edit Vehicle',
+                        onPressed: () {},
                       ),
                     ],
                   ),
@@ -187,16 +179,19 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
                               );
                             }
 
-                            if (_vehicleErrorMessage != null && vehicleEntity == null) {
+                            if (_vehicleErrorMessage != null &&
+                                vehicleEntity == null) {
                               return Card(
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
                                     children: [
-                                      Text('Error loading vehicle: $_vehicleErrorMessage'),
+                                      Text(
+                                        'Error loading vehicle: $_vehicleErrorMessage',
+                                      ),
                                       const SizedBox(height: 12),
                                       ElevatedButton.icon(
-                                        onPressed: _manualRefresh,
+                                        onPressed: _loadAll,
                                         icon: const Icon(Icons.refresh),
                                         label: const Text('Retry'),
                                       ),
@@ -213,7 +208,9 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
                               onEditVehicle: () {
                                 // navigate to edit screen (adjust route later)
                                 if (widget.vehicleId.isNotEmpty) {
-                                  context.go('/vehicle-edit/${widget.vehicleId}');
+                                  context.go(
+                                    '/vehicle-edit/${widget.vehicleId}',
+                                  );
                                 }
                               },
                             );
@@ -230,7 +227,9 @@ class _SpecificVehicleViewState extends State<SpecificVehicleView> with SingleTi
                           onPageChanged: (page) {
                             setState(() => _assignedCurrentPage = page);
                             // optionally request fresh data on page change
-                            context.read<VehicleProfileBloc>().add(GetVehicleProfileByIdEvent(widget.vehicleId));
+                            context.read<VehicleProfileBloc>().add(
+                              GetVehicleProfileByIdEvent(widget.vehicleId),
+                            );
                           },
                           searchController: _assignedSearchController,
                           searchQuery: _assignedSearchQuery,
