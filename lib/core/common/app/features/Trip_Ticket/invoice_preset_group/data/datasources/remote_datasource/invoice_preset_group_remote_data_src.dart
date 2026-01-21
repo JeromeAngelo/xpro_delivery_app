@@ -382,6 +382,72 @@ class InvoicePresetGroupRemoteDataSourceImpl
       await Future.wait(deliveryTasks);
       debugPrint('✅ Deliveries ready');
 
+      // -------------------------------------------------------------
+// ✅ NEW STEP: Fetch invoiceItems in bulk and attach to deliveryData
+// -------------------------------------------------------------
+debugPrint('🚀 Fetching invoiceItems in bulk (fast mode)...');
+
+final invoiceToItemIds = await _fetchInvoiceItemIdsByInvoiceIds(allInvoiceIds);
+
+// Build deliveryId -> invoiceItemIds (dedup)
+final Map<String, Set<String>> deliveryToItemIds = {};
+
+for (final invId in allInvoiceIds) {
+  final delId = invoiceToDelivery[invId];
+  if (delId == null || delId.isEmpty) continue;
+
+  final itemIds = invoiceToItemIds[invId];
+  if (itemIds == null || itemIds.isEmpty) continue;
+
+  deliveryToItemIds.putIfAbsent(delId, () => <String>{}).addAll(itemIds);
+}
+
+debugPrint(
+  '✅ invoiceItems grouped → ${deliveryToItemIds.length} deliveries will be updated',
+);
+
+// Update deliveryData invoiceItems in big batches (parallel)
+const deliveryUpdateBatchSize = 80;
+
+final deliveryIdsToUpdate = deliveryToItemIds.keys.toList();
+
+for (var i = 0; i < deliveryIdsToUpdate.length; i += deliveryUpdateBatchSize) {
+  final end = (i + deliveryUpdateBatchSize < deliveryIdsToUpdate.length)
+      ? i + deliveryUpdateBatchSize
+      : deliveryIdsToUpdate.length;
+
+  final batch = deliveryIdsToUpdate.sublist(i, end);
+
+  final futures = batch.map((delId) {
+    final ids = deliveryToItemIds[delId]!.toList();
+
+    return _pocketBaseClient
+        .collection('deliveryData')
+        .update(
+          delId,
+          body: {
+            // IMPORTANT:
+            // If you want replace:
+            'invoiceItems': ids,
+
+            // If you want append (PocketBase supports "+"):
+            // 'invoiceItems+': ids,
+            'updated': DateTime.now().toIso8601String(),
+          },
+        )
+        .catchError((e) {
+          debugPrint('⚠️ deliveryData invoiceItems update failed $delId: $e');
+          return null;
+        });
+  }).toList();
+
+  await Future.wait(futures);
+  debugPrint('✅ Updated deliveryData invoiceItems batch ${i ~/ deliveryUpdateBatchSize + 1}');
+}
+
+debugPrint('✨ invoiceItems attached to deliveryData successfully');
+
+
       // Create invoiceStatus in larger batches & parallel
       debugPrint('🚀 Creating invoiceStatus records (big batches)...');
       final invoiceToStatus = <String, String>{};
@@ -423,41 +489,45 @@ class InvoicePresetGroupRemoteDataSourceImpl
           '✅ Created ${results.whereType<RecordModel>().length} statuses for batch ${i ~/ statusBatchSize + 1}',
         );
       }
+// Update invoiceData in large parallel batches
+debugPrint('🚀 Updating invoiceData records (big batches)...');
+const updateBatchSize = 200;
 
-      // Update invoiceData in large parallel batches
-      debugPrint('🚀 Updating invoiceData records (big batches)...');
-      const updateBatchSize = 200;
-      for (var i = 0; i < allInvoiceIds.length; i += updateBatchSize) {
-        final end =
-            (i + updateBatchSize < allInvoiceIds.length)
-                ? i + updateBatchSize
-                : allInvoiceIds.length;
-        final batch = allInvoiceIds.sublist(i, end);
+for (var i = 0; i < allInvoiceIds.length; i += updateBatchSize) {
+  final end = (i + updateBatchSize < allInvoiceIds.length)
+      ? i + updateBatchSize
+      : allInvoiceIds.length;
 
-        final futures =
-            batch.map((invId) {
-              final statusId = invoiceToStatus[invId];
-              final delId = invoiceToDelivery[invId];
-              final custId = invoiceToCustomer[invId];
-              return _pocketBaseClient
-                  .collection('invoiceData')
-                  .update(
-                    invId,
-                    body: {
-                      if (delId != null) 'deliveryData': [delId],
-                      if (custId != null) 'customer': custId,
-                      if (statusId != null) 'invoiceStatus': [statusId],
-                    },
-                  )
-                  .catchError((e) {
-                    debugPrint('⚠️ invoiceData update failed $invId: $e');
-                    return null;
-                  });
-            }).toList();
+  final batch = allInvoiceIds.sublist(i, end);
 
-        await Future.wait(futures);
-        debugPrint('✅ Updated invoiceData batch ${i ~/ updateBatchSize + 1}');
-      }
+  final futures = batch.map((invId) async {
+    final statusId = invoiceToStatus[invId];
+    final delId = invoiceToDelivery[invId];
+    final custId = invoiceToCustomer[invId];
+
+    try {
+      await _pocketBaseClient.collection('invoiceData').update(
+        invId,
+        body: {
+          if (delId != null) 'deliveryData': [delId],
+          if (custId != null) 'customer': custId,
+          if (statusId != null) 'invoiceStatus': [statusId],
+        },
+      );
+      return true; // success marker
+    } catch (e) {
+      debugPrint('⚠️ invoiceData update failed $invId: $e');
+      return false; // failure marker
+    }
+  }).toList();
+
+  final results = await Future.wait(futures);
+  final ok = results.where((x) => x).length;
+  final fail = results.length - ok;
+
+  debugPrint('✅ Updated invoiceData batch ${i ~/ updateBatchSize + 1} | ok=$ok fail=$fail');
+}
+
 
       // NOTE: SKIP invoiceItems fetching/attaching to deliveryData to maximize speed.
       // If required later, re-enable a separate background job to attach invoiceItems.
@@ -477,6 +547,47 @@ class InvoicePresetGroupRemoteDataSourceImpl
     }
   }
 
+Future<Map<String, List<String>>> _fetchInvoiceItemIdsByInvoiceIds(
+  List<String> invoiceIds,
+) async {
+  final Map<String, List<String>> invoiceToItemIds = {};
+
+  if (invoiceIds.isEmpty) return invoiceToItemIds;
+
+  // Chunked to avoid very long filter strings / URL limits
+  const chunkSize = 120;
+
+  for (var i = 0; i < invoiceIds.length; i += chunkSize) {
+    final end = (i + chunkSize < invoiceIds.length) ? i + chunkSize : invoiceIds.length;
+    final chunk = invoiceIds.sublist(i, end);
+
+    // invoice = "id1" || invoice = "id2" ...
+    final filter = chunk.map((id) => 'invoice = "$id"').join(' || ');
+
+    final items = await _pocketBaseClient
+        .collection('invoiceItems')
+        .getFullList(
+          filter: filter,
+          // optional: fields if your PB client supports it
+          // fields: 'id,invoice',
+        )
+        .catchError((e) {
+          debugPrint('⚠️ invoiceItems chunk fetch failed: $e');
+          return <RecordModel>[];
+        });
+
+    for (final it in items) {
+      final invoiceId = it.data['invoice']?.toString().trim() ?? '';
+      if (invoiceId.isEmpty) continue;
+
+      invoiceToItemIds.putIfAbsent(invoiceId, () => []).add(it.id);
+    }
+
+    debugPrint('✅ invoiceItems fetched chunk ${i ~/ chunkSize + 1} → ${items.length} items');
+  }
+
+  return invoiceToItemIds;
+}
 
   String _generateDeliveryNumber() {
     final random = Random();
