@@ -3,26 +3,31 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delive
 import 'package:x_pro_delivery_app/core/usecases/usecase.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 
-class UpdateDeliveryStatus implements UsecaseWithParams<void, UpdateDeliveryStatusParams> {
+import '../../../../delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
+class UpdateDeliveryStatus
+    implements UsecaseWithParams<void, UpdateDeliveryStatusParams> {
   const UpdateDeliveryStatus(this._repo);
 
   final DeliveryUpdateRepo _repo;
 
   @override
-  ResultFuture<void> call(UpdateDeliveryStatusParams params) async {
-    return _repo.updateDeliveryStatus(params.customerId, params.statusId);
+  ResultFuture<void> call(UpdateDeliveryStatusParams params) {
+    return _repo.updateDeliveryStatus(
+      params.deliveryDataId,
+      params.status,
+    );
   }
 }
 
 class UpdateDeliveryStatusParams extends Equatable {
   const UpdateDeliveryStatusParams({
-    required this.customerId,
-    required this.statusId,
+    required this.deliveryDataId,
+    required this.status,
   });
 
-  final String customerId;
-  final String statusId;
+  final String deliveryDataId;
+  final DeliveryStatusChoicesEntity status;
 
   @override
-  List<Object?> get props => [customerId, statusId];
+  List<Object?> get props => [deliveryDataId, status];
 }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_state.dart';
+import 'package:intl/intl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_state.dart';
 
 class CompletedCustomerDetailsScreen extends StatefulWidget {
   final String collectionId;
@@ -97,20 +98,18 @@ class _CompletedCustomerDetailsScreenState
     final customer = collection.customer.target;
     final invoices = collection.invoices;
     final deliveryData = collection.deliveryData.target;
-    final trip = collection.trip.target;
+    //final trip = collection.trip.target;
 
     debugPrint('🎯 Collection Details:');
     debugPrint('   📦 Collection ID: ${collection.id}');
     debugPrint('   👤 Customer: ${customer?.name ?? 'Unknown'}');
     debugPrint('   💰 Collection Total Amount: ${collection.totalAmount}');
     debugPrint('   📄 Number of invoices: ${invoices.length}');
-
+    
     // Log individual invoice details
     for (int i = 0; i < invoices.length; i++) {
       final invoice = invoices[i];
-      debugPrint(
-        '   📋 Invoice ${i + 1}: ${invoice.refId ?? invoice.name} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
-      );
+      debugPrint('   📋 Invoice ${i + 1}: ${invoice.refId ?? invoice.name} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}');
     }
 
     return RefreshIndicator(
@@ -148,7 +147,7 @@ class _CompletedCustomerDetailsScreenState
             ],
 
             // Trip Information Card
-            if (trip != null) ...[_buildTripInfoCard(context, trip)],
+           // if (trip != null) ...[_buildTripInfoCard(context, trip)],
           ],
         ),
       ),
@@ -162,19 +161,19 @@ class _CompletedCustomerDetailsScreenState
     deliveryData,
   ) {
     // Calculate total amount from all invoices
-    final invoices = collection.invoices;
-    double totalInvoicesAmount = 0.0;
-    if (invoices.isNotEmpty) {
-      for (final invoice in invoices) {
-        totalInvoicesAmount += invoice.totalAmount ?? 0.0;
-      }
-    }
-
-    // Use invoices total or fallback to collection total
-    final displayAmount =
-        totalInvoicesAmount > 0.0
-            ? totalInvoicesAmount
-            : (collection.totalAmount ?? 0.0);
+     final invoices = collection.invoices;
+        double totalAmount = 0.0;
+        if (invoices.isNotEmpty) {
+          for (final invoice in invoices) {
+            totalAmount += invoice.totalAmount ?? 0.0;
+          }
+        }
+        
+        // Fallback to collection totalAmount if invoices don't have amounts
+        if (totalAmount == 0.0 && collection.totalAmount != null) {
+          totalAmount = collection.totalAmount!;
+          debugPrint('   🔄 Using collection totalAmount as fallback: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
+        }
     return Card(
       elevation: 4,
       child: Padding(
@@ -199,14 +198,14 @@ class _CompletedCustomerDetailsScreenState
               ],
             ),
             const Divider(height: 24),
-            _buildInfoRow(
-              'Delivery Number',
-              deliveryData.deliveryNumber ?? 'Unknown Store',
-            ),
+            // _buildInfoRow(
+            //   'Delivery Number',
+            //   deliveryData.deliveryNumber ?? 'Unknown Store',
+            // ),
 
             _buildInfoRow(
               'Total Amount',
-              '₱${displayAmount.toStringAsFixed(2)}',
+              '₱${totalAmount.toStringAsFixed(2)}',
               isHighlighted: true,
             ),
             _buildInfoRow(
@@ -300,7 +299,7 @@ class _CompletedCustomerDetailsScreenState
               'Number of Invoices',
               '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'}',
             ),
-
+            
             // Show individual invoice details
             ...invoices.asMap().entries.map((entry) {
               final index = entry.key;
@@ -314,10 +313,15 @@ class _CompletedCustomerDetailsScreenState
                 ],
               );
             }),
-
+            
             _buildInfoRow(
               'Total Invoices Amount',
               '₱${totalInvoicesAmount.toStringAsFixed(2)}',
+              isHighlighted: true,
+            ),
+            _buildInfoRow(
+              'Collection Amount',
+              '₱${collection.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
               isHighlighted: true,
             ),
           ],
@@ -326,47 +330,7 @@ class _CompletedCustomerDetailsScreenState
     );
   }
 
-  Widget _buildTripInfoCard(BuildContext context, trip) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.route,
-                  color: Theme.of(context).colorScheme.secondary,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Trip Information',
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            _buildInfoRow('Trip Number', trip.tripNumberId ?? 'Unknown'),
-            _buildInfoRow(
-              'Status',
-              trip.isAccepted == true ? 'Accepted' : 'Pending',
-            ),
-            _buildInfoRow(
-              'End Trip',
-              trip.isEndTrip == true ? 'Completed' : 'In Progress',
-            ),
-            if (trip.timeAccepted != null)
-              _buildInfoRow('Time Accepted', _formatDate(trip.timeAccepted)),
-          ],
-        ),
-      ),
-    );
-  }
+  
 
   Widget _buildInfoRow(
     String label,

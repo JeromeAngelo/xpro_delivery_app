@@ -4,27 +4,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/customer_summary_dialog.dart';
 
-//import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_queue_remark_dialog.dart';
+import '../../../../../../core/common/app/features/delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
+import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
+import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_event.dart';
+import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_state.dart';
 
 class UpdateStatusDrawer extends StatefulWidget {
-  final String customerId;
-  const UpdateStatusDrawer({super.key, required this.customerId});
+  final String deliveryDataId;
+
+  const UpdateStatusDrawer({super.key, required this.deliveryDataId});
 
   @override
   State<UpdateStatusDrawer> createState() => _UpdateStatusDrawerState();
 }
 
 class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
-  DeliveryUpdateState? _cachedState;
+  DeliveryStatusChoicesState? _cachedState;
   StreamSubscription? _subscription;
 
   @override
@@ -34,10 +36,10 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
   }
 
   void _initializeLocalData() {
-    final deliveryUpdateBloc = context.read<DeliveryUpdateBloc>();
+    final deliveryUpdateBloc = context.read<DeliveryStatusChoicesBloc>();
 
     _subscription = deliveryUpdateBloc.stream.listen((state) {
-      if (state is DeliveryStatusChoicesLoaded && mounted) {
+      if (state is AssignedDeliveryStatusChoicesLoaded && mounted) {
         setState(() {
           _cachedState = state;
         });
@@ -46,7 +48,12 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
 
     // Load local delivery status choices
     deliveryUpdateBloc.add(
-      LoadLocalDeliveryStatusChoicesEvent(widget.customerId),
+      GetAllAssignedDeliveryStatusChoicesEvent(widget.deliveryDataId),
+    );
+
+     // Load local delivery status choices
+    deliveryUpdateBloc.add(
+      GetAllAssignedDeliveryStatusChoicesEvent(widget.deliveryDataId),
     );
   }
 
@@ -60,9 +67,9 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
-        BlocListener<DeliveryUpdateBloc, DeliveryUpdateState>(
+        BlocListener<DeliveryStatusChoicesBloc, DeliveryStatusChoicesState>(
           listener: (context, state) {
-            if (state is DeliveryStatusUpdateSuccess) {
+            if (state is DeliveryStatusUpdated) {
               debugPrint('✅ Status update success, closing drawer');
               // Close drawer immediately without refreshing data
               // Data will be updated through the existing cache mechanism
@@ -73,17 +80,20 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
           },
         ),
       ],
-      child: BlocConsumer<DeliveryUpdateBloc, DeliveryUpdateState>(
-        listenWhen:
-            (previous, current) => current is DeliveryStatusChoicesLoaded,
+      child: BlocConsumer<
+        DeliveryStatusChoicesBloc,
+        DeliveryStatusChoicesState
+      >(
+        listenWhen: (previous, current) => current is DeliveryStatusUpdated,
         listener: (context, state) {
-          if (state is DeliveryStatusChoicesLoaded) {
+          if (state is AssignedDeliveryStatusChoicesLoaded) {
             _cachedState = state;
           }
         },
         buildWhen:
             (previous, current) =>
-                current is DeliveryStatusChoicesLoaded || _cachedState == null,
+                current is AssignedDeliveryStatusChoicesLoaded ||
+                _cachedState == null,
         builder: (context, state) {
           final effectiveState = _cachedState ?? state;
 
@@ -91,8 +101,8 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (effectiveState is DeliveryStatusChoicesLoaded) {
-            final availableStatuses = effectiveState.statusChoices;
+          if (effectiveState is AssignedDeliveryStatusChoicesLoaded) {
+            final availableStatuses = effectiveState.updates;
 
             return DraggableScrollableSheet(
               initialChildSize: 0.6,
@@ -140,11 +150,15 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                                             extra: customerState.deliveryData,
                                           );
                                           if (result == true) {
-                                            context.read<DeliveryUpdateBloc>().add(
-                                              LoadLocalDeliveryStatusChoicesEvent(
-                                                widget.customerId,
-                                              ),
-                                            );
+                                            context
+                                                .read<
+                                                  DeliveryStatusChoicesBloc
+                                                >()
+                                                .add(
+                                                  GetAllAssignedDeliveryStatusChoicesEvent(
+                                                    widget.deliveryDataId,
+                                                  ),
+                                                );
                                           }
                                         }
                                       },
@@ -201,11 +215,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                                   Icons.chevron_right,
                                   color: Theme.of(context).colorScheme.outline,
                                 ),
-                                onTap:
-                                    () => _updateCustomerStatus(
-                                      status.id ?? '',
-                                      status.title ?? '',
-                                    ),
+                                onTap: () => _updateCustomerStatus(status),
                               ),
                             );
                           }, childCount: availableStatuses.length),
@@ -222,196 +232,166 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
     );
   }
 
-  void _updateCustomerStatus(String statusId, String statusTitle) {
-    final currentTime = DateTime.now();
-    debugPrint('📝 Updating status at: ${currentTime.toIso8601String()}');
+  void _updateCustomerStatus(DeliveryStatusChoicesEntity status) {
+    final statusTitle = status.title?.toLowerCase() ?? '';
+    debugPrint('📝 Updating status: ${status.title}');
 
-    if (statusTitle.toLowerCase() == 'arrived') {
-      debugPrint('📍 Processing arrived status - updating location and status');
+    // ---------------- ARRIVED ----------------
+    if (statusTitle == 'arrived') {
       final deliveryDataBloc = context.read<DeliveryDataBloc>();
-      final customerState = deliveryDataBloc.state;
+      final state = deliveryDataBloc.state;
 
-      if (customerState is DeliveryDataLoaded) {
-        // Handle location update and status update - this will return early
-        _getCurrentLocationAndUpdate(deliveryDataBloc, statusId);
-        return; // Important: return here to prevent double status update
+      if (state is DeliveryDataLoaded) {
+        _getCurrentLocationAndUpdate(deliveryDataBloc, status);
+        return;
       }
     }
 
-    if (statusTitle.toLowerCase() == 'unloading') {
+    // ---------------- UNLOADING ----------------
+    if (statusTitle == 'unloading') {
       final deliveryDataBloc = context.read<DeliveryDataBloc>();
-      final customerState = deliveryDataBloc.state;
+      final state = deliveryDataBloc.state;
 
-      if (customerState is DeliveryDataLoaded) {
-        final deliveryData = customerState.deliveryData;
-        debugPrint('📦 Setting invoice to unloading for: ${deliveryData.id}');
-
+      if (state is DeliveryDataLoaded) {
         context.read<DeliveryDataBloc>().add(
-          SetInvoiceIntoUnloadingEvent(deliveryData.id ?? ''),
+          SetInvoiceIntoUnloadingEvent(state.deliveryData.id ?? ''),
         );
 
-        // Also update the delivery status
-        context.read<DeliveryUpdateBloc>().add(
-          UpdateDeliveryStatusEvent(
-            customerId: widget.customerId,
-            statusId: statusId,
+        context.read<DeliveryStatusChoicesBloc>().add(
+          UpdateCustomerStatusEvent(
+            deliveryDataId: widget.deliveryDataId,
+            status: status,
           ),
         );
-        return; // Important: return here to prevent double status update
+        context.read<DeliveryDataBloc>().add(
+          WatchLocalDeliveryDataByIdEvent(widget.deliveryDataId),
+        );
+        return;
       }
     }
 
-    if (statusTitle.toLowerCase() == 'mark as undelivered') {
-      // Close the modal bottom sheet first and navigate
-      if (mounted) {
+    // ---------------- UNDELIVERED ----------------
+    if (statusTitle == 'mark as undelivered') {
+      Navigator.of(context).pop();
+
+      final state = context.read<DeliveryDataBloc>().state;
+      if (state is DeliveryDataLoaded ) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            context.push(
+              '/undeliverable/${widget.deliveryDataId}',
+              extra: {'customerId': state.deliveryData, 'statusId': status},
+            );
+          }
+        });
+      }
+      return;
+    }
+
+    // ---------------- END DELIVERY ----------------
+    if (statusTitle == 'end delivery') {
+      final deliveryDataBloc = context.read<DeliveryDataBloc>();
+      final state = deliveryDataBloc.state;
+
+      if (state is DeliveryDataLoaded) {
         Navigator.of(context).pop();
 
-        final customerState = context.read<DeliveryDataBloc>().state;
-        if (customerState is DeliveryDataLoaded) {
-          // Use a small delay to ensure navigation state is clean
-          Future.delayed(const Duration(milliseconds: 100), () {
-            if (mounted) {
-              context.push(
-                '/undeliverable/${widget.customerId}',
-                extra: {
-                  'customer': customerState.deliveryData,
-                  'statusId': statusId,
-                },
-              );
-            }
-          });
-        }
+        deliveryDataBloc.add(CalculateDeliveryTimeEvent(widget.deliveryDataId));
+        context.read<DeliveryStatusChoicesBloc>().add(
+          SetEndDeliveryEvent(deliveryData: state.deliveryData),
+        );
+        context.read<DeliveryDataBloc>().add(
+          WatchLocalDeliveryDataByIdEvent(widget.deliveryDataId),
+        );
+
+        deliveryDataBloc.add(
+          SetInvoiceIntoCompletedEvent(state.deliveryData.id ?? ''),
+        );
+        context.read<DeliveryDataBloc>().add(
+          WatchLocalDeliveryDataByIdEvent(widget.deliveryDataId),
+        );
+
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder:
+                  (_) =>
+                      CustomerSummaryDialog(deliveryData: state.deliveryData),
+            );
+          }
+        });
+        // ---------------- DEFAULT STATUS UPDATE ----------------
       }
       return;
     }
 
-    // Add this new condition for "end delivery"
-    if (statusTitle.toLowerCase() == 'end delivery') {
-      if (mounted) {
-        final deliveryDataBloc = context.read<DeliveryDataBloc>();
-        final customerState = deliveryDataBloc.state;
-
-        if (customerState is DeliveryDataLoaded) {
-          final deliveryData = customerState.deliveryData;
-
-          // Close the modal bottom sheet first
-          Navigator.of(context).pop();
-
-          // Calculate total time
-          deliveryDataBloc.add(CalculateDeliveryTimeEvent(widget.customerId));
-
-          // Complete delivery
-          context.read<DeliveryUpdateBloc>().add(
-            CompleteDeliveryEvent(deliveryData: deliveryData),
-          );
-
-          context.read<DeliveryDataBloc>().add(
-            SetInvoiceIntoCompletedEvent(deliveryData.id ?? ''),
-          );
-
-          // Use a small delay to ensure navigation state is clean
-          Future.delayed(const Duration(milliseconds: 100), () {
-            if (mounted) {
-              // Show summary dialog
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder:
-                    (context) =>
-                        CustomerSummaryDialog(deliveryData: deliveryData),
-              );
-            }
-          });
-        }
-      }
-      return;
-    }
-
-    // Update delivery status - this will trigger the BlocListener above to close the drawer
-    debugPrint('📝 Firing status update event for: $statusTitle');
-    context.read<DeliveryUpdateBloc>().add(
-      UpdateDeliveryStatusEvent(
-        customerId: widget.customerId,
-        statusId: statusId,
+    // ---------------- DEFAULT STATUS UPDATE ----------------
+    context.read<DeliveryStatusChoicesBloc>().add(
+      UpdateCustomerStatusEvent(
+        deliveryDataId: widget.deliveryDataId,
+        status: status,
       ),
+    );
+    context.read<DeliveryDataBloc>().add(
+      WatchLocalDeliveryDataByIdEvent(widget.deliveryDataId),
     );
   }
 
-  /// Get current location and update delivery location, then proceed with status update
   Future<void> _getCurrentLocationAndUpdate(
     DeliveryDataBloc deliveryDataBloc,
-    String statusId,
+    DeliveryStatusChoicesEntity status,
   ) async {
     try {
-      debugPrint('📍 Getting current location for arrived status...');
-
-      // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        debugPrint('⚠️ Location services are disabled');
-        _proceedWithStatusUpdate(statusId);
+        _proceedWithStatusUpdate(status);
         return;
       }
 
-      // Check location permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          debugPrint('⚠️ Location permissions are denied');
-          _proceedWithStatusUpdate(statusId);
+          _proceedWithStatusUpdate(status);
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        debugPrint('⚠️ Location permissions are permanently denied');
-        _proceedWithStatusUpdate(statusId);
+        _proceedWithStatusUpdate(status);
         return;
       }
 
-      // Get current position
-      Position position = await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
       );
 
-      debugPrint(
-        '✅ Current location obtained: ${position.latitude}, ${position.longitude}',
+      deliveryDataBloc.add(
+        UpdateDeliveryLocationEvent(
+          id: widget.deliveryDataId,
+          latitude: position.latitude,
+          longitude: position.longitude,
+        ),
       );
 
-      // Update delivery location with current coordinates
-      if (mounted) {
-        deliveryDataBloc.add(
-          UpdateDeliveryLocationEvent(
-            id: widget.customerId,
-            latitude: position.latitude,
-            longitude: position.longitude,
-          ),
-        );
-      }
-
-      // Proceed with status update
-      _proceedWithStatusUpdate(statusId);
-    } catch (e) {
-      debugPrint('❌ Error getting location: ${e.toString()}');
-      // Proceed with status update even if location fails
-      _proceedWithStatusUpdate(statusId);
+      _proceedWithStatusUpdate(status);
+    } catch (_) {
+      _proceedWithStatusUpdate(status);
     }
   }
 
-  // Proceed with the arrived status update after location is handled
-  void _proceedWithStatusUpdate(String statusId) {
+  void _proceedWithStatusUpdate(DeliveryStatusChoicesEntity status) {
     if (!mounted) return;
 
-    // Update the delivery status - this will trigger the BlocListener to close the drawer
-    context.read<DeliveryUpdateBloc>().add(
-      UpdateDeliveryStatusEvent(
-        customerId: widget.customerId,
-        statusId: statusId,
+    context.read<DeliveryStatusChoicesBloc>().add(
+      UpdateCustomerStatusEvent(
+        deliveryDataId: widget.deliveryDataId,
+        status: status,
       ),
     );
 
-    debugPrint('✅ Status update event fired');
+    debugPrint('✅ Status update dispatched: ${status.title}');
   }
 }

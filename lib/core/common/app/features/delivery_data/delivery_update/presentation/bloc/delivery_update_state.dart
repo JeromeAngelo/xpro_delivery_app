@@ -160,8 +160,24 @@ class BulkDeliveryStatusChoicesError extends DeliveryUpdateState {
   @override
   List<Object> get props => [message, isLocalError];
 }
+class DeliveryStatusSyncing extends DeliveryUpdateState {
+  final String customerId;
+
+  const DeliveryStatusSyncing(this.customerId);
+
+  @override
+  List<Object> get props => [customerId];
+}
 
 
+class DeliveryStatusChoicesSynced extends DeliveryUpdateState {
+  final List<DeliveryUpdateEntity> syncedChoices;
+
+  const DeliveryStatusChoicesSynced(this.syncedChoices);
+
+  @override
+  List<Object> get props => [syncedChoices];
+}
 
 
 

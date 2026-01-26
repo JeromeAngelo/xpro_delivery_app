@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
 
 import 'package:x_pro_delivery_app/core/enums/undeliverable_reason.dart';
 
-import '../../../../../../core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_state.dart';
+import '../../../../../../core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_state.dart';
 
 class SpecificUndeliveredCustomerScreen extends StatefulWidget {
   final String cancelledInvoiceId;
@@ -22,16 +22,18 @@ class SpecificUndeliveredCustomerScreen extends StatefulWidget {
 }
 
 class _SpecificUndeliveredCustomerScreenState
-    extends State<SpecificUndeliveredCustomerScreen> {
+    extends State<SpecificUndeliveredCustomerScreen>{
   @override
   void initState() {
     super.initState();
-    debugPrint('🔄 Loading cancelled invoice details for ID: ${widget.cancelledInvoiceId}');
-    
+    debugPrint(
+      '🔄 Loading cancelled invoice details for ID: ${widget.cancelledInvoiceId}',
+    );
+
     // Load cancelled invoice by ID using the bloc
-    context
-        .read<CancelledInvoiceBloc>()
-        .add(LoadCancelledInvoicesByIdEvent(widget.cancelledInvoiceId));
+    context.read<CancelledInvoiceBloc>().add(
+      LoadCancelledInvoicesByIdEvent(widget.cancelledInvoiceId),
+    );
   }
 
   @override
@@ -42,7 +44,7 @@ class _SpecificUndeliveredCustomerScreenState
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            context.push('/undelivered-customer-screen');
+            context.push('/summary-trip');
           },
         ),
         actions: [
@@ -68,7 +70,9 @@ class _SpecificUndeliveredCustomerScreenState
         },
         child: BlocBuilder<CancelledInvoiceBloc, CancelledInvoiceState>(
           builder: (context, state) {
-            debugPrint('📋 Current cancelled invoices state: ${state.runtimeType}');
+            debugPrint(
+              '📋 Current cancelled invoices state: ${state.runtimeType}',
+            );
 
             if (state is CancelledInvoiceLoading) {
               return const _LoadingWidget();
@@ -77,7 +81,7 @@ class _SpecificUndeliveredCustomerScreenState
             if (state is SpecificCancelledInvoiceLoaded) {
               final cancelledInvoice = state.cancelledInvoice;
               debugPrint('✅ Cancelled invoice loaded: ${cancelledInvoice.id}');
-              
+
               return _buildCancelledInvoiceDetails(context, cancelledInvoice);
             }
 
@@ -85,9 +89,9 @@ class _SpecificUndeliveredCustomerScreenState
               return _ErrorWidget(
                 message: state.message,
                 onRetry: () {
-                  context
-                      .read<CancelledInvoiceBloc>()
-                      .add(LoadCancelledInvoicesByIdEvent(widget.cancelledInvoiceId));
+                  context.read<CancelledInvoiceBloc>().add(
+                    LoadCancelledInvoicesByIdEvent(widget.cancelledInvoiceId),
+                  );
                 },
               );
             }
@@ -103,13 +107,12 @@ class _SpecificUndeliveredCustomerScreenState
     final customer = cancelledInvoice.customer.target;
     final invoices = cancelledInvoice.invoices;
     final deliveryData = cancelledInvoice.deliveryData.target;
-    final trip = cancelledInvoice.trip.target;
+   // final trip = cancelledInvoice.trip.target;
 
     debugPrint('🎯 Cancelled Invoice Details:');
     debugPrint('   📦 Cancelled Invoice ID: ${cancelledInvoice.id}');
-    debugPrint('   👤 Customer: ${customer?.storeName ?? 'Unknown'}');
+    debugPrint('   👤 Customer: ${customer?.name ?? 'Unknown'}');
     debugPrint('   📄 Number of invoices: ${invoices.length}');
-    debugPrint('   🚫 Reason: ${cancelledInvoice.reason?.name ?? 'No reason'}');
     
     // Log individual invoice details
     for (int i = 0; i < invoices.length; i++) {
@@ -119,9 +122,9 @@ class _SpecificUndeliveredCustomerScreenState
 
     return RefreshIndicator(
       onRefresh: () async {
-        context
-            .read<CancelledInvoiceBloc>()
-            .add(LoadCancelledInvoicesByIdEvent(widget.cancelledInvoiceId));
+        context.read<CancelledInvoiceBloc>().add(
+          LoadCancelledInvoicesByIdEvent(widget.cancelledInvoiceId),
+        );
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -131,7 +134,7 @@ class _SpecificUndeliveredCustomerScreenState
           children: [
             // Cancellation Summary Card
             _buildCancellationSummaryCard(context, cancelledInvoice),
-            
+
             const SizedBox(height: 16),
 
             // Customer Information Card
@@ -153,13 +156,14 @@ class _SpecificUndeliveredCustomerScreenState
             ],
 
             // Trip Information Card
-            if (trip != null) ...[
-              _buildTripInfoCard(context, trip),
-              const SizedBox(height: 16),
-            ],
+            // if (trip != null) ...[
+            //   _buildTripInfoCard(context, trip),
+            //   const SizedBox(height: 16),
+            // ],
 
             // Cancellation Evidence Card
-            if (cancelledInvoice.image != null && cancelledInvoice.image!.isNotEmpty) ...[
+            if (cancelledInvoice.image != null &&
+                cancelledInvoice.image!.isNotEmpty) ...[
               _buildEvidenceCard(context, cancelledInvoice),
             ],
           ],
@@ -186,9 +190,9 @@ class _SpecificUndeliveredCustomerScreenState
                 const SizedBox(width: 8),
                 Text(
                   'Cancellation Summary',
-                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -207,10 +211,7 @@ class _SpecificUndeliveredCustomerScreenState
               isHighlighted: true,
               isError: true,
             ),
-            _buildInfoRow(
-              'Created',
-              _formatDate(cancelledInvoice.created),
-            ),
+            _buildInfoRow('Created', _formatDate(cancelledInvoice.created)),
             _buildInfoRow(
               'Last Updated',
               _formatDate(cancelledInvoice.updated),
@@ -220,6 +221,7 @@ class _SpecificUndeliveredCustomerScreenState
       ),
     );
   }
+
 
   Widget _buildCustomerInfoCard(BuildContext context, customer) {
     return Card(
@@ -246,11 +248,15 @@ class _SpecificUndeliveredCustomerScreenState
               ],
             ),
             const Divider(height: 24),
-            _buildInfoRow('Store Name', customer.storeName ?? 'Unknown Store'),
-            _buildInfoRow('Address', customer.address ?? 'No address provided'),
-            _buildInfoRow('Contact Number', customer.contactNumber ?? 'No contact'),
-            if (customer.email != null && customer.email!.isNotEmpty)
-              _buildInfoRow('Email', customer.email!),
+            _buildInfoRow('Store Name', customer.name ?? 'Unknown Store'),
+            _buildInfoRow(
+              'Address',
+              customer.province ?? 'No address provided',
+            ),
+            _buildInfoRow(
+              'Contact Number',
+              customer.contactNumber ?? 'No contact',
+            ),
           ],
         ),
       ),
@@ -314,7 +320,6 @@ class _SpecificUndeliveredCustomerScreenState
               '₱${totalInvoicesAmount.toStringAsFixed(2)}',
               isHighlighted: true,
             ),
-
           ],
         ),
       ),
@@ -346,51 +351,63 @@ class _SpecificUndeliveredCustomerScreenState
               ],
             ),
             const Divider(height: 24),
-            _buildInfoRow('Delivery Number', deliveryData.deliveryNumber ?? 'Unknown'),
-            _buildInfoRow('Invoice Status', deliveryData.invoiceStatus?.name ?? 'Unknown'),
-            if (deliveryData.deliveryDate != null)
-              _buildInfoRow('Delivery Date', _formatDate(deliveryData.deliveryDate)),
+            _buildInfoRow(
+              'Delivery Number',
+              deliveryData.deliveryNumber ?? 'Unknown',
+            ),
+            
+            if (deliveryData.created != null)
+              _buildInfoRow(
+                'Delivery Date',
+                _formatDate(deliveryData.created),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTripInfoCard(BuildContext context, trip) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.route,
-                  color: Theme.of(context).colorScheme.secondary,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Trip Information',
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            _buildInfoRow('Trip Number', trip.tripNumberId ?? 'Unknown'),
-            _buildInfoRow('Status', trip.isAccepted == true ? 'Accepted' : 'Pending'),
-            _buildInfoRow('End Trip', trip.isEndTrip == true ? 'Completed' : 'In Progress'),
-            if (trip.timeAccepted != null)
-              _buildInfoRow('Time Accepted', _formatDate(trip.timeAccepted)),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildTripInfoCard(BuildContext context, trip) {
+  //   return Card(
+  //     elevation: 2,
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(16),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Row(
+  //             children: [
+  //               Icon(
+  //                 Icons.route,
+  //                 color: Theme.of(context).colorScheme.secondary,
+  //                 size: 24,
+  //               ),
+  //               const SizedBox(width: 8),
+  //               Text(
+  //                 'Trip Information',
+  //                 style: Theme.of(context).textTheme.titleMedium!.copyWith(
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //           const Divider(height: 24),
+  //           _buildInfoRow('Trip Number', trip.tripNumberId ?? 'Unknown'),
+  //           _buildInfoRow(
+  //             'Status',
+  //             trip.isAccepted == true ? 'Accepted' : 'Pending',
+  //           ),
+  //           _buildInfoRow(
+  //             'End Trip',
+  //             trip.isEndTrip == true ? 'Completed' : 'In Progress',
+  //           ),
+  //           if (trip.timeAccepted != null)
+  //             _buildInfoRow('Time Accepted', _formatDate(trip.timeAccepted)),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildEvidenceCard(BuildContext context, cancelledInvoice) {
     return Card(
@@ -417,7 +434,8 @@ class _SpecificUndeliveredCustomerScreenState
               ],
             ),
             const Divider(height: 24),
-            if (cancelledInvoice.image != null && cancelledInvoice.image!.isNotEmpty) ...[
+            if (cancelledInvoice.image != null &&
+                cancelledInvoice.image!.isNotEmpty) ...[
               Container(
                 width: double.infinity,
                 height: 200,
@@ -441,29 +459,38 @@ class _SpecificUndeliveredCustomerScreenState
                             Icon(
                               Icons.broken_image,
                               size: 48,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Failed to load image',
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
                         ),
                       );
                     },
-                                       loadingBuilder: (context, child, loadingProgress) {
+                    loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return Container(
                         color: Theme.of(context).colorScheme.surfaceVariant,
                         child: Center(
                           child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
+                            value:
+                                loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
                           ),
                         ),
                       );
@@ -512,7 +539,12 @@ class _SpecificUndeliveredCustomerScreenState
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {bool isHighlighted = false, bool isError = false}) {
+  Widget _buildInfoRow(
+    String label,
+    String value, {
+    bool isHighlighted = false,
+    bool isError = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -525,9 +557,10 @@ class _SpecificUndeliveredCustomerScreenState
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: isError 
-                    ? Theme.of(context).colorScheme.error
-                    : isHighlighted 
+                color:
+                    isError
+                        ? Theme.of(context).colorScheme.error
+                        : isHighlighted
                         ? Theme.of(context).colorScheme.primary
                         : Theme.of(context).colorScheme.onSurface,
               ),
@@ -540,10 +573,14 @@ class _SpecificUndeliveredCustomerScreenState
               value,
               style: TextStyle(
                 overflow: TextOverflow.ellipsis,
-                fontWeight: isHighlighted || isError ? FontWeight.bold : FontWeight.normal,
-                color: isError 
-                    ? Theme.of(context).colorScheme.error
-                    : isHighlighted 
+                fontWeight:
+                    isHighlighted || isError
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                color:
+                    isError
+                        ? Theme.of(context).colorScheme.error
+                        : isHighlighted
                         ? Theme.of(context).colorScheme.primary
                         : Theme.of(context).colorScheme.onSurface,
               ),
@@ -558,11 +595,11 @@ class _SpecificUndeliveredCustomerScreenState
 
   String _getReasonDisplayName(UndeliverableReason? reason) {
     if (reason == null) return 'No reason specified';
-    
+
     switch (reason) {
       case UndeliverableReason.customerNotAvailable:
         return 'Customer Not Available';
-     
+
       case UndeliverableReason.environmentalIssues:
         return 'Refused Delivery';
       case UndeliverableReason.storeClosed:
@@ -571,8 +608,6 @@ class _SpecificUndeliveredCustomerScreenState
         return 'No Payment';
       case UndeliverableReason.none:
         return 'Damaged Goods';
-     
-     
     }
   }
 
@@ -606,10 +641,7 @@ class _ErrorWidget extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
 
-  const _ErrorWidget({
-    required this.message,
-    this.onRetry,
-  });
+  const _ErrorWidget({required this.message, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -637,10 +669,7 @@ class _ErrorWidget extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: onRetry,
-                child: const Text('Retry'),
-              ),
+              ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
             ],
           ],
         ),
@@ -694,4 +723,3 @@ class _EmptyWidget extends StatelessWidget {
     );
   }
 }
-

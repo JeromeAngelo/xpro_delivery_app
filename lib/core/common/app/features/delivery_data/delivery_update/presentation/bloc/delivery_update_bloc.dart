@@ -10,6 +10,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delive
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/pin_arrived_location.dart';
 import '../../domain/usecase/bulk_update_delivery_status.dart';
 import '../../domain/usecase/get_bulk_delivery_status_choices.dart';
+import '../../domain/usecase/sync_delivery_status_choices.dart';
 import 'delivery_update_event.dart';
 import 'delivery_update_state.dart';
 
@@ -23,6 +24,7 @@ class DeliveryUpdateBloc extends Bloc<DeliveryUpdateEvent, DeliveryUpdateState> 
   final CreateDeliveryStatus _createDeliveryStatus;
   final UpdateQueueRemarks _updateQueueRemarks;
   final PinArrivedLocation _pinArrivedLocation;
+  final SyncDeliveryStatusChoices _syncDeliveryStatusChoices;
   // Add the dependency
 final BulkUpdateDeliveryStatus _bulkUpdateDeliveryStatus;
   DeliveryUpdateState? _cachedState;
@@ -34,6 +36,7 @@ final BulkUpdateDeliveryStatus _bulkUpdateDeliveryStatus;
     required GetBulkDeliveryStatusChoices getBulkDeliveryStatusChoices,
     required CheckEndDeliverStatus checkEndDeliverStatus,
     required InitializePendingStatus initializePendingStatus,
+    required SyncDeliveryStatusChoices syncDeliveryStatusChoices,
     required CreateDeliveryStatus createDeliveryStatus,
    required UpdateQueueRemarks updateQueueRemarks,
    required PinArrivedLocation pinArrivedLocation,
@@ -43,6 +46,7 @@ required BulkUpdateDeliveryStatus bulkUpdateDeliveryStatus,
        _completeDelivery = completeDelivery,
        _getBulkDeliveryStatusChoices = getBulkDeliveryStatusChoices,
        _checkEndDeliverStatus = checkEndDeliverStatus,
+       _syncDeliveryStatusChoices = syncDeliveryStatusChoices,
        _initializePendingStatus = initializePendingStatus,
        _createDeliveryStatus = createDeliveryStatus,
        _updateQueueRemarks = updateQueueRemarks,
@@ -64,6 +68,8 @@ on<CheckLocalEndDeliveryStatusEvent>(_onCheckLocalEndDeliveryStatus);
 on<BulkUpdateDeliveryStatusEvent>(_onBulkUpdateDeliveries);
  on<GetBulkDeliveryStatusChoicesEvent>(_onGetBulkDeliveryStatusChoices);
   on<LoadLocalBulkDeliveryStatusChoicesEvent>(_onLoadLocalBulkDeliveryStatusChoices);
+  on<SyncDeliveryStatusChoicesEvent>(_onSyncDeliveryStatusChoices);
+
   }
 
 Future<void> _onUpdateQueueRemarks(
@@ -178,8 +184,7 @@ Future<void> _onGetDeliveryStatusChoices(
 }
 
 
-
- Future<void> _onUpdateDeliveryStatus(
+Future<void> _onUpdateDeliveryStatus(
   UpdateDeliveryStatusEvent event,
   Emitter<DeliveryUpdateState> emit,
 ) async {
@@ -188,8 +193,8 @@ Future<void> _onGetDeliveryStatusChoices(
 
   final result = await _updateDeliveryStatus(
     UpdateDeliveryStatusParams(
-      customerId: event.customerId,
-      statusId: event.statusId,
+      deliveryDataId: event.deliveryDataId,
+      status: event.status,
     ),
   );
 
@@ -197,13 +202,14 @@ Future<void> _onGetDeliveryStatusChoices(
     (failure) => emit(DeliveryUpdateError(failure.message)),
     (_) {
       emit(const DeliveryStatusUpdateSuccess());
-      // Immediately refresh local data
-      add(LoadLocalDeliveryStatusChoicesEvent(event.customerId));
-      // Then update with remote data
-      add(GetDeliveryStatusChoicesEvent(event.customerId));
+
+      // Refresh local + remote choices
+      add(LoadLocalDeliveryStatusChoicesEvent(event.deliveryDataId));
+      add(GetDeliveryStatusChoicesEvent(event.deliveryDataId));
     },
   );
 }
+
 
 
 // Now add the function
@@ -373,6 +379,28 @@ Future<void> _onCheckLocalEndDeliveryStatus(
       );
     }
   }
+
+  Future<void> _onSyncDeliveryStatusChoices(
+  SyncDeliveryStatusChoicesEvent event,
+  Emitter<DeliveryUpdateState> emit,
+) async {
+  emit(DeliveryStatusSyncing(event.customerId));
+  debugPrint('🔄 Starting sync of delivery status choices for ${event.customerId}');
+
+  final result = await _syncDeliveryStatusChoices(event.customerId);
+
+  result.fold(
+    (failure) {
+      debugPrint('❌ Sync failed: ${failure.message}');
+      emit(DeliveryUpdateError(failure.message));
+    },
+    (syncedChoices) {
+      debugPrint('✅ Successfully synced ${syncedChoices.length} delivery statuses for ${event.customerId}');
+      emit(DeliveryStatusChoicesSynced(syncedChoices));
+    },
+  );
+}
+
 
   @override
   Future<void> close() {

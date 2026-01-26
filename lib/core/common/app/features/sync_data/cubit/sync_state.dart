@@ -56,6 +56,9 @@ class SyncingTripData extends SyncState {
   @override
   List<Object?> get props => [progress, statusMessage];
 }
+class TripSynced extends SyncState {
+  const TripSynced();
+}
 
 class SyncingDeliveryData extends SyncState {
   final double progress;
@@ -124,4 +127,20 @@ class PendingOperationsCompleted extends SyncState {
 
   @override
   List<Object?> get props => [processedOperations, failedOperations];
+}
+class SyncingDeliveryStatusChoices extends SyncState {
+  final double progress;
+  final String statusMessage;
+
+  const SyncingDeliveryStatusChoices({
+    required this.progress,
+    required this.statusMessage,
+  });
+
+  @override
+  List<Object?> get props => [progress, statusMessage];
+}
+
+class DeliveryStatusChoicesSynced extends SyncState {
+  const DeliveryStatusChoicesSynced();
 }

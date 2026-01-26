@@ -1,4 +1,4 @@
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/entity/trip_entity.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/entity/users_entity.dart';
 

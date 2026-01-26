@@ -11,6 +11,6 @@ class LoadDeliveryTeam extends UsecaseWithParams<DeliveryTeamEntity, String> {
   @override
   ResultFuture<DeliveryTeamEntity> call(String params) => _repo.loadDeliveryTeam(params);
   
-  ResultFuture<DeliveryTeamEntity> loadFromLocal(String tripId) => _repo.loadLocalDeliveryTeam(tripId);
+ // ResultFuture<DeliveryTeamEntity> loadFromLocal(String tripId) => _repo.loadLocalDeliveryTeam(tripId);
 }
 

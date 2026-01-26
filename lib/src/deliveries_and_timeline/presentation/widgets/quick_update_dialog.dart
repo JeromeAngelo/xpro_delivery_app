@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
-import '../../../../core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_bloc.dart';
+import '../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
 
 class QuickUpdateDialog extends StatelessWidget {
   final List<String> selectedDeliveryIds;
@@ -12,28 +12,28 @@ class QuickUpdateDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Trigger bulk status choices load when dialog is built
-    context.read<DeliveryUpdateBloc>().add(
-      LoadLocalBulkDeliveryStatusChoicesEvent(selectedDeliveryIds),
-    );
-    context.read<DeliveryUpdateBloc>().add(
-      GetBulkDeliveryStatusChoicesEvent(selectedDeliveryIds),
+    // Trigger bulk status choices load when dialog is built (offline-first)
+    context.read<DeliveryStatusChoicesBloc>().add(
+      GetAllBulkDeliveryStatusChoicesEvent(selectedDeliveryIds),
     );
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: BlocConsumer<DeliveryUpdateBloc, DeliveryUpdateState>(
+      child: BlocConsumer<
+        DeliveryStatusChoicesBloc,
+        DeliveryStatusChoicesState
+      >(
         listenWhen:
             (previous, current) =>
-                current is DeliveryStatusUpdateSuccess ||
-                current is BulkDeliveryStatusUpdateSuccess ||
-                current is DeliveryUpdateError,
+                current is DeliveryStatusUpdated ||
+                current is BulkDeliveryStatusUpdated ||
+                current is DeliveryStatusChoicesError,
         listener: (context, state) {
-          if (state is DeliveryStatusUpdateSuccess ||
-              state is BulkDeliveryStatusUpdateSuccess) {
+          if (state is DeliveryStatusUpdated ||
+              state is BulkDeliveryStatusUpdated) {
             Navigator.of(context).pop(true); // ✅ close dialog on success
           }
-          if (state is DeliveryUpdateError) {
+          if (state is DeliveryStatusChoicesError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text("Update failed: ${state.message}")),
             );
@@ -41,11 +41,11 @@ class QuickUpdateDialog extends StatelessWidget {
         },
         buildWhen:
             (previous, current) =>
-                current is BulkDeliveryStatusChoicesLoaded ||
-                current is DeliveryUpdateLoading,
+                current is BulkAssignedDeliveryStatusChoicesLoaded ||
+                current is DeliveryStatusChoicesLoading,
         builder: (context, state) {
-          if (state is BulkDeliveryStatusChoicesLoaded) {
-            final choicesMap = state.bulkStatusChoices;
+          if (state is BulkAssignedDeliveryStatusChoicesLoaded) {
+            final choicesMap = state.choicesByCustomer;
 
             if (choicesMap.isEmpty) {
               return const Padding(
@@ -83,10 +83,10 @@ class QuickUpdateDialog extends StatelessWidget {
                         title: Text(status.title ?? 'N/A'),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () {
-                          context.read<DeliveryUpdateBloc>().add(
+                          context.read<DeliveryStatusChoicesBloc>().add(
                             BulkUpdateDeliveryStatusEvent(
-                              customerIds: selectedDeliveryIds,
-                              statusId: status.id!, // ✅ bulk update params
+                              deliveryDataIds: selectedDeliveryIds,
+                              status: status,
                             ),
                           );
                         },

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/entity/invoice_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
-import 'package:x_pro_delivery_app/core/enums/invoice_status.dart';
 
 class ConfirmBtn extends StatefulWidget {
   final List<InvoiceDataEntity> invoices;
@@ -31,9 +30,20 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
       child: BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+        // ✅ Only rebuild when "isUnloaded" for THIS customer can change
+        buildWhen: (prev, curr) {
+          final prevUnloaded = _extractIsUnloaded(prev);
+          final currUnloaded = _extractIsUnloaded(curr);
+
+          // if state type changes (loading -> loaded), rebuild
+          if (prev.runtimeType != curr.runtimeType) return true;
+
+          // if our computed flag changed, rebuild
+          return prevUnloaded != currUnloaded;
+        },
         builder: (context, deliveryDataState) {
-          final isUnloaded = _checkIfUnloaded(deliveryDataState);
-          
+          final isUnloaded = _extractIsUnloaded(deliveryDataState);
+
           debugPrint('🔍 ConfirmBtn state check:');
           debugPrint('   📦 Customer ID: ${widget.customer.id}');
           debugPrint('   📋 Delivery Data State: ${deliveryDataState.runtimeType}');
@@ -42,7 +52,9 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
           return BlocConsumer<DeliveryReceiptBloc, DeliveryReceiptState>(
             listener: (context, state) {
               if (state is DeliveryReceiptPdfGenerated) {
-                debugPrint('✅ PDF generated successfully, navigating to transaction');
+                debugPrint(
+                  '✅ PDF generated successfully, navigating to transaction',
+                );
                 _navigateToTransaction(context, state.pdfBytes);
               } else if (state is DeliveryReceiptError) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -54,12 +66,17 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
               }
             },
             builder: (context, receiptState) {
-              final isGeneratingPdf = receiptState is DeliveryReceiptPdfGenerating;
-              
+              final isGeneratingPdf =
+                  receiptState is DeliveryReceiptPdfGenerating;
+
+              // ✅ If unloaded is true, button must be usable again
+              // The only disable condition should be "isGeneratingPdf"
+              final canPress = isUnloaded && !isGeneratingPdf;
+
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Show status message if not unloaded
+                  // ✅ Show status message only while NOT unloaded
                   if (!isUnloaded) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -72,43 +89,50 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
                         children: [
                           Icon(
                             Icons.info_outline,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _getStatusMessage(deliveryDataState),
-                              style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall!
+                                  .copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                  ),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ],
-                  
+
                   RoundedButton(
-                    label: isGeneratingPdf 
-                        ? 'Generating PDF...' 
+                    label: isGeneratingPdf
+                        ? 'Generating PDF...'
                         : isUnloaded
                             ? 'Confirm Invoices (${widget.invoices.length}/${widget.invoices.length})'
                             : 'Waiting for Unloading to Complete...',
-                    onPressed: (isGeneratingPdf || !isUnloaded) ? null : () => _handleConfirmInvoices(context),
-                    buttonColour: (isGeneratingPdf || !isUnloaded)
-                        ? Theme.of(context).colorScheme.surfaceVariant
-                        : Theme.of(context).colorScheme.primary,
-                    labelColour: (isGeneratingPdf || !isUnloaded)
-                        ? Theme.of(context).colorScheme.onSurfaceVariant
-                        : Theme.of(context).colorScheme.onPrimary,
+                    onPressed: canPress ? () => _handleConfirmInvoices(context) : null,
+                    buttonColour: canPress
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.surfaceVariant,
+                    labelColour: canPress
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                     isLoading: isGeneratingPdf,
-                    icon: (isGeneratingPdf || !isUnloaded)
-                        ? null 
-                        : Icon(
+                    icon: canPress
+                        ? Icon(
                             Icons.edit_document,
                             color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                          )
+                        : null,
                   ),
                 ],
               );
@@ -119,84 +143,90 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
     );
   }
 
-  bool _checkIfUnloaded(DeliveryDataState state) {
-    debugPrint('🔍 Checking unloaded status for customer: ${widget.customer.id}');
-    
-    // Check if we have delivery data loaded (list)
-    if (state is DeliveryDataLoaded) {
-      final deliveryDataList = state.deliveryData;
-      
-      if (deliveryDataList.id == widget.customer.id) {
-        final isUnloaded = deliveryDataList.invoiceStatus == InvoiceStatus.unloaded;
-        debugPrint('✅ Found single delivery data with status: ${deliveryDataList.invoiceStatus?.name}');
-        debugPrint('📤 Is unloaded: $isUnloaded');
-        return isUnloaded;
+  // ✅ Robust read for isUnloaded based on current DeliveryDataBloc state
+  bool _extractIsUnloaded(DeliveryDataState state) {
+    final id = (widget.customer.id ?? '').toString().trim();
+    if (id.isEmpty) {
+      debugPrint('⚠️ Customer id is empty, cannot compute isUnloaded');
+      return false;
+    }
+
+    debugPrint('🔍 Checking isUnloaded for deliveryDataId=$id');
+
+    DeliveryDataEntity? delivery;
+
+    // 1️⃣ Trip list state
+    if (state is DeliveryDataByTripLoaded) {
+      final match = state.deliveryData.where((d) => d.id == id);
+      if (match.isNotEmpty) {
+        delivery = match.first;
+        debugPrint('✅ Found in DeliveryDataByTripLoaded list');
+      } else {
+        debugPrint('⚠️ Not found in DeliveryDataByTripLoaded list');
       }
-        }
-    
-    // Check if we have a single delivery data loaded by ID
-    if (state is DeliveryDataLoaded && state.deliveryData.id == widget.customer.id) {
-      final isUnloaded = state.deliveryData.invoiceStatus == InvoiceStatus.unloaded;
-      debugPrint('✅ Found single delivery data with status: ${state.deliveryData.invoiceStatus?.name}');
-      debugPrint('📤 Is unloaded: $isUnloaded');
-      return isUnloaded;
     }
-    
-    // Check if invoice was just updated (could be set to unloaded)
-    if (state is InvoiceSetToUnloading && state.deliveryDataId == widget.customer.id) {
-      final isUnloaded = state.deliveryData.invoiceStatus == InvoiceStatus.unloaded;
-      debugPrint('✅ Invoice status updated: $isUnloaded');
-      return isUnloaded;
+
+    // 2️⃣ Single loaded
+    if (delivery == null && state is DeliveryDataLoaded) {
+      if (state.deliveryData.id == id) {
+        delivery = state.deliveryData;
+        debugPrint('✅ Found in DeliveryDataLoaded single entity');
+      } else {
+        debugPrint('⚠️ DeliveryDataLoaded does not match id');
+      }
     }
-    
-    debugPrint('❌ No matching delivery data found or not in unloaded status');
-    return false;
+
+    // 3️⃣ Local/offline optimistic state you already emit
+    if (delivery == null && state is InvoiceSetToUnloading) {
+      if (state.deliveryDataId == id) {
+        delivery = state.deliveryData;
+        debugPrint('✅ Found in InvoiceSetToUnloading state');
+      } else {
+        debugPrint('⚠️ InvoiceSetToUnloading does not match id');
+      }
+    }
+
+    if (delivery == null) {
+      debugPrint('❌ No matching delivery in state → isUnloaded=false');
+      return false;
+    }
+
+    final isUnloaded = delivery.isUnloaded == true;
+
+    debugPrint('   📦 Delivery ID: ${delivery.id}');
+    debugPrint('   📤 isUnloaded: ${delivery.isUnloaded}');
+    debugPrint('✅ Computed isUnloaded = $isUnloaded');
+
+    return isUnloaded;
   }
 
   String _getStatusMessage(DeliveryDataState state) {
-    if (state is DeliveryDataLoaded) {
-      final deliveryDataList = state.deliveryData;
-      
-      if (deliveryDataList.id == widget.customer.id) {
-        return _getMessageForStatus(deliveryDataList.invoiceStatus);
-      }
-        }
-    
-    return 'Please wait for the delivery to be unloaded before confirming invoices';
-  }
-
-  String _getMessageForStatus(InvoiceStatus? status) {
-    switch (status) {
-      case InvoiceStatus.none:
-        return 'Invoice is pending processing';
-      case InvoiceStatus.truck:
-        return 'Invoice is in transit to destination';
-      case InvoiceStatus.unloading:
-        return 'Invoice is currently being unloaded';
-      case InvoiceStatus.delivered:
-        return 'Invoice has been completed';
-      case InvoiceStatus.cancelled:
-        return 'Invoice has been cancelled';
-      default:
-        return 'Waiting for unloading to complete';
-    }
+    // Keep it simple + consistent with the same resolver
+    final isUnloaded = _extractIsUnloaded(state);
+    return isUnloaded
+        ? 'Delivery has been unloaded. You may now confirm invoices.'
+        : 'Waiting for unloading to complete.';
   }
 
   void _handleConfirmInvoices(BuildContext context) {
     final customerData = widget.customer;
-    debugPrint('🔄 Starting invoice confirmation for customer: ${customerData.invoice}');
-    debugPrint('📄 Generating PDF for delivery data: ${widget.customer.id}');
-    
-    // Generate PDF first using the delivery receipt BLoC
+
+    debugPrint('🔄 Starting invoice confirmation');
+    debugPrint('   📦 deliveryDataId=${customerData.id}');
+    debugPrint('   📄 invoicesCount=${widget.invoices.length}');
+
     context.read<DeliveryReceiptBloc>().add(
-      GenerateDeliveryReceiptPdfEvent(widget.customer),
-    );
+          GenerateDeliveryReceiptPdfEvent(customerData),
+        );
   }
 
   void _navigateToTransaction(BuildContext context, pdfBytes) {
     final customerData = widget.customer;
+
     debugPrint('🚀 Navigating to transaction with generated PDF');
-    
+    debugPrint('   📦 deliveryDataId=${customerData.id}');
+    debugPrint('   📄 invoicesCount=${widget.invoices.length}');
+
     context.push(
       '/transaction',
       extra: {

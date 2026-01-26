@@ -1,10 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/model/delivery_receipt_model.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 import 'package:pdf/pdf.dart';
 import '../../../../../../../../../src/transaction_screen/presentation/utils/delivery_orders_pdf.dart';
+import '../../../../../../../../enums/sync_status_enums.dart';
+import '../../../../../../../../services/objectbox.dart';
+import '../../../../../trip_ticket/delivery_data/data/model/delivery_data_model.dart';
+import '../../../../delivery_update/data/models/delivery_update_model.dart';
 
 abstract class DeliveryReceiptLocalDatasource {
   /// Get all delivery receipts
@@ -48,22 +54,32 @@ abstract class DeliveryReceiptLocalDatasource {
 }
 
 class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasource {
-  final Box<DeliveryReceiptModel> _deliveryReceiptBox;
-  List<DeliveryReceiptModel>? _cachedDeliveryReceipts;
+    final ObjectBoxStore objectBoxStore;
 
-  DeliveryReceiptLocalDatasourceImpl(this._deliveryReceiptBox);
+  List<DeliveryReceiptModel>? _cachedDeliveryReceipts;
+  Box<DeliveryDataModel> get deliveryDataBox => objectBoxStore.deliveryDataBox;
+  Box<DeliveryReceiptModel> get deliveryReceiptBox => objectBoxStore.deliveryReceiptBox;
+  // Box<DeliveryStatusChoicesModel> get deliveryStatusChoicesBox =>
+  //     objectBoxStore.deliveryStatusBox;
+
+  Box<DeliveryUpdateModel> get deliveryUpdateBox =>
+      objectBoxStore.deliveryUpdateBox;
+
+  //Box<TripModel> get tripBox => objectBoxStore.tripBox; 
+
+  DeliveryReceiptLocalDatasourceImpl(this.objectBoxStore);
 
   @override
   Future<List<DeliveryReceiptModel>> getAllDeliveryReceipts() async {
     try {
       debugPrint('📱 LOCAL: Fetching all delivery receipts');
 
-      final query = _deliveryReceiptBox.query().build();
+      final query = deliveryReceiptBox.query().build();
       final deliveryReceipts = query.find();
       query.close();
 
       debugPrint('📊 Storage Stats:');
-      debugPrint('Total stored delivery receipts: ${_deliveryReceiptBox.count()}');
+      debugPrint('Total stored delivery receipts: ${deliveryReceiptBox.count()}');
       debugPrint('Found delivery receipts: ${deliveryReceipts.length}');
 
       _cachedDeliveryReceipts = deliveryReceipts;
@@ -79,8 +95,8 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
     try {
       debugPrint('📱 LOCAL: Fetching delivery receipt for trip ID: $tripId');
 
-      final query = _deliveryReceiptBox.query(
-        DeliveryReceiptModel_.tripId.equals(tripId)
+      final query = deliveryReceiptBox.query(
+        DeliveryReceiptModel_.trip.equals(tripId as int)
       ).build();
       
       final deliveryReceipt = query.findFirst();
@@ -105,8 +121,8 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
     try {
       debugPrint('📱 LOCAL: Fetching delivery receipt for delivery data ID: $deliveryDataId');
 
-      final query = _deliveryReceiptBox.query(
-        DeliveryReceiptModel_.deliveryDataId.equals(deliveryDataId)
+      final query = deliveryReceiptBox.query(
+        DeliveryReceiptModel_.deliveryData.equals(deliveryDataId as int)
       ).build();
       
       final deliveryReceipt = query.findFirst();
@@ -131,7 +147,7 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
     try {
       debugPrint('📱 LOCAL: Fetching delivery receipt with ID: $id');
 
-      final deliveryReceipt = _deliveryReceiptBox
+      final deliveryReceipt = deliveryReceiptBox
           .query(DeliveryReceiptModel_.pocketbaseId.equals(id))
           .build()
           .findFirst();
@@ -159,7 +175,7 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
       await _cleanupDeliveryReceipts();
       await _autoSave(deliveryReceipts);
 
-      final cachedCount = _deliveryReceiptBox.count();
+      final cachedCount = deliveryReceiptBox.count();
       debugPrint('✅ LOCAL: Cache verification: $cachedCount delivery receipts stored');
 
       _cachedDeliveryReceipts = deliveryReceipts;
@@ -169,47 +185,171 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
       throw CacheException(message: e.toString());
     }
   }
+@override
+Future<DeliveryReceiptModel> createDeliveryReceiptByDeliveryDataId({
+  required String deliveryDataId,
+  required String? status,
+  required DateTime? dateTimeCompleted,
+  required List<String>? customerImages,
+  required String? customerSignature,
+  required String? receiptFile,
+}) async {
+  try {
+    debugPrint('📱 LOCAL: Creating delivery receipt for deliveryDataId=$deliveryDataId');
 
-  @override
-  Future<DeliveryReceiptModel> createDeliveryReceiptByDeliveryDataId({
-    required String deliveryDataId,
-    required String? status,
-    required DateTime? dateTimeCompleted,
-    required List<String>? customerImages,
-    required String? customerSignature,
-    required String? receiptFile,
-  }) async {
-    try {
-      debugPrint('📱 LOCAL: Creating delivery receipt for delivery data: $deliveryDataId');
-      
-      // Generate a temporary ID for local storage
-      final tempId = 'local_${DateTime.now().millisecondsSinceEpoch}';
-      
-      final deliveryReceipt = DeliveryReceiptModel(
-        id: tempId,
-        collectionId: 'local',
-        collectionName: 'deliveryReceipt',
-        status: status ?? 'pending',
-        dateTimeCompleted: dateTimeCompleted,
-        customerImages: customerImages,
-        customerSignature: customerSignature,
-        receiptFile: receiptFile,
-        created: DateTime.now(),
-        updated: DateTime.now(),
-      );
-      
-      // Set the delivery data ID
-      deliveryReceipt.deliveryDataId = deliveryDataId;
-
-      _deliveryReceiptBox.put(deliveryReceipt);
-      debugPrint('✅ LOCAL: Delivery receipt created in local storage');
-      
-      return deliveryReceipt;
-    } catch (e) {
-      debugPrint('❌ LOCAL: Creation failed: ${e.toString()}');
-      throw CacheException(message: e.toString());
+    // -------------------------------------------------------------
+    // 1️⃣ Resolve actual PB delivery id (supports JSON string input)
+    // -------------------------------------------------------------
+    String actualDeliveryDataId = deliveryDataId.trim();
+    if (actualDeliveryDataId.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(actualDeliveryDataId);
+        actualDeliveryDataId = (decoded['id'] ?? '').toString().trim();
+        debugPrint('🎯 LOCAL: Extracted deliveryDataId from JSON → $actualDeliveryDataId');
+      } catch (e) {
+        debugPrint('⚠️ LOCAL: Failed to parse deliveryDataId JSON: $e');
+      }
     }
+
+    if (actualDeliveryDataId.isEmpty) {
+      throw CacheException(message: 'deliveryDataId is empty');
+    }
+
+    // -------------------------------------------------------------
+    // 2️⃣ Find DeliveryData locally (pocketbaseId first, then id)
+    // -------------------------------------------------------------
+    DeliveryDataModel? delivery;
+
+    final q1 = deliveryDataBox
+        .query(DeliveryDataModel_.pocketbaseId.equals(actualDeliveryDataId))
+        .build();
+    delivery = q1.findFirst();
+    q1.close();
+
+    if (delivery == null) {
+      final q2 = deliveryDataBox
+          .query(DeliveryDataModel_.id.equals(actualDeliveryDataId))
+          .build();
+      delivery = q2.findFirst();
+      q2.close();
+    }
+
+    if (delivery == null) {
+      debugPrint('❌ LOCAL: DeliveryData not found in ObjectBox for id=$actualDeliveryDataId');
+      throw CacheException(message: 'DeliveryData not found locally: $actualDeliveryDataId');
+    }
+
+    final deliveryPbId = (delivery.pocketbaseId).trim();
+    debugPrint('✅ LOCAL: DeliveryData found → obx=${delivery.objectBoxId} pb=$deliveryPbId');
+
+    // -------------------------------------------------------------
+    // ✅ 2.5️⃣ ADD LOCAL DELIVERY STATUS UPDATE (Mark as Received)
+    // -------------------------------------------------------------
+    try {
+      debugPrint('🔄 LOCAL: Creating DeliveryUpdate → Mark as Received');
+
+      final deliveryUpdate = DeliveryUpdateModel(
+        title: 'Mark as Received',
+        subtitle: 'Received Delivery',
+        time: DateTime.now(),
+        isAssigned: true,
+        id: '', // ⏳ will be set after remote sync (if you sync later)
+      );
+
+      // Link relations + offline sync markers
+      deliveryUpdate.deliveryData.target = delivery;
+      deliveryUpdate.deliveryDataPbId = deliveryPbId;
+
+      // If you have these fields in your model (based on your sample)
+      deliveryUpdate.syncStatus = SyncStatus.pending.name;
+      deliveryUpdate.retryCount = 0;
+      deliveryUpdate.lastLocalUpdatedAt = DateTime.now();
+
+      // Optional fields you used in sample
+      deliveryUpdate.customer = delivery.pocketbaseId;
+
+      // Add to parent ToMany
+      delivery.deliveryUpdates.add(deliveryUpdate);
+
+      // Save child -> parent
+      final updateObxId = deliveryUpdateBox.put(deliveryUpdate);
+      deliveryDataBox.put(delivery);
+
+      debugPrint('✅ LOCAL: DeliveryUpdate CREATED');
+      debugPrint('   • Update OBX ID: $updateObxId');
+      debugPrint('   • Title: ${deliveryUpdate.title}');
+      debugPrint('   • Subtitle: ${deliveryUpdate.subtitle}');
+      debugPrint('   • Time: ${deliveryUpdate.time}');
+      debugPrint('   • Total updates: ${delivery.deliveryUpdates.length}');
+    } catch (e) {
+      debugPrint('⚠️ LOCAL: Failed to create local delivery update: $e');
+      // Do not fail receipt creation; continue
+    }
+
+    // -------------------------------------------------------------
+    // 3️⃣ Prepare a local DeliveryReceiptModel
+    // -------------------------------------------------------------
+    final tempId = 'local_${DateTime.now().millisecondsSinceEpoch}';
+
+    final deliveryReceipt = DeliveryReceiptModel(
+      id: tempId,
+      collectionId: 'local',
+      collectionName: 'deliveryReceipt',
+      status: (status ?? 'completed'),
+      dateTimeCompleted: dateTimeCompleted ?? DateTime.now(),
+      customerImages: customerImages,
+      customerSignature: customerSignature,
+      receiptFile: receiptFile,
+      created: DateTime.now(),
+      updated: DateTime.now(),
+    );
+
+    // -------------------------------------------------------------
+    // 4️⃣ Link relations properly (ObjectBox)
+    // -------------------------------------------------------------
+    deliveryReceipt.deliveryData.target = delivery;
+
+    // Trip relation (optional)
+    try {
+      final tripTarget = delivery.trip.target;
+      if (tripTarget != null) {
+        deliveryReceipt.trip.target = tripTarget;
+        debugPrint('🚛 LOCAL: Linked trip → ${tripTarget.id} / pb=${tripTarget.pocketbaseId}');
+      } else {
+        debugPrint('⚠️ LOCAL: DeliveryData has no linked trip');
+      }
+    } catch (_) {}
+
+    // // InvoiceItems relation (optional)
+    // try {
+    //   final items = delivery.invoiceItems.toList();
+    //   debugPrint('🧾 LOCAL: Found ${items.length} invoiceItems in DeliveryData');
+
+    //   deliveryReceipt.i
+    //     ..clear()
+    //     ..addAll(items);
+
+    //   debugPrint('✅ LOCAL: Attached ${deliveryReceipt.invoiceItems.length} invoiceItems to receipt');
+    // } catch (_) {}
+
+    // -------------------------------------------------------------
+    // 5️⃣ Save to ObjectBox
+    // -------------------------------------------------------------
+    final savedObxId = deliveryReceiptBox.put(deliveryReceipt);
+
+    debugPrint('✅ LOCAL: DeliveryReceipt saved → obx=$savedObxId id=$tempId');
+    debugPrint('   📦 delivery pb=$deliveryPbId');
+    debugPrint('   🧾 images=${customerImages?.length ?? 0}, signature=${customerSignature != null}, receiptFile=${receiptFile != null}');
+    //debugPrint('   💰 totalAmount=${amount ?? 0.0}');
+    debugPrint('   ✅ status=${deliveryReceipt.status} completedAt=${deliveryReceipt.dateTimeCompleted}');
+
+    return deliveryReceiptBox.get(savedObxId)!;
+  } catch (e, st) {
+    debugPrint('❌ LOCAL: createDeliveryReceiptByDeliveryDataId ERROR: $e');
+    debugPrint('STACK TRACE: $st');
+    throw CacheException(message: e.toString());
   }
+}
 
   @override
   Future<void> updateDeliveryReceipt(DeliveryReceiptModel deliveryReceipt) async {
@@ -218,15 +358,15 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
       
       // Ensure delivery data ID is set if delivery data is assigned
       if (deliveryReceipt.deliveryData.target != null) {
-        deliveryReceipt.deliveryDataId = deliveryReceipt.deliveryData.target?.id;
+        deliveryReceipt.deliveryData.target!.id = deliveryReceipt.deliveryData.target?.id;
       }
       
       // Ensure trip ID is set if trip is assigned
       if (deliveryReceipt.trip.target != null) {
-        deliveryReceipt.tripId = deliveryReceipt.trip.target?.id;
+        deliveryReceipt.trip.target!.id = deliveryReceipt.trip.target?.id;
       }
       
-      _deliveryReceiptBox.put(deliveryReceipt);
+      deliveryReceiptBox.put(deliveryReceipt);
       debugPrint('✅ LOCAL: Delivery receipt updated in local storage');
     } catch (e) {
       debugPrint('❌ LOCAL: Update failed: ${e.toString()}');
@@ -239,7 +379,7 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
     try {
       debugPrint('📱 LOCAL: Deleting delivery receipt with ID: $id');
 
-      final deliveryReceipt = _deliveryReceiptBox
+      final deliveryReceipt = deliveryReceiptBox
           .query(DeliveryReceiptModel_.pocketbaseId.equals(id))
           .build()
           .findFirst();
@@ -250,7 +390,7 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
         );
       }
 
-      _deliveryReceiptBox.remove(deliveryReceipt.objectBoxId);
+      deliveryReceiptBox.remove(deliveryReceipt.objectBoxId);
       debugPrint('✅ LOCAL: Successfully deleted delivery receipt');
       return true;
     } catch (e) {
@@ -263,7 +403,7 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
   Future<void> clearAllDeliveryReceipts() async {
     try {
       debugPrint('🧹 LOCAL: Clearing all delivery receipts');
-      _deliveryReceiptBox.removeAll();
+      deliveryReceiptBox.removeAll();
       _cachedDeliveryReceipts = null;
       debugPrint('✅ LOCAL: Successfully cleared all delivery receipts');
     } catch (e) {
@@ -275,7 +415,7 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
   Future<void> _cleanupDeliveryReceipts() async {
     try {
       debugPrint('🧹 LOCAL: Starting delivery receipt cleanup process');
-      final allDeliveryReceipts = _deliveryReceiptBox.getAll();
+      final allDeliveryReceipts = deliveryReceiptBox.getAll();
 
       // Create a map to track unique delivery receipts by their PocketBase ID
       final Map<String?, DeliveryReceiptModel> uniqueDeliveryReceipts = {};
@@ -293,8 +433,8 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
       }
 
       // Clear all and save only valid unique delivery receipts
-      _deliveryReceiptBox.removeAll();
-      _deliveryReceiptBox.putMany(uniqueDeliveryReceipts.values.toList());
+      deliveryReceiptBox.removeAll();
+      deliveryReceiptBox.putMany(uniqueDeliveryReceipts.values.toList());
 
       debugPrint('✨ LOCAL: Cleanup complete:');
       debugPrint('📊 Original count: ${allDeliveryReceipts.length}');
@@ -341,18 +481,18 @@ class DeliveryReceiptLocalDatasourceImpl implements DeliveryReceiptLocalDatasour
       final validDeliveryReceipts = deliveryReceiptList.map((receipt) {
         // Ensure delivery data ID is set if delivery data is assigned
         if (receipt.deliveryData.target != null) {
-          receipt.deliveryDataId = receipt.deliveryData.target?.id;
+          receipt.deliveryData.target!.id = receipt.deliveryData.target?.id;
         }
         
         // Ensure trip ID is set if trip is assigned
         if (receipt.trip.target != null) {
-          receipt.tripId = receipt.trip.target?.id;
+          receipt.trip.target!.id = receipt.trip.target?.id;
         }
         
         return receipt;
       }).toList();
 
-      _deliveryReceiptBox.putMany(validDeliveryReceipts);
+      deliveryReceiptBox.putMany(validDeliveryReceipts);
       _cachedDeliveryReceipts = validDeliveryReceipts;
 
       debugPrint('📊 LOCAL: Storage Stats:');

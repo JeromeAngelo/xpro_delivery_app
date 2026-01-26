@@ -7,15 +7,15 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart'
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart'
     show DeliveryDataEntity;
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
 import 'package:x_pro_delivery_app/core/services/objectbox.dart';
@@ -23,13 +23,13 @@ import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 
-import '../common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
-import '../common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
-import '../common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
-import '../common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_event.dart';
+import '../common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
+import '../common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
+import '../common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import '../common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_event.dart';
 import '../common/app/features/delivery_data/customer_data/presentation/bloc/customer_data_bloc.dart';
 import '../common/app/features/delivery_data/customer_data/presentation/bloc/customer_data_event.dart';
-import '../common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import '../common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import '../common/app/features/delivery_team/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
 import '../common/app/features/delivery_team/delivery_vehicle_data/presentation/bloc/delivery_vehicle_event.dart';
 import '../common/app/features/delivery_data/invoice_data/presentation/bloc/invoice_data_bloc.dart';

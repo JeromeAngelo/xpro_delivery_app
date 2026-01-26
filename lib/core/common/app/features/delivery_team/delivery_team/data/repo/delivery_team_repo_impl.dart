@@ -15,24 +15,33 @@ class DeliveryTeamRepoImpl implements DeliveryTeamRepo {
   const DeliveryTeamRepoImpl(this._remoteDatasource, this._localDatasource);
 
   @override
-  ResultFuture<DeliveryTeamEntity> loadDeliveryTeam(String tripId) async {
+ResultFuture<DeliveryTeamEntity> loadDeliveryTeam(String tripId) async {
+  try {
+    // 1️⃣ Try local first
+    debugPrint('📱 Trying to load delivery team from LOCAL for trip: $tripId');
+    final localTeam = await _localDatasource.loadDeliveryTeam(tripId);
+    debugPrint('✅ LOCAL delivery team found');
+    return Right(localTeam);
+
+  } on CacheException catch (_) {
+    debugPrint('⚠️ LOCAL not available, trying REMOTE...');
+
     try {
-      debugPrint('🌐 Fetching delivery team from remote for trip: $tripId');
+      // 2️⃣ If local fails → call remote
+      debugPrint('🌐 Fetching delivery team from REMOTE for trip: $tripId');
       final remoteTeam = await _remoteDatasource.loadDeliveryTeam(tripId);
-      await _localDatasource.cacheDeliveryTeam(remoteTeam);
-      debugPrint('💾 Cached delivery team locally');
+      debugPrint('✅ REMOTE delivery team fetched');
       return Right(remoteTeam);
-    } on ServerException catch (_) {
-      debugPrint('⚠️ Remote fetch failed, attempting local fallback');
-      try {
-        final localTeam = await _localDatasource.loadDeliveryTeam(tripId);
-        debugPrint('📱 Successfully loaded from local storage');
-        return Right(localTeam);
-      } on CacheException catch (e) {
-        return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
-      }
+
+    } on ServerException catch (e) {
+      debugPrint('❌ REMOTE fetch Delivery Team Data failed: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     }
   }
+}
+
+
+
 
 // delivery_team_repo_impl.dart
 @override
@@ -142,6 +151,44 @@ ResultFuture<DeliveryTeamEntity> assignDeliveryTeamToTrip({
     return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
   }
 }
+
+ @override
+ResultFuture<DeliveryTeamEntity> syncDeliveryTeamByTrip(String tripId) async {
+  try {
+    debugPrint('🔄 Starting delivery team sync for trip: $tripId');
+
+    // Step 1: Try to load from remote (source of truth)
+    final remoteTeam = await _remoteDatasource.loadDeliveryTeam(tripId);
+    debugPrint('🌐 Remote delivery team fetched successfully');
+
+    // Step 2: Save remote data locally for offline use
+    await _localDatasource.saveDeliveryTeamByTripId(tripId, remoteTeam);
+    debugPrint('💾 Remote delivery team cached locally');
+
+    // Step 3: Optional verification from local
+    final verifiedLocal = await _localDatasource.loadDeliveryTeam(tripId);
+    debugPrint('✅ Verified delivery team in local storage: ${verifiedLocal.tripId}');
+
+    return Right(verifiedLocal);
+  } on ServerException catch (e) {
+    debugPrint('⚠️ Remote sync failed: ${e.message}');
+    // Attempt to load from local as fallback
+    try {
+      final localTeam = await _localDatasource.loadDeliveryTeam(tripId);
+      debugPrint('📱 Using cached local data after remote failure');
+      return Right(localTeam);
+    } on CacheException catch (ce) {
+      return Left(CacheFailure(message: ce.message, statusCode: ce.statusCode));
+    }
+  } on CacheException catch (e) {
+    debugPrint('❌ Local save failed: ${e.message}');
+    return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
+  } catch (e) {
+    debugPrint('❌ Unexpected error during sync: $e');
+    return Left(ServerFailure(message: e.toString(), statusCode: '500'));
+  }
+}
+
 
 
 

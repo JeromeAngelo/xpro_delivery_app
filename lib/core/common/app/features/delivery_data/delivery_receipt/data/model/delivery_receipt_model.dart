@@ -1,35 +1,108 @@
 import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/data/model/delivery_data_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/entity/delivery_receipt_entity.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
-
+import 'package:x_pro_delivery_app/core/enums/sync_status_enums.dart';
 @Entity()
 class DeliveryReceiptModel extends DeliveryReceiptEntity {
-  @Id()
+  @Id(assignable: true)
   int objectBoxId = 0;
-  
+
+  /// 🔑 PocketBase primary ID
+  @override
   @Property()
-  String pocketbaseId;
+  String? id;
 
   @Property()
-  String? tripId;
+  String pocketbaseId = '';
 
+  @override
   @Property()
-  String? deliveryDataId;
+  String? collectionId;
 
-  // ObjectBox doesn't support List<String> directly, so we store as comma-separated string
+  @override
+  @Property()
+  String? collectionName;
+
+  // ---------------------------------------------------
+  // ✅ ObjectBox RELATIONS (SOURCE OF TRUTH)
+  // ---------------------------------------------------
+
+  final trip = ToOne<TripModel>();
+  final deliveryData = ToOne<DeliveryDataModel>();
+
+  // ---------------------------------------------------
+  // Business fields
+  // ---------------------------------------------------
+
+  // Stored as CSV due to ObjectBox limitation
   @Property()
   String? customerImagesString;
 
+  @Property()
+  double? totalAmount;
+
+  @Property()
+  String? status;
+
+  @Property()
+  DateTime? dateTimeCompleted;
+
+  @Property()
+  String? customerSignature;
+
+  @Property()
+  String? receiptFile;
+
+  // ---------------------------------------------------
+  // Sync & audit fields
+  // ---------------------------------------------------
+
+  @Property()
+  DateTime? created;
+
+  @Property()
+  DateTime? updated;
+
+  @Property()
+  DateTime? lastLocalUpdatedAt;
+
+  @Property()
+  String syncStatus = SyncStatus.synced.name;
+
+  @Property()
+  int retryCount = 0;
+
+  @Property()
+  DateTime? lastSyncAttemptAt;
+
+  @Property()
+  DateTime? nextRetryAt;
+
+  @Property()
+  String? lastSyncError;
+
+  @Property()
+  int version = 0;
+
+  @Property()
+  String? updatedBy;
+
+  @Property()
+  String? deviceId;
+
+  // ---------------------------------------------------
+  // Constructor
+  // ---------------------------------------------------
   DeliveryReceiptModel({
-    super.dbId = 0,
+    super.dbId,
     super.id,
     super.collectionId,
     super.collectionName,
-    TripModel? trip,
-    DeliveryDataModel? deliveryData,
+    TripModel? tripModel,
+    DeliveryDataModel? deliveryDataModel,
     super.status,
     super.dateTimeCompleted,
     super.customerImages,
@@ -39,18 +112,29 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
     super.created,
     super.updated,
     this.objectBoxId = 0,
-  }) : 
-    pocketbaseId = id ?? '',
-    tripId = trip?.id,
-    deliveryDataId = deliveryData?.id,
-    customerImagesString = customerImages?.join(','),
-    super(
-      tripData: trip,
-      deliveryDataModel: deliveryData,
-    );
+  }) : pocketbaseId = id ?? '' {
+    if (tripModel != null) {
+      trip.target = tripModel;
+    }
 
+    if (deliveryDataModel != null) {
+      deliveryData.target = deliveryDataModel;
+    }
+
+    customerImagesString = customerImages?.join(',');
+  }
+
+  // ---------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------
+
+  // List<String>? get customerImages =>
+  //     customerImagesString?.split(',').where((e) => e.isNotEmpty).toList();
+
+  // ---------------------------------------------------
+  // JSON → MODEL (SYNC SAFE)
+  // ---------------------------------------------------
   factory DeliveryReceiptModel.fromJson(DataMap json) {
-    // Add safe date parsing
     DateTime? parseDate(dynamic value) {
       if (value == null || value.toString().isEmpty) return null;
       try {
@@ -60,65 +144,46 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       }
     }
 
-    // Parse customer images list
     List<String>? parseCustomerImages(dynamic value) {
       if (value == null) return null;
-      
-      if (value is List) {
-        return value.map((e) => e.toString()).toList();
-      } else if (value is String && value.isNotEmpty) {
-        // Handle comma-separated string format
+      if (value is List) return value.map((e) => e.toString()).toList();
+      if (value is String && value.isNotEmpty) {
         return value.split(',').where((s) => s.trim().isNotEmpty).toList();
       }
-      
       return null;
     }
 
-    // Handle expanded data for relations
-    final expandedData = json['expand'] as Map<String, dynamic>?;
-    
-    // Process trip relation
+    final expanded = json['expand'] as Map<String, dynamic>?;
+
     TripModel? tripModel;
-    if (expandedData != null && expandedData.containsKey('trip')) {
-      final tripData = expandedData['trip'];
-      if (tripData != null) {
-        if (tripData is RecordModel) {
-          tripModel = TripModel.fromJson({
-            'id': tripData.id,
-            'collectionId': tripData.collectionId,
-            'collectionName': tripData.collectionName,
-            ...tripData.data,
-            'expand': tripData.expand,
-          });
-        } else if (tripData is Map) {
-          tripModel = TripModel.fromJson(tripData as DataMap);
-        }
-      }
-    } else if (json['trip'] != null) {
-      // If not expanded, just store the ID
-      tripModel = TripModel(id: json['trip'].toString());
-    }
-    
-    // Process deliveryData relation
     DeliveryDataModel? deliveryDataModel;
-    if (expandedData != null && expandedData.containsKey('deliveryData')) {
-      final deliveryDataData = expandedData['deliveryData'];
-      if (deliveryDataData != null) {
-        if (deliveryDataData is RecordModel) {
-          deliveryDataModel = DeliveryDataModel.fromJson({
-            'id': deliveryDataData.id,
-            'collectionId': deliveryDataData.collectionId,
-            'collectionName': deliveryDataData.collectionName,
-            ...deliveryDataData.data,
-            'expand': deliveryDataData.expand,
-          });
-        } else if (deliveryDataData is Map) {
-          deliveryDataModel = DeliveryDataModel.fromJson(deliveryDataData as DataMap);
-        }
-      }
-    } else if (json['deliveryData'] != null) {
-      // If not expanded, just store the ID
-      deliveryDataModel = DeliveryDataModel(id: json['deliveryData'].toString());
+
+    if (expanded?['trip'] != null) {
+      final t = expanded!['trip'];
+      tripModel =
+          t is RecordModel
+              ? TripModel.fromJson({
+                'id': t.id,
+                'collectionId': t.collectionId,
+                'collectionName': t.collectionName,
+                ...t.data,
+                'expand': t.expand,
+              })
+              : TripModel.fromJson(t as DataMap);
+    }
+
+    if (expanded?['deliveryData'] != null) {
+      final d = expanded!['deliveryData'];
+      deliveryDataModel =
+          d is RecordModel
+              ? DeliveryDataModel.fromJson({
+                'id': d.id,
+                'collectionId': d.collectionId,
+                'collectionName': d.collectionName,
+                ...d.data,
+                'expand': d.expand,
+              })
+              : DeliveryDataModel.fromJson(d as DataMap);
     }
 
     return DeliveryReceiptModel(
@@ -130,9 +195,12 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       customerImages: parseCustomerImages(json['customerImages']),
       customerSignature: json['customerSignature']?.toString(),
       receiptFile: json['receiptFile']?.toString(),
-      totalAmount: json['totalAmount']!= null ? double.tryParse(json['totalAmount'].toString()) : null,
-      trip: tripModel,
-      deliveryData: deliveryDataModel,
+      totalAmount:
+          json['totalAmount'] != null
+              ? double.tryParse(json['totalAmount'].toString())
+              : null,
+      tripModel: tripModel,
+      deliveryDataModel: deliveryDataModel,
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
     );
@@ -185,20 +253,20 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       updated: updated ?? this.updated,
       objectBoxId: objectBoxId,
     );
-    
+
     // Handle relations
     if (trip != null) {
       model.trip.target = trip;
     } else if (this.trip.target != null) {
       model.trip.target = this.trip.target;
     }
-    
+
     if (deliveryData != null) {
       model.deliveryData.target = deliveryData;
     } else if (this.deliveryData.target != null) {
       model.deliveryData.target = this.deliveryData.target;
     }
-    
+
     return model;
   }
 
@@ -208,7 +276,10 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
     if (customerImagesString == null || customerImagesString!.isEmpty) {
       return super.customerImages;
     }
-    return customerImagesString!.split(',').where((s) => s.trim().isNotEmpty).toList();
+    return customerImagesString!
+        .split(',')
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
   }
 
   @override

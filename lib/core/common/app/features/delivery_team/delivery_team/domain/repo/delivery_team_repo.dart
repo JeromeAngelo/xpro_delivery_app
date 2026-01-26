@@ -10,6 +10,9 @@ abstract class DeliveryTeamRepo {
     required String tripId,
     required String deliveryTeamId,
   });
+  ResultFuture<DeliveryTeamEntity> syncDeliveryTeamByTrip(String tripId);
+
+
 }
 
 

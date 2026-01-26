@@ -100,36 +100,78 @@ Future<void> _onLoadLocalChecklistByTripIdHandler(
   );
 }
 
-
-
 Future<void> _onCheckItemHandler(
   CheckItemEvent event,
   Emitter<ChecklistState> emit,
 ) async {
   debugPrint('🔄 Checking item: ${event.id}');
-  
-  if (_cachedState is ChecklistLoaded) {
-    final currentState = _cachedState as ChecklistLoaded;
-    emit(ChecklistLoading());
 
-    final result = await _checkItem(event.id);
-    result.fold(
-      (failure) => emit(ChecklistError(failure.message)),
-      (isChecked) {
-        final updatedChecklist = currentState.checklist.map((item) {
-          if (item.id == event.id) {
-            return item..isChecked = isChecked;
-          }
-          return item;
-        }).toList();
-        
-        final newState = ChecklistLoaded(updatedChecklist);
-        _cachedState = newState;
-        emit(newState);
-      },
-    );
+  // Get current list from state (preferred) or cached fallback
+  final currentLoaded =
+      state is ChecklistLoaded ? state as ChecklistLoaded
+      : _cachedState is ChecklistLoaded ? _cachedState as ChecklistLoaded
+      : null;
+
+  if (currentLoaded == null) {
+    debugPrint('⚠️ Cannot check item — checklist not loaded yet');
+    return;
   }
+
+  final currentList = currentLoaded.checklist;
+
+  // Find target item
+  final index = currentList.indexWhere((i) => i.id == event.id);
+  if (index == -1) {
+    debugPrint('⚠️ Item not found in current checklist: ${event.id}');
+    return;
+  }
+
+  final target = currentList[index];
+  final currentChecked = target.isChecked ?? false;
+
+  // ✅ 1) Optimistic UI update (instant feedback)
+  final optimisticList = List<ChecklistModel>.from(
+    currentList.cast<ChecklistModel>(),
+  );
+
+  optimisticList[index] =
+      (target as ChecklistModel).copyWith(isChecked: !currentChecked);
+
+  final optimisticState = ChecklistLoaded(optimisticList);
+  _cachedState = optimisticState;
+  emit(optimisticState);
+
+  // ✅ 2) Remote first (actual source of truth)
+  final result = await _checkItem(event.id);
+
+  result.fold(
+    (failure) {
+      debugPrint('❌ Remote check failed: ${failure.message}');
+
+      // ✅ Optional: revert UI if remote fails
+      _cachedState = currentLoaded;
+      emit(currentLoaded);
+
+      emit(ChecklistError(failure.message));
+    },
+    (remoteChecked) {
+      debugPrint('✅ Remote check success: $remoteChecked');
+
+      // ✅ Ensure UI matches server result
+      final finalList = List<ChecklistModel>.from(
+        optimisticList.cast<ChecklistModel>(),
+      );
+
+      finalList[index] =
+          (finalList[index]).copyWith(isChecked: remoteChecked);
+
+      final newState = ChecklistLoaded(finalList);
+      _cachedState = newState;
+      emit(newState);
+    },
+  );
 }
+
 
 
 

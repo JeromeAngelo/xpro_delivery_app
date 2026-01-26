@@ -1,14 +1,20 @@
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/entity/delivery_update_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
+
+import '../../../../delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
 abstract class DeliveryUpdateRepo {
   const DeliveryUpdateRepo();
 
   // Core delivery status operations
   ResultFuture<List<DeliveryUpdateEntity>> getDeliveryStatusChoices(String customerId);
+    ResultFuture<List<DeliveryUpdateEntity>> syncDeliveryStatusChoices(String customerId);
+
   ResultFuture<List<DeliveryUpdateEntity>> getLocalDeliveryStatusChoices(String customerId);
-  ResultFuture<void> updateDeliveryStatus(String customerId, String statusId);
-  
+ ResultFuture<void> updateDeliveryStatus(
+    String deliveryDataId,
+    DeliveryStatusChoicesEntity status,
+  );  
   // Completion and initialization
    // Completion and initialization - Updated to use delivery data
   ResultFuture<void> completeDelivery(DeliveryDataEntity deliveryData);

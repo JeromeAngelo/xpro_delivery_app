@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import '../../../../trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 
 abstract class DeliveryReceiptEvent extends Equatable {
   const DeliveryReceiptEvent();

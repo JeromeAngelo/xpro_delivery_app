@@ -13,28 +13,24 @@ class GreetingView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Placeholder for success animation/image
-              Container(
+              SizedBox(
                 width: 200,
                 height: 200,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check_circle_outline,
-                  size: 100,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+
+                child: Image.asset(
+                  'assets/images/onboarding_image.gif',
+                  fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
               // Congratulations text
               Text(
                 'Great job!',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
               const SizedBox(height: 16),
 

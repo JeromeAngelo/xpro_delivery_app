@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/custom_timeline.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 
 class DeliveryTimeline extends StatefulWidget {
@@ -69,98 +69,103 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
             return const SizedBox();
           }
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 12),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 1.1,
-                    minHeight: 100,
-                  ),
-                  child: CustomTimelineTileBuilder.connected(
-                    physics: const NeverScrollableScrollPhysics(),
-                    nodePosition: 0.07,
-
-                    itemCount: statusUpdates.length,
-                    contentsBuilder: (_, index) {
-                      final status = statusUpdates[index];
-                      return Padding(
-                        padding: EdgeInsets.all(5.0),
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: ListTile(
-                            leading: Column(
-                              //    mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  StatusIcons.getStatusIcon(status.title ?? ''),
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ],
+          return GestureDetector(
+            onLongPress: (){
+              
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 1.1,
+                      minHeight: 100,
+                    ),
+                    child: CustomTimelineTileBuilder.connected(
+                      physics: const NeverScrollableScrollPhysics(),
+                      nodePosition: 0.07,
+            
+                      itemCount: statusUpdates.length,
+                      contentsBuilder: (_, index) {
+                        final status = statusUpdates[index];
+                        return Padding(
+                          padding: EdgeInsets.all(5.0),
+                          child: Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            title: Text(
-                              status.title ?? '',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  status.subtitle ?? '',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  _formatDateTime(
-                                    status.time ?? DateTime.now(),
-                                  ),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                            trailing: GestureDetector(
-                              onTap: () {
-                                if (status.id != null) {
-                                  context.push(
-                                    '/update-remark/${status.id ?? ''}',
-                                    extra: status,
-                                  );
-                                }
-                              },
-                              child: Column(
+                            child: ListTile(
+                              leading: Column(
+                                //    mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [Icon(Icons.arrow_forward_ios)],
+                                children: [
+                                  Icon(
+                                    StatusIcons.getStatusIcon(status.title ?? ''),
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ],
+                              ),
+                              title: Text(
+                                status.title ?? '',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    status.subtitle ?? '',
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    _formatDateTime(
+                                      status.time ?? DateTime.now(),
+                                    ),
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                              trailing: GestureDetector(
+                                onTap: () {
+                                  if (status.id != null) {
+                                    context.push(
+                                      '/update-remark/${status.id ?? ''}',
+                                      extra: status,
+                                    );
+                                  }
+                                },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [Icon(Icons.arrow_forward_ios)],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    indicatorBuilder: (_, index) {
-                      return CustomDotIndicator(
-                        color:
-                            index == statusUpdates.length - 1
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.outline,
-                      );
-                    },
-                    connectorBuilder: (_, index, type) {
-                      return CustomSolidLineConnector(
-                        color:
-                            index == statusUpdates.length - 1
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.outline,
-                      );
-                    },
+                        );
+                      },
+                      indicatorBuilder: (_, index) {
+                        return CustomDotIndicator(
+                          color:
+                              index == statusUpdates.length - 1
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.outline,
+                        );
+                      },
+                      connectorBuilder: (_, index, type) {
+                        return CustomSolidLineConnector(
+                          color:
+                              index == statusUpdates.length - 1
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.outline,
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }

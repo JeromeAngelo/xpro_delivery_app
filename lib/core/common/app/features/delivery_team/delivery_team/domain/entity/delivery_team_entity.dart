@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/model/checklist_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
 
@@ -13,6 +13,7 @@ class DeliveryTeamEntity extends Equatable {
   String? id;
   String? collectionId;
   String? collectionName;
+  String? tripId;
   final ToMany<PersonelModel> personels = ToMany<PersonelModel>();
   final ToMany<ChecklistModel> checklist = ToMany<ChecklistModel>();
   final ToOne<TripModel> trip = ToOne<TripModel>();
@@ -33,6 +34,7 @@ class DeliveryTeamEntity extends Equatable {
     List<PersonelModel>? personels,
     List<ChecklistModel>? checklist,
     TripModel? trip,
+    this.tripId,
     this.activeDeliveries,
     this.totalDelivered,
     this.undeliveredCustomers,
@@ -43,7 +45,7 @@ class DeliveryTeamEntity extends Equatable {
     if (personels != null) this.personels.addAll(personels);
     if (checklist != null) this.checklist.addAll(checklist);
     if (trip != null) this.trip.target = trip;
-    if(deliveryVehicle != null) this.deliveryVehicle.target = deliveryVehicle;
+    if (deliveryVehicle != null) this.deliveryVehicle.target = deliveryVehicle;
   }
 
   @override
@@ -61,6 +63,7 @@ class DeliveryTeamEntity extends Equatable {
     totalDistanceTravelled,
     created,
     updated,
+    tripId,
   ];
 
   // Add this factory constructor
@@ -69,6 +72,7 @@ class DeliveryTeamEntity extends Equatable {
       id: '',
       collectionId: '',
       collectionName: '',
+      tripId: '',
       personels: const [],
       checklist: const [],
       trip: null,

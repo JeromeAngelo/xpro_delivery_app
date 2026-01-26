@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_items/domain/entity/invoice_items_entity.dart';
 
+import '../../../../../../core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+
 class ProductList extends StatefulWidget {
-  final InvoiceItemsEntity invoiceItem;
+  final DeliveryDataEntity deliveryData;
+  final InvoiceItemsEntity item; // ✅ PASS ITEM DIRECTLY
   final Function(int baseQuantity)? onBaseQuantityChanged;
 
   const ProductList({
     super.key,
-    required this.invoiceItem,
+    required this.deliveryData,
+    required this.item,
     this.onBaseQuantityChanged,
   });
 
@@ -19,8 +23,12 @@ class ProductList extends StatefulWidget {
 class _ProductListState extends State<ProductList> {
   late TextEditingController _baseQuantityController;
   late FocusNode _baseQuantityFocusNode;
+
   int _maxQuantity = 0;
   int _currentBaseQuantity = 0;
+
+  // ✅ Direct item reference (no index, no list access)
+  InvoiceItemsEntity get _item => widget.item;
 
   @override
   void initState() {
@@ -28,22 +36,17 @@ class _ProductListState extends State<ProductList> {
     _initializeQuantities();
     _setupControllers();
 
-    debugPrint('📦 Initializing invoice item: ${widget.invoiceItem.name}');
-    debugPrint('   📊 Quantity: ${widget.invoiceItem.quantity}');
-    debugPrint('   📊 Base Quantity: $_currentBaseQuantity');
-    debugPrint('   💰 Unit Price: ${widget.invoiceItem.uomPrice}');
-    debugPrint('   💵 Total Amount: ${widget.invoiceItem.totalAmount}');
-    debugPrint(
-      '   🔗 Delivery Data ID: ${widget.invoiceItem.invoiceData.target?.id}',
-    );
+    debugPrint('📦 ProductList init');
+    debugPrint('   • Item: ${_item.name}');
+    debugPrint('   • Qty: ${_item.quantity}');
+    debugPrint('   • BaseQty: $_currentBaseQuantity');
+    debugPrint('   • DeliveryData: ${widget.deliveryData.id}');
   }
 
   void _initializeQuantities() {
-    _maxQuantity = (widget.invoiceItem.quantity ?? 0).toInt();
-    _currentBaseQuantity =
-        (widget.invoiceItem.totalBaseQuantity ?? _maxQuantity).toInt();
+    _maxQuantity = (_item.quantity ?? 0).toInt();
+    _currentBaseQuantity = (_item.totalBaseQuantity ?? _maxQuantity).toInt();
 
-    // Ensure base quantity doesn't exceed max quantity
     if (_currentBaseQuantity > _maxQuantity) {
       _currentBaseQuantity = _maxQuantity;
     }
@@ -63,52 +66,54 @@ class _ProductListState extends State<ProductList> {
     final text = _baseQuantityController.text;
 
     if (text.isEmpty) {
-      // Consider empty as 0
       _updateBaseQuantity(0);
       return;
     }
 
     final value = int.tryParse(text);
-    if (value != null) {
-      // Restrict to max quantity
-      if (value > _maxQuantity) {
-        _baseQuantityController.text = _maxQuantity.toString();
-        _baseQuantityController.selection = TextSelection.fromPosition(
-          TextPosition(offset: _baseQuantityController.text.length),
-        );
-        _updateBaseQuantity(_maxQuantity);
-      } else if (value < 0) {
-        _baseQuantityController.text = '0';
-        _baseQuantityController.selection = TextSelection.fromPosition(
-          TextPosition(offset: _baseQuantityController.text.length),
-        );
-        _updateBaseQuantity(0);
-      } else {
-        _updateBaseQuantity(value);
-      }
+    if (value == null) return;
+
+    if (value > _maxQuantity) {
+      _setControllerValue(_maxQuantity);
+    } else if (value < 0) {
+      _setControllerValue(0);
+    } else {
+      _updateBaseQuantity(value);
     }
   }
 
+  void _setControllerValue(int value) {
+    _baseQuantityController.text = value.toString();
+    _baseQuantityController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _baseQuantityController.text.length),
+    );
+    _updateBaseQuantity(value);
+  }
+
   void _onFocusChanged() {
-    if (!_baseQuantityFocusNode.hasFocus) {
-      // When focus is lost, ensure we have a valid value
-      if (_baseQuantityController.text.isEmpty) {
-        _baseQuantityController.text = '0';
-        _updateBaseQuantity(0);
-      }
+    if (!_baseQuantityFocusNode.hasFocus &&
+        _baseQuantityController.text.isEmpty) {
+      _setControllerValue(0);
     }
   }
 
   void _updateBaseQuantity(int newValue) {
-    if (_currentBaseQuantity != newValue) {
-      setState(() {
-        _currentBaseQuantity = newValue;
-      });
+    if (_currentBaseQuantity == newValue) return;
 
-      debugPrint('📊 Base quantity updated: $newValue (max: $_maxQuantity)');
-      widget.onBaseQuantityChanged?.call(newValue);
-    }
+    setState(() {
+      _currentBaseQuantity = newValue;
+    });
+
+    // ✅ reflect change in entity (UI consistency only)
+    _item.totalBaseQuantity;
+
+    debugPrint('📊 BaseQty updated → $_currentBaseQuantity');
+    widget.onBaseQuantityChanged?.call(newValue);
   }
+
+  // ------------------------------------------------------------------
+  // UI
+  // ------------------------------------------------------------------
 
   Widget _buildProductHeader() {
     return Row(
@@ -128,21 +133,19 @@ class _ProductListState extends State<ProductList> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.invoiceItem.name ?? 'No Name',
+                _item.name ?? 'No Name',
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
               ),
-              if (widget.invoiceItem.brand != null &&
-                  widget.invoiceItem.brand!.isNotEmpty)
+              if ((_item.brand ?? '').isNotEmpty)
                 Text(
-                  'Brand: ${widget.invoiceItem.brand}',
+                  'Brand: ${_item.brand}',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-              if (widget.invoiceItem.refId != null &&
-                  widget.invoiceItem.refId!.isNotEmpty)
+              if ((_item.refId ?? '').isNotEmpty)
                 Text(
-                  'Ref: ${widget.invoiceItem.refId}',
+                  'Ref: ${_item.refId}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
             ],
@@ -156,102 +159,87 @@ class _ProductListState extends State<ProductList> {
     return Padding(
       padding: const EdgeInsets.only(right: 40),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text(
-            widget.invoiceItem.uom ?? 'UOM',
+            _item.uom ?? 'UOM',
             style: Theme.of(
               context,
             ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 24),
-          Column(
-            children: [
-              Container(
-                width: 80,
-                height: 40,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 12,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _maxQuantity.toString(),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Text('Quantity', style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
+          _quantityBox(_maxQuantity.toString(), 'Quantity'),
           const SizedBox(width: 24),
-          Column(
-            children: [
-              Container(
-                width: 80,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color:
-                        _baseQuantityFocusNode.hasFocus
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.grey.shade300,
-                    width: _baseQuantityFocusNode.hasFocus ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: TextField(
-                  controller: _baseQuantityController,
-                  focusNode: _baseQuantityFocusNode,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(3), // Reasonable limit
-                  ],
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 4,
-                    ),
-                    isDense: true,
-                  ),
-                  onTap: () {
-                    // Select all text when user taps the field
-                    _baseQuantityController.selection = TextSelection(
-                      baseOffset: 0,
-                      extentOffset: _baseQuantityController.text.length,
-                    );
-                  },
-                  onSubmitted: (value) {
-                    _baseQuantityFocusNode.unfocus();
-                  },
-                ),
-              ),
-
-              Text(
-                'Base Qty',
-                style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                  color:
-                      _baseQuantityFocusNode.hasFocus
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                ),
-              ),
-            ],
-          ),
+          _editableQuantityBox(),
         ],
       ),
+    );
+  }
+
+  Widget _quantityBox(String value, String label) {
+    return Column(
+      children: [
+        Container(
+          width: 80,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+
+  Widget _editableQuantityBox() {
+    return Column(
+      children: [
+        Container(
+          width: 80,
+          height: 40,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color:
+                  _baseQuantityFocusNode.hasFocus
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.grey.shade300,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TextField(
+            controller: _baseQuantityController,
+            focusNode: _baseQuantityFocusNode,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 8),
+            ),
+          ),
+        ),
+        Text(
+          'Base Qty',
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
+            color:
+                _baseQuantityFocusNode.hasFocus
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+          ),
+        ),
+      ],
     );
   }
 
@@ -261,97 +249,80 @@ class _ProductListState extends State<ProductList> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Unit Price', style: Theme.of(context).textTheme.bodySmall),
-              Text(
-                '₱${widget.invoiceItem.uomPrice?.toStringAsFixed(2) ?? '0.00'}',
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
+          _priceColumn(
+            'Unit Price',
+            '₱${_item.uomPrice?.toStringAsFixed(2) ?? '0.00'}',
+            Theme.of(context).colorScheme.primary,
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'Total Amount',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              Text(
-                '₱${widget.invoiceItem.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-              ),
-            ],
+          _priceColumn(
+            'Total Amount',
+            '₱${_item.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+            Theme.of(context).colorScheme.secondary,
+            large: true,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuantityInfo() {
-    if (_currentBaseQuantity != _maxQuantity) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.primaryContainer.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-          ),
+  Widget _priceColumn(
+    String label,
+    String value,
+    Color color, {
+    bool large = false,
+  }) {
+    return Column(
+      crossAxisAlignment:
+          large ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          value,
+          style: (large
+                  ? Theme.of(context).textTheme.titleLarge
+                  : Theme.of(context).textTheme.titleMedium)!
+              .copyWith(fontWeight: FontWeight.bold, color: color),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.info_outline,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Delivering $_currentBaseQuantity of $_maxQuantity items',
-              style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return const SizedBox.shrink();
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
             _buildProductHeader(),
             const SizedBox(height: 20),
             _buildQuantitySection(),
-            _buildQuantityInfo(),
+            if (_currentBaseQuantity != _maxQuantity) _buildQuantityInfo(),
             const SizedBox(height: 16),
             _buildPriceSection(),
-            const SizedBox(height: 12),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuantityInfo() {
+    return Container(
+      margin: const EdgeInsets.only(left: 16, top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        'Delivering $_currentBaseQuantity of $_maxQuantity items',
+        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -359,8 +330,6 @@ class _ProductListState extends State<ProductList> {
 
   @override
   void dispose() {
-    _baseQuantityController.removeListener(_onBaseQuantityChanged);
-    _baseQuantityFocusNode.removeListener(_onFocusChanged);
     _baseQuantityController.dispose();
     _baseQuantityFocusNode.dispose();
     super.dispose();

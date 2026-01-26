@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:objectbox/objectbox.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
 
 @Entity()
 class ChecklistEntity extends Equatable {
@@ -10,7 +10,7 @@ class ChecklistEntity extends Equatable {
   final ToOne<TripModel> trip = ToOne<TripModel>();
 
   ChecklistEntity({
-    required this.id,
+ this.id,
     required this.objectName,
     required this.isChecked,
     this.description,
@@ -21,11 +21,11 @@ class ChecklistEntity extends Equatable {
     if (tripModel != null) trip.target = tripModel;
   }
 
-  final String id;
-  final String? objectName;
-  final String? description;
+  String? id;
+   String? objectName;
+  String? description;
   bool? isChecked;
-  final String? status;
+   String? status;
   DateTime? timeCompleted;
 
   ChecklistEntity.empty()
@@ -47,6 +47,6 @@ class ChecklistEntity extends Equatable {
 
   @override
   String toString() {
-    return 'ChecklistEntity(id: $id, objectName: $objectName, isChecked: $isChecked, tripId: ${trip.target?.id})';
+    return 'ChecklistEntity(id: $id, objectName: $objectName, isChecked: $isChecked, tripModel: ${trip.target?.id})';
   }
 }

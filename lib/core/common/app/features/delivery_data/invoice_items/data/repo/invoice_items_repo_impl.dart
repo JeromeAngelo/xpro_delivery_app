@@ -92,7 +92,7 @@ class InvoiceItemsRepoImpl implements InvoiceItemsRepo {
               totalBaseQuantity: invoiceItem.totalBaseQuantity,
               uomPrice: invoiceItem.uomPrice,
               totalAmount: invoiceItem.totalAmount,
-              invoiceData: invoiceItem.invoiceData as InvoiceDataModel,
+              invoiceDataModel: invoiceItem.invoiceData as InvoiceDataModel,
               created: invoiceItem.created,
               updated: invoiceItem.updated,
             );

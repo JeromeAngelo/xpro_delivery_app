@@ -1,18 +1,22 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/models/delivery_team_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/data/models/personel_models.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../../../../../../services/objectbox.dart';
+import '../../../../../checklists/intransit_checklist/data/model/checklist_model.dart';
+import '../../../../../trip_ticket/trip/data/models/trip_models.dart';
+import '../../../../delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
+
 abstract class DeliveryTeamLocalDatasource {
   Future<DeliveryTeamModel> loadDeliveryTeam(String tripId);
   Future<void> updateDeliveryTeam(DeliveryTeamModel team);
   Future<void> cacheDeliveryTeam(DeliveryTeamModel team);
   Future<DeliveryTeamModel> loadDeliveryTeamById(String deliveryTeamId);
+  Future<void> saveDeliveryTeamByTripId(String tripId, DeliveryTeamModel team);
   Future<DeliveryTeamModel> assignDeliveryTeamToTrip({
     required String tripId,
     required String deliveryTeamId,
@@ -20,91 +24,112 @@ abstract class DeliveryTeamLocalDatasource {
 }
 
 class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
-  final Box<DeliveryTeamModel> _deliveryTeamBox;
+   Box<DeliveryTeamModel> get _deliveryTeamBox => objectBoxStore.deliveryTeamBox;
+    Box<DeliveryVehicleModel> get vehicleBox => objectBoxStore.deliveryVehicleBox;
+  Box<PersonelModel> get personnelBox => objectBoxStore.personelBox;
+   Box<ChecklistModel> get checklistBox => objectBoxStore.checklistBox;
+      Box<TripModel> get tripBox => objectBoxStore.tripBox;
+
   DeliveryTeamModel? _cachedDeliveryTeam;
 
-  DeliveryTeamLocalDatasourceImpl(this._deliveryTeamBox);
+  final ObjectBoxStore objectBoxStore;
+
+  DeliveryTeamLocalDatasourceImpl(this.objectBoxStore);
+
   @override
-  Future<DeliveryTeamModel> loadDeliveryTeam(String tripId) async {
-    try {
-      debugPrint('🔍 Querying local delivery team for trip: $tripId');
+Future<DeliveryTeamModel> loadDeliveryTeam(String tripId) async {
+  try {
+    debugPrint("📥 LOCAL loadDeliveryTeam() tripId = $tripId");
 
-      // Get user data from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final userData = prefs.getString('user_data');
+    // -------------------------------------------------------------
+    // 1️⃣ Find the trip first
+    // -------------------------------------------------------------
+    final tripQuery = tripBox.query(TripModel_.id.equals(tripId)).build();
+    final trip = tripQuery.findFirst();
+    tripQuery.close();
 
-      // First try with tripId directly
-      final query = _deliveryTeamBox.query(
-        DeliveryTeamModel_.tripId.equals(tripId),
-      );
-      final teams = query.build().find();
-      // query.;
-
-      debugPrint('📊 Storage Stats:');
-      debugPrint('Total stored delivery teams: ${_deliveryTeamBox.count()}');
-      debugPrint('Found teams for trip: ${teams.length}');
-
-      if (teams.isNotEmpty) {
-        final team = teams.first;
-        _cachedDeliveryTeam = team;
-        debugPrint('✅ Found delivery team using provided trip ID');
-        return team;
-      }
-
-      // If not found with tripId, try with tripNumberId from user data
-      if (userData != null) {
-        final userJson = jsonDecode(userData);
-        final tripNumberId = userJson['tripNumberId'];
-
-        if (tripNumberId != null) {
-          debugPrint(
-            '🔍 Trying with trip number ID from preferences: $tripNumberId',
-          );
-
-          final tripNumberQuery =
-              _deliveryTeamBox
-                  .query(DeliveryTeamModel_.tripId.equals(tripNumberId))
-                  .build();
-
-          final tripNumberTeams = tripNumberQuery.find();
-          tripNumberQuery.close();
-
-          if (tripNumberTeams.isNotEmpty) {
-            final team = tripNumberTeams.first;
-            _cachedDeliveryTeam = team;
-            debugPrint('✅ Found team using trip number ID from preferences');
-            return team;
-          }
-        }
-      }
-
-      // Try with pocketbaseId as last resort
-      final pbQuery =
-          _deliveryTeamBox
-              .query(DeliveryTeamModel_.pocketbaseId.equals(tripId))
-              .build();
-
-      final pbTeams = pbQuery.find();
-      pbQuery.close();
-
-      if (pbTeams.isNotEmpty) {
-        final team = pbTeams.first;
-        _cachedDeliveryTeam = team;
-        debugPrint('✅ Found team using pocketbase ID');
-        return team;
-      }
-
-      // If we get here, no team was found
-      debugPrint('❌ No delivery team found in local storage for trip: $tripId');
-      throw const CacheException(
-        message: 'No delivery team found in local storage',
+    if (trip == null) {
+      debugPrint("⚠️ Trip not found in local DB for tripId: $tripId");
+      throw CacheException(
+        message: "Trip not found in local DB",
         statusCode: 404,
       );
-    } catch (e) {
-      debugPrint('❌ Local storage error: ${e.toString()}');
-      throw CacheException(message: e.toString());
     }
+
+    // -------------------------------------------------------------
+    // 2️⃣ Get DeliveryTeam linked to this trip
+    // -------------------------------------------------------------
+    DeliveryTeamModel? team;
+    for (final t in _deliveryTeamBox.getAll()) {
+      if (t.trip.targetId == trip.objectBoxId) {
+        team = t;
+        break;
+      }
+    }
+
+    if (team == null) {
+      debugPrint("❌ No DeliveryTeam found for trip: $tripId");
+      throw CacheException(
+        message: "No DeliveryTeam found in local DB",
+        statusCode: 404,
+      );
+    }
+
+    debugPrint(
+      "✅ DeliveryTeam FOUND → pbId=${team.id}, obx=${team.objectBoxId}, active delivery ${team.activeDeliveries}",
+    );
+    debugPrint(
+      "    Personnels=${team.personels.length}, Checklist=${team.checklist.length}, Vehicle=${team.deliveryVehicle.target?.name}",
+    );
+
+    // -------------------------------------------------------------
+    // 3️⃣ Load Vehicle (ToOne)
+    // -------------------------------------------------------------
+    final vRef = team.deliveryVehicle.target;
+    if (vRef != null) {
+      final fullVehicle = vehicleBox.get(vRef.objectBoxId);
+      if (fullVehicle != null) {
+        team.deliveryVehicle.target = fullVehicle;
+        team.deliveryVehicle.targetId = fullVehicle.objectBoxId;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 4️⃣ Load Personnels (ToMany)
+    // -------------------------------------------------------------
+    final personnels = <PersonelModel>[];
+    for (var p in team.personels) {
+      if (p.objectBoxId != 0) {
+        final full = personnelBox.get(p.objectBoxId);
+        if (full != null) personnels.add(full);
+      }
+    }
+    team.personels
+      ..clear()
+      ..addAll(personnels);
+
+    // -------------------------------------------------------------
+    // 5️⃣ Load Checklist (ToMany)
+    // -------------------------------------------------------------
+    final checklist = <ChecklistModel>[];
+    for (var c in team.checklist) {
+      if (c.objectBoxId != 0) {
+        final full = checklistBox.get(c.objectBoxId);
+        if (full != null) checklist.add(full);
+      }
+    }
+    team.checklist
+      ..clear()
+      ..addAll(checklist);
+
+    debugPrint("🎉 DeliveryTeam fully loaded for trip: ${trip.id}");
+    return team;
+
+  } catch (e, st) {
+    debugPrint("❌ loadDeliveryTeam ERROR: $e\n$st");
+    throw CacheException(message: e.toString());
   }
+}
 
   @override
   Future<void> updateDeliveryTeam(DeliveryTeamModel team) async {
@@ -189,16 +214,15 @@ class DeliveryTeamLocalDatasourceImpl implements DeliveryTeamLocalDatasource {
     }
   }
 
-bool _isValidDeliveryTeam(DeliveryTeamModel team) {
-  final hasTrip = team.tripId != null && team.tripId!.isNotEmpty;
-  final hasVehicle = team.deliveryVehicle.target != null &&
-      team.deliveryVehicle.target!.id != 0;
-  final hasPersonnel = team.personels.isNotEmpty;
+  bool _isValidDeliveryTeam(DeliveryTeamModel team) {
+    final hasTrip = team.tripId != null && team.tripId!.isNotEmpty;
+    final hasVehicle =
+        team.deliveryVehicle.target != null &&
+        team.deliveryVehicle.target!.id != 0;
+    final hasPersonnel = team.personels.isNotEmpty;
 
-  return hasTrip && hasVehicle && hasPersonnel;
-}
-
-
+    return hasTrip && hasVehicle && hasPersonnel;
+  }
 
   @override
   Future<void> cacheDeliveryTeam(DeliveryTeamModel team) async {
@@ -210,16 +234,15 @@ bool _isValidDeliveryTeam(DeliveryTeamModel team) {
         id: team.id,
         collectionId: team.collectionId,
         collectionName: team.collectionName,
-        created: team.created,
-        updated: team.updated,
+      
       );
 
       // Copy personnel and vehicles
-     teamCopy.personels.addAll(team.personels);
-if (team.deliveryVehicle.target != null) {
-  teamCopy.deliveryVehicle.target = team.deliveryVehicle.target;
-}
-     // teamCopy.deliveryVehicle.target?.id = team.deliveryVehicle.target?.id;
+      teamCopy.personels.addAll(team.personels);
+      if (team.deliveryVehicle.target != null) {
+        teamCopy.deliveryVehicle.target = team.deliveryVehicle.target;
+      }
+      // teamCopy.deliveryVehicle.target?.id = team.deliveryVehicle.target?.id;
 
       // Clean up data
       await _cleanupPersonnelData(teamCopy);
@@ -230,7 +253,7 @@ if (team.deliveryVehicle.target != null) {
       _cachedDeliveryTeam = teamCopy;
 
       // Verify storage immediately after saving
-     _deliveryTeamBox.get(savedId);
+      _deliveryTeamBox.get(savedId);
       // if (storedTeam != null) {
       //   debugPrint('✅ Storage verification successful');
       //   debugPrint('📊 Final stored team details:');
@@ -304,4 +327,90 @@ if (team.deliveryVehicle.target != null) {
       throw CacheException(message: e.toString());
     }
   }
+
+  /// /// Saves delivery team data locally for a given trip ID
+@override
+Future<void> saveDeliveryTeamByTripId(
+  String tripId,
+  DeliveryTeamModel team,
+) async {
+  try {
+    debugPrint('💾 LOCAL: Saving delivery team via Trip relation → tripId=$tripId');
+
+    // -------------------------------------------------------------
+    // 1️⃣ Find the trip first
+    // -------------------------------------------------------------
+    final tripQuery = tripBox.query(TripModel_.id.equals(tripId)).build();
+    final trip = tripQuery.findFirst();
+    tripQuery.close();
+
+    if (trip == null) {
+      debugPrint('❌ Trip not found in local DB for tripId=$tripId');
+      throw CacheException(
+        message: 'Trip not found in local DB',
+        statusCode: 404,
+      );
+    }
+
+    // -------------------------------------------------------------
+    // 2️⃣ Cleanup dependent data before save
+    // -------------------------------------------------------------
+    await _cleanupPersonnelData(team);
+
+    // -------------------------------------------------------------
+    // 3️⃣ Check existing DeliveryTeam via Trip relation
+    // -------------------------------------------------------------
+    DeliveryTeamModel? existingTeam;
+    if (trip.deliveryTeam.target != null) {
+      final obxId = trip.deliveryTeam.target!.objectBoxId;
+      existingTeam = _deliveryTeamBox.get(obxId);
+    }
+
+    if (existingTeam != null) {
+      debugPrint('♻️ Updating existing DeliveryTeam for trip ${trip.name}');
+      team.objectBoxId = existingTeam.objectBoxId;
+    }
+
+    // -------------------------------------------------------------
+    // 4️⃣ Link team to trip (CRITICAL)
+    // -------------------------------------------------------------
+    team.trip.target = trip;
+    team.trip.targetId = trip.objectBoxId;
+
+    // -------------------------------------------------------------
+    // 5️⃣ Save DeliveryTeam
+    // -------------------------------------------------------------
+    _deliveryTeamBox.put(team);
+
+    // -------------------------------------------------------------
+    // 6️⃣ Ensure Trip → DeliveryTeam link is set
+    // -------------------------------------------------------------
+    trip.deliveryTeam.target = team;
+    tripBox.put(trip);
+
+    _cachedDeliveryTeam = team;
+
+    debugPrint('✅ LOCAL: Delivery team saved successfully for trip ${trip.name}');
+
+    // -------------------------------------------------------------
+    // 7️⃣ Verification
+    // -------------------------------------------------------------
+    final verifyTeam =
+        tripBox.get(trip.objectBoxId)?.deliveryTeam.target;
+
+    if (verifyTeam != null) {
+      debugPrint(
+        '📊 Verification OK → ${verifyTeam.personels.length} personnels stored',
+      );
+    } else {
+      debugPrint('⚠️ Verification failed: Trip has no linked DeliveryTeam');
+    }
+  } catch (e, st) {
+    debugPrint(
+      '❌ LOCAL: Failed to save delivery team for trip $tripId\n$e\n$st',
+    );
+    throw CacheException(message: e.toString());
+  }
+}
+
 }

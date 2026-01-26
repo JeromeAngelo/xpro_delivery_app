@@ -9,20 +9,20 @@ import 'package:objectbox/objectbox.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_status/presentation/bloc/invoice_status_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/return_items/presentation/bloc/return_items_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/presentation/bloc/logs_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/presentation/bloc/personel_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/presentation/bloc/checklist_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/presentation/bloc/customer_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/presentation/bloc/invoice_data_bloc.dart';
@@ -38,6 +38,7 @@ import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_
 import 'package:x_pro_delivery_app/core/common/widgets/network_status_indicator.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/sync_status_indicator.dart';
 
+import 'core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
 import 'core/common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
 import 'core/common/app/features/sync_data/cubit/sync_cubit.dart';
 import 'core/services/background_service.dart';
@@ -46,25 +47,25 @@ import 'core/services/offline_sync_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize WorkManager with callback dispatcher for background tasks
   await Workmanager().initialize(
     callbackDispatcher,
     isInDebugMode: false, // Set to true for debugging background tasks
   );
-  
+
   final store = await ObjectBoxStore.create();
   await Geolocator.isLocationServiceEnabled();
   // ✅ ADD THIS: Initialize Foreground Location Service
   await ForegroundLocationService.initialize();
   sl.registerSingleton<Store>(store.store);
   await init();
-  
+
   // Initialize offline sync service for 100% offline capability
   final pb = sl<PocketBase>();
   await OfflineSyncService().initialize(pb);
   debugPrint('✅ Main: Offline sync service initialized');
-  
+
   runApp(const MyApp());
 }
 
@@ -104,6 +105,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<ReturnItemsBloc>()),
         BlocProvider(create: (_) => sl<UserPerformanceBloc>()),
         BlocProvider(create: (_) => sl<LogsBloc>()),
+        BlocProvider(create: (_) => sl<DeliveryStatusChoicesBloc>()),
       ],
       child: MultiProvider(
         providers: [

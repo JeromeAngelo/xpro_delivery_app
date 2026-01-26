@@ -12,7 +12,7 @@ class EndTripChecklistRepoImpl extends EndTripChecklistRepo {
 
   final EndTripChecklistRemoteDataSource _remoteDataSource;
   final EndTripChecklistLocalDataSource _localDataSource;
-
+  
 @override
 ResultFuture<List<EndChecklistEntity>> generateEndTripChecklist(String tripId) async {
   try {
@@ -75,6 +75,7 @@ ResultFuture<bool> checkEndTripChecklistItem(String id) async {
       }
     }
   }
+
 
   @override
   ResultFuture<List<EndChecklistEntity>> loadLocalEndTripChecklist(String tripId) async {

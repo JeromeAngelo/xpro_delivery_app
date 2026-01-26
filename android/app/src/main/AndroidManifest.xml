@@ -11,6 +11,8 @@
 <uses-permission android:name="android.permission.WAKE_LOCK" />
 <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
 <!-- Internet for API updates -->
 <uses-permission android:name="android.permission.INTERNET" />
 
@@ -27,6 +29,7 @@
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:enableOnBackInvokedCallback="true"
         android:label="XPro Delivery"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">

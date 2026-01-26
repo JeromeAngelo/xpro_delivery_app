@@ -1,38 +1,87 @@
 import 'package:objectbox/objectbox.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/data/model/customer_data_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/entity/invoice_data_entity.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 
 @Entity()
 class InvoiceDataModel extends InvoiceDataEntity {
-  @Id()
+  @Id(assignable: true)
   int objectBoxId = 0;
-  
+
+  @override
+  @Property()
+  String? id;
+
+  @override
+  @Property()
+  String? collectionId;
+
+  @override
+  @Property()
+  String? collectionName;
+
+  @override
+  @Property()
+  String? refId;
+
+  @override
+  @Property()
+  String? name;
+
+  @override
+  @Property()
+  DateTime? documentDate;
+
+  @override
+  @Property()
+  double? totalAmount;
+
+  @override
+  @Property()
+  double? volume;
+
+  @override
+  @Property()
+  double? weight;
+
+  @override
+  @Property()
+  DateTime? created;
+
+  @override
+  @Property()
+  DateTime? updated;
+
+  /// Pocketbase ID
   @Property()
   String pocketbaseId;
 
-  InvoiceDataModel({
-    super.dbId = 0,
-    super.id,
-    super.collectionId,
-    super.collectionName,
-    super.refId,
-    super.name,
-    super.documentDate,
-    super.totalAmount,
-    super.volume,
-    super.weight,
-    CustomerDataModel? customer,
-    super.created,
-    super.updated,
-    this.objectBoxId = 0,
-  }) : 
-    pocketbaseId = id ?? '',
-    super(customerData: customer);
+  /// --- Relation ---
+  @override
+  final customer = ToOne<CustomerDataModel>();
 
-  factory InvoiceDataModel.fromJson(DataMap json) {
-    // Add safe date parsing
+  InvoiceDataModel({
+    this.id,
+    this.collectionId,
+    this.collectionName,
+    this.refId,
+    this.name,
+    this.documentDate,
+    this.totalAmount,
+    this.volume,
+    this.weight,
+    CustomerDataModel? customerData,
+    this.created,
+    this.updated,
+    this.objectBoxId = 0,
+  }) : pocketbaseId = id ?? '' {
+    if (customerData != null) {
+      customer.target = customerData;
+    }
+  }
+
+  /// --- From JSON ---
+  factory InvoiceDataModel.fromJson(dynamic json) {
     DateTime? parseDate(dynamic value) {
       if (value == null || value.toString().isEmpty) return null;
       try {
@@ -42,26 +91,17 @@ class InvoiceDataModel extends InvoiceDataEntity {
       }
     }
 
-    // Handle expanded data for customer relation
-    final expandedData = json['expand'] as Map<String, dynamic>?;
+    final expanded = json['expand'] as Map<String, dynamic>?;
     CustomerDataModel? customerModel;
 
-    if (expandedData != null && expandedData.containsKey('customer')) {
-      final customerData = expandedData['customer'];
-      if (customerData != null) {
-        if (customerData is RecordModel) {
-          customerModel = CustomerDataModel.fromJson({
-            'id': customerData.id,
-            'collectionId': customerData.collectionId,
-            'collectionName': customerData.collectionName,
-            ...customerData.data,
-          });
-        } else if (customerData is Map) {
-          customerModel = CustomerDataModel.fromJson(customerData as DataMap);
-        }
+    if (expanded != null && expanded['customer'] != null) {
+      final data = expanded['customer'];
+      if (data is Map<String, dynamic>) {
+        customerModel = CustomerDataModel.fromJson(data);
+      } else if (data is CustomerDataModel) {
+        customerModel = data;
       }
     } else if (json['customer'] != null) {
-      // If not expanded, just store the ID
       customerModel = CustomerDataModel(id: json['customer'].toString());
     }
 
@@ -75,12 +115,13 @@ class InvoiceDataModel extends InvoiceDataEntity {
       totalAmount: json['totalAmount'] != null ? double.tryParse(json['totalAmount'].toString()) : null,
       volume: json['volume'] != null ? double.tryParse(json['volume'].toString()) : null,
       weight: json['weight'] != null ? double.tryParse(json['weight'].toString()) : null,
-      customer: customerModel,
+      customerData: customerModel,
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
     );
   }
 
+  /// --- To JSON ---
   DataMap toJson() {
     return {
       'id': pocketbaseId,
@@ -98,6 +139,7 @@ class InvoiceDataModel extends InvoiceDataEntity {
     };
   }
 
+  /// --- Copy With ---
   InvoiceDataModel copyWith({
     String? id,
     String? collectionId,
@@ -108,7 +150,7 @@ class InvoiceDataModel extends InvoiceDataEntity {
     double? totalAmount,
     double? volume,
     double? weight,
-    CustomerDataModel? customer,
+    CustomerDataModel? customerData,
     DateTime? created,
     DateTime? updated,
   }) {
@@ -126,14 +168,13 @@ class InvoiceDataModel extends InvoiceDataEntity {
       updated: updated ?? this.updated,
       objectBoxId: objectBoxId,
     );
-    
-    // Handle customer relation
-    if (customer != null) {
-      model.customer.target = customer;
-    } else if (this.customer.target != null) {
-      model.customer.target = this.customer.target;
+
+    if (customerData != null) {
+      model.customer.target = customerData;
+    } else if (customer.target != null) {
+      model.customer.target = customer.target;
     }
-    
+
     return model;
   }
 

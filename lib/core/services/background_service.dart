@@ -140,7 +140,7 @@ Future<bool> _executeLocationTracking(Map<String, dynamic>? inputData) async {
     // 🔹 STEP 6: Save in tripCoordinates (secondary, optional)
     bool coordinateSaved = false;
     try {
-      await pb.collection('tripCoordinates').create(
+      await pb.collection('tripCoordinatesUpdates').create(
         body: {
           'trip': tripId,
           'latitude': lat,

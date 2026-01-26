@@ -1,31 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/domain/entity/collection_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/domain/entity/collection_entity.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/list_tiles.dart';
-
 class SummaryCompletedCustomerList extends StatelessWidget {
   final List<CollectionEntity> collections;
-  final bool isOffline;
 
   const SummaryCompletedCustomerList({
     super.key,
     required this.collections,
-    this.isOffline = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (isOffline) {
-      return Column(
-        children: [
-          _buildOfflineIndicator(),
-          const SizedBox(height: 8),
-          _buildCustomerList(context),
-        ],
-      );
-    }
-
     return _buildCustomerList(context);
   }
 
@@ -39,7 +26,9 @@ class SummaryCompletedCustomerList extends StatelessWidget {
       return hasCustomer;
     }).toList();
 
-    debugPrint('✅ CUSTOMER LIST: Found ${completedCollections.length} completed collections with customers');
+    debugPrint(
+      '✅ CUSTOMER LIST: Found ${completedCollections.length} completed collections with customers',
+    );
 
     if (completedCollections.isEmpty) {
       return _buildEmptyState(context);
@@ -51,89 +40,66 @@ class SummaryCompletedCustomerList extends StatelessWidget {
       itemCount: completedCollections.length,
       itemBuilder: (context, index) {
         final collection = completedCollections[index];
-        
-        // Get customer data directly from collection entity
+
         final customer = collection.customer.target;
         final invoices = collection.invoices;
-        
+
         debugPrint('👤 Processing customer for collection ${collection.id}:');
         debugPrint('   - Customer ID: ${customer?.id}');
         debugPrint('   - Customer Name: ${customer?.name}');
         debugPrint('   - Owner Name: ${customer?.ownerName}');
         debugPrint('   - Number of invoices: ${invoices.length}');
         debugPrint('   - Collection Total: ${collection.totalAmount}');
-        
-        // Log individual invoice details
-        for (int i = 0; i < invoices.length; i++) {
-          final invoice = invoices[i];
-          debugPrint('   - Invoice ${i + 1} (${invoice.refId ?? invoice.name}): ₱${NumberFormat('#,##0.00').format(invoice.totalAmount ?? 0.0)}');
-        }
-        
-        // Extract customer information directly from collection's customer relation
-        final customerName = customer?.ownerName ?? customer?.name ?? 'Unknown Customer';
-        final storeName = customer?.name ?? customerName;
-        
-        // Calculate total amount from all invoices
+
+        // Calculate total amount
         double totalAmount = 0.0;
-        if (invoices.isNotEmpty) {
-          for (final invoice in invoices) {
-            totalAmount += invoice.totalAmount ?? 0.0;
-          }
+        for (final invoice in invoices) {
+          totalAmount += invoice.totalAmount ?? 0.0;
         }
-        
-        // Fallback to collection totalAmount if invoices don't have amounts
+
         if (totalAmount == 0.0 && collection.totalAmount != null) {
           totalAmount = collection.totalAmount!;
-          debugPrint('   🔄 Using collection totalAmount as fallback: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
+          debugPrint(
+            '   🔄 Using collection totalAmount fallback: ₱${NumberFormat('#,##0.00').format(totalAmount)}',
+          );
         }
-        
-        debugPrint('📊 Final display data:');
-        debugPrint('   - Store Name: $storeName');
-        debugPrint('   - Customer Name: $customerName');
-        debugPrint('   - Total Amount: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
-        
+
+        final customerName =
+            customer?.ownerName ?? customer?.name ?? 'Unknown Customer';
+        final storeName = customer?.name ?? customerName;
+
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: CommonListTiles(
             onTap: () {
-              debugPrint('🔄 Navigating to collection details: ${collection.id}');
+              debugPrint(
+                '🔄 Navigating to collection details: ${collection.id}',
+              );
               context.push(
                 '/summary-collection/${collection.id}',
                 extra: {
                   'collection': collection,
                   'customer': customer,
                   'invoices': invoices.toList(),
-                  'isOffline': isOffline,
                 },
               );
             },
             title: storeName,
-            subtitle: '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'} • ₱${NumberFormat('#,##0.00').format(totalAmount)}',
+            subtitle:
+                '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'} • ₱${NumberFormat('#,##0.00').format(totalAmount)}',
             leading: CircleAvatar(
-              backgroundColor: isOffline 
-                  ? Colors.orange.withOpacity(0.1)
-                  : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              backgroundColor:
+                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
               child: Icon(
                 Icons.store,
-                color: isOffline 
-                    ? Colors.orange
-                    : Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (isOffline)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Icon(
-                      Icons.offline_bolt,
-                      color: Colors.orange,
-                      size: 16,
-                    ),
-                  ),
-                // Add customer status indicator
-                if (customer?.ownerName != null && customer!.ownerName!.isNotEmpty)
+                if (customer?.ownerName != null &&
+                    customer!.ownerName!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: Icon(
@@ -151,39 +117,13 @@ class SummaryCompletedCustomerList extends StatelessWidget {
             elevation: 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: isOffline 
-                  ? BorderSide(color: Colors.orange.withOpacity(0.3))
-                  : BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            backgroundColor: isOffline 
-                ? Colors.orange.withOpacity(0.05)
-                : Theme.of(context).colorScheme.surface,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            backgroundColor: Theme.of(context).colorScheme.surface,
           ),
         );
       },
-    );
-  }
-
-  Widget _buildOfflineIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.offline_bolt, color: Colors.orange, size: 16),
-          const SizedBox(width: 8),
-          Text(
-            'Showing offline data',
-            style: TextStyle(color: Colors.orange, fontSize: 12),
-          ),
-        ],
-      ),
     );
   }
 
@@ -197,20 +137,27 @@ class SummaryCompletedCustomerList extends StatelessWidget {
             Icon(
               Icons.people_outline,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color:
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             ),
             const SizedBox(height: 16),
             Text(
               'No Completed Customers',
               style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
                   ),
             ),
             const SizedBox(height: 8),
             Text(
               'Completed deliveries will appear here',
               style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.5),
                   ),
               textAlign: TextAlign.center,
             ),

@@ -2,156 +2,87 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/mixins/offline_first_mixin.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/assign_delivery_team_to_trip.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/load_delivery_team.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/load_delivery_team_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/presentation/bloc/personel_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/presentation/bloc/checklist_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/presentation/bloc/delivery_vehicle_bloc.dart';
 
-class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with OfflineFirstMixin<DeliveryTeamEvent, DeliveryTeamState> {
-  final TripBloc _tripBloc;
-  final PersonelBloc _personelBloc;
-  final DeliveryVehicleBloc _deliveryVehicleBloc;
-  final ChecklistBloc _checklistBloc;
+import '../../domain/usecase/load_delivery_team.dart';
+import '../../domain/usecase/load_delivery_team_by_id.dart';
+import '../../domain/usecase/assign_delivery_team_to_trip.dart';
+import '../../domain/usecase/sync_delivery_team_by_trip.dart';
+
+import 'delivery_team_event.dart';
+import 'delivery_team_state.dart';
+
+class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState>
+    with OfflineFirstMixin<DeliveryTeamEvent, DeliveryTeamState> {
+  
   final LoadDeliveryTeam _loadDeliveryTeam;
   final LoadDeliveryTeamById _loadDeliveryTeamById;
   final AssignDeliveryTeamToTrip _assignDeliveryTeamToTrip;
+  final SyncDeliveryTeamByTrip _syncDeliveryTeam;
   final ConnectivityProvider _connectivity;
+
   DeliveryTeamState? _cachedState;
 
   DeliveryTeamBloc({
-    required TripBloc tripBloc,
-    required PersonelBloc personelBloc,
-    required ChecklistBloc checklistBloc,
-    required DeliveryVehicleBloc deliveryVehicleBloc,
     required LoadDeliveryTeam loadDeliveryTeam,
     required LoadDeliveryTeamById loadDeliveryTeamById,
     required AssignDeliveryTeamToTrip assignDeliveryTeamToTrip,
+    required SyncDeliveryTeamByTrip syncDeliveryTeam,
     required ConnectivityProvider connectivity,
-  }) : _tripBloc = tripBloc,
-       _personelBloc = personelBloc,
-       _deliveryVehicleBloc = deliveryVehicleBloc,
-       _checklistBloc = checklistBloc,
-       _loadDeliveryTeam = loadDeliveryTeam,
-       _loadDeliveryTeamById = loadDeliveryTeamById,
-       _assignDeliveryTeamToTrip = assignDeliveryTeamToTrip,
-       _connectivity = connectivity,
-       super(const DeliveryTeamInitial()) {
+  })  : _loadDeliveryTeam = loadDeliveryTeam,
+        _loadDeliveryTeamById = loadDeliveryTeamById,
+        _assignDeliveryTeamToTrip = assignDeliveryTeamToTrip,
+        _syncDeliveryTeam = syncDeliveryTeam,
+        _connectivity = connectivity,
+        super(const DeliveryTeamInitial()) {
     on<LoadDeliveryTeamEvent>(_onLoadDeliveryTeam);
-    on<LoadLocalDeliveryTeamEvent>(_onLoadLocalDeliveryTeam);
     on<LoadDeliveryTeamByIdEvent>(_onLoadDeliveryTeamById);
-    on<LoadLocalDeliveryTeamByIdEvent>(_onLoadLocalDeliveryTeamById);
     on<AssignDeliveryTeamToTripEvent>(_onAssignDeliveryTeamToTrip);
+    on<SyncDeliveryTeamEvent>(_onSyncDeliveryTeamByTrip);
   }
 
   Future<void> _onLoadDeliveryTeam(
-    LoadDeliveryTeamEvent event,
-    Emitter<DeliveryTeamState> emit,
-  ) async {
-    debugPrint('🔍 OFFLINE-FIRST: Loading delivery team for trip: ${event.tripId}');
-    emit(const DeliveryTeamLoading());
+  LoadDeliveryTeamEvent event,
+  Emitter<DeliveryTeamState> emit,
+) async {
+  emit(const DeliveryTeamLoading());
+  debugPrint('🌐 Loading delivery team from local for trip: ${event.tripId}');
 
-    await executeOfflineFirst(
-      localOperation: () async {
-        final result = await _loadDeliveryTeam.loadFromLocal(event.tripId);
-        result.fold(
-          (failure) => throw Exception(failure.message),
-          (deliveryTeam) {
-            final newState = DeliveryTeamLoaded(
-              deliveryTeam: deliveryTeam,
-              tripState: _tripBloc.state,
-              personelState: _personelBloc.state,
-              checklistState: _checklistBloc.state,
-              deliveryVehicleState: _deliveryVehicleBloc.state,
-            );
-            _cachedState = newState;
-            emit(newState);
-          },
-        );
-      },
-      remoteOperation: () async {
-        final result = await _loadDeliveryTeam(event.tripId);
-        result.fold(
-          (failure) => throw Exception(failure.message),
-          (deliveryTeam) {
-            final newState = DeliveryTeamLoaded(
-              deliveryTeam: deliveryTeam,
-              tripState: _tripBloc.state,
-              personelState: _personelBloc.state,
-              checklistState: _checklistBloc.state,
-              deliveryVehicleState: _deliveryVehicleBloc.state,
-            );
-            _cachedState = newState;
-            emit(newState);
-          },
-        );
-      },
-      onLocalSuccess: (data) {
-        debugPrint('✅ Delivery team loaded from local cache');
-      },
-      onRemoteSuccess: (data) {
-        debugPrint('✅ Delivery team synced from remote');
-      },
-      onError: (error) => emit(DeliveryTeamError(error)),
-      connectivity: _connectivity,
-    );
-  }
+  final result = await _loadDeliveryTeam(event.tripId);
 
-  /// Legacy method - use LoadDeliveryTeamEvent with offline-first pattern instead
-  Future<void> _onLoadLocalDeliveryTeam(
-    LoadLocalDeliveryTeamEvent event,
-    Emitter<DeliveryTeamState> emit,
-  ) async {
-    debugPrint('📱 Loading local delivery team for trip: ${event.tripId}');
-    emit(const DeliveryTeamLoading());
+  result.fold(
+    (failure) {
+      debugPrint('❌ Remote fetch failed: ${failure.message}');
+      emit(DeliveryTeamError(failure.message));
+    },
+    (team) {
+      debugPrint('✅ Delivery team loaded successfully for trip: ${event.tripId}');
+      emit(DeliveryTeamLoaded(
+        tripId: event.tripId,
+        deliveryTeam: team,
+      ));
+    },
+  );
+}
 
-    final result = await _loadDeliveryTeam.loadFromLocal(event.tripId);
-    result.fold(
-      (failure) {
-        debugPrint('⚠️ Local load failed, attempting remote fetch');
-        add(LoadDeliveryTeamEvent(event.tripId));
-      },
-      (deliveryTeam) {
-        debugPrint('✅ Local delivery team loaded: ${deliveryTeam.id}');
-        final newState = DeliveryTeamLoaded(
-        deliveryTeam: deliveryTeam,
-        tripState: _tripBloc.state,
-        personelState: _personelBloc.state,
-        checklistState: _checklistBloc.state,
-        deliveryVehicleState: _deliveryVehicleBloc.state,
-      );
-        _cachedState = newState;
-        emit(newState);
-
-        // Refresh data in background
-        add(LoadDeliveryTeamEvent(event.tripId));
-      },
-    );
-  }
-
+  // ---------------------------------------------------------------------------
+  // LOAD DELIVERY TEAM BY TEAM ID
+  // ---------------------------------------------------------------------------
   Future<void> _onLoadDeliveryTeamById(
     LoadDeliveryTeamByIdEvent event,
     Emitter<DeliveryTeamState> emit,
   ) async {
-    debugPrint('🔍 OFFLINE-FIRST: Loading delivery team by ID: ${event.teamId}');
     emit(const DeliveryTeamLoading());
+    debugPrint('🔍 Loading delivery team by ID: ${event.teamId}');
 
     await executeOfflineFirst(
       localOperation: () async {
         final result = await _loadDeliveryTeamById.loadFromLocal(event.teamId);
         result.fold(
           (failure) => throw Exception(failure.message),
-          (deliveryTeam) {
+          (team) {
             final newState = DeliveryTeamLoaded(
-              deliveryTeam: deliveryTeam,
-              tripState: _tripBloc.state,
-              personelState: _personelBloc.state,
-              checklistState: _checklistBloc.state,
-              deliveryVehicleState: _deliveryVehicleBloc.state,
+              tripId: team.trip.target?.id ?? '',
+              deliveryTeam: team,
             );
             _cachedState = newState;
             emit(newState);
@@ -162,68 +93,30 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
         final result = await _loadDeliveryTeamById(event.teamId);
         result.fold(
           (failure) => throw Exception(failure.message),
-          (deliveryTeam) {
+          (team) {
             final newState = DeliveryTeamLoaded(
-              deliveryTeam: deliveryTeam,
-              tripState: _tripBloc.state,
-              personelState: _personelBloc.state,
-              checklistState: _checklistBloc.state,
-              deliveryVehicleState: _deliveryVehicleBloc.state,
+              tripId: team.trip.target?.id ?? '',
+              deliveryTeam: team,
             );
             _cachedState = newState;
             emit(newState);
           },
         );
       },
-      onLocalSuccess: (data) {
-        debugPrint('✅ Delivery team loaded from cache by ID');
-      },
-      onRemoteSuccess: (data) {
-        debugPrint('✅ Delivery team synced from remote by ID');
-      },
       onError: (error) => emit(DeliveryTeamError(error)),
-      connectivity: _connectivity,
+      connectivity: _connectivity, onLocalSuccess: (data) {  }, onRemoteSuccess: (data) {  },
     );
   }
 
-  /// Legacy method - use LoadDeliveryTeamByIdEvent with offline-first pattern instead
-  Future<void> _onLoadLocalDeliveryTeamById(
-    LoadLocalDeliveryTeamByIdEvent event,
-    Emitter<DeliveryTeamState> emit,
-  ) async {
-    debugPrint('📱 Loading local delivery team by ID: ${event.teamId}');
-    emit(const DeliveryTeamLoading());
-
-    final result = await _loadDeliveryTeamById.loadFromLocal(event.teamId);
-    result.fold(
-      (failure) {
-        debugPrint('⚠️ Local load by ID failed: ${failure.message}');
-        add(LoadDeliveryTeamByIdEvent(event.teamId));
-      },
-      (deliveryTeam) {
-        debugPrint('✅ Local team loaded by ID: ${deliveryTeam.id}');
-        final newState = DeliveryTeamLoaded(
-        deliveryTeam: deliveryTeam,
-        tripState: _tripBloc.state,
-        personelState: _personelBloc.state,
-        checklistState: _checklistBloc.state,
-        deliveryVehicleState: _deliveryVehicleBloc.state,
-      );
-        _cachedState = newState;
-        emit(newState);
-        add(LoadDeliveryTeamByIdEvent(event.teamId));
-      },
-    );
-  }
-
+  // ---------------------------------------------------------------------------
+  // ASSIGN DELIVERY TEAM TO A TRIP
+  // ---------------------------------------------------------------------------
   Future<void> _onAssignDeliveryTeamToTrip(
     AssignDeliveryTeamToTripEvent event,
     Emitter<DeliveryTeamState> emit,
   ) async {
     emit(const DeliveryTeamLoading());
-    debugPrint(
-      '🔄 Assigning team ${event.deliveryTeamId} to trip ${event.tripId}',
-    );
+    debugPrint('🔄 Assigning delivery team…');
 
     final result = await _assignDeliveryTeamToTrip(
       AssignDeliveryTeamParams(
@@ -233,18 +126,42 @@ class DeliveryTeamBloc extends Bloc<DeliveryTeamEvent, DeliveryTeamState> with O
     );
 
     result.fold(
-      (failure) {
-        debugPrint('❌ Assignment failed: ${failure.message}');
-        emit(DeliveryTeamError(failure.message));
-      },
-      (_) {
-        debugPrint('✅ Team assigned successfully');
-        emit(
-          DeliveryTeamAssigned(
-            deliveryTeamId: event.deliveryTeamId,
-            tripId: event.tripId,
-          ),
+      (failure) => emit(DeliveryTeamError(failure.message)),
+      (_) => emit(
+        DeliveryTeamAssigned(
+          tripId: event.tripId,
+          deliveryTeamId: event.deliveryTeamId,
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // SYNC (REMOTE ONLY)
+  // ---------------------------------------------------------------------------
+  Future<void> _onSyncDeliveryTeamByTrip(
+    SyncDeliveryTeamEvent event,
+    Emitter<DeliveryTeamState> emit,
+  ) async {
+    emit(const DeliveryTeamLoading());
+    debugPrint('🔄 Syncing delivery team for trip: ${event.tripId}');
+
+    if (!_connectivity.isOnline) {
+      debugPrint('⚠ Offline — cannot sync.');
+      return;
+    }
+
+    final result = await _syncDeliveryTeam(event.tripId);
+
+    result.fold(
+      (failure) => emit(DeliveryTeamError(failure.message)),
+      (team) {
+        final newState = DeliveryTeamLoaded(
+          tripId: event.tripId,
+          deliveryTeam: team,
         );
+        _cachedState = newState;
+        emit(newState);
       },
     );
   }

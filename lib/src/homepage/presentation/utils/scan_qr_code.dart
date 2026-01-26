@@ -7,11 +7,11 @@ import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 
 class QRScannerView extends StatefulWidget {
@@ -76,44 +76,67 @@ class _QRScannerViewState extends State<QRScannerView>
       ),
       body: BlocConsumer<TripBloc, TripState>(
         listener: (context, state) {
-          if (state is TripQRScanned) {
-            setState(() => _isProcessing = false);
-            debugPrint('✅ Trip loaded from QR: ${state.trip.id}');
+  debugPrint('🔔 BLoC Listener triggered with state: ${state.runtimeType}');
 
-            if (state.trip.id != null && state.trip.tripNumberId != null) {
-              // Initialize delivery updates
-              context.read<DeliveryUpdateBloc>().add(
-                InitializePendingStatusEvent(
-                  state.trip.deliveryData
-                      .map((customer) => customer.id ?? '')
-                      .where((id) => id.isNotEmpty)
-                      .toList(),
-                ),
-              );
+  if (state is TripQRScanned) {
+    setState(() => _isProcessing = false);
 
-              // Get customer data
-              context.read<DeliveryDataBloc>().add(
-                GetDeliveryDataByTripIdEvent(state.trip.id!),
-              );
+    final trip = state.trip;
+    debugPrint('✅ TripQRScanned received');
+    debugPrint('   Trip ID: ${trip.id}');
+    debugPrint('   Trip Number ID: ${trip.tripNumberId}');
+    debugPrint('   QR Code: ${trip.qrCode}');
+    debugPrint('   Delivery Data Count: ${trip.deliveryData.length}');
+    debugPrint('   Personnel Count: ${trip.personels.length}');
+    debugPrint('   Checklist Count: ${trip.checklist.length}');
+    debugPrint('   Delivery Team ID: ${trip.deliveryTeam.target?.id}');
+    debugPrint('   OTP ID: ${trip.otp.target?.id}');
+    debugPrint('   EndTrip OTP ID: ${trip.endTripOtp.target?.id}');
 
-              // Close the scanner screen and navigate to trip ticket view
-              Navigator.pop(context);
-              context.go('/trip-ticket/${state.trip.tripNumberId}');
-            } else {
-              CoreUtils.showSnackBar(
-                context,
-                'Invalid QR code: Missing trip information',
-              );
-              controller?.resumeCamera();
-            }
-          } else if (state is TripError) {
-            setState(() => _isProcessing = false);
-            CoreUtils.showSnackBar(context, 'Error: ${state.message}');
-            controller?.resumeCamera();
-          } else if (state is TripQRScanning) {
-            setState(() => _isProcessing = true);
-          }
-        },
+    if (trip.id != null && trip.tripNumberId != null) {
+      debugPrint('🎯 Trip data valid, proceeding with initialization');
+
+      // Initialize delivery updates
+      final deliveryIds = trip.deliveryData
+          .map((customer) => customer.id ?? '')
+          .where((id) => id.isNotEmpty)
+          .toList();
+      debugPrint('📦 Delivery IDs for initialization: $deliveryIds');
+
+      context.read<DeliveryUpdateBloc>().add(
+        InitializePendingStatusEvent(deliveryIds),
+      );
+
+      // Get customer data
+      context.read<DeliveryDataBloc>().add(
+        GetDeliveryDataByTripIdEvent(trip.id!),
+      );
+
+      // Close scanner and navigate
+      debugPrint('➡ Navigating to trip ticket view for ${trip.tripNumberId}');
+      Navigator.pop(context);
+      context.go('/trip-ticket/${trip.tripNumberId}');
+    } else {
+      debugPrint('❌ Trip data invalid: Missing ID or tripNumberId');
+      CoreUtils.showSnackBar(
+        context,
+        'Invalid QR code: Missing trip information',
+      );
+      controller?.resumeCamera();
+    }
+  } else if (state is TripError) {
+    setState(() => _isProcessing = false);
+    debugPrint('❌ TripError: ${state.message}');
+    CoreUtils.showSnackBar(context, 'Error: ${state.message}');
+    controller?.resumeCamera();
+  } else if (state is TripQRScanning) {
+    setState(() => _isProcessing = true);
+    debugPrint('⏳ TripQRScanning: Scanner is active');
+  } else {
+    debugPrint('⚠️ Unexpected state: ${state.runtimeType}');
+  }
+},
+
         builder: (context, state) {
           return Stack(
             children: [

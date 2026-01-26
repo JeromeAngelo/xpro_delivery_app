@@ -55,7 +55,7 @@ class UpdateDeliveryBtn extends StatelessWidget {
         enableDrag: true,
         context: context,
         builder: (BuildContext context) {
-          return UpdateStatusDrawer(customerId: customerId);
+          return UpdateStatusDrawer(deliveryDataId: customerId);
         },
       );
     }

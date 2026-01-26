@@ -19,6 +19,14 @@ class LoadDeliveryTeamEvent extends DeliveryTeamEvent {
   List<Object?> get props => [tripId];
 }
 
+class SyncDeliveryTeamEvent extends DeliveryTeamEvent {
+  final String tripId;
+  const SyncDeliveryTeamEvent(this.tripId);
+
+  @override
+  List<Object?> get props => [tripId];
+}
+
 class LoadDeliveryTeamByIdEvent extends DeliveryTeamEvent {
   final String teamId;
   const LoadDeliveryTeamByIdEvent(this.teamId);

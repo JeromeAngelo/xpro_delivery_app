@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:objectbox/objectbox.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/enums/otp_type.dart';
 
 @Entity()

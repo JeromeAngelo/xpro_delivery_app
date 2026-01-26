@@ -15,24 +15,15 @@ class HomepageBody extends StatefulWidget {
 class _HomepageBodyState extends State<HomepageBody>
     with AutomaticKeepAliveClientMixin {
   late final AuthBloc _authBloc;
+
   AuthState? _cachedUserState;
   AuthState? _cachedTripState;
-  final bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeBlocs();
-    _setupListeners();
-  }
-
-  void _initializeBlocs() {
     _authBloc = context.read<AuthBloc>();
-  }
-
-  void _setupListeners() {
     debugPrint('📱 Homepage Body initialized - waiting for data from parent');
-    // Data loading is handled by parent homepage_view.dart to avoid duplicates
   }
 
   @override
@@ -41,44 +32,76 @@ class _HomepageBodyState extends State<HomepageBody>
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        // 📱 OFFLINE-FIRST: Cache successful states
+        // ✅ cache user
         if (state is UserByIdLoaded) {
-          setState(() => _cachedUserState = state);
+          final userHasTrip = (state.user.tripNumberId ?? '').trim().isNotEmpty;
+
+          setState(() {
+            _cachedUserState = state;
+
+            // ✅ IMPORTANT: if user has NO trip -> clear cached trip
+            if (!userHasTrip) {
+              _cachedTripState = null;
+              debugPrint('🧹 Cleared cached trip state (user has no trip)');
+            }
+          });
         }
+
+        // ✅ cache trip ONLY if current user state says user has trip
         if (state is UserTripLoaded) {
-          setState(() => _cachedTripState = state);
+          final effectiveUser =
+              (_cachedUserState is UserByIdLoaded)
+                  ? (_cachedUserState as UserByIdLoaded).user
+                  : null;
+
+          final userHasTrip =
+              (effectiveUser?.tripNumberId ?? '').trim().isNotEmpty;
+
+          if (userHasTrip) {
+            setState(() => _cachedTripState = state);
+          } else {
+            // If somehow trip arrives but user says no trip, ignore it.
+            debugPrint(
+              '⚠️ Ignored UserTripLoaded because user has no tripNumberId',
+            );
+            setState(() => _cachedTripState = null);
+          }
         }
       },
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           debugPrint('🎯 Homepage Body State: $state');
 
-          // Determine effective user state (current or cached)
-          final effectiveUserState = (state is UserByIdLoaded) ? state : _cachedUserState;
-          final effectiveTripState = (state is UserTripLoaded) ? state : _cachedTripState;
+          final effectiveUserState =
+              (state is UserByIdLoaded) ? state : _cachedUserState;
+          final effectiveTripState =
+              (state is UserTripLoaded) ? state : _cachedTripState;
 
-          // Check if user has a trip assigned
+          // ✅ Decide trip presence ONLY based on user.tripNumberId
+          // (TripLoaded is not trusted by itself because it can be stale)
           bool hasTrip = false;
-          
+
           if (effectiveUserState is UserByIdLoaded) {
-            final user = effectiveUserState.user;
-            hasTrip = user.tripNumberId != null && user.tripNumberId!.isNotEmpty;
-          }
-          
-          // Also check if we have trip data directly
-          if (effectiveTripState is UserTripLoaded) {
-            hasTrip = true;
+            final tripNo = (effectiveUserState.user.tripNumberId ?? '').trim();
+            hasTrip = tripNo.isNotEmpty;
           }
 
-          if (hasTrip) {
+          // Optional: allow trip state only if user hasTrip already true
+          final hasValidTripState =
+              hasTrip && (effectiveTripState is UserTripLoaded);
+
+          if (hasValidTripState) {
             debugPrint('✅ Trip found - showing delivery timeline');
-            return const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DeliveryTimelineTile(),
-                SizedBox(height: 8),
-                TripSummaryTile(),
-              ],
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DeliveryTimelineTile(),
+                  SizedBox(height: 8),
+                  TripSummaryTile(),
+                ],
+              ),
             );
           }
 

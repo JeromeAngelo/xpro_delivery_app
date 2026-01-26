@@ -1,18 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/domain/entity/collection_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/domain/entity/collection_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/collection_dashboard_screen.dart';
 
 import '../widget/summary_completed_customer_list.dart';
-
 class SummaryCollectionScreen extends StatefulWidget {
   const SummaryCollectionScreen({super.key});
 
@@ -25,154 +22,45 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
     with AutomaticKeepAliveClientMixin {
   late final AuthBloc _authBloc;
   late final CollectionsBloc _collectionsBloc;
-  bool _isDataInitialized = false;
-  bool _isLoading = true;
-  bool _hasTriedLocalLoad = false;
+
   String? _currentTripId;
-  List<CollectionEntity> _currentCollections = [];
-  bool _isOffline = false;
+  List<CollectionEntity> _collections = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeBlocs();
-    
-    // Force immediate data load
+    _authBloc = context.read<AuthBloc>();
+    _collectionsBloc = context.read<CollectionsBloc>();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadDataImmediately();
+      _loadCollections();
     });
   }
 
-  void _initializeBlocs() {
-    _authBloc = context.read<AuthBloc>();
-    _collectionsBloc = context.read<CollectionsBloc>();
-  }
-
-  // Immediately load data from any available source
-  Future<void> _loadDataImmediately() async {
-    debugPrint('🚀 SUMMARY: Attempting immediate data load');
-    
-    // First check if we already have data in the bloc
-    final currentState = _collectionsBloc.state;
-    if (currentState is CollectionsLoaded && currentState.collections.isNotEmpty) {
-      debugPrint('✅ SUMMARY: Using existing data from bloc state');
-      setState(() {
-        _currentCollections = currentState.collections;
-        _isOffline = false;
-        _isLoading = false;
-        _isDataInitialized = true;
-      });
-      return;
-    }
-    
-    // Check for offline data
-    if (currentState is CollectionsOffline && currentState.collections.isNotEmpty) {
-      debugPrint('📱 SUMMARY: Using offline data from bloc state');
-      setState(() {
-        _currentCollections = currentState.collections;
-        _isOffline = true;
-        _isLoading = false;
-        _isDataInitialized = true;
-      });
-      return;
-    }
-    
-    // Try multiple sources for trip ID
-    final prefs = await SharedPreferences.getInstance();
-    
-    // 1. Check user_trip_data first
-    final tripData = prefs.getString('user_trip_data');
-    if (tripData != null) {
-      try {
-        final tripJson = jsonDecode(tripData);
-        if (tripJson['id'] != null) {
-          _currentTripId = tripJson['id'];
-          debugPrint('🔍 SUMMARY: Found trip ID in user_trip_data: $_currentTripId');
-          _loadDataWithTripId();
-          return;
-        }
-      } catch (e) {
-        debugPrint('⚠️ SUMMARY: Error parsing user_trip_data: $e');
-      }
-    }
-    
-    // 2. Check user_data for embedded trip
-    final userData = prefs.getString('user_data');
-    if (userData != null) {
-      try {
-        final userJson = jsonDecode(userData);
-        
-        // Check for trip object
-        final trip = userJson['trip'] as Map<String, dynamic>?;
-        if (trip != null && trip['id'] != null) {
-          _currentTripId = trip['id'];
-          debugPrint('🔍 SUMMARY: Found trip ID in user_data.trip: $_currentTripId');
-          _loadDataWithTripId();
-          return;
-        }
-        
-        // Check for tripNumberId and resolve it
-        final tripNumberId = userJson['tripNumberId'];
-        if (tripNumberId != null) {
-          _currentTripId = tripNumberId; // This will be resolved in the datasource
-          debugPrint('🔍 SUMMARY: Found tripNumberId in user_data: $_currentTripId');
-          _loadDataWithTripId();
-          return;
-        }
-      } catch (e) {
-        debugPrint('⚠️ SUMMARY: Error parsing user_data: $e');
-      }
-    }
-    
-    debugPrint('⚠️ SUMMARY: No trip ID found in any SharedPreferences data');
-    setState(() => _isLoading = false);
-    
-    // 3. Also check if we have trip data in the auth bloc
+  void _loadCollections() {
     final authState = _authBloc.state;
+
     if (authState is UserTripLoaded && authState.trip.id != null) {
       _currentTripId = authState.trip.id;
-      debugPrint('🔍 SUMMARY: Found trip ID in auth bloc: $_currentTripId');
-      _loadDataWithTripId();
-      return;
-    }
-    
-    // If no trip ID found anywhere, ensure loading is stopped
-    setState(() => _isLoading = false);
-  }
+      debugPrint('🌐 SUMMARY: Loading collections for tripId=$_currentTripId');
 
-  void _loadDataWithTripId() {
-    if (_currentTripId != null && !_hasTriedLocalLoad) {
-      _hasTriedLocalLoad = true;
-      debugPrint('📱 SUMMARY: Loading data for trip ID: $_currentTripId');
-      
-      // Load local data first for immediate display, then remote
-      _collectionsBloc.add(GetLocalCollectionsByTripIdEvent(_currentTripId!));
-      // After a short delay, load remote data to ensure fresh data
-      Future.delayed(const Duration(milliseconds: 500), () {
-        _collectionsBloc.add(GetCollectionsByTripIdEvent(_currentTripId!));
-      });
+      _collectionsBloc.add(
+        GetCollectionsByTripIdEvent(_currentTripId!),
+      );
+    } else {
+      debugPrint('⚠️ SUMMARY: No active trip found');
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _refreshData() async {
-    debugPrint('🔄 SUMMARY: Manual refresh triggered');
-    setState(() => _isLoading = true);
-    
-    if (_currentTripId != null) {
-      debugPrint('🔄 SUMMARY: Refreshing data for trip: $_currentTripId');
-      _collectionsBloc.add(RefreshCollectionsEvent(_currentTripId!));
-    } else {
-      // Try to get trip ID from auth bloc
-      final authState = _authBloc.state;
-      if (authState is UserTripLoaded && authState.trip.id != null) {
-        _currentTripId = authState.trip.id;
-        debugPrint('🔍 SUMMARY: Found trip ID in auth bloc during refresh: $_currentTripId');
-        _collectionsBloc.add(RefreshCollectionsEvent(_currentTripId!));
-      } else {
-        // Try to get from SharedPreferences
-        await _loadDataImmediately();
-      }
-    }
+    if (_currentTripId == null) return;
+
+    debugPrint('🔄 SUMMARY: Refreshing collections');
+    _collectionsBloc.add(
+      GetCollectionsByTripIdEvent(_currentTripId!),
+    );
   }
 
   @override
@@ -184,39 +72,30 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
       child: BlocConsumer<CollectionsBloc, CollectionsState>(
         listener: (context, state) {
           if (state is CollectionsLoaded) {
-            debugPrint('✅ SUMMARY: Collections loaded: ${state.collections.length} items');
+            debugPrint(
+              '✅ SUMMARY: Loaded ${state.collections.length} collections',
+            );
             setState(() {
-              _currentCollections = state.collections;
-              _isOffline = false;
+              _collections = state.collections;
               _isLoading = false;
             });
-          } else if (state is CollectionsOffline) {
-            debugPrint('📱 SUMMARY: Collections loaded offline: ${state.collections.length} items');
-            setState(() {
-              _currentCollections = state.collections;
-              _isOffline = true;
-              _isLoading = false;
-            });
-          } else if (state is CollectionsError) {
-            debugPrint('❌ SUMMARY: Error loading collections: ${state.message}');
-            setState(() => _isLoading = false);
           } else if (state is CollectionsEmpty) {
             debugPrint('📭 SUMMARY: No collections found');
             setState(() {
-              _currentCollections = [];
-              _isOffline = false;
+              _collections = [];
               _isLoading = false;
             });
+          } else if (state is CollectionsError) {
+            debugPrint('❌ SUMMARY ERROR: ${state.message}');
+            setState(() => _isLoading = false);
           }
         },
         builder: (context, state) {
-          // Show loading indicator while initial data is being fetched
           if (_isLoading && state is CollectionsLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // If we have collections data (either loaded or offline)
-          if (_currentCollections.isNotEmpty) {
+          if (_collections.isNotEmpty) {
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Padding(
@@ -224,49 +103,21 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Collection Dashboard with passed data
                     CollectionDashboardScreen(
-                      collections: _currentCollections,
-                      isOffline: _isOffline,
+                      collections: _collections,
+                      isOffline: false, // always online now
                     ),
                     const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.all(5),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Completed Customers',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          if (_isOffline) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.offline_bolt, color: Colors.orange, size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Offline',
-                                    style: TextStyle(color: Colors.orange, fontSize: 10),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
+                      child: Text(
+                        'Completed Customers',
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
-                    // Completed Customer List with passed data
                     SummaryCompletedCustomerList(
-                      collections: _currentCollections,
-                      isOffline: _isOffline,
+                      collections: _collections,
+                     // isOffline: false,
                     ),
                   ],
                 ),
@@ -274,12 +125,10 @@ class _SummaryCollectionScreenState extends State<SummaryCollectionScreen>
             );
           }
 
-          // If we have an error
           if (state is CollectionsError) {
             return _buildErrorState(state.message);
           }
 
-          // Default state - show empty state with refresh button
           return _buildEmptyState();
         },
       ),

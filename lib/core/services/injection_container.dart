@@ -2,13 +2,19 @@ import 'package:get_it/get_it.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/update_delivery_location.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/return_items/data/model/return_items_model.dart'
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/data/datasources/remote_datasource/delivery_status_choices_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/domain/repo/delivery_status_choices_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/domain/usecase/set_end_delivery.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/usecases/update_delivery_location.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/return_items/data/model/return_items_model.dart'
     show ReturnItemsModel;
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/data/repo/logs_repo_impl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/domain/repo/logs_repo.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/presentation/bloc/logs_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/intransit_otp/data/datasource/local_datasource/otp_local_datasource.dart' show OtpLocalDatasource, OtpLocalDatasourceImpl;
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/domain/usecase/sync_delivery_team_by_trip.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/intransit_otp/data/datasource/local_datasource/otp_local_datasource.dart'
+    show OtpLocalDatasource, OtpLocalDatasourceImpl;
 import 'package:x_pro_delivery_app/core/services/app_logger.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/local_datasource/delivery_team_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/data/datasource/remote_datasource/delivery_team_datasource.dart';
@@ -30,10 +36,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/person
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/domain/usecase/set_role.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/personels/presentation/bloc/personel_bloc.dart';
 
-
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/datasource/remote_datasource/delivery_update_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/datasource/local_datasource/delivery_update_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/models/delivery_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/repo/delivery_update_repo_impl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/repo/delivery_update_repo.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/check_end_delivery_status.dart';
@@ -44,35 +48,32 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delive
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/update_delivery_status.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/usecase/update_queue_remarks.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/datasource/local_datasource/trip_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/datasource/remote_datasource/trip_remote_datasurce.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/repo/trip_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/repo/trip_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/accept_trip.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/calculate_total_distance.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/check_end_trip_status.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/end_trip.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/get_trip.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/get_trip_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/get_trips_by_date_range.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/scan_qr_usecase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/search_trip.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/search_trip_by_details.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/usecase/update_trip_location.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/datasources/local_datasource/trip_update_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/datasources/remote_datasource/trip_update_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/model/trip_update_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/data/repo/trip_update_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/repo/trip_update_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/usecases/create_trip_updates.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/usecases/get_trip_updates.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/datasource/local_datasource/trip_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/datasource/remote_datasource/trip_remote_datasurce.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/repo/trip_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/repo/trip_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/accept_trip.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/calculate_total_distance.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/check_end_trip_status.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/end_trip.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/get_trip.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/get_trip_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/get_trips_by_date_range.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/scan_qr_usecase.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/search_trip.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/search_trip_by_details.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/usecase/update_trip_location.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/data/datasources/local_datasource/trip_update_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/data/datasources/remote_datasource/trip_update_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/data/repo/trip_update_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/domain/repo/trip_update_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/domain/usecases/create_trip_updates.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/domain/usecases/get_trip_updates.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/datasource/local_datasource/checklist_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/datasource/remote_datasource/checklist_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/model/checklist_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/data/repo/checklist_repo_impl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/domain/repo/checklist_repo.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/domain/usecase/check_Item.dart';
@@ -81,7 +82,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/presentation/bloc/checklist_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/datasources/local_datasource/end_trip_checklist_local_data_src.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/datasources/remote_datasource/end_trip_checklist_remote_data_src.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/model/end_trip_checklist_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/data/repo/end_trip_checklist_repo_impl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/domain/repo/end_trip_checklist_repo.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/domain/usecase/check_end_trip_checklist.dart';
@@ -90,7 +90,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_checklist/presentation/bloc/end_trip_checklist_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/datasources/local_datasource/end_trip_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/datasources/remote_datasource/end_trip_otp_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/model/end_trip_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/data/repo/end_trip_repo_impl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/repo/end_trip_otp_repo.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/end_otp_verify.dart';
@@ -99,12 +98,10 @@ import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/dom
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/load_end_trip_otp_by_trip_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_bloc.dart';
 
-
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/data/model/cancelled_invoice_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart'
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart'
     show CancelledInvoiceBloc;
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/data/datasources/remote_datasource/customer_data_remote_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/data/repo/customer_data_repo_impl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/repo/customer_data_repo.dart';
@@ -117,20 +114,18 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/custom
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/get_customer_data_by_delivery_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/domain/usecases/update_customer_data.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/presentation/bloc/customer_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/datasource/local_datasource/delivery_data_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/datasource/remote_datasource/delivery_data_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/data/repo/delivery_data_repo_impl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/repo/delivery_data_repo.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/calculate_delivery_time_by_delivery_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/delete_delivery_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_all_delivery_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_delivery_data_by_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/usecases/get_delivery_data_by_trip_id.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/data/datasource/local_datasource/delivery_data_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/data/datasource/remote_datasource/delivery_data_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/data/repo/delivery_data_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/repo/delivery_data_repo.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/usecases/calculate_delivery_time_by_delivery_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/usecases/delete_delivery_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/usecases/get_all_delivery_data.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/usecases/get_delivery_data_by_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/usecases/get_delivery_data_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/datasource/local_datasource/delivery_receipt_local_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/datasource/remote_datasource/delivery_receipt_remote_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/model/delivery_receipt_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/repo/delivery_receipt_repo_impl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/repo/delivery_receipt_repo.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/usecases/create_delivery_receipt.dart';
@@ -168,6 +163,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoic
 
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
+import 'package:x_pro_delivery_app/core/services/foreground_location_service.dart'
+    show ForegroundLocationService;
 import 'package:x_pro_delivery_app/core/services/objectbox.dart';
 import 'package:x_pro_delivery_app/core/services/sync_service.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/local_datasource/auth_local_data_source.dart';
@@ -189,39 +186,53 @@ import 'package:x_pro_delivery_app/src/on_boarding/domain/usecases/check_if_user
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_bloc.dart';
 
 import '../../src/on_boarding/data/local_datasource/onboarding_local_datasource.dart';
-import '../common/app/features/Trip_Ticket/cancelled_invoices/data/datasources/local_datasource/cancelled_invoice_local_datasource.dart'
+import '../common/app/features/delivery_status_choices/data/datasources/local_datasource/delivery_status_choices_local_datasource.dart';
+import '../common/app/features/delivery_status_choices/data/datasources/sync/sync_delivery_status_choices_worker.dart';
+import '../common/app/features/delivery_status_choices/data/repo/delivery_status_choices_repo_impl.dart';
+import '../common/app/features/delivery_status_choices/domain/usecase/bulk_update_delivery_status_usecase.dart';
+import '../common/app/features/delivery_status_choices/domain/usecase/get_all_bulk_delivery_status_choices.dart';
+import '../common/app/features/delivery_status_choices/domain/usecase/get_assigned_delivery_status_choices.dart';
+import '../common/app/features/delivery_status_choices/domain/usecase/sync_all_delivery_status_choices.dart';
+import '../common/app/features/delivery_status_choices/domain/usecase/update_customer_status.dart';
+import '../common/app/features/trip_ticket/cancelled_invoices/data/datasources/local_datasource/cancelled_invoice_local_datasource.dart'
     show CancelledInvoiceLocalDataSource, CancelledInvoiceLocalDataSourceImpl;
-import '../common/app/features/Trip_Ticket/cancelled_invoices/data/datasources/remote_datasource/cancelled_invoice_remote_datasource.dart'
+import '../common/app/features/trip_ticket/cancelled_invoices/data/datasources/remote_datasource/cancelled_invoice_remote_datasource.dart'
     show CancelledInvoiceRemoteDataSource, CancelledInvoiceRemoteDataSourceImpl;
-import '../common/app/features/Trip_Ticket/cancelled_invoices/data/repo/cancelled_invoice_repo_impl.dart'
+import '../common/app/features/trip_ticket/cancelled_invoices/data/datasources/sync_worker/cancelled_invoice_worker.dart';
+import '../common/app/features/trip_ticket/cancelled_invoices/data/repo/cancelled_invoice_repo_impl.dart'
     show CancelledInvoiceRepoImpl;
-import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/repo/cancelled_invoice_repo.dart'
+import '../common/app/features/trip_ticket/cancelled_invoices/domain/repo/cancelled_invoice_repo.dart'
     show CancelledInvoiceRepo;
-import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/create_cancelled_invoice_by_delivery_data_id.dart'
+import '../common/app/features/trip_ticket/cancelled_invoices/domain/usecases/create_cancelled_invoice_by_delivery_data_id.dart'
     show CreateCancelledInvoiceByDeliveryDataId;
-import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/delete_cancelled_invoice.dart'
+import '../common/app/features/trip_ticket/cancelled_invoices/domain/usecases/delete_cancelled_invoice.dart'
     show DeleteCancelledInvoice;
-import '../common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_trip_id.dart'
+import '../common/app/features/trip_ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_trip_id.dart'
     show LoadCancelledInvoicesByTripId;
 
-import '../common/app/features/Trip_Ticket/delivery_collection/data/datasource/local_datasource/collection_local_datasource.dart';
-import '../common/app/features/Trip_Ticket/delivery_collection/data/datasource/remote_datasource/collection_remote_datasource.dart'
+import '../common/app/features/trip_ticket/delivery_collection/data/datasource/local_datasource/collection_local_datasource.dart';
+import '../common/app/features/trip_ticket/delivery_collection/data/datasource/remote_datasource/collection_remote_datasource.dart'
     show CollectionRemoteDataSource, CollectionRemoteDataSourceImpl;
-import '../common/app/features/Trip_Ticket/delivery_collection/data/repo/collection_repo_impl.dart'
+import '../common/app/features/trip_ticket/delivery_collection/data/repo/collection_repo_impl.dart'
     show CollectionRepoImpl;
-import '../common/app/features/Trip_Ticket/delivery_collection/domain/repo/collection_repo.dart'
+import '../common/app/features/trip_ticket/delivery_collection/domain/repo/collection_repo.dart'
     show CollectionRepo;
-import '../common/app/features/Trip_Ticket/delivery_collection/domain/usecases/delete_collection.dart'
+import '../common/app/features/trip_ticket/delivery_collection/domain/usecases/delete_collection.dart'
     show DeleteCollection;
-import '../common/app/features/Trip_Ticket/delivery_collection/domain/usecases/get_collection_by_id.dart';
-import '../common/app/features/Trip_Ticket/delivery_collection/domain/usecases/get_collection_by_trip_id.dart';
-import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_completed.dart';
-import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloaded.dart';
-import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/set_invoice_into_unloading.dart';
-import '../common/app/features/Trip_Ticket/delivery_data/domain/usecases/sync_delivery_data_by_trip_id.dart';
+import '../common/app/features/trip_ticket/delivery_collection/domain/usecases/get_collection_by_id.dart';
+import '../common/app/features/trip_ticket/delivery_collection/domain/usecases/get_collection_by_trip_id.dart';
+import '../common/app/features/trip_ticket/delivery_data/domain/usecases/set_invoice_into_completed.dart';
+import '../common/app/features/trip_ticket/delivery_data/domain/usecases/set_invoice_into_unloaded.dart';
+import '../common/app/features/trip_ticket/delivery_data/domain/usecases/set_invoice_into_unloading.dart';
+import '../common/app/features/trip_ticket/delivery_data/domain/usecases/sync_delivery_data_by_trip_id.dart';
+import '../common/app/features/trip_ticket/delivery_data/domain/usecases/watch_all_local_delivery_data.dart';
+import '../common/app/features/trip_ticket/delivery_data/domain/usecases/watch_local_delivery_data_by_id.dart';
+import '../common/app/features/trip_ticket/delivery_data/domain/usecases/watch_local_delivery_data_by_trip.dart';
 import '../common/app/features/delivery_data/delivery_update/domain/usecase/bulk_update_delivery_status.dart';
 import '../common/app/features/delivery_data/delivery_update/domain/usecase/get_bulk_delivery_status_choices.dart';
 import '../common/app/features/delivery_data/delivery_update/domain/usecase/pin_arrived_location.dart';
+import '../common/app/features/delivery_data/delivery_update/domain/usecase/sync_delivery_status_choices.dart'
+    show SyncDeliveryStatusChoices;
 import '../common/app/features/delivery_data/invoice_data/domain/usecase/set_invoice_unloaded.dart';
 import '../common/app/features/delivery_data/invoice_status/data/datasources/local_datasource/invoice_status_local_datasource.dart';
 import '../common/app/features/delivery_data/invoice_status/data/datasources/remote_datasource/invoice_status_remote_datasource.dart';
@@ -229,16 +240,16 @@ import '../common/app/features/delivery_data/invoice_status/data/repo/invoice_st
 import '../common/app/features/delivery_data/invoice_status/domain/repo/invoice_status_repo.dart';
 import '../common/app/features/delivery_data/invoice_status/domain/usecase/get_invoice_status_by_invoice_id.dart';
 import '../common/app/features/delivery_data/invoice_status/presentation/bloc/invoice_status_bloc.dart';
-import '../common/app/features/Trip_Ticket/return_items/data/datasource/local_datasource/return_items_local_datasource.dart';
-import '../common/app/features/Trip_Ticket/return_items/data/datasource/remote_datasource/return_items_remote_datasource.dart';
-import '../common/app/features/Trip_Ticket/return_items/data/repo/return_items_repo_impl.dart';
-import '../common/app/features/Trip_Ticket/return_items/domain/repo/return_items_repo.dart';
-import '../common/app/features/Trip_Ticket/return_items/domain/usecases/add_items_to_return_items_by_delivery_id.dart';
-import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_id.dart';
-import '../common/app/features/Trip_Ticket/return_items/domain/usecases/get_return_items_by_trip_id.dart';
-import '../common/app/features/Trip_Ticket/return_items/presentation/bloc/return_items_bloc.dart';
-import '../common/app/features/Trip_Ticket/trip/domain/usecase/check_trip_personnels.dart';
-import '../common/app/features/Trip_Ticket/trip/domain/usecase/set_mismatched_reason.dart';
+import '../common/app/features/trip_ticket/return_items/data/datasource/local_datasource/return_items_local_datasource.dart';
+import '../common/app/features/trip_ticket/return_items/data/datasource/remote_datasource/return_items_remote_datasource.dart';
+import '../common/app/features/trip_ticket/return_items/data/repo/return_items_repo_impl.dart';
+import '../common/app/features/trip_ticket/return_items/domain/repo/return_items_repo.dart';
+import '../common/app/features/trip_ticket/return_items/domain/usecases/add_items_to_return_items_by_delivery_id.dart';
+import '../common/app/features/trip_ticket/return_items/domain/usecases/get_return_items_by_id.dart';
+import '../common/app/features/trip_ticket/return_items/domain/usecases/get_return_items_by_trip_id.dart';
+import '../common/app/features/trip_ticket/return_items/presentation/bloc/return_items_bloc.dart';
+import '../common/app/features/trip_ticket/trip/domain/usecase/check_trip_personnels.dart';
+import '../common/app/features/trip_ticket/trip/domain/usecase/set_mismatched_reason.dart';
 import '../common/app/features/app_logs/data/datasource/local_datasource/logs_local_datasource/logs_local_datasource.dart';
 import '../common/app/features/app_logs/domain/usecases/add_log.dart';
 import '../common/app/features/app_logs/domain/usecases/clear_logs.dart';
@@ -250,7 +261,6 @@ import '../common/app/features/app_logs/domain/usecases/get_unsynced_logs.dart';
 import '../common/app/features/app_logs/domain/usecases/mark_logs_as_synced.dart';
 import '../common/app/features/app_logs/domain/usecases/sync_logs_to_remote.dart';
 import '../common/app/features/otp/intransit_otp/data/datasource/remote_data_source/otp_remote_datasource.dart';
-import '../common/app/features/otp/intransit_otp/data/models/otp_models.dart';
 import '../common/app/features/otp/intransit_otp/data/repo/otp_repo_impl.dart';
 import '../common/app/features/otp/intransit_otp/domain/repo/otp_repo.dart';
 import '../common/app/features/otp/intransit_otp/domain/usecases/get_generated_otp.dart';
@@ -262,12 +272,12 @@ import '../common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart
 import '../common/app/features/sync_data/cubit/sync_cubit.dart';
 import '../common/app/features/users/user_performance/data/datasources/local_datasource/user_performance_local_datasource.dart';
 import '../common/app/features/users/user_performance/data/datasources/remote_datasource/user_performance_remote_datasource.dart';
-import '../common/app/features/users/user_performance/data/model/user_performance_model.dart';
 import '../common/app/features/users/user_performance/data/repo/user_performance_repo_impl.dart';
 import '../common/app/features/users/user_performance/domain/repo/user_performance_repo.dart';
 import '../common/app/features/users/user_performance/domain/usecases/calculate_delivery_accuracy.dart';
 import '../common/app/features/users/user_performance/domain/usecases/load_user_performance_by_user_id.dart';
 import '../common/app/features/users/user_performance/presentation/bloc/user_performance_bloc.dart';
+import 'offline_sync_service.dart';
 
 final sl = GetIt.instance;
 final pb = PocketBase('https://delivery-app.winganmarketing.com');
@@ -278,6 +288,8 @@ Future<void> init() async {
 
   // Add SyncService registration
   sl.registerLazySingleton(() => SyncService());
+  sl.registerLazySingleton(() => ForegroundLocationService());
+  sl.registerLazySingleton(() => OfflineSyncService());
 
   // Add this if missing
   await initSyncCubit();
@@ -290,6 +302,7 @@ Future<void> init() async {
   await initTrip();
 
   await initDeliveryUpdate();
+  await initDeliveryStatusChoices();
   await initOtp();
   await initEndTripOtp();
 
@@ -362,7 +375,7 @@ Future<void> initAuth() async {
   sl.registerLazySingleton(() => RefreshUserData(sl()));
 
   // Repository
-  sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl(), sl(),   sl(),));
+  sl.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(sl(), sl(), sl()));
 
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSrc>(
@@ -370,7 +383,7 @@ Future<void> initAuth() async {
   );
 
   sl.registerLazySingleton<AuthLocalDataSrc>(
-    () => AuthLocalDataSrcImpl(objectBoxStore.store, prefs),
+    () => AuthLocalDataSrcImpl(objectBoxStore: objectBoxStore, prefs: prefs),
   );
 
   // External
@@ -405,8 +418,7 @@ Future<void> initUserPerformance() async {
 
   sl.registerLazySingleton<UserPerformanceLocalDataSource>(
     () => UserPerformanceLocalDataSourceImpl(
-      objectBoxStore.store.box<UserPerformanceModel>(),
-      objectBoxStore.store,
+      objectBoxStore
     ),
   );
 }
@@ -436,12 +448,10 @@ Future<void> initChecklist() async {
 
   sl.registerLazySingleton<ChecklistLocalDatasource>(
     () => ChecklistLocalDatasourceImpl(
-      objectBoxStore.store.box<ChecklistModel>(),
+      objectBoxStore,
     ),
   );
 }
-
-
 
 Future<void> initPersonel() async {
   final objectBoxStore = await ObjectBoxStore.create();
@@ -481,17 +491,16 @@ Future<void> initDeliveryTeam() async {
   sl.registerFactory(
     () => DeliveryTeamBloc(
       loadDeliveryTeam: sl(),
-      tripBloc: sl(),
-      personelBloc: sl(),
       loadDeliveryTeamById: sl(),
-      checklistBloc: sl(),
-      deliveryVehicleBloc: sl(),
       assignDeliveryTeamToTrip: sl(),
       connectivity: sl(),
+      syncDeliveryTeam: sl(),
     ),
   );
 
   sl.registerLazySingleton(() => LoadDeliveryTeam(sl()));
+
+  sl.registerLazySingleton(() => SyncDeliveryTeamByTrip(sl()));
 
   sl.registerLazySingleton(() => LoadDeliveryTeamById(sl()));
 
@@ -514,9 +523,7 @@ Future<void> initDeliveryTeam() async {
   );
 
   sl.registerLazySingleton<DeliveryTeamLocalDatasource>(
-    () => DeliveryTeamLocalDatasourceImpl(
-      objectBoxStore.store.box<DeliveryTeamModel>(),
-    ),
+    () => DeliveryTeamLocalDatasourceImpl(objectBoxStore),
   );
 }
 
@@ -580,11 +587,7 @@ Future<void> initTrip() async {
   );
 
   sl.registerLazySingleton<TripLocalDatasource>(
-    () => TripLocalDatasourceImpl(
-      objectBoxStore.store,
-      objectBoxStore.store.box<TripModel>(),
-      sl(), // Provides the PocketBase client
-    ),
+    () => TripLocalDatasourceImpl(objectBoxStore),
   );
 }
 
@@ -599,20 +602,25 @@ Future<void> initDeliveryUpdate() async {
       checkEndDeliverStatus: sl(),
       initializePendingStatus: sl(),
       createDeliveryStatus: sl(),
-      updateQueueRemarks: sl(), pinArrivedLocation: sl(), bulkUpdateDeliveryStatus: sl(), getBulkDeliveryStatusChoices: sl(),
-      
+      updateQueueRemarks: sl(),
+      pinArrivedLocation: sl(),
+      bulkUpdateDeliveryStatus: sl(),
+      getBulkDeliveryStatusChoices: sl(),
+      syncDeliveryStatusChoices: sl(),
     ),
   );
   sl.registerLazySingleton(() => CompleteDelivery(sl()));
   sl.registerLazySingleton(() => GetDeliveryStatusChoices(sl()));
   sl.registerLazySingleton(() => UpdateDeliveryStatus(sl()));
   sl.registerLazySingleton(() => CheckEndDeliverStatus(sl()));
+  sl.registerLazySingleton(() => SyncDeliveryStatusChoices(sl()));
+
   sl.registerLazySingleton(() => InitializePendingStatus(sl()));
   sl.registerLazySingleton(() => CreateDeliveryStatus(sl()));
   sl.registerLazySingleton(() => GetBulkDeliveryStatusChoices(sl()));
   sl.registerLazySingleton(() => BulkUpdateDeliveryStatus(sl()));
   sl.registerLazySingleton(() => UpdateQueueRemarks(sl()));
-  sl.registerLazySingleton( () => PinArrivedLocation(sl()));
+  sl.registerLazySingleton(() => PinArrivedLocation(sl()));
   sl.registerLazySingleton<DeliveryUpdateRepo>(
     () => DeliveryUpdateRepoImpl(sl(), sl()),
   );
@@ -621,13 +629,60 @@ Future<void> initDeliveryUpdate() async {
     () => DeliveryUpdateDatasourceImpl(pocketBaseClient: sl()),
   );
   sl.registerLazySingleton<DeliveryUpdateLocalDatasource>(
-    () => DeliveryUpdateLocalDatasourceImpl(
-      objectBoxStore.store.box<DeliveryUpdateModel>(),
-      objectBoxStore.store.box<DeliveryDataModel>(),
+    () => DeliveryUpdateLocalDatasourceImpl(objectBoxStore),
+  );
+}
+Future<void> initDeliveryStatusChoices() async {
+  // 1️⃣ Initialize ObjectBox
+  final objectBoxStore = await ObjectBoxStore.create();
+
+  // 2️⃣ Local datasource instance
+  final localImpl = DeliveryStatusChoicesLocalDatasourceImpl(
+    objectBoxStore: objectBoxStore,
+  );
+
+  // 3️⃣ Register BLoC
+  sl.registerFactory(
+    () => DeliveryStatusChoicesBloc(
+      syncDeliveryStatusChoices: sl(),
+      getAssignedDeliveryStatusChoices: sl(),
+      updateCustomerStatus: sl(),
+      getAllBulkDeliveryStatusChoices: sl(),
+      bulkUpdateDeliveryStatus: sl(), completeDelivery: sl(),
+      
+    ),
+  );
+
+  // 4️⃣ Register use cases
+  sl.registerLazySingleton(() => SyncAllDeliveryStatusChoices(sl()));
+  sl.registerLazySingleton(() => GetAssignedDeliveryStatusChoices(sl()));
+  sl.registerLazySingleton(() => UpdateCustomerStatus(sl()));
+  sl.registerLazySingleton(() => GetAllBulkDeliveryStatusChoices(sl()));
+  sl.registerLazySingleton(() => BulkUpdateDeliveryStatusUsecase(sl()));
+  sl.registerLazySingleton(() => SetEndDelivery(sl()));
+  // 5️⃣ Register remote datasource
+  sl.registerLazySingleton<DeliveryStatusChoicesRemoteDataSource>(
+    () => DeliveryStatusChoicesRemoteDataSourceImpl(sl()),
+  );
+
+  // 6️⃣ Register local datasource under both abstract and concrete types
+  sl.registerLazySingleton<DeliveryStatusChoicesLocalDatasource>(() => localImpl);
+  sl.registerLazySingleton<DeliveryStatusChoicesLocalDatasourceImpl>(() => localImpl);
+
+  // 7️⃣ Register repository
+  sl.registerLazySingleton<DeliveryStatusChoicesRepo>(
+    () => DeliveryStatusChoicesRepoImpl(sl(), sl(), sl()),
+  );
+
+  // 8️⃣ Register sync worker
+  sl.registerLazySingleton<DeliveryStatusSyncWorker>(
+    () => DeliveryStatusSyncWorker(
+      local: sl<DeliveryStatusChoicesLocalDatasourceImpl>(),
+      remote: sl<DeliveryStatusChoicesRemoteDataSource>(),
+      interval: const Duration(seconds: 10),
     ),
   );
 }
-
 
 
 Future<void> initOtp() async {
@@ -654,7 +709,7 @@ Future<void> initOtp() async {
   );
 
   sl.registerLazySingleton<OtpLocalDatasource>(
-    () => OtpLocalDatasourceImpl(objectBoxStore.store.box<OtpModel>()),
+    () => OtpLocalDatasourceImpl(objectBoxStore),
   );
 }
 
@@ -689,7 +744,7 @@ Future<void> initEndTripOtp() async {
 
   sl.registerLazySingleton<EndTripOtpLocalDatasource>(
     () => EndTripOtpLocalDatasourceImpl(
-      objectBoxStore.store.box<EndTripOtpModel>(),
+      objectBoxStore,
     ),
   );
 }
@@ -723,7 +778,7 @@ Future<void> initEndTripChecklist() async {
 
   sl.registerLazySingleton<EndTripChecklistLocalDataSource>(
     () => EndTripChecklistLocalDataSourceImpl(
-      objectBoxStore.store.box<EndTripChecklistModel>(),
+      objectBoxStore,
     ),
   );
 }
@@ -748,8 +803,7 @@ Future<void> initTripUpdate() async {
 
   sl.registerLazySingleton<TripUpdateLocalDatasource>(
     () => TripUpdateLocalDatasourceImpl(
-      objectBoxStore.store.box<TripUpdateModel>(),
-    ),
+objectBoxStore    ),
   );
 }
 
@@ -770,13 +824,20 @@ Future<void> initDeliveryData() async {
       syncDeliveryDataByTripId: sl(),
       setInvoiceIntoUnloaded: sl(),
       setInvoiceIntoCompleted: sl(),
-      connectivity: sl()
+      connectivity: sl(),
+      watchLocalDeliveryDataByTripId: sl(),
+      watchLocalDeliveryDataById: sl(),
+      watchAllLocalDeliveryData: sl()
     ),
   );
 
   // Usecases
   sl.registerLazySingleton(() => GetAllDeliveryData(sl()));
   sl.registerLazySingleton(() => GetDeliveryDataByTripId(sl()));
+  sl.registerLazySingleton(() => WatchLocalDeliveryDataByTripId(sl()));
+    sl.registerLazySingleton(() => WatchAllLocalDeliveryData(sl()));
+
+  sl.registerLazySingleton(() => WatchLocalDeliveryDataById(sl()));
   sl.registerLazySingleton(() => GetDeliveryDataById(sl()));
   sl.registerLazySingleton(() => DeleteDeliveryData(sl()));
   sl.registerLazySingleton(() => SetInvoiceIntoCompleted(sl()));
@@ -797,10 +858,7 @@ Future<void> initDeliveryData() async {
   );
 
   sl.registerLazySingleton<DeliveryDataLocalDataSource>(
-    () => DeliveryDataLocalDataSourceImpl(
-      objectBoxStore.store.box<DeliveryDataModel>(),
-      sl<Store>(),
-    ),
+    () => DeliveryDataLocalDataSourceImpl(objectBoxStore),
   );
 }
 
@@ -835,7 +893,7 @@ Future<void> initInvoiceData() async {
       getInvoiceDataByCustomerId: sl(),
       addInvoiceDataToDelivery: sl(),
       addInvoiceDataToInvoiceStatus: sl(),
-      setInvoiceUnloaded: sl()
+      setInvoiceUnloaded: sl(),
     ),
   );
 
@@ -858,19 +916,16 @@ Future<void> initInvoiceStatus() async {
 
   // BLoC
   sl.registerLazySingleton(
-    () => InvoiceStatusBloc(
-      getInvoiceStatusByInvoiceId: sl(),
-    ),
+    () => InvoiceStatusBloc(getInvoiceStatusByInvoiceId: sl()),
   );
 
   // Usecases
   sl.registerLazySingleton(() => GetInvoiceStatusByInvoiceId(sl()));
 
   // Repository
-  sl.registerLazySingleton<InvoiceStatusRepo>(() => InvoiceStatusRepoImpl(
-    remoteDataSource: sl(),
-    localDataSource: sl(),
-  ));
+  sl.registerLazySingleton<InvoiceStatusRepo>(
+    () => InvoiceStatusRepoImpl(remoteDataSource: sl(), localDataSource: sl()),
+  );
 
   // Remote DataSource
   sl.registerLazySingleton<InvoiceStatusRemoteDataSource>(
@@ -977,14 +1032,21 @@ Future<void> initDeliveryReceipt() async {
 
   sl.registerLazySingleton<DeliveryReceiptLocalDatasource>(
     () => DeliveryReceiptLocalDatasourceImpl(
-      objectBoxStore.store.box<DeliveryReceiptModel>(),
+      objectBoxStore,
     ),
   );
 }
 
 Future<void> initCancelledInvoice() async {
   final objectBoxStore = await ObjectBoxStore.create();
+ // 2️⃣ Local datasource instance
+  final localImpl = CancelledInvoiceLocalDataSourceImpl(
+     objectBoxStore,
+  );
 
+   final remoteImpl = CancelledInvoiceRemoteDataSourceImpl(
+     pocketBaseClient: sl(),
+  );
   sl.registerLazySingleton(
     () => CancelledInvoiceBloc(
       deleteCancelledInvoice: sl(),
@@ -1003,19 +1065,32 @@ Future<void> initCancelledInvoice() async {
 
   sl.registerLazySingleton<CancelledInvoiceRepo>(
     () =>
-        CancelledInvoiceRepoImpl(localDataSource: sl(), remoteDataSource: sl()),
+        CancelledInvoiceRepoImpl(localDataSource: sl(), remoteDataSource: sl(), syncWorker: sl()), 
   );
 
   sl.registerLazySingleton<CancelledInvoiceLocalDataSource>(
-    () => CancelledInvoiceLocalDataSourceImpl(
-      cancelledInvoiceBox: objectBoxStore.store.box<CancelledInvoiceModel>(),
-      deliveryDataBox: objectBoxStore.store.box<DeliveryDataModel>(),
-      tripBox: objectBoxStore.store.box<TripModel>(),
-    ),
+    () => localImpl,
+  );
+
+   sl.registerLazySingleton<CancelledInvoiceLocalDataSourceImpl>(
+    () => localImpl,
   );
 
   sl.registerLazySingleton<CancelledInvoiceRemoteDataSource>(
-    () => CancelledInvoiceRemoteDataSourceImpl(pocketBaseClient: sl()),
+    () => remoteImpl,
+  );
+
+  sl.registerLazySingleton<CancelledInvoiceRemoteDataSourceImpl>(
+    () => remoteImpl,
+  );
+
+   // 8️⃣ Register sync worker
+  sl.registerLazySingleton<CancelledInvoiceSyncWorker>(
+    () => CancelledInvoiceSyncWorker(
+      local: sl<CancelledInvoiceLocalDataSourceImpl>(),
+      remote: sl<CancelledInvoiceRemoteDataSourceImpl>(),
+      interval: const Duration(seconds: 10),
+    ),
   );
 }
 
@@ -1040,11 +1115,13 @@ Future<void> initCollection() async {
   );
 
   sl.registerLazySingleton<CollectionLocalDataSource>(
-    () => CollectionLocalDataSourceImpl(objectBoxStore.store.box()),
+    () => CollectionLocalDataSourceImpl(objectBoxStore),
   );
   sl.registerLazySingleton<CollectionRemoteDataSource>(
     () => CollectionRemoteDataSourceImpl(pocketBaseClient: sl()),
   );
+
+ 
 }
 
 Future<void> initReturnItems() async {
@@ -1107,10 +1184,7 @@ Future<void> initAppLogs() async {
 
   // Repository
   sl.registerLazySingleton<LogsRepo>(
-    () => LogsRepoImpl(
-      logsLocalDatasource: sl(),
-      logsRemoteDataSource: sl(),
-    ),
+    () => LogsRepoImpl(logsLocalDatasource: sl(), logsRemoteDataSource: sl()),
   );
 
   // Local DataSource

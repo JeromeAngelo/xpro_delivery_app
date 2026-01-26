@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+
+import '../../../../delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
 abstract class DeliveryUpdateEvent extends Equatable {
   const DeliveryUpdateEvent();
 }
@@ -39,14 +41,19 @@ class LoadLocalBulkDeliveryStatusChoicesEvent extends DeliveryUpdateEvent {
 }
 
 
-// Existing events remain the same
 class UpdateDeliveryStatusEvent extends DeliveryUpdateEvent {
-  final String customerId;
-  final String statusId;
-  const UpdateDeliveryStatusEvent({required this.customerId, required this.statusId});
+  final String deliveryDataId;
+  final DeliveryStatusChoicesEntity status;
+
+  const UpdateDeliveryStatusEvent({
+    required this.deliveryDataId,
+    required this.status,
+  });
+
   @override
-  List<Object> get props => [customerId, statusId];
+  List<Object> get props => [deliveryDataId, status];
 }
+
 
 // Replace the existing CompleteDeliveryEvent with this:
 class CompleteDeliveryEvent extends DeliveryUpdateEvent {
@@ -145,4 +152,13 @@ class PinArrivedLocationEvent extends DeliveryUpdateEvent {
 
   @override
   List<Object> get props => [deliveryId];
+}
+
+class SyncDeliveryStatusChoicesEvent extends DeliveryUpdateEvent {
+  final String customerId;
+
+  const SyncDeliveryStatusChoicesEvent(this.customerId);
+
+  @override
+  List<Object> get props => [customerId];
 }

@@ -5,8 +5,8 @@ import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_p
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_state.dart';
 import 'package:x_pro_delivery_app/src/delivery_team/initial_screens/view_personel_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_team/initial_screens/view_trips_screens.dart';
 import 'package:x_pro_delivery_app/src/delivery_team/initial_screens/view_vehicle_screen.dart';

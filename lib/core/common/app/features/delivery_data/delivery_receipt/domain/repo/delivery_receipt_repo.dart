@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/entity/delivery_receipt_entity.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 
-import '../../../../Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import '../../../../trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 
 abstract class DeliveryReceiptRepo {
   const DeliveryReceiptRepo();

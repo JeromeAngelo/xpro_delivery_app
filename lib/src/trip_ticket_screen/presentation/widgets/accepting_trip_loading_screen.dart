@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_state.dart';
 import 'package:x_pro_delivery_app/core/services/app_debug_logger.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/warning_dialog.dart';
 
@@ -130,12 +130,12 @@ class _AcceptingTripLoadingScreenState extends State<AcceptingTripLoadingScreen>
           AppDebugLogger.instance.logInfo('✅ Trip accepted successfully: ${state.tripId}');
           AppDebugLogger.instance.logInfo('📍 Starting location tracking and navigating to checklist');
           
-          // Start comprehensive distance tracking for the accepted trip
-          context.read<TripBloc>().add(StartLocationTrackingEvent(
-            tripId: state.tripId,
-            updateInterval: const Duration(minutes: 5), // Time-based: every 5 minutes
-            distanceFilter: 5.0, // Distance-based: every 5 meters of movement
-          ));
+          // // Start comprehensive distance tracking for the accepted trip
+          // context.read<TripBloc>().add(StartLocationTrackingEvent(
+          //   tripId: state.tripId,
+          //   updateInterval: const Duration(minutes: 5), // Time-based: every 5 minutes
+          //   distanceFilter: 5.0, // Distance-based: every 5 meters of movement
+          // ));
           
           context.go('/checklist');
         }
@@ -184,7 +184,7 @@ class _AcceptingTripLoadingScreenState extends State<AcceptingTripLoadingScreen>
                     message = 'Checking authorization...';
                   } else if (state is TripAccepting) {
                     message = 'Accepting trip...';
-                  } else if (state is LocationTrackingStarted) {
+                  } else if (state is LocationTrackingStarting) {
                     message = 'Starting location tracking...';
                   }
                   

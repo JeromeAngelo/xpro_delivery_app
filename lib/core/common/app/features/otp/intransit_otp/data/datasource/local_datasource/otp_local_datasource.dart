@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 
+import '../../../../../../../../services/objectbox.dart';
+import '../../../../../trip_ticket/trip/data/models/trip_models.dart';
 import '../../models/otp_models.dart';
 
 
 abstract class OtpLocalDatasource {
+
+    Future<OtpModel?> getOtpById(String id);
+
+        Future<OtpModel?> getOtpByTripId(String tripId);
+
+
   Future<bool> verifyInTransitOtp({
     required String enteredOtp,
     required String generatedOtp,
@@ -21,9 +29,12 @@ abstract class OtpLocalDatasource {
 }
 
 class OtpLocalDatasourceImpl implements OtpLocalDatasource {
-  final Box<OtpModel> _otpBox;
+   Box<OtpModel> get otpBox => objectBoxStore.intransitOtpBox;
+     Box<TripModel> get tripBox => objectBoxStore.tripBox;
 
-  OtpLocalDatasourceImpl(this._otpBox);
+  final ObjectBoxStore objectBoxStore;
+
+  OtpLocalDatasourceImpl(this.objectBoxStore);
 
   @override
   Future<bool> verifyInTransitOtp({
@@ -35,7 +46,7 @@ class OtpLocalDatasourceImpl implements OtpLocalDatasource {
   }) async {
     try {
       debugPrint('📱 LOCAL: Verifying In-Transit OTP');
-      final query = _otpBox.query(OtpModel_.id.equals(otpId)).build();
+      final query = otpBox.query(OtpModel_.id.equals(otpId)).build();
       final otp = query.findFirst();
       query.close();
 
@@ -46,7 +57,7 @@ class OtpLocalDatasourceImpl implements OtpLocalDatasource {
         otp.intransitOdometer = odometerReading;
         otp.id = tripId;
         
-        _otpBox.put(otp);
+        otpBox.put(otp);
         debugPrint('✅ LOCAL: OTP verified and data saved');
         return true;
       }
@@ -66,7 +77,7 @@ class OtpLocalDatasourceImpl implements OtpLocalDatasource {
   }) async {
     try {
       debugPrint('📱 LOCAL: Verifying End-Delivery OTP');
-      final otps = _otpBox.getAll();
+      final otps = otpBox.getAll();
       
       if (otps.isNotEmpty) {
         final otp = otps.first;
@@ -74,7 +85,7 @@ class OtpLocalDatasourceImpl implements OtpLocalDatasource {
           otp.otpCode = enteredOtp;
           otp.isVerified = true;
           otp.verifiedAt = DateTime.now();
-          _otpBox.put(otp);
+          otpBox.put(otp);
           debugPrint('✅ LOCAL: End-Delivery OTP verified');
           return true;
         }
@@ -87,4 +98,99 @@ class OtpLocalDatasourceImpl implements OtpLocalDatasource {
       throw CacheException(message: e.toString());
     }
   }
+  @override
+Future<OtpModel?> getOtpById(String id) async {
+  try {
+    debugPrint('📱 LOCAL: Fetching OTP by ID → $id');
+
+    // -----------------------------------------------------
+    // 1️⃣ Query OTP by PB ID
+    // -----------------------------------------------------
+    final query =
+        otpBox.query(OtpModel_.id.equals(id)).build();
+    final otp = query.findFirst();
+    query.close();
+
+    if (otp == null) {
+      debugPrint('⚠️ OTP not found for ID: $id');
+      return null;
+    }
+
+    debugPrint('🔐 OTP found → id=${otp.id}, code=${otp.otpCode}');
+
+    // -----------------------------------------------------
+    // 2️⃣ Load Trip relation (ToOne)
+    // -----------------------------------------------------
+    final tripRef = otp.trip.target;
+    if (tripRef != null) {
+      final fullTrip = tripBox.get(tripRef.objectBoxId);
+      if (fullTrip != null) {
+        otp.trip.target = fullTrip;
+        otp.trip.targetId = fullTrip.objectBoxId;
+        debugPrint('🚚 Trip loaded → ${fullTrip.name}');
+      } else {
+        debugPrint('⚠️ Trip reference exists but cannot load full Trip');
+      }
+    } else {
+      debugPrint('ℹ️ OTP has no trip assigned');
+    }
+
+    debugPrint('✅ OTP fully loaded');
+    return otp;
+  } catch (e, st) {
+    debugPrint('❌ getOtpById ERROR: $e\n$st');
+    throw CacheException(message: e.toString());
+  }
+}
+
+
+@override
+Future<OtpModel?> getOtpByTripId(String tripId) async {
+  try {
+    debugPrint('📱 LOCAL: Fetching OTP by Trip ID → $tripId');
+
+    // -----------------------------------------------------
+    // 1️⃣ Find the Trip first (PB ID)
+    // -----------------------------------------------------
+    final tripQuery =
+        tripBox.query(TripModel_.id.equals(tripId)).build();
+    final trip = tripQuery.findFirst();
+    tripQuery.close();
+
+    if (trip == null) {
+      debugPrint('⚠️ Trip not found for tripId: $tripId');
+      return null;
+    }
+
+    // -----------------------------------------------------
+    // 2️⃣ Find OTP linked to this Trip
+    // -----------------------------------------------------
+    final otpQuery =
+        otpBox.query(OtpModel_.trip.equals(trip.objectBoxId)).build();
+    final otp = otpQuery.findFirst();
+    otpQuery.close();
+
+    if (otp == null) {
+      debugPrint('⚠️ No OTP found for trip: ${trip.name}');
+      return null;
+    }
+
+    debugPrint(
+      '🔐 OTP found for trip → code=${otp.otpCode}, verified=${otp.isVerified}',
+    );
+
+    // -----------------------------------------------------
+    // 3️⃣ Attach full Trip relation
+    // -----------------------------------------------------
+    otp.trip.target = trip;
+    otp.trip.targetId = trip.objectBoxId;
+
+    debugPrint('✅ OTP fully loaded with Trip relation');
+    return otp;
+  } catch (e, st) {
+    debugPrint('❌ getOtpByTripId ERROR: $e\n$st');
+    throw CacheException(message: e.toString());
+  }
+}
+
 }

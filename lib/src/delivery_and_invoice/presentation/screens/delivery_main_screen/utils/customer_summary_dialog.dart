@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 
 class CustomerSummaryDialog extends StatelessWidget {
   final DeliveryDataEntity deliveryData;
@@ -40,7 +40,7 @@ class CustomerSummaryDialog extends StatelessWidget {
                     Icons.store,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: Text(deliveryData.customer.target?.name ?? 'N/A'),
+                  title: Text(deliveryData.storeName ?? 'N/A'),
                   subtitle: const Text('Store Name'),
                 ),
                 ListTile(

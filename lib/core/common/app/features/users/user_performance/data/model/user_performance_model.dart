@@ -1,27 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:objectbox/objectbox.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/user_performance/domain/entity/user_performance_entity.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
 
+import '../../../../../../../enums/sync_status_enums.dart' show SyncStatus;
 @Entity()
 class UserPerformanceModel extends UserPerformanceEntity {
-  @Id()
+  // --------------------------------------------------------------------------
+  // OBJECTBOX ID
+  // --------------------------------------------------------------------------
+  @Id(assignable: true)
   int objectBoxId = 0;
-  
+
+  // --------------------------------------------------------------------------
+  // POCKETBASE METADATA
+  // --------------------------------------------------------------------------
   @Property()
-  String pocketbaseId;
+  String pocketbaseId = '';
+
+  // --------------------------------------------------------------------------
+  // RELATIONS
+  // --------------------------------------------------------------------------
+  /// ✅ SINGLE SOURCE OF TRUTH for user
+  final user = ToOne<LocalUsersModel>();
+
+  // --------------------------------------------------------------------------
+  // SYNC / METADATA
+  // --------------------------------------------------------------------------
+  @Property()
+  DateTime? lastLocalUpdatedAt;
 
   @Property()
-  String? userId;
+  String syncStatus = SyncStatus.synced.name;
 
+  @Property()
+  int retryCount = 0;
+
+  @Property()
+  DateTime? lastSyncAttemptAt;
+
+  @Property()
+  DateTime? nextRetryAt;
+
+  @Property()
+  String? lastSyncError;
+
+  @Property()
+  int version = 0;
+
+  @Property()
+  String? updatedBy;
+
+  @Property()
+  String? deviceId;
+
+  // --------------------------------------------------------------------------
+  // PERFORMANCE FIELDS
+  // --------------------------------------------------------------------------
+  @override
+  @Property()
+  double? totalDeliveries;
+
+  @override
+  @Property()
+  double? successfulDeliveries;
+
+  @override
+  @Property()
+  double? cancelledDeliveries;
+
+  @override
+  @Property()
+  double? deliveryAccuracy;
+
+  // --------------------------------------------------------------------------
+  // TIMESTAMPS
+  // --------------------------------------------------------------------------
+  @override
+  @Property()
+  DateTime? created;
+
+  @override
+  @Property()
+  DateTime? updated;
+
+  // --------------------------------------------------------------------------
+  // CONSTRUCTOR
+  // --------------------------------------------------------------------------
   UserPerformanceModel({
-    super.dbId = 0,
+    super.dbId,
     super.id,
     super.collectionId,
     super.collectionName,
-    super.userData,
+    LocalUsersModel? userData,
     super.totalDeliveries,
     super.successfulDeliveries,
     super.cancelledDeliveries,
@@ -29,58 +101,54 @@ class UserPerformanceModel extends UserPerformanceEntity {
     super.created,
     super.updated,
     this.objectBoxId = 0,
-  }) : 
-    pocketbaseId = id ?? '',
-    userId = userData?.id;
+  }) : pocketbaseId = id ?? '' {
+    if (userData != null) {
+      user.target = userData;
+    }
+  }
 
+  // --------------------------------------------------------------------------
+  // JSON HELPERS
+  // --------------------------------------------------------------------------
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    try {
+      if (value is DateTime) return value;
+      return DateTime.parse(value.toString());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  // --------------------------------------------------------------------------
+  // FROM JSON
+  // --------------------------------------------------------------------------
   factory UserPerformanceModel.fromJson(DataMap json) {
-    // Add safe date parsing
-    DateTime? parseDate(dynamic value) {
-      if (value == null || value.toString().isEmpty) return null;
-      try {
-        return DateTime.parse(value.toString());
-      } catch (_) {
-        return null;
-      }
-    }
+    debugPrint('🔄 MODEL: Creating UserPerformanceModel from JSON');
 
-    // Parse double values safely
-    double? parseDouble(dynamic value) {
-      if (value == null) return null;
-      try {
-        if (value is double) return value;
-        if (value is int) return value.toDouble();
-        if (value is String) return double.tryParse(value);
-        return null;
-      } catch (e) {
-        debugPrint('❌ Error parsing double value: $e');
-        return null;
-      }
-    }
-
-    // Handle expanded data for relations
     final expandedData = json['expand'] as Map<String, dynamic>?;
-    
-    // Process user relation
+
+    // -----------------------------
+    // USER RELATION
+    // -----------------------------
     LocalUsersModel? userModel;
-    if (expandedData != null && expandedData.containsKey('user')) {
-      final userData = expandedData['user'];
-      if (userData != null) {
-        if (userData is RecordModel) {
-          userModel = LocalUsersModel.fromJson({
-            'id': userData.id,
-            'collectionId': userData.collectionId,
-            'collectionName': userData.collectionName,
-            ...userData.data,
-            'expand': userData.expand,
-          });
-        } else if (userData is Map) {
-          userModel = LocalUsersModel.fromJson(userData as DataMap);
-        }
+    final userData = expandedData?['user'] ?? json['user'];
+
+    if (userData != null) {
+      if (userData is Map<String, dynamic>) {
+        userModel = LocalUsersModel.fromJson(userData);
+      } else if (userData is LocalUsersModel) {
+        userModel = userData;
+      } else if (userData is String && userData.isNotEmpty) {
+        userModel = LocalUsersModel(id: userData);
       }
-    } else if (json['user'] != null) {
-      // If not expanded, just store the ID
-      userModel = LocalUsersModel(id: json['user'].toString());
     }
 
     return UserPerformanceModel(
@@ -88,14 +156,15 @@ class UserPerformanceModel extends UserPerformanceEntity {
       collectionId: json['collectionId']?.toString(),
       collectionName: json['collectionName']?.toString(),
       userData: userModel,
-      totalDeliveries: parseDouble(json['totalDeliveries']),
-      successfulDeliveries: parseDouble(json['successfulDeliveries']),
-      cancelledDeliveries: parseDouble(json['cancelledDeliveries']),
-      deliveryAccuracy: parseDouble(json['deliveryAccuracy']),
-      created: parseDate(json['created']),
-      updated: parseDate(json['updated']),
+      totalDeliveries: _parseDouble(json['totalDeliveries']),
+      successfulDeliveries: _parseDouble(json['successfulDeliveries']),
+      cancelledDeliveries: _parseDouble(json['cancelledDeliveries']),
+      deliveryAccuracy: _parseDouble(json['deliveryAccuracy']),
+      created: _parseDate(json['created']),
+      updated: _parseDate(json['updated']),
     );
   }
+
 
   DataMap toJson() {
     return {
@@ -136,14 +205,14 @@ class UserPerformanceModel extends UserPerformanceEntity {
       updated: updated ?? this.updated,
       objectBoxId: objectBoxId,
     );
-    
+
     // Handle user relation
     if (userData != null) {
       model.user.target = userData;
     } else if (user.target != null) {
       model.user.target = user.target;
     }
-    
+
     return model;
   }
 
@@ -182,14 +251,13 @@ class UserPerformanceModel extends UserPerformanceEntity {
   // Method to calculate and update delivery accuracy
   UserPerformanceModel calculateAccuracy() {
     double? newAccuracy;
-    if (totalDeliveries != null && totalDeliveries! > 0 && successfulDeliveries != null) {
+    if (totalDeliveries != null &&
+        totalDeliveries! > 0 &&
+        successfulDeliveries != null) {
       newAccuracy = (successfulDeliveries! / totalDeliveries!) * 100;
     }
-    
-    return copyWith(
-      deliveryAccuracy: newAccuracy,
-      updated: DateTime.now(),
-    );
+
+    return copyWith(deliveryAccuracy: newAccuracy, updated: DateTime.now());
   }
 
   // Method to add a delivery
@@ -198,12 +266,14 @@ class UserPerformanceModel extends UserPerformanceEntity {
     bool isCancelled = false,
   }) {
     final newTotal = (totalDeliveries ?? 0) + 1;
-    final newSuccessful = isSuccessful 
-        ? (successfulDeliveries ?? 0) + 1 
-        : (successfulDeliveries ?? 0);
-    final newCancelled = isCancelled 
-        ? (cancelledDeliveries ?? 0) + 1 
-        : (cancelledDeliveries ?? 0);
+    final newSuccessful =
+        isSuccessful
+            ? (successfulDeliveries ?? 0) + 1
+            : (successfulDeliveries ?? 0);
+    final newCancelled =
+        isCancelled
+            ? (cancelledDeliveries ?? 0) + 1
+            : (cancelledDeliveries ?? 0);
 
     return copyWith(
       totalDeliveries: newTotal,

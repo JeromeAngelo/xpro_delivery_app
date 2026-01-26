@@ -2,19 +2,22 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:objectbox/objectbox.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 
 import '../../../../delivery_vehicle_data/data/model/delivery_vehicle_model.dart';
-import '../../../../../Trip_Ticket/trip/data/models/trip_models.dart';
+import '../../../../../trip_ticket/trip/data/models/trip_models.dart';
 import '../../../../personels/data/models/personel_models.dart';
 import '../../models/delivery_team_model.dart';
 
 abstract class DeliveryTeamDatasource {
   Future<DeliveryTeamModel> loadDeliveryTeam(String tripId);
   Future<DeliveryTeamModel> loadDeliveryTeamById(String deliveryTeamId);
+  Future<DeliveryTeamModel> syncDeliveryTeamByTrip(String tripId);
+
   Future<DeliveryTeamModel> assignDeliveryTeamToTrip({
     required String tripId,
     required String deliveryTeamId,
@@ -30,65 +33,58 @@ class DeliveryTeamDatasourceImpl implements DeliveryTeamDatasource {
 
   final PocketBase _pocketBaseClient;
   final Box<DeliveryTeamModel> _deliveryTeamBox;
-  
-@override
+  @override
 Future<DeliveryTeamModel> loadDeliveryTeam(String tripId) async {
-try {
-debugPrint('🔄 Starting delivery team load with trip ID: $tripId');
+  try {
+    debugPrint('🔄 Starting delivery team load with trip ID: $tripId');
 
-// Extract trip ID if we received a JSON object
-String actualTripId;
-if (tripId.startsWith('{')) {
-final tripData = jsonDecode(tripId);
-actualTripId = tripData['id'];
-} else {
-actualTripId = tripId;
-}
-
-debugPrint('🎯 Extracted trip ID: $actualTripId');
-
-// If actualTripId looks like a tripNumberId (starts with TRIP-), 
-// // we need to find the actual PocketBase record ID
-String pocketBaseTripId = actualTripId;
-
-    if (actualTripId.startsWith('TRIP-')) {
-      debugPrint('🔍 Trip ID appears to be tripNumberId, finding PocketBase record ID...');
-      try {
-        final tripResults = await _pocketBaseClient.collection('tripticket').getFullList(
-          filter: 'tripNumberId = "$actualTripId"',
-        );
-        
-        if (tripResults.isNotEmpty) {
-          pocketBaseTripId = tripResults.first.id;
-          debugPrint('✅ Found PocketBase trip ID: $pocketBaseTripId for tripNumberId: $actualTripId');
-        } else {
-          debugPrint('⚠️ No trip found with tripNumberId: $actualTripId');
-        }
-      } catch (e) {
-        debugPrint('⚠️ Failed to resolve tripNumberId: $e');
-      }
-    }
-
+    // Fetch delivery team by actual trip record ID
     final result = await _pocketBaseClient.collection('deliveryTeam').getFullList(
       expand: 'personels,tripTicket,deliveryVehicle',
-      filter: 'tripTicket = "$pocketBaseTripId"',
+      filter: 'tripTicket = "$tripId"', // using actual PB record ID
     );
 
+    debugPrint('📡 Raw DeliveryTeam Result Count: ${result.length}');
+
     if (result.isEmpty) {
+      debugPrint('⚠️ No delivery team found for trip ID: $tripId');
       throw const ServerException(
         message: 'No delivery team found for this trip',
         statusCode: '404',
       );
     }
 
+    // RAW RECORD DUMP (before mapping)
     final record = result.first;
-    
-    // FIXED: Process the record like delivery data datasource
+
+    debugPrint('📦 RAW DELIVERY TEAM RECORD (before mapping):');
+    debugPrint('🆔 id: ${record.id}');
+    debugPrint('📚 collectionName: ${record.collectionName}');
+    debugPrint('👤 name: ${record.data['name']}');
+    debugPrint('🚌 deliveryVehicle: ${record.data['deliveryVehicle']}');
+    debugPrint('🧑‍🤝‍🧑 personels(list): ${record.data['personels']}');
+    debugPrint('🧾 tripTicket: ${record.data['tripTicket']}');
+    debugPrint('🔍 expanded keys: ${record.expand.keys.toList()}');
+
+    // EXPANDED DATA RAW DUMP
+    if (record.expand.isNotEmpty) {
+      debugPrint('📦 EXPANDED DATA:');
+
+      record.expand.forEach((key, value) {
+        debugPrint('   ➜ $key: (${value.runtimeType})');
+
+        for (var i = 0; i < value.length; i++) {
+          debugPrint('      [$i] → id: ${value[i].id}, name: ${value[i].data['name']}');
+        }
+            });
+    }
+
+    // Process model
     final deliveryTeamModel = _processDeliveryTeamRecord(record);
-    
+
     debugPrint('✅ Delivery team data processed successfully');
-    
     return deliveryTeamModel;
+
   } catch (e) {
     debugPrint('❌ Error in delivery team load: $e');
     throw ServerException(
@@ -97,6 +93,7 @@ String pocketBaseTripId = actualTripId;
     );
   }
 }
+
 
 @override
 Future<DeliveryTeamModel> loadDeliveryTeamById(String deliveryTeamId) async {
@@ -243,7 +240,7 @@ DeliveryTeamModel _processDeliveryTeamRecord(RecordModel record) {
     id: record.id,
     collectionId: record.collectionId,
     collectionName: record.collectionName,
-    personels: personelsList,
+    personelsList: personelsList,
     deliveryVehicleModel: deliveryVehicleModel,
     tripModel: tripModel,
     activeDeliveries: _safeParseInt(record.data['activeDeliveries']),
@@ -278,6 +275,53 @@ double? _safeParseDouble(dynamic value) {
   Future<DeliveryTeamModel> assignDeliveryTeamToTrip({required String tripId, required String deliveryTeamId}) {
     // TODO: implement assignDeliveryTeamToTrip
     throw UnimplementedError();
+  }
+  
+  @override
+  Future<DeliveryTeamModel> syncDeliveryTeamByTrip(String tripId) async {
+   
+  try {
+    debugPrint('🔄 Starting delivery team load with trip ID: $tripId');
+
+    // Extract trip ID if we received a JSON object
+    String actualTripId;
+    if (tripId.startsWith('{')) {
+      final tripData = jsonDecode(tripId);
+      actualTripId = tripData['id'];
+    } else {
+      actualTripId = tripId;
+    }
+
+    debugPrint('🎯 Extracted trip ID: $actualTripId');
+
+    // ✅ Directly use the actual trip record ID (not tripNumberId)
+    final pocketBaseTripId = actualTripId;
+
+    // Fetch delivery team by actual trip record ID
+    final result = await _pocketBaseClient.collection('deliveryTeam').getFullList(
+      expand: 'personels,tripTicket,deliveryVehicle',
+      filter: 'tripTicket.id = "$pocketBaseTripId"', // ✅ FIXED: use actual trip record ID
+    );
+
+    if (result.isEmpty) {
+      throw const ServerException(
+        message: 'No delivery team found for this trip',
+        statusCode: '404',
+      );
+    }
+
+    final record = result.first;
+    final deliveryTeamModel = _processDeliveryTeamRecord(record);
+
+    debugPrint('✅ Delivery team data processed successfully');
+    return deliveryTeamModel;
+  } catch (e) {
+    debugPrint('❌ Error in delivery team load: $e');
+    throw ServerException(
+      message: 'Failed to load delivery team: ${e.toString()}',
+      statusCode: '500',
+    );
+  }
   }
 
 

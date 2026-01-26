@@ -1,0 +1,85 @@
+import 'package:equatable/equatable.dart';
+import 'package:objectbox/objectbox.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/customer_data/data/model/customer_data_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/data/model/delivery_data_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/data/model/invoice_data_model.dart';
+import 'package:x_pro_delivery_app/core/enums/undeliverable_reason.dart';
+
+import '../../../../../../../enums/sync_status_enums.dart';
+@Entity()
+class CancelledInvoiceEntity extends Equatable {
+  @Id()
+  int dbId = 0;
+
+  final String? id;
+  final String? collectionId;
+  final String? collectionName;
+
+  // Relations
+  final ToOne<DeliveryDataModel> deliveryData = ToOne<DeliveryDataModel>();
+  final ToOne<TripModel> trip = ToOne<TripModel>();
+  final ToOne<CustomerDataModel> customer = ToOne<CustomerDataModel>();
+  final ToOne<InvoiceDataModel> invoice = ToOne<InvoiceDataModel>();
+  final ToMany<InvoiceDataModel> invoices = ToMany<InvoiceDataModel>();
+
+  UndeliverableReason? reason;
+  String? image;
+
+  // Standard fields
+  final DateTime? created;
+  DateTime? updated;
+
+  // 🔥 Offline-first sync fields
+  String syncStatus;           // 'pending', 'synced', 'failed'
+  int retryCount;
+  DateTime? lastSyncAttemptAt;
+  DateTime? lastLocalUpdatedAt;
+CancelledInvoiceEntity({
+  this.dbId = 0,
+  this.id,
+  this.collectionId,
+  this.collectionName,
+  DeliveryDataModel? deliveryDataModel,
+  TripModel? tripData,
+  CustomerDataModel? customerData,
+  InvoiceDataModel? invoiceData,
+  List<InvoiceDataModel>? invoicesList,
+  this.reason,
+  this.image,
+  this.created,
+  this.updated,
+  String? syncStatus, // optional parameter
+  this.retryCount = 0,
+  this.lastSyncAttemptAt,
+  this.lastLocalUpdatedAt,
+}) : syncStatus = syncStatus ?? SyncStatus.pending.name // set default here
+{
+  if (deliveryDataModel != null) deliveryData.target = deliveryDataModel;
+  if (tripData != null) trip.target = tripData;
+  if (customerData != null) customer.target = customerData;
+  if (invoiceData != null) invoice.target = invoiceData;
+  if (invoicesList != null) invoices.addAll(invoicesList);
+}
+
+
+  @override
+  List<Object?> get props => [
+        id,
+        collectionId,
+        collectionName,
+        deliveryData.target?.id,
+        trip.target?.id,
+        customer.target?.id,
+        invoice.target?.id,
+        invoices,
+        reason,
+        image,
+        created,
+        updated,
+        syncStatus,
+        retryCount,
+        lastSyncAttemptAt,
+        lastLocalUpdatedAt,
+      ];
+}

@@ -32,7 +32,7 @@ class InvoiceItemsLocalDataSourceImpl implements InvoiceItemsLocalDataSource {
       debugPrint('📱 LOCAL: Fetching invoice items for invoice data ID: $invoiceDataId');
 
       final query = _invoiceItemsBox.query(
-        InvoiceItemsModel_.invoiceDataId.equals(invoiceDataId)
+        InvoiceItemsModel_.invoiceData.equals(invoiceDataId as int)
       ).build();
       
       final invoiceItems = query.find();

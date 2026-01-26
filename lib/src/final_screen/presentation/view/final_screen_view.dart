@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_event.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/default_drawer.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
@@ -57,10 +57,7 @@ class _FinalScreenViewState extends State<FinalScreenView>
                   icon: Icon(Icons.receipt_long_outlined),
                   text: 'Collections',
                 ),
-                Tab(
-                  icon: Icon(Icons.keyboard_return_sharp),
-                  text: 'Returns',
-                ),
+                Tab(icon: Icon(Icons.keyboard_return_sharp), text: 'Returns'),
                 Tab(
                   icon: Icon(Icons.cancel_presentation_rounded),
                   text: 'Undelivered',
@@ -88,45 +85,48 @@ class _FinalScreenViewState extends State<FinalScreenView>
         controller: _tabController,
         children: const [
           FinalCollectionScreen(),
-         // SummaryReturnScreen(),
-         FinalReturnScreen(),
+          // SummaryReturnScreen(),
+          FinalReturnScreen(),
           SummaryUndeliverableScreen(),
         ],
       ),
-      // In the build method, update the bottom navigation bar:
 
-bottomNavigationBar: BlocBuilder<AuthBloc, AuthState>(
-  builder: (context, state) {
-    if (state is UserTripLoaded && state.trip.id != null) {
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: RoundedButton(
-          label: 'End Trip',
-          onPressed: () {
-            showDialog(
-              context: context,
-              barrierDismissible: false, // Prevent dismissing by tapping outside
-              builder: (context) => ConfirmationDialog(
-                onConfirm: () {
-                  debugPrint('🎫 Ending trip with ID: ${state.trip.id}');
-                  context
-                      .read<TripBloc>()
-                      .add(EndTripEvent(state.trip.id!));
-                  context
-                      .read<TripBloc>()
-                      .add(const StopLocationTrackingEvent());
-                  // Don't navigate here, let the dialog's BlocListener handle it
+      // In the build method, update the bottom navigation bar:
+      bottomNavigationBar: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is UserTripLoaded && state.trip.id != null) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: RoundedButton(
+                label: 'End Trip',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible:
+                        false, // Prevent dismissing by tapping outside
+                    builder:
+                        (context) => ConfirmationDialog(
+                          onConfirm: () {
+                            debugPrint(
+                              '🎫 Ending trip with ID: ${state.trip.id}',
+                            );
+                            context.read<TripBloc>().add(
+                              EndTripEvent(state.trip.id ?? ''),
+                            );
+                            context.read<TripBloc>().add(
+                              const StopLocationTrackingEvent(),
+                            );
+                            // Don't navigate here, let the dialog's BlocListener handle it
+                          },
+                        ),
+                  );
                 },
               ),
             );
-          },
-        ),
-      );
-    }
-    return const SizedBox.shrink();
-  },
-),
-
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 }

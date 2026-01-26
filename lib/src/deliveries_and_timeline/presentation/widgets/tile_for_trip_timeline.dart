@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip_updates/domain/entity/trip_update_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/domain/entity/trip_update_entity.dart';
 import 'package:x_pro_delivery_app/core/enums/trip_update_status.dart';
 
 import 'package:x_pro_delivery_app/core/common/widgets/trip_update_icons.dart';

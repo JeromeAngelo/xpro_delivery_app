@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
 
-import '../../../../../../core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-
+import '../../../../../../core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 class ConfirmButtonProducts extends StatelessWidget {
   final String invoiceId;
   final String deliveryDataId;
@@ -22,8 +21,19 @@ class ConfirmButtonProducts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+      // ✅ Rebuild only when the unloading flag for THIS delivery can change
+      buildWhen: (prev, curr) {
+        final prevUnloading = _extractIsUnloading(prev);
+        final currUnloading = _extractIsUnloading(curr);
+
+        // If state type changed (loading -> loaded), allow rebuild
+        if (prev.runtimeType != curr.runtimeType) return true;
+
+        // If unloading flag changed, allow rebuild
+        return prevUnloading != currUnloading;
+      },
       builder: (context, state) {
-        final isUnloading = _checkIfUnloading(state);
+        final isUnloading = _extractIsUnloading(state);
 
         debugPrint('🔍 Button state check:');
         debugPrint('   🆔 Invoice ID: $invoiceId');
@@ -47,27 +57,21 @@ class ConfirmButtonProducts extends StatelessWidget {
           ),
           child: SafeArea(
             child: RoundedButton(
-              label:
-                  isUnloading
-                      ? 'Proceed to Order Summary'
-                      : 'Waiting for Unloading...',
+              // ✅ Correct label logic
+              label: isUnloading
+                  ? 'Proceed to Order Summary'
+                  : 'Waiting for Unloading...',
               onPressed: isUnloading ? () => _handleProceed(context) : null,
-              buttonColour:
-                  isUnloading
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withOpacity(0.3),
+              buttonColour: isUnloading
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
               icon: Icon(
                 isUnloading
                     ? Icons.check_circle_outline
                     : Icons.hourglass_empty,
-                color:
-                    isUnloading
-                        ? Theme.of(context).colorScheme.surface
-                        : Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.5),
+                color: isUnloading
+                    ? Theme.of(context).colorScheme.surface
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
             ),
           ),
@@ -76,91 +80,46 @@ class ConfirmButtonProducts extends StatelessWidget {
     );
   }
 
-  bool _checkIfUnloading(DeliveryDataState state) {
-    debugPrint(
-      '🔍 Checking unloading status for delivery data: $deliveryDataId',
-    );
+  // ✅ Single source of truth: read unloading from whatever state holds the data
+  bool _extractIsUnloading(DeliveryDataState state) {
+    debugPrint('🔍 Checking unloading status for deliveryDataId=$deliveryDataId');
 
-    // Check if we have delivery data loaded (list)
-    if (state is DeliveryDataLoaded) {
-      // Check if deliveryDataList is a List
-      if (state.deliveryData is List<DeliveryDataEntity>) {
-        final deliveryDataList = state.deliveryData as List<DeliveryDataEntity>;
-        try {
-          final deliveryData = deliveryDataList.firstWhere(
-            (data) => data.id == deliveryDataId,
-          );
+    DeliveryDataEntity? delivery;
 
-          final isUnloading = _hasUnloadingStatus(deliveryData);
-          debugPrint('✅ Found delivery data in list');
-          debugPrint('🚛 Has unloading status: $isUnloading');
-          return isUnloading;
-        } catch (e) {
-          debugPrint('⚠️ Delivery data not found in loaded list: $e');
-        }
+    // ✅ Most common: list by trip
+    if (state is DeliveryDataByTripLoaded) {
+      final match = state.deliveryData.where((d) => d.id == deliveryDataId);
+      if (match.isNotEmpty) {
+        delivery = match.first;
+        debugPrint('✅ Found in DeliveryDataByTripLoaded list');
       } else {
-        // If it's a single entity, check if it matches our ID
-        final deliveryData = state.deliveryData;
-        if (deliveryData.id == deliveryDataId) {
-          final isUnloading = _hasUnloadingStatus(deliveryData);
-          debugPrint('✅ Found single delivery data');
-          debugPrint('🚛 Has unloading status: $isUnloading');
-          return isUnloading;
-        }
+        debugPrint('⚠️ Not found in DeliveryDataByTripLoaded list');
       }
     }
 
-    // Check if we have a single delivery data loaded by ID
-    if (state is DeliveryDataLoaded &&
-        state.deliveryData.id == deliveryDataId) {
-      final isUnloading = _hasUnloadingStatus(state.deliveryData);
-      debugPrint('✅ Found single delivery data by ID');
-      debugPrint('🚛 Has unloading status: $isUnloading');
-      return isUnloading;
-    }
-
-    // Check if invoice was just set to unloading
-
-    debugPrint('❌ No matching delivery data found or not in unloading status');
-    return false;
-  }
-
-  bool _hasUnloadingStatus(DeliveryDataEntity deliveryData) {
-    debugPrint('🔍 Checking delivery updates for unloading status');
-    debugPrint(
-      '   📦 Number of delivery updates: ${deliveryData.deliveryUpdates.length}',
-    );
-
-    // Check if any delivery update has "Unloading" status
-    for (int i = 0; i < deliveryData.deliveryUpdates.length; i++) {
-      final update = deliveryData.deliveryUpdates[i];
-      final title = update.title?.toLowerCase().trim();
-      debugPrint(
-        '   📋 Update ${i + 1}: "${update.title}" (normalized: "$title")',
-      );
-
-      if (title == 'unloading') {
-        debugPrint('✅ Found unloading status in delivery updates');
-        return true;
+    // ✅ Single delivery loaded by ID
+    if (delivery == null && state is DeliveryDataLoaded) {
+      final d = state.deliveryData;
+      if (d.id == deliveryDataId) {
+        delivery = d;
+        debugPrint('✅ Found in DeliveryDataLoaded single entity');
+      } else {
+        debugPrint('⚠️ DeliveryDataLoaded does not match id');
       }
     }
 
-    // Also check the latest delivery update
-    if (deliveryData.deliveryUpdates.isNotEmpty) {
-      final latestUpdate = deliveryData.deliveryUpdates.last;
-      final latestTitle = latestUpdate.title?.toLowerCase().trim();
-      debugPrint(
-        '📍 Latest delivery update: "${latestUpdate.title}" (normalized: "$latestTitle")',
-      );
-
-      if (latestTitle == 'unloading') {
-        debugPrint('✅ Latest update is unloading');
-        return true;
-      }
+    if (delivery == null) {
+      debugPrint('❌ No matching delivery data found in current state');
+      return false;
     }
 
-    debugPrint('❌ No unloading status found in delivery updates');
-    return false;
+    final isUnloading = delivery.isUnloading == true;
+
+    debugPrint('   📦 DeliveryData ID: ${delivery.id}');
+    debugPrint('   📤 isUnloading: ${delivery.isUnloading}');
+    debugPrint('✅ Computed isUnloading = $isUnloading');
+
+    return isUnloading;
   }
 
   void _handleProceed(BuildContext context) {
@@ -169,7 +128,6 @@ class ConfirmButtonProducts extends StatelessWidget {
     debugPrint('   📦 Delivery Data ID: $deliveryDataId');
     debugPrint('   🔢 Invoice Number: $invoiceNumber');
 
-    // Navigate to confirmation screen with updated route
     context.push(
       '/confirm-order/$invoiceId/$deliveryDataId',
       extra: {

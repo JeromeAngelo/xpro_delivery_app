@@ -4,711 +4,2830 @@
   "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
   "entities": [
     {
-      "id": "1:8278670380677883868",
-      "lastPropertyId": "28:1119544490582682879",
-      "name": "LocalUser",
+      "id": "1:2605450421295684748",
+      "lastPropertyId": "15:4548969816478219072",
+      "name": "CancelledInvoiceEntity",
       "properties": [
         {
-          "id": "1:8092750327433260",
+          "id": "1:3535851841518460987",
           "name": "dbId",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "3:3772493454375589782",
-          "name": "email",
-          "type": 9
-        },
-        {
-          "id": "4:3455812979128153817",
-          "name": "profilePic",
-          "type": 9
-        },
-        {
-          "id": "9:2239427814570972009",
-          "name": "name",
-          "type": 9
-        },
-        {
-          "id": "10:2114045489098269834",
-          "name": "tripNumberId",
-          "type": 9
-        },
-        {
-          "id": "22:3520250928743885914",
+          "id": "2:4235402779927569635",
           "name": "id",
           "type": 9
         },
         {
-          "id": "23:5097115423714955296",
+          "id": "3:7345501325407564882",
           "name": "collectionId",
           "type": 9
         },
         {
-          "id": "24:6148436269133931972",
+          "id": "4:5071637786876982816",
           "name": "collectionName",
           "type": 9
         },
         {
-          "id": "25:761780313740976048",
+          "id": "5:5418374351722401459",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "1:5500362182318245056",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "6:3541909969634049547",
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "40:124209545521540075",
+          "indexId": "2:2615559763271583655",
           "relationTarget": "TripModel"
         },
         {
-          "id": "26:8952936577818342021",
-          "name": "deliveryTeamId",
+          "id": "7:7853962119807515754",
+          "name": "customerId",
           "type": 11,
           "flags": 520,
-          "indexId": "42:6459650309448698702",
-          "relationTarget": "DeliveryTeamModel"
+          "indexId": "3:1174032566070523324",
+          "relationTarget": "CustomerDataModel"
         },
         {
-          "id": "27:3760358077954491990",
-          "name": "token",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "2:2437256378976969932",
-      "lastPropertyId": "8:2136454817149967725",
-      "name": "ChecklistEntity",
-      "properties": [
-        {
-          "id": "1:4477987743165216934",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:3931591266541154713",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:5867174164226154781",
-          "name": "objectName",
-          "type": 9
-        },
-        {
-          "id": "4:522061422086891091",
-          "name": "isChecked",
-          "type": 1
-        },
-        {
-          "id": "5:4434074810226791799",
-          "name": "status",
-          "type": 9
-        },
-        {
-          "id": "6:8940432436861085673",
-          "name": "timeCompleted",
-          "type": 10
-        },
-        {
-          "id": "7:94474667100763187",
-          "name": "tripId",
+          "id": "8:3740412975153501993",
+          "name": "invoiceId",
           "type": 11,
           "flags": 520,
-          "indexId": "41:5008797146945500630",
-          "relationTarget": "TripModel"
+          "indexId": "4:5707081153607295829",
+          "relationTarget": "InvoiceDataModel"
         },
         {
-          "id": "8:2136454817149967725",
-          "name": "description",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "3:1642281493645422089",
-      "lastPropertyId": "9:3579455420369730652",
-      "name": "ChecklistModel",
-      "properties": [
-        {
-          "id": "6:8031641174212398977",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "7:2912809523573672447",
-          "name": "tripId",
-          "type": 9
-        },
-        {
-          "id": "8:4133133059971107355",
-          "name": "pocketBaseId",
-          "type": 9
-        },
-        {
-          "id": "9:3579455420369730652",
-          "name": "isChecked",
-          "type": 1
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "6:3030380395827557545",
-      "lastPropertyId": "15:8187351072217879784",
-      "name": "DeliveryUpdateEntity",
-      "properties": [
-        {
-          "id": "1:2872014589800890025",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:4510343960395030145",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:1963893039403240492",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:1149887436990373064",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:6023778725503830578",
-          "name": "title",
-          "type": 9
-        },
-        {
-          "id": "6:3389140036369585595",
-          "name": "subtitle",
-          "type": 9
-        },
-        {
-          "id": "7:3751266713506871109",
-          "name": "time",
-          "type": 10
-        },
-        {
-          "id": "8:9210493944751373739",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "9:7534054163778508981",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "10:4301795890561203656",
-          "name": "customer",
-          "type": 9
-        },
-        {
-          "id": "11:339301082955252596",
-          "name": "isAssigned",
-          "type": 1
-        },
-        {
-          "id": "12:2514652108917566499",
-          "name": "assignedTo",
-          "type": 9
-        },
-        {
-          "id": "13:4125497972464191773",
+          "id": "9:5121991860209875748",
           "name": "image",
           "type": 9
         },
         {
-          "id": "14:9207743476254050728",
-          "name": "remarks",
-          "type": 9
-        },
-        {
-          "id": "15:8187351072217879784",
-          "name": "deliveryDataId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "53:8117827002727378821",
-          "relationTarget": "DeliveryDataModel"
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "7:743757926875478403",
-      "lastPropertyId": "15:3835893324442889868",
-      "name": "DeliveryUpdateModel",
-      "properties": [
-        {
-          "id": "13:3125113937303846028",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "14:2390634401853740969",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "15:3835893324442889868",
-          "name": "customer",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "10:4782152680528557896",
-      "lastPropertyId": "9:3565892398588450264",
-      "name": "PersonelEntity",
-      "properties": [
-        {
-          "id": "1:9166391245504139454",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:6959278537002403254",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:3895615444469194375",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:7572438726892229144",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:7181989841462903246",
-          "name": "name",
-          "type": 9
-        },
-        {
-          "id": "6:6400523452675398463",
+          "id": "10:881982281013014506",
           "name": "created",
           "type": 10
         },
         {
-          "id": "7:3981896081873859853",
+          "id": "11:5749241341911366178",
           "name": "updated",
           "type": 10
         },
         {
-          "id": "8:4464013545579720312",
-          "name": "deliveryTeamId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "31:7728192773003880619",
-          "relationTarget": "DeliveryTeamModel"
-        },
-        {
-          "id": "9:3565892398588450264",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "32:2725745165475775246",
-          "relationTarget": "TripModel"
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "11:6114492281946439458",
-      "lastPropertyId": "11:4587561234129879826",
-      "name": "PersonelModel",
-      "properties": [
-        {
-          "id": "8:4348728843700536428",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "9:6965507140557150922",
-          "name": "pocketbaseId",
+          "id": "12:2790120287816376503",
+          "name": "syncStatus",
           "type": 9
         },
         {
-          "id": "10:3968780198185668754",
-          "name": "tripId",
-          "type": 9
+          "id": "13:7544164857214663761",
+          "name": "retryCount",
+          "type": 6
         },
         {
-          "id": "11:4587561234129879826",
-          "name": "deliveryTeamId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "14:4634356157032572206",
-      "lastPropertyId": "25:626156953183959655",
-      "name": "TripEntity",
-      "properties": [
-        {
-          "id": "1:8331655926247374688",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:311333714104891901",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:6239376025946591758",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:8017420667308803322",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:8763390681432738921",
-          "name": "tripNumberId",
-          "type": 9
-        },
-        {
-          "id": "8:8715294592410334777",
-          "name": "isAccepted",
-          "type": 1
-        },
-        {
-          "id": "9:3711484348110405773",
-          "name": "created",
+          "id": "14:9124650846488559690",
+          "name": "lastSyncAttemptAt",
           "type": 10
         },
         {
-          "id": "10:1628851151417726000",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "11:8071478128879828670",
-          "name": "timeAccepted",
-          "type": 10
-        },
-        {
-          "id": "12:6882837936944343347",
-          "name": "deliveryTeamId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "23:5349887073563019195",
-          "relationTarget": "DeliveryTeamModel"
-        },
-        {
-          "id": "13:6887230557996274240",
-          "name": "otpId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "29:7549525326544430329",
-          "relationTarget": "OtpModel"
-        },
-        {
-          "id": "14:8136254872264618090",
-          "name": "endTripOtpId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "30:8999944981528090819",
-          "relationTarget": "EndTripOtpModel"
-        },
-        {
-          "id": "15:4941899855765488894",
-          "name": "isEndTrip",
-          "type": 1
-        },
-        {
-          "id": "16:6727132840220338073",
-          "name": "timeEndTrip",
-          "type": 10
-        },
-        {
-          "id": "17:6531624176651104398",
-          "name": "totalTripDistance",
-          "type": 9
-        },
-        {
-          "id": "18:7411264566326524894",
-          "name": "qrCode",
-          "type": 9
-        },
-        {
-          "id": "19:7919928115341683040",
-          "name": "userId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "43:531173930812991960",
-          "relationTarget": "LocalUsersModel"
-        },
-        {
-          "id": "20:5613982689448357445",
-          "name": "latitude",
-          "type": 8
-        },
-        {
-          "id": "21:4551943407444772877",
-          "name": "longitude",
-          "type": 8
-        },
-        {
-          "id": "22:245363032872952798",
-          "name": "deliveryVehicleId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "61:8619182400183796725",
-          "relationTarget": "DeliveryVehicleModel"
-        },
-        {
-          "id": "23:2584058250560362913",
-          "name": "name",
-          "type": 9
-        },
-        {
-          "id": "24:4302120255473557971",
-          "name": "allowMismatchedPersonnels",
-          "type": 1
-        },
-        {
-          "id": "25:626156953183959655",
-          "name": "deliveryDate",
+          "id": "15:4548969816478219072",
+          "name": "lastLocalUpdatedAt",
           "type": 10
         }
       ],
       "relations": [
         {
-          "id": "8:3785961766489236590",
-          "name": "personels",
-          "targetId": "11:6114492281946439458"
-        },
-        {
-          "id": "9:1839302727849658408",
-          "name": "checklist",
-          "targetId": "3:1642281493645422089"
-        },
-        {
-          "id": "41:1790612701283068757",
-          "name": "endTripChecklist",
-          "targetId": "43:2966284262887622250"
-        },
-        {
-          "id": "43:6298771103393394809",
-          "name": "tripUpdates",
-          "targetId": "48:8340272642715376828"
-        },
-        {
-          "id": "46:78219375503453127",
-          "name": "deliveryData",
-          "targetId": "55:8423633885083896888"
+          "id": "1:7654189323574629181",
+          "name": "invoices",
+          "targetId": "28:3051464379129971716"
         }
       ]
     },
     {
-      "id": "15:8914728044268258781",
-      "lastPropertyId": "12:1234570302468668782",
-      "name": "TripModel",
+      "id": "2:8546058327239943010",
+      "lastPropertyId": "22:8514315688093074490",
+      "name": "CancelledInvoiceModel",
       "properties": [
         {
-          "id": "11:2912521654645147918",
+          "id": "1:1293501837717426294",
           "name": "objectBoxId",
           "type": 6,
           "flags": 129
         },
         {
-          "id": "12:1234570302468668782",
-          "name": "pocketbaseId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "20:3827618117737923097",
-      "lastPropertyId": "14:209634526167592840",
-      "name": "DeliveryTeamEntity",
-      "properties": [
-        {
-          "id": "1:4021125925690014592",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:1728716429982816714",
+          "id": "2:304590271211418033",
           "name": "id",
           "type": 9
         },
         {
-          "id": "3:3955318567771985141",
-          "name": "collectionId",
+          "id": "3:2338393504873868008",
+          "name": "pocketbaseId",
           "type": 9
         },
         {
-          "id": "4:7450810517738687855",
+          "id": "4:1508063731123123972",
           "name": "collectionName",
           "type": 9
         },
         {
-          "id": "7:299598900691912166",
-          "name": "activeDeliveries",
+          "id": "5:5559654234513589098",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "6:5313265488727060727",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "143:2848402671787826840",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "7:6108721116991831516",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "144:4148336292482891371",
+          "relationTarget": "CustomerDataModel"
+        },
+        {
+          "id": "8:8224570667020960941",
+          "name": "invoiceId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "145:1515858227487159004",
+          "relationTarget": "InvoiceDataModel"
+        },
+        {
+          "id": "9:5276238130637623329",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "142:8157583052569743803",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "10:3524294070118027257",
+          "name": "reasonString",
+          "type": 9
+        },
+        {
+          "id": "11:5553698998103395988",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "12:5842939325251295349",
+          "name": "retryCount",
           "type": 6
         },
         {
-          "id": "8:3634252224675327345",
-          "name": "totalDelivered",
+          "id": "13:566457705687419775",
+          "name": "lastSyncAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "14:1308349384990691459",
+          "name": "nextRetryAt",
+          "type": 10
+        },
+        {
+          "id": "15:8759787671246851543",
+          "name": "lastSyncError",
+          "type": 9
+        },
+        {
+          "id": "16:4358546563190883270",
+          "name": "version",
           "type": 6
         },
         {
-          "id": "9:3353116449410246463",
-          "name": "totalDistanceTravelled",
-          "type": 8
+          "id": "17:23706442117306028",
+          "name": "updatedBy",
+          "type": 9
         },
         {
-          "id": "10:6255876164463889503",
+          "id": "18:908207169398269764",
+          "name": "deviceId",
+          "type": 9
+        },
+        {
+          "id": "19:7460396106069487888",
+          "name": "image",
+          "type": 9
+        },
+        {
+          "id": "20:6258789385776066718",
           "name": "created",
           "type": 10
         },
         {
-          "id": "11:423417278038742725",
+          "id": "21:1855368896163343448",
           "name": "updated",
           "type": 10
         },
         {
-          "id": "12:1773645114622699408",
-          "name": "undeliveredCustomers",
-          "type": 6
-        },
-        {
-          "id": "13:8165478066265954911",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "21:830914855730843355",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "14:209634526167592840",
-          "name": "deliveryVehicleId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "58:6533658377279110948",
-          "relationTarget": "DeliveryVehicleModel"
+          "id": "22:8514315688093074490",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
         }
       ],
       "relations": [
         {
-          "id": "13:8061470341385443398",
-          "name": "personels",
-          "targetId": "11:6114492281946439458"
-        },
-        {
-          "id": "14:7896462966271049217",
-          "name": "checklist",
-          "targetId": "3:1642281493645422089"
+          "id": "2:4486128474527854060",
+          "name": "invoices",
+          "targetId": "28:3051464379129971716"
         }
       ]
     },
     {
-      "id": "24:643024459725978300",
-      "lastPropertyId": "9:7211628598320049830",
-      "name": "OtpModel",
+      "id": "3:3388590708048066295",
+      "lastPropertyId": "8:7663254243789288165",
+      "name": "ChecklistEntity",
       "properties": [
         {
-          "id": "1:4557798915105780545",
+          "id": "1:91440351031551110",
           "name": "dbId",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:9140415642245004041",
+          "id": "2:1760735882271619938",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "9:7201618571718376036",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "3:8571841785726102698",
           "name": "id",
           "type": 9
         },
         {
-          "id": "3:5514683999879237980",
-          "name": "otpCode",
+          "id": "4:2151170583895928894",
+          "name": "objectName",
           "type": 9
         },
         {
-          "id": "4:1203840555742406130",
-          "name": "generatedCode",
+          "id": "5:3556434583145707989",
+          "name": "description",
           "type": 9
         },
         {
-          "id": "5:943925897027227969",
-          "name": "isVerified",
+          "id": "6:2269785681089781404",
+          "name": "isChecked",
           "type": 1
         },
         {
-          "id": "6:4141566973643536495",
-          "name": "createdAt",
-          "type": 10
+          "id": "7:3214769122096941362",
+          "name": "status",
+          "type": 9
         },
         {
-          "id": "7:4004611392860737254",
-          "name": "expiresAt",
+          "id": "8:7663254243789288165",
+          "name": "timeCompleted",
           "type": 10
-        },
-        {
-          "id": "8:799240029127897019",
-          "name": "verifiedAt",
-          "type": 10
-        },
-        {
-          "id": "9:7211628598320049830",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "145:7194170607201910613",
-          "relationTarget": "TripModel"
         }
       ],
       "relations": []
     },
     {
-      "id": "28:7427438328308874200",
-      "lastPropertyId": "26:3147787524653339424",
-      "name": "LocalUsersModel",
+      "id": "4:704455943639555765",
+      "lastPropertyId": "9:6016268597161934470",
+      "name": "ChecklistModel",
       "properties": [
         {
-          "id": "22:7118967602015234264",
+          "id": "1:712917428359993990",
           "name": "objectBoxId",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "23:8503047217667845871",
+          "id": "2:4987470188505955810",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:2670084630163824696",
           "name": "pocketbaseId",
           "type": 9
         },
         {
-          "id": "24:7551472861255514630",
+          "id": "4:4066082977305746433",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "146:7875735645817778399",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "5:6126895585097875854",
+          "name": "objectName",
+          "type": 9
+        },
+        {
+          "id": "6:7274840408304662282",
+          "name": "isChecked",
+          "type": 1
+        },
+        {
+          "id": "7:6143131897546297512",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "8:6798683740807718243",
+          "name": "timeCompleted",
+          "type": 10
+        },
+        {
+          "id": "9:6016268597161934470",
+          "name": "description",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "5:7491627631105862324",
+      "lastPropertyId": "11:9058232319187212870",
+      "name": "CollectionEntity",
+      "properties": [
+        {
+          "id": "1:1838203210119150565",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4024937566199407808",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:6976511675832906547",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:9090243686025732579",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:2866408079133357533",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "11:8652177848306338133",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "6:4674073633671445759",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "12:3741328271439938055",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "7:4346290265720058314",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "13:3806466878452327810",
+          "relationTarget": "CustomerDataModel"
+        },
+        {
+          "id": "8:4061809053329393605",
+          "name": "invoiceId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "14:5514731425643226240",
+          "relationTarget": "InvoiceDataModel"
+        },
+        {
+          "id": "9:390962820092021314",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "10:9221723127653842594",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "11:9058232319187212870",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": [
+        {
+          "id": "3:5219333078703132342",
+          "name": "invoices",
+          "targetId": "28:3051464379129971716"
+        }
+      ]
+    },
+    {
+      "id": "6:4563950948000762030",
+      "lastPropertyId": "22:8976860514323564459",
+      "name": "CollectionModel",
+      "properties": [
+        {
+          "id": "1:4110378837766672158",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:4607563975009740108",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8363130745012654817",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "4:7269987301294316383",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "5:747082474396314378",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "6:493703063783238223",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "148:7493379723053538664",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "7:1804272345433277393",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "149:6347776736625333758",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "8:4684521169208878062",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "147:16718666172932968",
+          "relationTarget": "CustomerDataModel"
+        },
+        {
+          "id": "9:4130622334082066292",
+          "name": "invoiceId",
+          "type": 9
+        },
+        {
+          "id": "10:3961843543316992586",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "11:1796570641537202342",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "12:3992101023783740287",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "13:6529427972523633743",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
+        },
+        {
+          "id": "14:1627410137294713635",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "15:7474875062408060948",
+          "name": "retryCount",
+          "type": 6
+        },
+        {
+          "id": "16:7613848340071081595",
+          "name": "lastSyncAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "17:4772971915351307175",
+          "name": "nextRetryAt",
+          "type": 10
+        },
+        {
+          "id": "18:8185407160624828189",
+          "name": "lastSyncError",
+          "type": 9
+        },
+        {
+          "id": "19:2199358625290402605",
+          "name": "version",
+          "type": 6
+        },
+        {
+          "id": "20:7887544629449063227",
+          "name": "updatedBy",
+          "type": 9
+        },
+        {
+          "id": "21:3086472844782090223",
+          "name": "deviceId",
+          "type": 9
+        },
+        {
+          "id": "22:8976860514323564459",
+          "name": "deliveryReceiptId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "18:821561599902455830",
+          "relationTarget": "DeliveryReceiptModel"
+        }
+      ],
+      "relations": [
+        {
+          "id": "4:4597920613855183869",
+          "name": "invoices",
+          "targetId": "28:3051464379129971716"
+        }
+      ]
+    },
+    {
+      "id": "7:4547785083597077826",
+      "lastPropertyId": "16:2852640144041549227",
+      "name": "CustomerDataEntity",
+      "properties": [
+        {
+          "id": "1:6348160542058881759",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1871385128291599953",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:7334814977094218954",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:6749088424102402007",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:5101251217254653190",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "6:1461635061674122286",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "7:2794071650840448138",
+          "name": "paymentMode",
+          "type": 9
+        },
+        {
+          "id": "8:1368226319694313218",
+          "name": "province",
+          "type": 9
+        },
+        {
+          "id": "9:1018313581429990569",
+          "name": "ownerName",
+          "type": 9
+        },
+        {
+          "id": "10:5119309598549375972",
+          "name": "contactNumber",
+          "type": 9
+        },
+        {
+          "id": "11:1293791377318846042",
+          "name": "municipality",
+          "type": 9
+        },
+        {
+          "id": "12:9060913247743853981",
+          "name": "barangay",
+          "type": 9
+        },
+        {
+          "id": "13:2740145649064092201",
+          "name": "longitude",
+          "type": 8
+        },
+        {
+          "id": "14:4290690486901988258",
+          "name": "latitude",
+          "type": 8
+        },
+        {
+          "id": "15:6068634598742153110",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "16:2852640144041549227",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "8:9195030030844102386",
+      "lastPropertyId": "17:1272858356670403971",
+      "name": "CustomerDataModel",
+      "properties": [
+        {
+          "id": "1:3865390866431905912",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:1650922758948209339",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:6465390239425128803",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:4617295037444502939",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:7428104037236706053",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "6:8074297440954888229",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "7:8224658465638530192",
+          "name": "province",
+          "type": 9
+        },
+        {
+          "id": "8:7019179496395841885",
+          "name": "municipality",
+          "type": 9
+        },
+        {
+          "id": "9:3671023928801338363",
+          "name": "barangay",
+          "type": 9
+        },
+        {
+          "id": "10:9191554930932629039",
+          "name": "ownerName",
+          "type": 9
+        },
+        {
+          "id": "11:5928760355051199583",
+          "name": "contactNumber",
+          "type": 9
+        },
+        {
+          "id": "12:4577893037255221913",
+          "name": "longitude",
+          "type": 8
+        },
+        {
+          "id": "13:8019033717074057645",
+          "name": "latitude",
+          "type": 8
+        },
+        {
+          "id": "14:7361386365619537337",
+          "name": "paymentMode",
+          "type": 9
+        },
+        {
+          "id": "15:7435553787453916817",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "16:7960146216422290428",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "17:1272858356670403971",
+          "name": "pocketbaseId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "9:3880844303309588474",
+      "lastPropertyId": "24:7036258914384850250",
+      "name": "DeliveryDataEntity",
+      "properties": [
+        {
+          "id": "1:6471101544318101545",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5006545740764468577",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8766134449281426490",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:4395157251615166255",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:1153577255649713764",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "19:1320961231481190222",
+          "relationTarget": "CustomerDataModel"
+        },
+        {
+          "id": "6:3439616984143511245",
+          "name": "invoiceId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "20:4981757644215939487",
+          "relationTarget": "InvoiceDataModel"
+        },
+        {
+          "id": "7:3355571227685748187",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "21:4767872075119395844",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "8:8563749256034120301",
+          "name": "paymentMode",
+          "type": 9
+        },
+        {
+          "id": "9:5952528380717593009",
+          "name": "deliveryNumber",
+          "type": 9
+        },
+        {
+          "id": "10:7716073119275377404",
+          "name": "totalDeliveryTime",
+          "type": 9
+        },
+        {
+          "id": "11:171471145083405779",
+          "name": "storeName",
+          "type": 9
+        },
+        {
+          "id": "12:2529977563801099962",
+          "name": "ownerName",
+          "type": 9
+        },
+        {
+          "id": "13:3161664589724863123",
+          "name": "contactNumber",
+          "type": 9
+        },
+        {
+          "id": "14:2047953952976245534",
+          "name": "barangay",
+          "type": 9
+        },
+        {
+          "id": "15:7773285117398001386",
+          "name": "municipality",
+          "type": 9
+        },
+        {
+          "id": "16:4371370427441871801",
+          "name": "province",
+          "type": 9
+        },
+        {
+          "id": "17:6463516112269846846",
+          "name": "refID",
+          "type": 9
+        },
+        {
+          "id": "18:4102975420795758621",
+          "name": "hasPendingSync",
+          "type": 1
+        },
+        {
+          "id": "19:2378104139202078254",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "20:6549592090099479098",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
+        },
+        {
+          "id": "21:7442766915595111424",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "22:5370196118461344506",
+          "name": "hasTrip",
+          "type": 1
+        },
+        {
+          "id": "23:3480534315513904122",
+          "name": "isUnloaded",
+          "type": 1
+        },
+        {
+          "id": "24:7036258914384850250",
+          "name": "isUnloading",
+          "type": 1
+        }
+      ],
+      "relations": [
+        {
+          "id": "5:1835603896504740724",
+          "name": "invoices",
+          "targetId": "28:3051464379129971716"
+        },
+        {
+          "id": "6:5612444519647440902",
+          "name": "deliveryUpdates",
+          "targetId": "20:6122538976404362051"
+        },
+        {
+          "id": "7:8357423334061325860",
+          "name": "invoiceItems",
+          "targetId": "30:8401084059541240575"
+        }
+      ]
+    },
+    {
+      "id": "10:7361580305992308065",
+      "lastPropertyId": "31:8156091510322522507",
+      "name": "DeliveryDataModel",
+      "properties": [
+        {
+          "id": "1:3692065382946598683",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:4316382215670302515",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:3368458627408869307",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "4:5222412176977717846",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "150:5402672256599966209",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "5:7160042034692474738",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "6:1310725018569942941",
+          "name": "retryCount",
+          "type": 6
+        },
+        {
+          "id": "7:2049249243678280342",
+          "name": "lastSyncAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "8:708128218977618472",
+          "name": "nextRetryAt",
+          "type": 10
+        },
+        {
+          "id": "9:3799800683311038857",
+          "name": "lastSyncError",
+          "type": 9
+        },
+        {
+          "id": "10:6249179068390544862",
+          "name": "version",
+          "type": 6
+        },
+        {
+          "id": "11:4499024445677790382",
+          "name": "updatedBy",
+          "type": 9
+        },
+        {
+          "id": "12:3300152647744077588",
+          "name": "deviceId",
+          "type": 9
+        },
+        {
+          "id": "13:3893062862352138840",
+          "name": "paymentMode",
+          "type": 9
+        },
+        {
+          "id": "14:6428465597869017020",
+          "name": "deliveryNumber",
+          "type": 9
+        },
+        {
+          "id": "15:4798134250996817883",
+          "name": "totalDeliveryTime",
+          "type": 9
+        },
+        {
+          "id": "16:5270672300061267077",
+          "name": "storeName",
+          "type": 9
+        },
+        {
+          "id": "17:3861660360110166716",
+          "name": "ownerName",
+          "type": 9
+        },
+        {
+          "id": "18:6686106204256235919",
+          "name": "contactNumber",
+          "type": 9
+        },
+        {
+          "id": "19:8341836825070577192",
+          "name": "barangay",
+          "type": 9
+        },
+        {
+          "id": "20:6014866983129602364",
+          "name": "municipality",
+          "type": 9
+        },
+        {
+          "id": "21:9151943291582829908",
+          "name": "province",
+          "type": 9
+        },
+        {
+          "id": "22:4300862467904321483",
+          "name": "refID",
+          "type": 9
+        },
+        {
+          "id": "23:5275864224591341575",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "24:2489736240543658404",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
+        },
+        {
+          "id": "25:2470601936093213560",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "26:4860587201310314646",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "22:4333917068128321100",
+          "relationTarget": "CustomerDataModel"
+        },
+        {
+          "id": "27:4655359012334117437",
+          "name": "invoiceId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "23:1040386230041542640",
+          "relationTarget": "InvoiceDataModel"
+        },
+        {
+          "id": "28:6860658961378469190",
+          "name": "hasTrip",
+          "type": 1
+        },
+        {
+          "id": "29:6361920888264578873",
+          "name": "hasPendingSync",
+          "type": 1
+        },
+        {
+          "id": "30:5176405860112759328",
+          "name": "isUnloaded",
+          "type": 1
+        },
+        {
+          "id": "31:8156091510322522507",
+          "name": "isUnloading",
+          "type": 1
+        }
+      ],
+      "relations": [
+        {
+          "id": "8:3128537961857434301",
+          "name": "invoices",
+          "targetId": "28:3051464379129971716"
+        },
+        {
+          "id": "9:1247101211295266985",
+          "name": "deliveryUpdates",
+          "targetId": "20:6122538976404362051"
+        },
+        {
+          "id": "10:1450243002974752146",
+          "name": "invoiceItems",
+          "targetId": "30:8401084059541240575"
+        }
+      ]
+    },
+    {
+      "id": "11:5227308974183210635",
+      "lastPropertyId": "14:1212393611631571294",
+      "name": "DeliveryReceiptEntity",
+      "properties": [
+        {
+          "id": "1:389178305628556415",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3500473117427899650",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8360850614307967958",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:8568385529783249595",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:9170011643668018540",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "25:8681963329710515211",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "6:6563830315123545903",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "26:5782988313654883984",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "7:2692873772150828377",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "8:8505351182212374588",
+          "name": "dateTimeCompleted",
+          "type": 10
+        },
+        {
+          "id": "9:2696007427489381935",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "10:3908325416096942686",
+          "name": "customerImages",
+          "type": 30
+        },
+        {
+          "id": "11:6868719937678409135",
+          "name": "customerSignature",
+          "type": 9
+        },
+        {
+          "id": "12:6380311775287201357",
+          "name": "receiptFile",
+          "type": 9
+        },
+        {
+          "id": "13:4714324513170223182",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "14:1212393611631571294",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "12:5741811714046663826",
+      "lastPropertyId": "11:8166474666381427601",
+      "name": "DeliveryReceiptItemsEntity",
+      "properties": [
+        {
+          "id": "1:7612233185293502150",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6721408160212964093",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:7732495478482338918",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:5538600849230772949",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:2087918705949567706",
+          "name": "deliveryReceiptId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "27:2439599457679809994",
+          "relationTarget": "DeliveryReceiptModel"
+        },
+        {
+          "id": "6:46035438806849948",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "7:1628538053764534956",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "8:3561594045094758111",
+          "name": "customerImage",
+          "type": 9
+        },
+        {
+          "id": "9:7992165722203568909",
+          "name": "receiptFile",
+          "type": 9
+        },
+        {
+          "id": "10:2633014513734850859",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "11:8166474666381427601",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": [
+        {
+          "id": "11:4053783356645410935",
+          "name": "invoiceItems",
+          "targetId": "30:8401084059541240575"
+        }
+      ]
+    },
+    {
+      "id": "13:1576594592412952416",
+      "lastPropertyId": "3:7421505515109721564",
+      "name": "DeliveryReceiptItemsModel",
+      "properties": [
+        {
+          "id": "1:6296851593843047173",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:7339757379049438917",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:7421505515109721564",
+          "name": "deliveryReceiptId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "14:8047721167219302010",
+      "lastPropertyId": "25:1311167762935750285",
+      "name": "DeliveryReceiptModel",
+      "properties": [
+        {
+          "id": "1:5249816100604979475",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:4770666231262696898",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:6269883628642112813",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "4:4119958404412229513",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "5:6538352115681478521",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "6:7656074767709464750",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "28:4455279871110155950",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "7:819102527393798996",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "29:692532005367719897",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "8:1672547328343115038",
+          "name": "customerImagesString",
+          "type": 9
+        },
+        {
+          "id": "9:8424027649926772708",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "10:3890620223726553916",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "11:2141385608699118477",
+          "name": "dateTimeCompleted",
+          "type": 10
+        },
+        {
+          "id": "12:7360352504374356494",
+          "name": "customerSignature",
+          "type": 9
+        },
+        {
+          "id": "13:3463478574145139211",
+          "name": "receiptFile",
+          "type": 9
+        },
+        {
+          "id": "14:48676680181115402",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "15:470562512507159831",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "16:8088478437979615224",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
+        },
+        {
+          "id": "17:7476982528232431864",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "18:6328701428877498659",
+          "name": "retryCount",
+          "type": 6
+        },
+        {
+          "id": "19:7941899561609805391",
+          "name": "lastSyncAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "20:1598986623963025347",
+          "name": "nextRetryAt",
+          "type": 10
+        },
+        {
+          "id": "21:6490358834362737368",
+          "name": "lastSyncError",
+          "type": 9
+        },
+        {
+          "id": "22:7368746678559038100",
+          "name": "version",
+          "type": 6
+        },
+        {
+          "id": "23:6437309432295774025",
+          "name": "updatedBy",
+          "type": 9
+        },
+        {
+          "id": "24:1497746224981212298",
+          "name": "deviceId",
+          "type": 9
+        },
+        {
+          "id": "25:1311167762935750285",
+          "name": "customerImages",
+          "type": 30
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "15:1721995805242204793",
+      "lastPropertyId": "8:8730398120079113802",
+      "name": "DeliveryStatusChoicesEntity",
+      "properties": [
+        {
+          "id": "1:165847141139898956",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3546002588401068135",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:4259042338397132527",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:70414221255650696",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:5367461149924403247",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "6:6381321215671288673",
+          "name": "subtitle",
+          "type": 9
+        },
+        {
+          "id": "7:1254905455592242366",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "8:8730398120079113802",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "16:7188053989775321173",
+      "lastPropertyId": "15:2919131059143370912",
+      "name": "DeliveryStatusChoicesModel",
+      "properties": [
+        {
+          "id": "1:767834112799015147",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:8363415612063552325",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:3783696075505369384",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:5991898689486800214",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:534242369995945989",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "6:6165139071037339685",
+          "name": "subtitle",
+          "type": 9
+        },
+        {
+          "id": "7:1842618604944863257",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "8:6323052078351262347",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "9:9137584102692272018",
+          "name": "deliveryDataId",
+          "type": 9
+        },
+        {
+          "id": "10:8039346917324420473",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "11:6378435858571776828",
+          "name": "retryCount",
+          "type": 6
+        },
+        {
+          "id": "12:2611414582984833305",
+          "name": "lastSyncAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "13:85016909035628873",
+          "name": "nextRetryAt",
+          "type": 10
+        },
+        {
+          "id": "14:8555572847495273876",
+          "name": "lastSyncError",
+          "type": 9
+        },
+        {
+          "id": "15:2919131059143370912",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "17:4973536654098501306",
+      "lastPropertyId": "12:3066023178029802933",
+      "name": "DeliveryTeamEntity",
+      "properties": [
+        {
+          "id": "1:5878844024099537589",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8706227704012727288",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:1047929203656181761",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:3293476603963947066",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:987933456668126355",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "151:2093040457677057601",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "6:5822397776661616257",
+          "name": "deliveryVehicleId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "31:7025316256110207397",
+          "relationTarget": "DeliveryVehicleModel"
+        },
+        {
+          "id": "7:9100870039986848260",
+          "name": "activeDeliveries",
+          "type": 6
+        },
+        {
+          "id": "8:6996015294386504404",
+          "name": "totalDelivered",
+          "type": 6
+        },
+        {
+          "id": "9:6283010072940051100",
+          "name": "undeliveredCustomers",
+          "type": 6
+        },
+        {
+          "id": "10:6207587162883855186",
+          "name": "totalDistanceTravelled",
+          "type": 8
+        },
+        {
+          "id": "11:7451749192410598676",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "12:3066023178029802933",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": [
+        {
+          "id": "12:3137754484063615926",
+          "name": "personels",
+          "targetId": "39:6008063225934898197"
+        },
+        {
+          "id": "13:1583122497197470826",
+          "name": "checklist",
+          "targetId": "4:704455943639555765"
+        }
+      ]
+    },
+    {
+      "id": "18:4246515664198531899",
+      "lastPropertyId": "11:1144151085446600263",
+      "name": "DeliveryTeamModel",
+      "properties": [
+        {
+          "id": "1:7318405062525264532",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:4630591973017934170",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:1717390431685803062",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:6397188334541841273",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:944573171784743695",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "6:2455281818948703288",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "152:6134555839895565348",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "7:499825224102392814",
+          "name": "activeDeliveries",
+          "type": 6
+        },
+        {
+          "id": "8:4975412746032094304",
+          "name": "totalDelivered",
+          "type": 6
+        },
+        {
+          "id": "9:5784251771631431637",
+          "name": "totalDistanceTravelled",
+          "type": 8
+        },
+        {
+          "id": "10:5501393957618839034",
+          "name": "undeliveredCustomers",
+          "type": 6
+        },
+        {
+          "id": "11:1144151085446600263",
+          "name": "deliveryVehicleId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "33:6520801777688306256",
+          "relationTarget": "DeliveryVehicleModel"
+        }
+      ],
+      "relations": [
+        {
+          "id": "14:4139888466752053422",
+          "name": "personels",
+          "targetId": "39:6008063225934898197"
+        },
+        {
+          "id": "15:1142226660828143901",
+          "name": "checklist",
+          "targetId": "4:704455943639555765"
+        }
+      ]
+    },
+    {
+      "id": "19:5478446270249218606",
+      "lastPropertyId": "15:7932227885911204953",
+      "name": "DeliveryUpdateEntity",
+      "properties": [
+        {
+          "id": "1:1987136525297953721",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5048912093342292542",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:5203618718493807827",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:5368452700804539093",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:5134937373205137374",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "6:4376797268450062157",
+          "name": "subtitle",
+          "type": 9
+        },
+        {
+          "id": "7:409146677845868460",
+          "name": "time",
+          "type": 10
+        },
+        {
+          "id": "8:6178432588853411441",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "9:5461708810845411945",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "10:307285956584525574",
+          "name": "customer",
+          "type": 9
+        },
+        {
+          "id": "11:6816300604285931261",
+          "name": "image",
+          "type": 9
+        },
+        {
+          "id": "12:5770717993167486763",
+          "name": "isAssigned",
+          "type": 1
+        },
+        {
+          "id": "13:1621664992411638151",
+          "name": "assignedTo",
+          "type": 9
+        },
+        {
+          "id": "14:5145392114555560346",
+          "name": "remarks",
+          "type": 9
+        },
+        {
+          "id": "15:7932227885911204953",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "34:4954577070998765152",
+          "relationTarget": "DeliveryDataModel"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "20:6122538976404362051",
+      "lastPropertyId": "20:2873904303904716546",
+      "name": "DeliveryUpdateModel",
+      "properties": [
+        {
+          "id": "1:2936037236141848979",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:5633840470100716383",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8248976012811654192",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:8511306973037690500",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:5552732744626961314",
+          "name": "deliveryDataPbId",
+          "type": 9
+        },
+        {
+          "id": "6:7931719162009333088",
+          "name": "statusChoicePbId",
+          "type": 9
+        },
+        {
+          "id": "7:1657253344369947589",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "8:2364464257493794414",
+          "name": "subtitle",
+          "type": 9
+        },
+        {
+          "id": "9:6910073034311483118",
+          "name": "time",
+          "type": 10
+        },
+        {
+          "id": "10:8177827224561607583",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "11:7038049441234175454",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "12:1893512502250000163",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
+        },
+        {
+          "id": "13:2924247815116003735",
+          "name": "isAssigned",
+          "type": 1
+        },
+        {
+          "id": "14:5475387080935011001",
+          "name": "assignedTo",
+          "type": 9
+        },
+        {
+          "id": "15:5546861359999660007",
+          "name": "remarks",
+          "type": 9
+        },
+        {
+          "id": "16:5850169210815138996",
+          "name": "image",
+          "type": 9
+        },
+        {
+          "id": "17:1538347902963999557",
+          "name": "customer",
+          "type": 9
+        },
+        {
+          "id": "18:4263949259886412061",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "19:7071538715544093247",
+          "name": "retryCount",
+          "type": 6
+        },
+        {
+          "id": "20:2873904303904716546",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "35:6349205111350515862",
+          "relationTarget": "DeliveryDataModel"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "21:5733362386525004119",
+      "lastPropertyId": "13:906653436030698758",
+      "name": "DeliveryVehicleEntity",
+      "properties": [
+        {
+          "id": "1:7811099165895314201",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5457486410700288636",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:4873778444242780769",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:5407271790181132535",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:6460636824165472201",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "6:3019654819120350412",
+          "name": "plateNo",
+          "type": 9
+        },
+        {
+          "id": "7:8152486340101656296",
+          "name": "make",
+          "type": 9
+        },
+        {
+          "id": "8:4487469494454826339",
+          "name": "type",
+          "type": 9
+        },
+        {
+          "id": "9:3082398481573415063",
+          "name": "wheels",
+          "type": 9
+        },
+        {
+          "id": "10:5534763626744467404",
+          "name": "volumeCapacity",
+          "type": 8
+        },
+        {
+          "id": "11:6750486584966414048",
+          "name": "weightCapacity",
+          "type": 8
+        },
+        {
+          "id": "12:7050285040445283905",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "13:906653436030698758",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "22:5129259731498196879",
+      "lastPropertyId": "7:8214967809506076456",
+      "name": "DeliveryVehicleModel",
+      "properties": [
+        {
+          "id": "1:8620848680005826806",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2102010621426106763",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:710425704249440603",
           "name": "tripId",
           "type": 9
         },
         {
-          "id": "25:819799394032496594",
-          "name": "deliveryTeamId",
+          "id": "4:2790014605143428683",
+          "name": "name",
           "type": 9
         },
         {
-          "id": "26:3147787524653339424",
+          "id": "5:2786472478948408881",
+          "name": "plateNo",
+          "type": 9
+        },
+        {
+          "id": "6:3847411041789131120",
+          "name": "type",
+          "type": 9
+        },
+        {
+          "id": "7:8214967809506076456",
+          "name": "make",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "23:7235606948735183524",
+      "lastPropertyId": "8:127791634787957566",
+      "name": "EndChecklistEntity",
+      "properties": [
+        {
+          "id": "1:2907807952370037597",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5669357853511400471",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:2899585582025908578",
+          "name": "objectName",
+          "type": 9
+        },
+        {
+          "id": "4:7434241792669696957",
+          "name": "isChecked",
+          "type": 1
+        },
+        {
+          "id": "5:606687085846855487",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "6:831178432582733848",
+          "name": "description",
+          "type": 9
+        },
+        {
+          "id": "7:1437489626060247627",
+          "name": "tripId",
+          "type": 9
+        },
+        {
+          "id": "8:127791634787957566",
+          "name": "timeCompleted",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "24:692893091437084324",
+      "lastPropertyId": "14:6847614112414595046",
+      "name": "EndTripChecklistModel",
+      "properties": [
+        {
+          "id": "1:3314842308633383476",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:3592397603927997049",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:5515012135982014148",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "4:616798270318772647",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "153:4646893375502212279",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "5:3634933204776173747",
+          "name": "objectName",
+          "type": 9
+        },
+        {
+          "id": "6:220146198692207055",
+          "name": "isChecked",
+          "type": 1
+        },
+        {
+          "id": "7:3645397548550690274",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "8:7055215145500876940",
+          "name": "timeCompleted",
+          "type": 10
+        },
+        {
+          "id": "9:7134563408722239394",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "10:2541103275114360917",
+          "name": "retryCount",
+          "type": 6
+        },
+        {
+          "id": "11:2152192495641156725",
+          "name": "lastSyncAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "12:6619716792213937456",
+          "name": "nextRetryAt",
+          "type": 10
+        },
+        {
+          "id": "13:2930645321849930565",
+          "name": "lastSyncError",
+          "type": 9
+        },
+        {
+          "id": "14:6847614112414595046",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "25:3774608363243592871",
+      "lastPropertyId": "10:8222561615599613245",
+      "name": "EndTripOtpEntity",
+      "properties": [
+        {
+          "id": "1:31834539008321042",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:9179133972681648193",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:7662697221859725028",
+          "name": "otpCode",
+          "type": 9
+        },
+        {
+          "id": "4:389384402351803386",
+          "name": "generatedCode",
+          "type": 9
+        },
+        {
+          "id": "5:7422186303841365234",
+          "name": "endTripOdometer",
+          "type": 9
+        },
+        {
+          "id": "6:2134223282146037287",
+          "name": "isVerified",
+          "type": 1
+        },
+        {
+          "id": "7:1349555719579220730",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "8:6441618603777565738",
+          "name": "expiresAt",
+          "type": 10
+        },
+        {
+          "id": "9:5745938696245986067",
+          "name": "verifiedAt",
+          "type": 10
+        },
+        {
+          "id": "10:8222561615599613245",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "37:6952052801930810761",
+          "relationTarget": "TripModel"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "26:4494351386241539610",
+      "lastPropertyId": "9:1255865898873941235",
+      "name": "EndTripOtpModel",
+      "properties": [
+        {
+          "id": "1:6700805018422547399",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3837798199040369334",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:4756946867361025138",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "154:5025018611835212561",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "4:3818594431660483765",
+          "name": "otpCode",
+          "type": 9
+        },
+        {
+          "id": "5:2159440864088018737",
+          "name": "generatedCode",
+          "type": 9
+        },
+        {
+          "id": "6:8117880995430019819",
+          "name": "isVerified",
+          "type": 1
+        },
+        {
+          "id": "7:5583709964809469498",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "8:8083965968357670504",
+          "name": "expiresAt",
+          "type": 10
+        },
+        {
+          "id": "9:1255865898873941235",
+          "name": "verifiedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "27:3931669996525697474",
+      "lastPropertyId": "13:4895435045946204884",
+      "name": "InvoiceDataEntity",
+      "properties": [
+        {
+          "id": "1:7058024074043775590",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8507584619570941694",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:6825155890743055915",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:3113633099804818794",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:7773399191298012532",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "6:6733876003717994816",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "7:6788806331211666600",
+          "name": "documentDate",
+          "type": 10
+        },
+        {
+          "id": "8:1187143162970521088",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "9:288157519412408804",
+          "name": "volume",
+          "type": 8
+        },
+        {
+          "id": "10:6134664600951108479",
+          "name": "weight",
+          "type": 8
+        },
+        {
+          "id": "11:6709326575469644129",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "39:5252857528993235088",
+          "relationTarget": "CustomerDataEntity"
+        },
+        {
+          "id": "12:6365837908714129806",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "13:4895435045946204884",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "28:3051464379129971716",
+      "lastPropertyId": "14:3063100499580174108",
+      "name": "InvoiceDataModel",
+      "properties": [
+        {
+          "id": "1:8295924410066060581",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:8303042247629942895",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8624417695686799138",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:8324941016074710162",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:5914645620628927319",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "6:7430903221810074330",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "7:451854838862845176",
+          "name": "documentDate",
+          "type": 10
+        },
+        {
+          "id": "8:5628343779026144108",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "9:2141831734832441120",
+          "name": "volume",
+          "type": 8
+        },
+        {
+          "id": "10:3109280091877682564",
+          "name": "weight",
+          "type": 8
+        },
+        {
+          "id": "11:5842720270881283582",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "12:152782992193909612",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "13:929460337921822527",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "14:3063100499580174108",
+          "name": "customerId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "40:5577436198734566869",
+          "relationTarget": "CustomerDataEntity"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "29:8244139954852974633",
+      "lastPropertyId": "15:6016096223974686387",
+      "name": "InvoiceItemsEntity",
+      "properties": [
+        {
+          "id": "1:5553493834876714427",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4866583713647650904",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:6995432315461968162",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:5539256416066144542",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:983156151433785626",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "6:6081759246207382907",
+          "name": "brand",
+          "type": 9
+        },
+        {
+          "id": "7:972788162490959245",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "8:4260868038806965395",
+          "name": "uom",
+          "type": 9
+        },
+        {
+          "id": "9:8050249915293698465",
+          "name": "quantity",
+          "type": 8
+        },
+        {
+          "id": "10:1721624401134484039",
+          "name": "totalBaseQuantity",
+          "type": 8
+        },
+        {
+          "id": "11:2740880647748294180",
+          "name": "uomPrice",
+          "type": 8
+        },
+        {
+          "id": "12:7011385951460000820",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "13:4267783343670980819",
+          "name": "invoiceDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "41:8615331461853496811",
+          "relationTarget": "InvoiceDataEntity"
+        },
+        {
+          "id": "14:8710473007870720316",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "15:6016096223974686387",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "30:8401084059541240575",
+      "lastPropertyId": "16:1925504477378077492",
+      "name": "InvoiceItemsModel",
+      "properties": [
+        {
+          "id": "1:2169121402573006074",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:1054793020000795455",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:7496371361547163223",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:2781571533696803402",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:1209866450545772455",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "6:5795640542517928175",
+          "name": "brand",
+          "type": 9
+        },
+        {
+          "id": "7:3534367169855525109",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "8:497972169487316910",
+          "name": "uom",
+          "type": 9
+        },
+        {
+          "id": "9:7036876264217348431",
+          "name": "quantity",
+          "type": 8
+        },
+        {
+          "id": "10:5329491228686454586",
+          "name": "totalBaseQuantity",
+          "type": 8
+        },
+        {
+          "id": "11:5437172931810853149",
+          "name": "uomPrice",
+          "type": 8
+        },
+        {
+          "id": "12:132281361824696028",
+          "name": "totalAmount",
+          "type": 8
+        },
+        {
+          "id": "13:201594308970669002",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "14:4094827838072632989",
+          "name": "invoiceDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "155:3018857996586788440",
+          "relationTarget": "InvoiceDataEntity"
+        },
+        {
+          "id": "15:5611098754916601611",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "16:1925504477378077492",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "31:1389056348720647433",
+      "lastPropertyId": "7:6073425615317040460",
+      "name": "InvoiceStatusEntity",
+      "properties": [
+        {
+          "id": "1:6594881162184003751",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6149262651750682803",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:3997615131384321116",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:8534783139403514709",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:5820033942746264258",
+          "name": "invoiceDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "43:4260487609291655210",
+          "relationTarget": "InvoiceDataModel"
+        },
+        {
+          "id": "6:6165850091463230952",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "7:6073425615317040460",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "32:6346985801023214315",
+      "lastPropertyId": "2:2576927348661942436",
+      "name": "InvoiceStatusModel",
+      "properties": [
+        {
+          "id": "1:4375176398067039331",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2576927348661942436",
+          "name": "pocketbaseId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "33:2543188870154911093",
+      "lastPropertyId": "11:8880669476902849230",
+      "name": "LocalUser",
+      "properties": [
+        {
+          "id": "1:557167466908906229",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8573482026584654141",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8662742991619887486",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:8984064867944621467",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:2767431991805718338",
+          "name": "email",
+          "type": 9
+        },
+        {
+          "id": "6:5644046842975948645",
+          "name": "profilePic",
+          "type": 9
+        },
+        {
+          "id": "7:325667982981114674",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "8:1858599135476088574",
+          "name": "tripNumberId",
+          "type": 9
+        },
+        {
+          "id": "9:7883386197915583390",
+          "name": "token",
+          "type": 9
+        },
+        {
+          "id": "10:2333916072065352894",
+          "name": "deliveryTeamId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "44:4446079808206741145",
+          "relationTarget": "DeliveryTeamModel"
+        },
+        {
+          "id": "11:8880669476902849230",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "45:6874798033509907157",
+          "relationTarget": "TripModel"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "34:1827711305972330060",
+      "lastPropertyId": "12:4190019525129242352",
+      "name": "LocalUsersModel",
+      "properties": [
+        {
+          "id": "1:4909352009484230659",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:7564198901181337125",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:7328495941362467173",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "4:1544948467876051679",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "5:850366008964248391",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "6:7591240757187773861",
+          "name": "email",
+          "type": 9
+        },
+        {
+          "id": "7:2304020454226877058",
+          "name": "profilePic",
+          "type": 9
+        },
+        {
+          "id": "8:7711773233423876571",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "9:8101750463105091394",
+          "name": "tripNumberId",
+          "type": 9
+        },
+        {
+          "id": "10:3613307525522142233",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "156:5714957687532517731",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "11:7335002540761455796",
+          "name": "deliveryTeamId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "157:7044846486832933051",
+          "relationTarget": "DeliveryTeamModel"
+        },
+        {
+          "id": "12:4190019525129242352",
           "name": "token",
           "type": 9
         }
@@ -716,1642 +2835,28 @@
       "relations": []
     },
     {
-      "id": "29:5712654757194167079",
-      "lastPropertyId": "3:3552847195292051829",
-      "name": "DeliveryTeamModel",
-      "properties": [
-        {
-          "id": "1:2313676663934023492",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:6857897770363156194",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:3552847195292051829",
-          "name": "tripId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "42:792996251176618181",
-      "lastPropertyId": "8:252946663843519247",
-      "name": "EndChecklistEntity",
-      "properties": [
-        {
-          "id": "1:993407976825458506",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:6180605324378926902",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:3635790849741874685",
-          "name": "objectName",
-          "type": 9
-        },
-        {
-          "id": "4:7246786467333471832",
-          "name": "isChecked",
-          "type": 1
-        },
-        {
-          "id": "5:2192373627021538263",
-          "name": "status",
-          "type": 9
-        },
-        {
-          "id": "6:777439657364217530",
-          "name": "timeCompleted",
-          "type": 10
-        },
-        {
-          "id": "7:4872620912309772707",
-          "name": "trip",
-          "type": 9
-        },
-        {
-          "id": "8:252946663843519247",
-          "name": "description",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "43:2966284262887622250",
-      "lastPropertyId": "6:6987941804636964193",
-      "name": "EndTripChecklistModel",
-      "properties": [
-        {
-          "id": "1:4688045235485403187",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2497662157408653586",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:5234942605294889225",
-          "name": "objectName",
-          "type": 9
-        },
-        {
-          "id": "4:6497557161687300793",
-          "name": "isChecked",
-          "type": 1
-        },
-        {
-          "id": "5:4806679431450460278",
-          "name": "status",
-          "type": 9
-        },
-        {
-          "id": "6:6987941804636964193",
-          "name": "trip",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "47:3525944426048839466",
-      "lastPropertyId": "10:352449712989912343",
-      "name": "TripUpdateEntity",
-      "properties": [
-        {
-          "id": "1:4901701440858827615",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:4385970042061235222",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:5439995069398349660",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:8617933621496379187",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:7617129892896370951",
-          "name": "date",
-          "type": 10
-        },
-        {
-          "id": "6:1986567278734983987",
-          "name": "image",
-          "type": 9
-        },
-        {
-          "id": "7:2301721007510007266",
-          "name": "description",
-          "type": 9
-        },
-        {
-          "id": "8:8315970559949902738",
-          "name": "latitude",
-          "type": 9
-        },
-        {
-          "id": "9:1509613113570699495",
-          "name": "longitude",
-          "type": 9
-        },
-        {
-          "id": "10:352449712989912343",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "24:4860185457431415277",
-          "relationTarget": "TripModel"
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "48:8340272642715376828",
-      "lastPropertyId": "3:5159939301141199792",
-      "name": "TripUpdateModel",
-      "properties": [
-        {
-          "id": "1:3339049301227088481",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2519476872926955778",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:5159939301141199792",
-          "name": "tripId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "49:1131722236529943803",
-      "lastPropertyId": "9:450557366528971416",
-      "name": "EndTripOtpModel",
-      "properties": [
-        {
-          "id": "1:2153301131389480900",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:3501068772274110439",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:6593792952443977985",
-          "name": "otpCode",
-          "type": 9
-        },
-        {
-          "id": "4:3824144617639256991",
-          "name": "generatedCode",
-          "type": 9
-        },
-        {
-          "id": "5:5319112439839724392",
-          "name": "isVerified",
-          "type": 1
-        },
-        {
-          "id": "6:5017239233748648122",
-          "name": "createdAt",
-          "type": 10
-        },
-        {
-          "id": "7:8556722920323910051",
-          "name": "expiresAt",
-          "type": 10
-        },
-        {
-          "id": "8:6054709776274326083",
-          "name": "verifiedAt",
-          "type": 10
-        },
-        {
-          "id": "9:450557366528971416",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "144:1351070229125063372",
-          "relationTarget": "TripModel"
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "50:5941042707820935484",
-      "lastPropertyId": "10:4110476614063380959",
-      "name": "EndTripOtpEntity",
-      "properties": [
-        {
-          "id": "1:3448734606175245413",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:4938343817719946011",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:6081123548549574525",
-          "name": "otpCode",
-          "type": 9
-        },
-        {
-          "id": "4:5487622200613296526",
-          "name": "generatedCode",
-          "type": 9
-        },
-        {
-          "id": "5:894217468241371721",
-          "name": "isVerified",
-          "type": 1
-        },
-        {
-          "id": "6:3845387719778105177",
-          "name": "createdAt",
-          "type": 10
-        },
-        {
-          "id": "7:7537857964352029569",
-          "name": "expiresAt",
-          "type": 10
-        },
-        {
-          "id": "8:6676027769759253249",
-          "name": "verifiedAt",
-          "type": 10
-        },
-        {
-          "id": "9:14288157266564761",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "27:6013288350372582445",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "10:4110476614063380959",
-          "name": "endTripOdometer",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "51:644365920268088622",
-      "lastPropertyId": "10:5622219702744553453",
-      "name": "OtpEntity",
-      "properties": [
-        {
-          "id": "1:6582525345214236852",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2845022542673206518",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:2921851186473326785",
-          "name": "otpCode",
-          "type": 9
-        },
-        {
-          "id": "4:8882587011533747056",
-          "name": "generatedCode",
-          "type": 9
-        },
-        {
-          "id": "5:5576716717786791508",
-          "name": "isVerified",
-          "type": 1
-        },
-        {
-          "id": "6:4782956038354887062",
-          "name": "createdAt",
-          "type": 10
-        },
-        {
-          "id": "7:3028890394502713668",
-          "name": "expiresAt",
-          "type": 10
-        },
-        {
-          "id": "8:5022640461465373847",
-          "name": "verifiedAt",
-          "type": 10
-        },
-        {
-          "id": "9:1142875064865309875",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "28:1576209480408598494",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "10:5622219702744553453",
-          "name": "intransitOdometer",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "52:9083427205524041375",
-      "lastPropertyId": "16:4260745180941735885",
-      "name": "CustomerDataEntity",
-      "properties": [
-        {
-          "id": "1:4868288152570646043",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:8206230229738950286",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:4725597140303171333",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:6278899991849064350",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:614509000958955798",
-          "name": "name",
-          "type": 9
-        },
-        {
-          "id": "6:3793187981659323346",
-          "name": "refId",
-          "type": 9
-        },
-        {
-          "id": "7:5496476561129568530",
-          "name": "province",
-          "type": 9
-        },
-        {
-          "id": "8:5884791488567902038",
-          "name": "municipality",
-          "type": 9
-        },
-        {
-          "id": "9:6701347040662838281",
-          "name": "barangay",
-          "type": 9
-        },
-        {
-          "id": "10:2783775945740123000",
-          "name": "longitude",
-          "type": 8
-        },
-        {
-          "id": "11:3025217968909891973",
-          "name": "latitude",
-          "type": 8
-        },
-        {
-          "id": "12:5926541534332922823",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "13:1934374496140161182",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "14:1466543434623790523",
-          "name": "paymentMode",
-          "type": 9
-        },
-        {
-          "id": "15:7202673304775741392",
-          "name": "ownerName",
-          "type": 9
-        },
-        {
-          "id": "16:4260745180941735885",
-          "name": "contactNumber",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "53:5190305223310503460",
-      "lastPropertyId": "2:2394894553572228419",
-      "name": "CustomerDataModel",
-      "properties": [
-        {
-          "id": "1:2168481243069811817",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2394894553572228419",
-          "name": "pocketbaseId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "54:9218130673980506226",
-      "lastPropertyId": "20:5474888939982950439",
-      "name": "DeliveryDataEntity",
-      "properties": [
-        {
-          "id": "1:4906769591890609172",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:7358260089789875428",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:2258766517610321544",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:596307483188138072",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:4144876367608462754",
-          "name": "customerId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "50:6729783580412313614",
-          "relationTarget": "CustomerDataModel"
-        },
-        {
-          "id": "6:7624508358227969655",
-          "name": "invoiceId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "51:492352135283157291",
-          "relationTarget": "InvoiceDataModel"
-        },
-        {
-          "id": "7:1632832920146205993",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "52:2056104230444902586",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "8:8871873741572861845",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "9:8058838556045378331",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "10:5289778272447002516",
-          "name": "hasTrip",
-          "type": 1
-        },
-        {
-          "id": "11:7509367947342390876",
-          "name": "paymentMode",
-          "type": 9
-        },
-        {
-          "id": "12:6046998802875835427",
-          "name": "deliveryNumber",
-          "type": 9
-        },
-        {
-          "id": "13:6673957372490714795",
-          "name": "totalDeliveryTime",
-          "type": 9
-        },
-        {
-          "id": "14:5754081539352014631",
-          "name": "storeName",
-          "type": 9
-        },
-        {
-          "id": "15:155553564337782442",
-          "name": "ownerName",
-          "type": 9
-        },
-        {
-          "id": "16:6644212675777977107",
-          "name": "contactNumber",
-          "type": 9
-        },
-        {
-          "id": "17:9159910432773523906",
-          "name": "barangay",
-          "type": 9
-        },
-        {
-          "id": "18:1691785403663000118",
-          "name": "municipality",
-          "type": 9
-        },
-        {
-          "id": "19:8252414638358267993",
-          "name": "province",
-          "type": 9
-        },
-        {
-          "id": "20:5474888939982950439",
-          "name": "refID",
-          "type": 9
-        }
-      ],
-      "relations": [
-        {
-          "id": "45:7445309286868354680",
-          "name": "deliveryUpdates",
-          "targetId": "6:3030380395827557545"
-        },
-        {
-          "id": "49:8890252336964719573",
-          "name": "invoiceItems",
-          "targetId": "61:2520708785790055940"
-        },
-        {
-          "id": "52:2804511821638289007",
-          "name": "invoices",
-          "targetId": "59:6569961212987627256"
-        }
-      ]
-    },
-    {
-      "id": "55:8423633885083896888",
-      "lastPropertyId": "6:2998275801690102624",
-      "name": "DeliveryDataModel",
-      "properties": [
-        {
-          "id": "1:7522337741825164044",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:6641313370538388014",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:3352908740349422317",
-          "name": "tripId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "56:5750131685428495714",
-      "lastPropertyId": "13:9168803752813950564",
-      "name": "DeliveryVehicleEntity",
-      "properties": [
-        {
-          "id": "1:5518541338824228705",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:4929378817223943174",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:8059202892796599178",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:3261140737103521717",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:1772163597076679941",
-          "name": "name",
-          "type": 9
-        },
-        {
-          "id": "6:6779520887551228619",
-          "name": "plateNo",
-          "type": 9
-        },
-        {
-          "id": "7:6087083418364663896",
-          "name": "make",
-          "type": 9
-        },
-        {
-          "id": "8:7229224855281799484",
-          "name": "type",
-          "type": 9
-        },
-        {
-          "id": "9:3393610763414408528",
-          "name": "wheels",
-          "type": 9
-        },
-        {
-          "id": "10:3387518068581453663",
-          "name": "volumeCapacity",
-          "type": 8
-        },
-        {
-          "id": "11:7292686564216911093",
-          "name": "weightCapacity",
-          "type": 8
-        },
-        {
-          "id": "12:2135988521692038103",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "13:9168803752813950564",
-          "name": "updated",
-          "type": 10
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "57:3735904064588148309",
-      "lastPropertyId": "3:6792997228860389736",
-      "name": "DeliveryVehicleModel",
-      "properties": [
-        {
-          "id": "1:2474681307724591512",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2827071663528713181",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:6792997228860389736",
-          "name": "tripId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "58:8584941869586890365",
-      "lastPropertyId": "13:5572719738333128348",
-      "name": "InvoiceDataEntity",
-      "properties": [
-        {
-          "id": "1:5101684925978890544",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2542747618580257275",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:8035055846937843930",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:767250777745036707",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:6334293822355052885",
-          "name": "refId",
-          "type": 9
-        },
-        {
-          "id": "6:2112697575659830225",
-          "name": "name",
-          "type": 9
-        },
-        {
-          "id": "7:7242760466736211814",
-          "name": "documentDate",
-          "type": 10
-        },
-        {
-          "id": "8:5098139640876201423",
-          "name": "totalAmount",
-          "type": 8
-        },
-        {
-          "id": "9:7168374071322422523",
-          "name": "volume",
-          "type": 8
-        },
-        {
-          "id": "10:1250326509221853815",
-          "name": "weight",
-          "type": 8
-        },
-        {
-          "id": "11:1164927965649940950",
-          "name": "customerId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "55:1848184781269476166",
-          "relationTarget": "CustomerDataEntity"
-        },
-        {
-          "id": "12:4852356324185017037",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "13:5572719738333128348",
-          "name": "updated",
-          "type": 10
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "59:6569961212987627256",
-      "lastPropertyId": "2:8084006730648569459",
-      "name": "InvoiceDataModel",
-      "properties": [
-        {
-          "id": "1:7494899090446384552",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:8084006730648569459",
-          "name": "pocketbaseId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "60:5456379962994459273",
-      "lastPropertyId": "15:3414312128542141691",
-      "name": "InvoiceItemsEntity",
-      "properties": [
-        {
-          "id": "1:179043112874821257",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:4305297166253711783",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:3804502667656079011",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:2701084778700999211",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:8364468300915529965",
-          "name": "name",
-          "type": 9
-        },
-        {
-          "id": "6:6309471862630726220",
-          "name": "brand",
-          "type": 9
-        },
-        {
-          "id": "7:8651610507598912609",
-          "name": "refId",
-          "type": 9
-        },
-        {
-          "id": "8:6772083183977711807",
-          "name": "uom",
-          "type": 9
-        },
-        {
-          "id": "9:9204825723787185791",
-          "name": "quantity",
-          "type": 8
-        },
-        {
-          "id": "10:7379891928036427625",
-          "name": "totalBaseQuantity",
-          "type": 8
-        },
-        {
-          "id": "11:6580548185888550421",
-          "name": "uomPrice",
-          "type": 8
-        },
-        {
-          "id": "12:7974847257541097050",
-          "name": "totalAmount",
-          "type": 8
-        },
-        {
-          "id": "13:157734064135979928",
-          "name": "invoiceDataId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "56:7508340840242053858",
-          "relationTarget": "InvoiceDataEntity"
-        },
-        {
-          "id": "14:7664984616937522348",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "15:3414312128542141691",
-          "name": "updated",
-          "type": 10
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "61:2520708785790055940",
-      "lastPropertyId": "3:4978533290324364066",
-      "name": "InvoiceItemsModel",
-      "properties": [
-        {
-          "id": "1:8801701441009767215",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:7984252080888224103",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:4978533290324364066",
-          "name": "invoiceDataId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "62:6696027886578843082",
-      "lastPropertyId": "11:9211212812383505369",
-      "name": "CancelledInvoiceEntity",
-      "properties": [
-        {
-          "id": "1:6016276785470579852",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:911468149428682187",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:5645730998315508244",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:6533963536204622638",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:1049086707635307859",
-          "name": "deliveryDataId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "73:2268301001151602922",
-          "relationTarget": "DeliveryDataModel"
-        },
-        {
-          "id": "6:4000085788755296544",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "74:3578485567881505030",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "7:5741995476175580629",
-          "name": "image",
-          "type": 9
-        },
-        {
-          "id": "8:8744520221355629524",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "9:2544935811426072395",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "10:673659440479412154",
-          "name": "customerId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "104:362057801517326832",
-          "relationTarget": "CustomerDataModel"
-        },
-        {
-          "id": "11:9211212812383505369",
-          "name": "invoiceId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "105:6404571701268891173",
-          "relationTarget": "InvoiceDataModel"
-        }
-      ],
-      "relations": [
-        {
-          "id": "50:7248760973464895799",
-          "name": "invoices",
-          "targetId": "59:6569961212987627256"
-        }
-      ]
-    },
-    {
-      "id": "63:8492922918573989072",
-      "lastPropertyId": "6:6388257097833933823",
-      "name": "CancelledInvoiceModel",
-      "properties": [
-        {
-          "id": "1:5359998800618440528",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:815476487805924351",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:4012930170989795794",
-          "name": "deliveryDataId",
-          "type": 9
-        },
-        {
-          "id": "4:7204035059790858290",
-          "name": "tripId",
-          "type": 9
-        },
-        {
-          "id": "5:8381234087228022510",
-          "name": "customerId",
-          "type": 9
-        },
-        {
-          "id": "6:6388257097833933823",
-          "name": "invoiceId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "64:4019554688609507216",
-      "lastPropertyId": "11:498185478058447605",
-      "name": "CollectionEntity",
-      "properties": [
-        {
-          "id": "1:3075379124216933668",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:718171142003326428",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:4086904969161824294",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:1259010254478584075",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:7309128930852689225",
-          "name": "deliveryDataId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "75:2510826988125649135",
-          "relationTarget": "DeliveryDataModel"
-        },
-        {
-          "id": "6:5041223312496557639",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "76:5259988568133545514",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "7:51367333003224312",
-          "name": "totalAmount",
-          "type": 8
-        },
-        {
-          "id": "8:7094512690254242496",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "9:2318097404791678608",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "10:8905344570507788371",
-          "name": "customerId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "106:1553761506678957010",
-          "relationTarget": "CustomerDataModel"
-        },
-        {
-          "id": "11:498185478058447605",
-          "name": "invoiceId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "107:45131630434287320",
-          "relationTarget": "InvoiceDataModel"
-        }
-      ],
-      "relations": [
-        {
-          "id": "51:1183977227842710033",
-          "name": "invoices",
-          "targetId": "59:6569961212987627256"
-        }
-      ]
-    },
-    {
-      "id": "65:4826906273048525394",
-      "lastPropertyId": "6:5061264034473684791",
-      "name": "CollectionModel",
-      "properties": [
-        {
-          "id": "1:37688900503369350",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:922268717945401595",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:904777158917823705",
-          "name": "deliveryDataId",
-          "type": 9
-        },
-        {
-          "id": "4:4543480027854611254",
-          "name": "tripId",
-          "type": 9
-        },
-        {
-          "id": "5:6604342347755008534",
-          "name": "customerId",
-          "type": 9
-        },
-        {
-          "id": "6:5061264034473684791",
-          "name": "invoiceId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "66:5369113908483710527",
-      "lastPropertyId": "14:1322378065497598722",
-      "name": "DeliveryReceiptEntity",
-      "properties": [
-        {
-          "id": "1:2828724549444558229",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:3871630763802832070",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:1884981731332442006",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:2666198938965664148",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:6239827665897272987",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "77:5388113584819944273",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "6:7622812748898939351",
-          "name": "deliveryDataId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "78:3613385546501454754",
-          "relationTarget": "DeliveryDataModel"
-        },
-        {
-          "id": "7:7738367120852075695",
-          "name": "status",
-          "type": 9
-        },
-        {
-          "id": "8:6987594248542423449",
-          "name": "dateTimeCompleted",
-          "type": 10
-        },
-        {
-          "id": "9:3963222541239776041",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "10:8655890687803461364",
-          "name": "updated",
-          "type": 10
-        },
-        {
-          "id": "11:9205865162335605476",
-          "name": "customerImages",
-          "type": 30
-        },
-        {
-          "id": "12:7353811758378347702",
-          "name": "customerSignature",
-          "type": 9
-        },
-        {
-          "id": "13:8429985021512645349",
-          "name": "receiptFile",
-          "type": 9
-        },
-        {
-          "id": "14:1322378065497598722",
-          "name": "totalAmount",
-          "type": 8
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "67:4289851035742724734",
-      "lastPropertyId": "11:8534009607210679578",
-      "name": "DeliveryReceiptItemsEntity",
-      "properties": [
-        {
-          "id": "1:960985303543964902",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:3589750516837685247",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:5159040245389744519",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:5742247946431043013",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:8131792983990183952",
-          "name": "deliveryReceiptId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "79:2239231746914140117",
-          "relationTarget": "DeliveryReceiptModel"
-        },
-        {
-          "id": "6:3729177002167302672",
-          "name": "status",
-          "type": 9
-        },
-        {
-          "id": "7:6619690206865098034",
-          "name": "totalAmount",
-          "type": 8
-        },
-        {
-          "id": "8:695027353661576594",
-          "name": "customerImage",
-          "type": 9
-        },
-        {
-          "id": "9:2073245836900552129",
-          "name": "receiptFile",
-          "type": 9
-        },
-        {
-          "id": "10:1879915831534771554",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "11:8534009607210679578",
-          "name": "updated",
-          "type": 10
-        }
-      ],
-      "relations": [
-        {
-          "id": "48:9064645761870730284",
-          "name": "invoiceItems",
-          "targetId": "61:2520708785790055940"
-        }
-      ]
-    },
-    {
-      "id": "68:5958189581756342264",
-      "lastPropertyId": "3:7346969639673212711",
-      "name": "DeliveryReceiptItemsModel",
-      "properties": [
-        {
-          "id": "1:5616679355631951999",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:1255772515846782877",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:7346969639673212711",
-          "name": "deliveryReceiptId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "69:5638905333969246812",
-      "lastPropertyId": "6:7139364902655718745",
-      "name": "DeliveryReceiptModel",
-      "properties": [
-        {
-          "id": "1:9122143144950536211",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:2800682189094504379",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:1126613588922829686",
-          "name": "tripId",
-          "type": 9
-        },
-        {
-          "id": "4:2327992606865351910",
-          "name": "deliveryDataId",
-          "type": 9
-        },
-        {
-          "id": "5:8799920658252251874",
-          "name": "customerImagesString",
-          "type": 9
-        },
-        {
-          "id": "6:7139364902655718745",
-          "name": "customerImages",
-          "type": 30
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "70:6479783549970940169",
-      "lastPropertyId": "13:7295034867755324763",
-      "name": "ReturnItemsEntity",
-      "properties": [
-        {
-          "id": "1:8382758819123203771",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:1621906261954409005",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:3356235032628822890",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:4781598445333716715",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:7954259085956512029",
-          "name": "tripId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "124:8209766669906924453",
-          "relationTarget": "TripModel"
-        },
-        {
-          "id": "6:3253875228766539923",
-          "name": "deliveryDataId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "125:5472937549113458966",
-          "relationTarget": "DeliveryDataModel"
-        },
-        {
-          "id": "7:6119117531245627649",
-          "name": "invoiceItemId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "126:8417569755727327156",
-          "relationTarget": "InvoiceItemsModel"
-        },
-        {
-          "id": "8:3005488892675054688",
-          "name": "invoiceDataId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "127:4963583739483190802",
-          "relationTarget": "InvoiceDataModel"
-        },
-        {
-          "id": "9:1216141050218175370",
-          "name": "refId",
-          "type": 9
-        },
-        {
-          "id": "10:6573874257112704081",
-          "name": "quantity",
-          "type": 6
-        },
-        {
-          "id": "11:7707995984966269711",
-          "name": "uom",
-          "type": 9
-        },
-        {
-          "id": "12:601389943062901165",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "13:7295034867755324763",
-          "name": "updated",
-          "type": 10
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "71:1727574566052977972",
-      "lastPropertyId": "3:7244768276797261303",
-      "name": "ReturnItemsModel",
-      "properties": [
-        {
-          "id": "1:6315903562355532096",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:1799277539243780407",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:7244768276797261303",
-          "name": "tripId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "72:7814655483863072260",
-      "lastPropertyId": "11:5991959409366285564",
-      "name": "UserPerformanceEntity",
-      "properties": [
-        {
-          "id": "1:4896337134402260046",
-          "name": "dbId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:6567380934430192839",
-          "name": "id",
-          "type": 9
-        },
-        {
-          "id": "3:2833581766450366437",
-          "name": "collectionId",
-          "type": 9
-        },
-        {
-          "id": "4:9019068681167742092",
-          "name": "collectionName",
-          "type": 9
-        },
-        {
-          "id": "5:3052740929367157076",
-          "name": "userId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "130:8414763800157151842",
-          "relationTarget": "LocalUsersModel"
-        },
-        {
-          "id": "6:2837888171190632280",
-          "name": "totalDeliveries",
-          "type": 8
-        },
-        {
-          "id": "7:6893222659021521465",
-          "name": "successfulDeliveries",
-          "type": 8
-        },
-        {
-          "id": "8:8578950964490677215",
-          "name": "cancelledDeliveries",
-          "type": 8
-        },
-        {
-          "id": "9:986475168633003094",
-          "name": "deliveryAccuracy",
-          "type": 8
-        },
-        {
-          "id": "10:8375539817196726996",
-          "name": "created",
-          "type": 10
-        },
-        {
-          "id": "11:5991959409366285564",
-          "name": "updated",
-          "type": 10
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "73:8797290553868215244",
-      "lastPropertyId": "3:4966134959561711191",
-      "name": "UserPerformanceModel",
-      "properties": [
-        {
-          "id": "1:4580841109716550118",
-          "name": "objectBoxId",
-          "type": 6,
-          "flags": 1
-        },
-        {
-          "id": "2:6348117852064112729",
-          "name": "pocketbaseId",
-          "type": 9
-        },
-        {
-          "id": "3:4966134959561711191",
-          "name": "userId",
-          "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "74:566513554873847289",
-      "lastPropertyId": "4:6895538169006859796",
+      "id": "35:6192207383671956033",
+      "lastPropertyId": "4:5680766134423769004",
       "name": "LogEntryModel",
       "properties": [
         {
-          "id": "1:7036898187121490860",
+          "id": "1:936736842390919275",
           "name": "objectBoxId",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:280938438911162155",
+          "id": "2:3210675470024617788",
           "name": "pocketbaseId",
           "type": 9
         },
         {
-          "id": "3:5177933412878263584",
+          "id": "3:4139465986031818657",
           "name": "levelIndex",
           "type": 6
         },
         {
-          "id": "4:6895538169006859796",
+          "id": "4:5680766134423769004",
           "name": "categoryIndex",
           "type": 6
         }
@@ -2359,46 +2864,178 @@
       "relations": []
     },
     {
-      "id": "75:7140982549523238352",
-      "lastPropertyId": "7:3361716387080211145",
-      "name": "InvoiceStatusEntity",
+      "id": "36:6152253761963295918",
+      "lastPropertyId": "10:5274580448795619857",
+      "name": "OtpEntity",
       "properties": [
         {
-          "id": "1:9077987873615865762",
+          "id": "1:5098028112338983435",
           "name": "dbId",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:562331865642410087",
+          "id": "2:3255514197543856078",
           "name": "id",
           "type": 9
         },
         {
-          "id": "3:4121449269182848589",
+          "id": "3:6493009399904992973",
+          "name": "otpCode",
+          "type": 9
+        },
+        {
+          "id": "4:8413064533607833698",
+          "name": "generatedCode",
+          "type": 9
+        },
+        {
+          "id": "5:8506537086830295013",
+          "name": "intransitOdometer",
+          "type": 9
+        },
+        {
+          "id": "6:8162429268914947612",
+          "name": "isVerified",
+          "type": 1
+        },
+        {
+          "id": "7:7370548007318561829",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "8:4822084728405138100",
+          "name": "expiresAt",
+          "type": 10
+        },
+        {
+          "id": "9:7528267428874187879",
+          "name": "verifiedAt",
+          "type": 10
+        },
+        {
+          "id": "10:5274580448795619857",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "48:2396513470547913445",
+          "relationTarget": "TripModel"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "37:827436586700502350",
+      "lastPropertyId": "9:2676372517132866239",
+      "name": "OtpModel",
+      "properties": [
+        {
+          "id": "1:467195019415203195",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4905087248604450188",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:7772947597790181748",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "158:2211333728042819557",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "4:671372501502571496",
+          "name": "otpCode",
+          "type": 9
+        },
+        {
+          "id": "5:3568282489101453459",
+          "name": "generatedCode",
+          "type": 9
+        },
+        {
+          "id": "6:2045343500965976167",
+          "name": "isVerified",
+          "type": 1
+        },
+        {
+          "id": "7:2352269373711899074",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "8:3928475614506902787",
+          "name": "expiresAt",
+          "type": 10
+        },
+        {
+          "id": "9:2676372517132866239",
+          "name": "verifiedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "38:8733751605757642198",
+      "lastPropertyId": "9:6454791798513184084",
+      "name": "PersonelEntity",
+      "properties": [
+        {
+          "id": "1:916407483376571081",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3642899759519488270",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8258503411620172518",
           "name": "collectionId",
           "type": 9
         },
         {
-          "id": "4:5602327719757752823",
+          "id": "4:2311961381248425612",
           "name": "collectionName",
           "type": 9
         },
         {
-          "id": "5:2931820423468839887",
-          "name": "invoiceDataId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "140:8085853412025881100",
-          "relationTarget": "InvoiceDataModel"
+          "id": "5:8775747652213599550",
+          "name": "name",
+          "type": 9
         },
         {
-          "id": "6:8758771299941472412",
+          "id": "6:6360964548512003381",
+          "name": "deliveryTeamId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "50:6091471180846449389",
+          "relationTarget": "DeliveryTeamModel"
+        },
+        {
+          "id": "7:8065485051863022021",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "51:2438088607238290373",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "8:6585012849579863980",
           "name": "created",
           "type": 10
         },
         {
-          "id": "7:3361716387080211145",
+          "id": "9:6454791798513184084",
           "name": "updated",
           "type": 10
         }
@@ -2406,18 +3043,905 @@
       "relations": []
     },
     {
-      "id": "76:3546031072707572946",
-      "lastPropertyId": "2:692970277932223833",
-      "name": "InvoiceStatusModel",
+      "id": "39:6008063225934898197",
+      "lastPropertyId": "5:1123926755189482015",
+      "name": "PersonelModel",
       "properties": [
         {
-          "id": "1:5201683130247104026",
+          "id": "1:7154079896506831808",
           "name": "objectBoxId",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:692970277932223833",
+          "id": "2:5117256702760694382",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:7002068512938534026",
+          "name": "tripId",
+          "type": 9
+        },
+        {
+          "id": "4:529706229203305311",
+          "name": "deliveryTeamId",
+          "type": 9
+        },
+        {
+          "id": "5:1123926755189482015",
+          "name": "name",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "40:1113250541684648771",
+      "lastPropertyId": "13:5726994064413678543",
+      "name": "ReturnItemsEntity",
+      "properties": [
+        {
+          "id": "1:4988500220230297719",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3129083954217175466",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:1969960813376458517",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:4690591102732037069",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:3085489454711436380",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "52:605655116045656940",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "6:3985646209357277785",
+          "name": "deliveryDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "53:8949990344381758932",
+          "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "7:8925404449100295774",
+          "name": "invoiceItemId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "54:723558059963372114",
+          "relationTarget": "InvoiceItemsModel"
+        },
+        {
+          "id": "8:3640171507838187978",
+          "name": "invoiceDataId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "55:5117561565283660318",
+          "relationTarget": "InvoiceDataModel"
+        },
+        {
+          "id": "9:7689622119970873169",
+          "name": "refId",
+          "type": 9
+        },
+        {
+          "id": "10:3737373352359863512",
+          "name": "quantity",
+          "type": 6
+        },
+        {
+          "id": "11:5021226590679658804",
+          "name": "uom",
+          "type": 9
+        },
+        {
+          "id": "12:2377255355913563973",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "13:5726994064413678543",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "41:5759033999515509595",
+      "lastPropertyId": "3:2853183580708530481",
+      "name": "ReturnItemsModel",
+      "properties": [
+        {
+          "id": "1:8045837343097278853",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:7498830464225545740",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:2853183580708530481",
+          "name": "tripId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "42:88472125874859222",
+      "lastPropertyId": "26:5122234334910541378",
+      "name": "TripEntity",
+      "properties": [
+        {
+          "id": "1:6378168072468128958",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6634763117125700368",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:4848242876736649598",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:4570856317117900954",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:6932578662976636115",
+          "name": "tripNumberId",
+          "type": 9
+        },
+        {
+          "id": "6:4594109074449530724",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "7:6276516420731413748",
+          "name": "deliveryTeamId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "56:8742452635805383006",
+          "relationTarget": "DeliveryTeamModel"
+        },
+        {
+          "id": "8:2305628357744225511",
+          "name": "otpId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "57:4297817206548622981",
+          "relationTarget": "OtpModel"
+        },
+        {
+          "id": "9:8200777225522233618",
+          "name": "endTripOtpId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "58:5220886857866098713",
+          "relationTarget": "EndTripOtpModel"
+        },
+        {
+          "id": "10:8143222062331574387",
+          "name": "userId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "59:3367544150688767721",
+          "relationTarget": "LocalUsersModel"
+        },
+        {
+          "id": "11:8172574424497008490",
+          "name": "deliveryVehicleId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "60:5146998458254584997",
+          "relationTarget": "DeliveryVehicleModel"
+        },
+        {
+          "id": "12:1782512037095658895",
+          "name": "latitude",
+          "type": 8
+        },
+        {
+          "id": "13:4197914542080799310",
+          "name": "longitude",
+          "type": 8
+        },
+        {
+          "id": "14:5605886255211240911",
+          "name": "accuracy",
+          "type": 8
+        },
+        {
+          "id": "15:7799543910009949443",
+          "name": "tripDistance",
+          "type": 8
+        },
+        {
+          "id": "16:6055473244310162273",
+          "name": "source",
+          "type": 9
+        },
+        {
+          "id": "17:6325945540696228715",
+          "name": "totalTripDistance",
+          "type": 9
+        },
+        {
+          "id": "18:3308515023005669342",
+          "name": "allowMismatchedPersonnels",
+          "type": 1
+        },
+        {
+          "id": "19:1603794452992178708",
+          "name": "isAccepted",
+          "type": 1
+        },
+        {
+          "id": "20:6096034282365744403",
+          "name": "isEndTrip",
+          "type": 1
+        },
+        {
+          "id": "21:8797195882481990702",
+          "name": "timeEndTrip",
+          "type": 10
+        },
+        {
+          "id": "22:1296122468181962451",
+          "name": "timeAccepted",
+          "type": 10
+        },
+        {
+          "id": "23:374225052878644148",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "24:6109925048508968330",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "25:5433248822982986053",
+          "name": "deliveryDate",
+          "type": 10
+        },
+        {
+          "id": "26:5122234334910541378",
+          "name": "qrCode",
+          "type": 9
+        }
+      ],
+      "relations": [
+        {
+          "id": "16:560634777858945706",
+          "name": "personels",
+          "targetId": "39:6008063225934898197"
+        },
+        {
+          "id": "17:456395435482240963",
+          "name": "checklist",
+          "targetId": "4:704455943639555765"
+        },
+        {
+          "id": "18:5276432672080387803",
+          "name": "endTripChecklist",
+          "targetId": "24:692893091437084324"
+        },
+        {
+          "id": "19:7630185075680798293",
+          "name": "tripUpdates",
+          "targetId": "45:4570811112980183234"
+        },
+        {
+          "id": "20:8963906666653089846",
+          "name": "deliveryData",
+          "targetId": "10:7361580305992308065"
+        },
+        {
+          "id": "21:6973101464147097607",
+          "name": "deliveryCollection",
+          "targetId": "6:4563950948000762030"
+        },
+        {
+          "id": "22:6344134514111688849",
+          "name": "cancelledInvoices",
+          "targetId": "2:8546058327239943010"
+        }
+      ]
+    },
+    {
+      "id": "43:7704832219274453297",
+      "lastPropertyId": "26:36932615904227010",
+      "name": "TripModel",
+      "properties": [
+        {
+          "id": "1:2756346935320673724",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:8275664335761537759",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:2591084163431374693",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "4:53476793209637570",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "5:2951477859961070012",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "6:2594810008661328335",
+          "name": "tripNumberId",
+          "type": 9
+        },
+        {
+          "id": "7:6746343879243591784",
+          "name": "qrCode",
+          "type": 9
+        },
+        {
+          "id": "8:1260910755197327897",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "9:2305622401935122201",
+          "name": "totalTripDistance",
+          "type": 9
+        },
+        {
+          "id": "10:2934784543942681451",
+          "name": "latitude",
+          "type": 8
+        },
+        {
+          "id": "11:6165085517596896027",
+          "name": "source",
+          "type": 9
+        },
+        {
+          "id": "12:343320938531082690",
+          "name": "longitude",
+          "type": 8
+        },
+        {
+          "id": "13:7312191688697321838",
+          "name": "accuracy",
+          "type": 8
+        },
+        {
+          "id": "14:8728635319797186640",
+          "name": "tripDistance",
+          "type": 8
+        },
+        {
+          "id": "15:4547057405731222642",
+          "name": "timeAccepted",
+          "type": 10
+        },
+        {
+          "id": "16:6145749530964009486",
+          "name": "timeEndTrip",
+          "type": 10
+        },
+        {
+          "id": "17:349003105485195282",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "18:4719610919703763032",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "19:3324752723803776659",
+          "name": "deliveryDate",
+          "type": 10
+        },
+        {
+          "id": "20:8032192809771940013",
+          "name": "deliveryVehicleId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "61:5197149031262499387",
+          "relationTarget": "DeliveryVehicleModel"
+        },
+        {
+          "id": "21:3361408932569611437",
+          "name": "userId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "62:2521540870424541979",
+          "relationTarget": "LocalUsersModel"
+        },
+        {
+          "id": "22:2385656053072571026",
+          "name": "otpId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "63:222451528466064363",
+          "relationTarget": "OtpModel"
+        },
+        {
+          "id": "23:9043970446133209440",
+          "name": "endTripOtpId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "64:7283752978195062632",
+          "relationTarget": "EndTripOtpModel"
+        },
+        {
+          "id": "24:3857499883750444918",
+          "name": "deliveryTeamId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "65:5401805505622570753",
+          "relationTarget": "DeliveryTeamModel"
+        },
+        {
+          "id": "25:114656565558919868",
+          "name": "allowMismatchedPersonnels",
+          "type": 1
+        },
+        {
+          "id": "26:36932615904227010",
+          "name": "isEndTrip",
+          "type": 1
+        }
+      ],
+      "relations": [
+        {
+          "id": "23:7464747965835507518",
+          "name": "personels",
+          "targetId": "39:6008063225934898197"
+        },
+        {
+          "id": "24:8135971590957297263",
+          "name": "deliveryCollection",
+          "targetId": "6:4563950948000762030"
+        },
+        {
+          "id": "25:6022806294625452737",
+          "name": "cancelledInvoices",
+          "targetId": "2:8546058327239943010"
+        },
+        {
+          "id": "26:5107947801219190064",
+          "name": "checklist",
+          "targetId": "4:704455943639555765"
+        },
+        {
+          "id": "27:8560993649076160016",
+          "name": "endTripChecklist",
+          "targetId": "24:692893091437084324"
+        },
+        {
+          "id": "28:2922236558243548930",
+          "name": "tripUpdates",
+          "targetId": "45:4570811112980183234"
+        },
+        {
+          "id": "29:6984763155418216047",
+          "name": "deliveryData",
+          "targetId": "10:7361580305992308065"
+        }
+      ]
+    },
+    {
+      "id": "44:1217018760258792573",
+      "lastPropertyId": "10:5711182016331800037",
+      "name": "TripUpdateEntity",
+      "properties": [
+        {
+          "id": "1:581045271120160394",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6730217020433737017",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:977205603630285764",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:2572980434995613466",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:7112209470951579256",
+          "name": "date",
+          "type": 10
+        },
+        {
+          "id": "6:2817835706406149087",
+          "name": "image",
+          "type": 9
+        },
+        {
+          "id": "7:1181157592040203968",
+          "name": "description",
+          "type": 9
+        },
+        {
+          "id": "8:5893633635957771365",
+          "name": "latitude",
+          "type": 9
+        },
+        {
+          "id": "9:3061473279270844560",
+          "name": "longitude",
+          "type": 9
+        },
+        {
+          "id": "10:5711182016331800037",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "66:4675489664079675782",
+          "relationTarget": "TripModel"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "45:4570811112980183234",
+      "lastPropertyId": "21:8626067892472877638",
+      "name": "TripUpdateModel",
+      "properties": [
+        {
+          "id": "1:8490841093155708368",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:2667835179503974240",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:7148745153213108416",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "4:7365584233603875051",
+          "name": "tripId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "159:6359760606742529418",
+          "relationTarget": "TripModel"
+        },
+        {
+          "id": "5:6127385025957585295",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "6:5421993021892775122",
+          "name": "retryCount",
+          "type": 6
+        },
+        {
+          "id": "7:920192419325752027",
+          "name": "lastSyncAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "8:2671411044106602794",
+          "name": "nextRetryAt",
+          "type": 10
+        },
+        {
+          "id": "9:602047634913461265",
+          "name": "lastSyncError",
+          "type": 9
+        },
+        {
+          "id": "10:743997392684998916",
+          "name": "version",
+          "type": 6
+        },
+        {
+          "id": "11:4842046286547956794",
+          "name": "updatedBy",
+          "type": 9
+        },
+        {
+          "id": "12:7728382077384536686",
+          "name": "deviceId",
+          "type": 9
+        },
+        {
+          "id": "13:8078250574209219875",
+          "name": "date",
+          "type": 10
+        },
+        {
+          "id": "14:2724109571495380833",
+          "name": "image",
+          "type": 9
+        },
+        {
+          "id": "15:5128976035394841700",
+          "name": "description",
+          "type": 9
+        },
+        {
+          "id": "16:4357071377347537324",
+          "name": "latitude",
+          "type": 9
+        },
+        {
+          "id": "17:4178728476482693347",
+          "name": "longitude",
+          "type": 9
+        },
+        {
+          "id": "18:4386166802151462657",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "19:241738383635384622",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "20:1202434386640041528",
+          "name": "hasTrip",
+          "type": 1
+        },
+        {
+          "id": "21:8626067892472877638",
+          "name": "hasPendingSync",
+          "type": 1
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "46:8873069058085427288",
+      "lastPropertyId": "11:8558756300507837832",
+      "name": "UserPerformanceEntity",
+      "properties": [
+        {
+          "id": "1:4962651070486344061",
+          "name": "dbId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:7230413496446834554",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:4506524872716579605",
+          "name": "collectionId",
+          "type": 9
+        },
+        {
+          "id": "4:2891711407963137615",
+          "name": "collectionName",
+          "type": 9
+        },
+        {
+          "id": "5:8532911178186886620",
+          "name": "userId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "68:3060197714116732560",
+          "relationTarget": "LocalUsersModel"
+        },
+        {
+          "id": "6:1037263491200740673",
+          "name": "totalDeliveries",
+          "type": 8
+        },
+        {
+          "id": "7:5935654085854423306",
+          "name": "successfulDeliveries",
+          "type": 8
+        },
+        {
+          "id": "8:8879571186390276836",
+          "name": "cancelledDeliveries",
+          "type": 8
+        },
+        {
+          "id": "9:5905497877326267699",
+          "name": "deliveryAccuracy",
+          "type": 8
+        },
+        {
+          "id": "10:1847853509442501108",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "11:8558756300507837832",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "47:4502532215337322605",
+      "lastPropertyId": "18:7768679235769375116",
+      "name": "UserPerformanceModel",
+      "properties": [
+        {
+          "id": "1:3337516765130349538",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:6223615632402357",
+          "name": "pocketbaseId",
+          "type": 9
+        },
+        {
+          "id": "3:4394471198839211218",
+          "name": "userId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "69:7055437893395205585",
+          "relationTarget": "LocalUsersModel"
+        },
+        {
+          "id": "4:2290709808802248912",
+          "name": "lastLocalUpdatedAt",
+          "type": 10
+        },
+        {
+          "id": "5:899995556465608010",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "6:1208239883907658899",
+          "name": "retryCount",
+          "type": 6
+        },
+        {
+          "id": "7:4403647163667183847",
+          "name": "lastSyncAttemptAt",
+          "type": 10
+        },
+        {
+          "id": "8:7636737524434496562",
+          "name": "nextRetryAt",
+          "type": 10
+        },
+        {
+          "id": "9:7225093900203336245",
+          "name": "lastSyncError",
+          "type": 9
+        },
+        {
+          "id": "10:6755182480423826034",
+          "name": "version",
+          "type": 6
+        },
+        {
+          "id": "11:3476751943843988555",
+          "name": "updatedBy",
+          "type": 9
+        },
+        {
+          "id": "12:4942498889017281474",
+          "name": "deviceId",
+          "type": 9
+        },
+        {
+          "id": "13:7845710723487749422",
+          "name": "totalDeliveries",
+          "type": 8
+        },
+        {
+          "id": "14:2626832528401764304",
+          "name": "successfulDeliveries",
+          "type": 8
+        },
+        {
+          "id": "15:4030979484685351254",
+          "name": "cancelledDeliveries",
+          "type": 8
+        },
+        {
+          "id": "16:2460670705115954385",
+          "name": "deliveryAccuracy",
+          "type": 8
+        },
+        {
+          "id": "17:8994808703567751752",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "18:7768679235769375116",
+          "name": "updated",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "48:4350876074771390893",
+      "lastPropertyId": "5:2535604623766079555",
+      "name": "UserRoleModel",
+      "properties": [
+        {
+          "id": "1:6240494377114805140",
+          "name": "objectBoxId",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:7013788578861460352",
+          "name": "id",
+          "type": 9
+        },
+        {
+          "id": "3:8812000795464214110",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "4:4256077087520164837",
+          "name": "permissions",
+          "type": 30
+        },
+        {
+          "id": "5:2535604623766079555",
           "name": "pocketbaseId",
           "type": 9
         }
@@ -2425,653 +3949,106 @@
       "relations": []
     }
   ],
-  "lastEntityId": "76:3546031072707572946",
-  "lastIndexId": "145:7194170607201910613",
-  "lastRelationId": "52:2804511821638289007",
+  "lastEntityId": "48:4350876074771390893",
+  "lastIndexId": "159:6359760606742529418",
+  "lastRelationId": "29:6984763155418216047",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
-  "retiredEntityUids": [
-    1709191995835174192,
-    5647878385979291019,
-    6731247264778152736,
-    2458712594399542542,
-    3107077524193027026,
-    5955780460900690118,
-    8194473631824528840,
-    116420218591968259,
-    1767132873335522797,
-    2135318920905868119,
-    572117866772752744,
-    1402609585364815748,
-    7120148567131405051,
-    2810982542403258041,
-    6624942406754561090,
-    5432582490327826448,
-    813909493096520087,
-    2593343718872205124,
-    6887281950365048680,
-    1636938665827161760,
-    2117216250781186987,
-    8325197092071778196,
-    2222338414731561434,
-    5190367765380256665,
-    4702232932726113116,
-    1498007900983199816,
-    8984387025797531191,
-    937918581849543207,
-    2516527742303567496,
-    4333057689990297160,
-    2221868557555259792
-  ],
+  "retiredEntityUids": [],
   "retiredIndexUids": [
-    2981830705100883060,
-    2782803977680333148,
-    6300437396902348039,
-    4041501902131753704,
-    8777982949646307272,
-    7024515020805388727,
-    5590631857740543101,
-    5824002030703593085,
-    935312474712296861,
-    4446192239018063099,
-    1394205174110905009,
-    899601815778169880,
-    6079813195697612926,
-    7657596910129447497,
-    1886208561651737779,
-    938783085154942789,
-    7764234828199311654,
-    3402456903208139476,
-    12771229517713532,
-    3730222485602799089,
-    6172864948547412323,
-    4720663995748975221,
-    6429149503988953500,
-    8526261447759437205,
-    1731107271344601681,
-    518642663306885988,
-    9151995988484559211,
-    4403320217953853729,
-    1726970402077863884,
-    2852350600320815169,
-    857558378186194142,
-    5535485596900826500,
-    8129482255202537649,
-    6908958383296806346,
-    7932569622179544317,
-    4586169951709319616,
-    5876197726705580579,
-    4350617180197170491,
-    4618938960140997394,
-    7865768950632988384,
-    5849448005371519222,
-    6216503592579678999,
-    2929868313853451577,
-    8392113346002922573,
-    1572312363836999092,
-    8813127732259371883,
-    5911969113098242606,
-    3943932802148224205,
-    4687192535655085016,
-    5513443102488682930,
-    5231495607980221658,
-    5250439930599153631,
-    4739623102102877132,
-    66366586473896345,
-    5919243101713377994,
-    1361690439118438072,
-    7272566313916276180,
-    7661187329471132209,
-    8141262806335892232,
-    4313790059035887863,
-    8559553551552707379,
-    7597268288597430123,
-    7516783137746932816,
-    6165004111790533116,
-    130617342430599913,
-    6693967078919351563,
-    8409512806390582317,
-    4825664026656140278,
-    5476341418432294988,
-    1171187708824140506,
-    212432795640100884,
-    275404355999582526,
-    2364513733229906522,
-    4882525221675082522,
-    4202647451836453134,
-    4559760120099527645,
-    5992119699418627524,
-    1056979858007497304,
-    8572364359171147937,
-    7247713234655754338,
-    7036718240826879657,
-    1498077514876797370,
-    8976760665311177153,
-    4386486870506067259,
-    4295261022001219369,
-    9101044710165158669
+    2391151746905594800,
+    8721039378638956729,
+    9058820739849879805,
+    6079457313011947778,
+    7989717842909666654,
+    6889690400245246383,
+    5326004971865504581,
+    347194340483472355,
+    4283382001795717667,
+    8855967841757821707,
+    9025612460864832167,
+    8395433212604267854,
+    8712866817625943518,
+    6658691915624328171,
+    1538209654923386210,
+    63587393637977269,
+    1246989797385504603,
+    6171834832616693413,
+    1743311183682641854,
+    4097823182110564830,
+    5937201223192283529,
+    9057468819748228168,
+    6580083492631676194,
+    7456603656093951761,
+    5217024311102953317,
+    529160537486736536,
+    3188413455413064412,
+    199423267335357909,
+    1806982839103410568,
+    655925653712927236,
+    1448086654463194025,
+    7537463904431028964,
+    5974440756535516662,
+    192687211236978193,
+    832628893806852244,
+    8928782927579413768,
+    6441346005481448924,
+    3450689738991449558,
+    5831806716854426024,
+    8313820731139897158,
+    1181573334785891002,
+    7452376244179150305,
+    975441523990339832,
+    8012157172048040676,
+    7287272245465888860,
+    992040669707020594,
+    6509418599485977657,
+    7602675407447019158,
+    3466308675571188166,
+    2013008403064407131,
+    4786115519089839099,
+    1856457879844141146,
+    5456548474878252669,
+    7343302417999999689,
+    1936438146079096790,
+    2693047327320203498,
+    105895130289214766,
+    3010880229461671514,
+    969465009715428219,
+    4611097727723014057,
+    1588277557021730086,
+    5126187941760446915,
+    3780724065936063178,
+    7844589810649398668,
+    5437388938735440198,
+    82836898788132184,
+    4495375042750036439,
+    7505210783583125052,
+    4260706765763892965,
+    2818331691660175263,
+    3090266189510790886,
+    2725137893210609383,
+    6638299577496970315,
+    6188627288852825831,
+    5034632241463496775,
+    6379471923095334652,
+    1059356060927719125,
+    2586630738621217973,
+    3324542446315975845,
+    1723785812874771648,
+    8036132501314100320,
+    1316039533312596029,
+    3063085435978090795,
+    2832659410584871451,
+    8578661738131049617,
+    9061520833194661442,
+    4649129504149120151,
+    2753773403605013340,
+    1546646529814978800,
+    202867169602236364
   ],
-  "retiredPropertyUids": [
-    3346502891055187729,
-    1009332994863935659,
-    2324303722038017820,
-    7788635126355027900,
-    7334760455591202468,
-    8381667705519424013,
-    2710477333633267407,
-    3055896665825880636,
-    4678345076338164646,
-    7001435660534463531,
-    3371026510439087837,
-    5329373544729784361,
-    3324814194881990742,
-    7899912214650689887,
-    3520683897252299998,
-    5756124573361889393,
-    4736890772351912530,
-    1556138099246924859,
-    5777588314242894772,
-    1515482504621780335,
-    6695954596118044804,
-    4688492044640008953,
-    7864172107054097804,
-    153098866840512948,
-    1017756023256924244,
-    733073798972306696,
-    8649563819024543426,
-    5026498849414778679,
-    4923944400873830152,
-    8964901702785174985,
-    2591008408372236149,
-    2833951936164225068,
-    3105786280374445439,
-    3234456093933637888,
-    623759477716576776,
-    5884932740389322811,
-    1499446022435534747,
-    9049041803453357739,
-    2896878176954484620,
-    4674086858133167844,
-    6635358543995513750,
-    2057975570452214727,
-    6696659810550947331,
-    2673370692750713040,
-    2452258425451218631,
-    1660829942871227289,
-    2481549374181021520,
-    2647248119636072139,
-    3123785702483572634,
-    7708327547631968643,
-    6986507959279631750,
-    6854176634043208467,
-    636066565857395264,
-    7514130931921951299,
-    956767886241436992,
-    9059613739051651735,
-    3954239300359103519,
-    8456539975188843360,
-    7855429121177003935,
-    3814657222248468385,
-    118867138343753619,
-    3617129722980667683,
-    6100680245733313644,
-    3988289524928837905,
-    7220003368912499423,
-    7591981076327796786,
-    6865162061090837420,
-    874109652006675219,
-    3307256693058695743,
-    8689131560753511824,
-    7383993059172374117,
-    1555406793455982899,
-    6714374928200089591,
-    3042412625847487470,
-    3123422852844259364,
-    7266098996974810707,
-    6886073076169604887,
-    3429347792345719564,
-    9131168568839693837,
-    4670377013173472518,
-    6194329686129516474,
-    8211050437118544391,
-    6926303013006571764,
-    1181701315522890829,
-    6912351668832820101,
-    4960961578336605968,
-    5792604516464607618,
-    4905934325953802439,
-    2586529332979243720,
-    5861714207120707011,
-    1873158772802680681,
-    5084572190381757332,
-    7748044255256174871,
-    7972348241275475002,
-    1261572913212912961,
-    6761708035171457004,
-    2634043966613139471,
-    7720841438373947280,
-    6206971940003050337,
-    7542721183222484098,
-    155822766592974440,
-    8496483455969129505,
-    2178731346099788232,
-    6221411334446485428,
-    2051736087611920237,
-    8091250733894021936,
-    8424877247173309892,
-    5936290088340059749,
-    3401469890485481111,
-    90345078465889098,
-    8570110506833708183,
-    9152837453747261590,
-    6280043272279039033,
-    1205345670970589924,
-    7329503767436942265,
-    2089832183961038400,
-    4900112148274986884,
-    5057066566090903305,
-    3852867156292370197,
-    2620484594183047470,
-    1779482180990046958,
-    5774607245411278659,
-    5530847620210540319,
-    3650136383948829499,
-    6750117226059744954,
-    8256360511733442188,
-    3442425869725346823,
-    6653769136411455134,
-    5232249076290523924,
-    5114193768578248515,
-    869744572143142212,
-    7966901206049272756,
-    6761636637536665936,
-    6066451446905563522,
-    3666705536834561833,
-    7294019686697303616,
-    2568272940799886390,
-    8668470884968752331,
-    3017993733987945649,
-    1642277713169861702,
-    6846417587262951599,
-    3248218099750963756,
-    1687518482051146126,
-    4092268054658678507,
-    4679455853066371887,
-    7193871567497624824,
-    4037163148147848591,
-    471256164172782859,
-    3225561053691562279,
-    8728538038950971971,
-    7266365344229709032,
-    7508193386524436699,
-    2767468891706791322,
-    1774270480587178987,
-    1202246538480569000,
-    3223422758391311674,
-    6435739894853343272,
-    3374035810299161816,
-    9107479157367655135,
-    267960583653816918,
-    2633421765705684186,
-    262455484447700793,
-    3631673552392912539,
-    1845631243407067851,
-    8608845737309140413,
-    4956262906346606043,
-    5292948896455438928,
-    2430809978846032528,
-    7735096263462153087,
-    6335579363066827439,
-    4882081437172580607,
-    3061032585647135624,
-    2554901496995892810,
-    8786142205816397975,
-    8174398557175301547,
-    4326647970592138593,
-    7347651946967189121,
-    2038198061276200161,
-    5022564998890878109,
-    3305357813724603285,
-    5127278744056458213,
-    8434655857806917917,
-    4818737849281510032,
-    1017119108737096578,
-    5575952014722064126,
-    4588130528760471343,
-    8255311086692512601,
-    8475649867718060193,
-    4909422161419561195,
-    493693054723217232,
-    6075804939639433975,
-    9148555850270000235,
-    1734468122192002532,
-    8712156239102596010,
-    7019605952068996319,
-    2947252145267312157,
-    9086207744144734969,
-    256582326921748728,
-    1308393457313955946,
-    5331664432725031139,
-    4940556951321025223,
-    5578967840659667487,
-    1273653736147391768,
-    5964088283253944682,
-    7561021174642281097,
-    4633115773106761011,
-    2156627673242474335,
-    621575398230288989,
-    2839846883970833567,
-    8138372410520429987,
-    8497769358559599242,
-    6683516220717541421,
-    753938509431198301,
-    5115470052619938283,
-    2407621401099227263,
-    5645589271456974710,
-    3943047939382892239,
-    4819292598439533012,
-    81471854687097645,
-    2894727471067594752,
-    5841964243118193692,
-    5708406590959690661,
-    6209956281521035556,
-    8824375292511182769,
-    3002616149896201006,
-    6876487194760412825,
-    7179125411577599663,
-    9218304528965443174,
-    5053188798423684984,
-    6365039277670865476,
-    6521198168162998790,
-    1849011463706792379,
-    1222961001376872913,
-    6623588558235138825,
-    4797487283297426094,
-    3274716364988500121,
-    7500813721015562269,
-    2016412316382749069,
-    4617807091484509180,
-    1664638640866434715,
-    1310607178100257051,
-    2751010279870765211,
-    4249800905296480194,
-    2541656314562760752,
-    9183558434272641539,
-    527796475590680333,
-    7366984776947846670,
-    3914332514906635095,
-    1899462517382426399,
-    6935080176359632810,
-    8910130772582302120,
-    8927908042961978708,
-    5721957865069607072,
-    6322027692736321227,
-    9216643524753605112,
-    6710299430894799167,
-    6210998683546887611,
-    6894276842539030329,
-    4133114395883755979,
-    105319028927879718,
-    4191316215346017706,
-    4989933997621522724,
-    6686536332549314011,
-    4839088005258446305,
-    6406352966592152370,
-    4647964431685183452,
-    7398992804350638175,
-    8502432387044699617,
-    8789905355408153954,
-    1449615058738359455,
-    4880751019398108216,
-    7919008357053089198,
-    1905456188826770252,
-    3193306949989739351,
-    7915277020131883841,
-    3874592165834909809,
-    2254359110924808111,
-    7465490325345930004,
-    2015172529944872494,
-    8543318595254771691,
-    1864920782530861828,
-    4522413966018009944,
-    8797962648914788389,
-    6900674462289497262,
-    2265347942980778690,
-    1159071939057965804,
-    1930353276913245788,
-    495942872694066139,
-    302180669176230366,
-    353255264519052879,
-    8635794056678148942,
-    4274432975179550722,
-    9095531140116553685,
-    2998275801690102624,
-    1119544490582682879,
-    6236750458352047417,
-    3253882744375541347,
-    8135099039353923812,
-    3381536243504511229,
-    45105488215685205,
-    1018357521837095445,
-    4087694502081403835,
-    6474825060915434468,
-    7363645517555672052,
-    5420239464119476058,
-    7303160245840236974,
-    8812957164445977657,
-    1045020115845912295,
-    6043937121149023227,
-    5866289250807945815,
-    4473423505279939315,
-    8091191658113377414,
-    5143026906601448759,
-    111157491964795591,
-    886845633227859065,
-    7862959537730988789,
-    3792298513174971000,
-    1369727991867701382,
-    7602950538999883170,
-    4657750512920984701,
-    4765256920943358881,
-    5957476963308025203,
-    4804241814732810859,
-    6558666286453278682,
-    7391864432468285792,
-    4991381980770158838,
-    4848981102286286916,
-    2252812235607604872,
-    925197155801949221,
-    7358673056707796553,
-    2829182731243011253,
-    6951871397512140651,
-    6129570854454915775,
-    7137774916926280362,
-    7923803019541041321,
-    8426379740425083318,
-    296532642051237585,
-    7335564331495633789,
-    7126038900417777501,
-    2801144532307129762,
-    6325828076300386899,
-    270983248864754213,
-    6409336372386458699,
-    5169533415623584624,
-    6497842107553043055,
-    7636815526717123652,
-    6515989377128153678,
-    634443315658693490,
-    4194123572114620536,
-    851112904590827220,
-    8986910532050463210,
-    9125521959038870111,
-    2770902239759775903,
-    4443279738750832096,
-    5221032146910871289,
-    2663816627981708346,
-    3725358458194100352,
-    2277412749602805915,
-    6433142257288463011,
-    7600171264578283543,
-    7302890908149584229,
-    4526406225289741230,
-    8186774332665517874,
-    5438979947531339030,
-    9166228944783305484,
-    5231326900758383552,
-    6307766040921005380,
-    344950642817430532,
-    1827036462628612368,
-    596861409252080956,
-    2509549930219347946,
-    7788696190495463391,
-    1182637436290937352,
-    3185695397029916180,
-    7482434781887082599,
-    7547398494399669109,
-    9212230789388552615,
-    4849920256823204710,
-    6341109722109625035,
-    5524543240484184771,
-    510632936006348073,
-    2236155664072012998,
-    2935231896130179601,
-    3913111527420347263,
-    3851258104500491561,
-    7955364885727961290,
-    2221253742651843905,
-    8974145915940495565,
-    8186513145024983979,
-    4369489657167608582,
-    8222082613003819562,
-    3440119017008134938,
-    7240213920209634204,
-    5225197093163286518,
-    8768302685213339695,
-    7159250174630514347,
-    688633321144220225,
-    7712354582157774445,
-    20699139691494007,
-    3257272905913404798,
-    5966119542570929601,
-    2054820229075353456,
-    1354780863573015275,
-    8352136082830244547,
-    6308530438112771624,
-    5654710875855817213,
-    1442767062996121287,
-    2616114769091067229,
-    2978713147213114232,
-    7733948270425816243,
-    6096513534413029008,
-    6909169449759179596,
-    5029006026594443824,
-    3149737445133335124,
-    3285981560810214996,
-    4292325636304599832,
-    6509687678033297242,
-    2428300827424217746,
-    6459952616228590918,
-    9163101723595439190,
-    2081631122263565441,
-    6006406697334212765,
-    267814120063409867,
-    7905683759712683842,
-    6807520937482742362,
-    8207918602700888103,
-    8018805169024900810,
-    9024996737942869157,
-    7516508171733807906,
-    4405439017711572684,
-    2391120462549753352,
-    1281672098929982405,
-    9183796705152472307,
-    2781752260426345470,
-    5450074392613403862,
-    2373140102148991748,
-    5224150141613133736,
-    655879933433011631,
-    8356014716741193452,
-    4853744715588708487,
-    4489963106830340807,
-    131988642879265621,
-    3603718351566598495,
-    8685509533717266954,
-    2608369877185797316,
-    7603402449542992811,
-    3709584509802714636,
-    4281595992971248849,
-    7986841945518961124,
-    8596900298846992208,
-    1136157881071497442,
-    7242929660127407819,
-    6785323552713586580,
-    2088534606867845567,
-    1174106696378544901,
-    4901481522986122322,
-    2944343869770818756,
-    7739883618297448780,
-    2492853829283906299,
-    7323883443322035507,
-    7910129559602669704,
-    8055234233253314331,
-    6186365132359912635,
-    4172421423966186718,
-    6325676081482135511,
-    2950505108334920364,
-    2894228457296743553,
-    4163351549138731239,
-    7543617251530756104,
-    5654570394661900185,
-    4054983847623094980,
-    1542758854891727305,
-    8118348817022776716,
-    8422213836280040162,
-    3184061274569432270,
-    8057469913794903815,
-    5310961405297681090,
-    1492033224014375763,
-    8128311458033104675,
-    4371168023259649949,
-    5356208287296348895,
-    1619972481835330093,
-    6590600448549686068,
-    8532757649039017378,
-    5008752805959440831,
-    470859633088862700,
-    8310058358750134313,
-    474734031823528984,
-    4239136672454108126
-  ],
-  "retiredRelationUids": [
-    4626963580022962752,
-    7952964050811186203,
-    2572761830930501922,
-    5657459460448516614,
-    8176844965992326068,
-    1966879051449128539,
-    4390911173969797425,
-    7705048988162586471,
-    4036520657680791832,
-    964408522493268961,
-    4702156903672996872,
-    3629441164168392802,
-    768856214699475907,
-    520418666464514115,
-    1587644881745869281,
-    2271626364931710282,
-    9194901586609090214,
-    5055001292096896164,
-    1211522283703357965,
-    7951814181348982632,
-    4643822862643184357,
-    8009148045859773887,
-    7971742671112932770,
-    2312004636728150997,
-    863808831836037207,
-    4081384640078222274,
-    3677489048848750233,
-    9059256670982983459
-  ],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
   "version": 1
 }

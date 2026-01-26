@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
-
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 class CustomersDashboardTrx extends StatefulWidget {
   final DeliveryDataEntity deliveryData;
 
@@ -34,15 +33,9 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
         '🔄 Loading delivery data for transaction: ${widget.deliveryData.id}',
       );
 
-      // Load local data first
       context.read<DeliveryDataBloc>().add(
-        GetLocalDeliveryDataByIdEvent(widget.deliveryData.id!),
-      );
-
-      // Then load from remote
-      context.read<DeliveryDataBloc>().add(
-        GetDeliveryDataByIdEvent(widget.deliveryData.id!),
-      );
+            GetDeliveryDataByIdEvent(widget.deliveryData.id!),
+          );
     }
   }
 
@@ -50,7 +43,7 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
   Widget build(BuildContext context) {
     return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
       builder: (context, state) {
-        DeliveryDataEntity? effectiveDeliveryData;
+        DeliveryDataEntity effectiveDeliveryData;
 
         if (state is DeliveryDataLoaded) {
           effectiveDeliveryData = state.deliveryData;
@@ -60,9 +53,15 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
           debugPrint('📦 Using initial delivery data from widget');
         }
 
-        final customer = effectiveDeliveryData.customer.target;
+        // ✅ Use DeliveryData fields directly (no customer.target)
+        final storeName = (effectiveDeliveryData.storeName ?? '').trim();
+        final address = (effectiveDeliveryData.municipality ?? '').trim();
+        final mop = (effectiveDeliveryData.paymentMode ?? '').trim();
 
-        if (customer != null) {
+        final hasAnyCustomerInfo =
+            storeName.isNotEmpty || address.isNotEmpty || mop.isNotEmpty;
+
+        if (hasAnyCustomerInfo) {
           return SizedBox(
             height: 180,
             width: double.infinity,
@@ -76,8 +75,8 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                     Text(
                       'Customer Details',
                       style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                     ),
                     const SizedBox(height: 15),
                     Expanded(
@@ -86,7 +85,6 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                           Expanded(
                             child: _buildLeftColumn(
                               context,
-                              customer,
                               effectiveDeliveryData,
                             ),
                           ),
@@ -94,7 +92,6 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                           Expanded(
                             child: _buildRightColumn(
                               context,
-                              customer,
                               effectiveDeliveryData,
                             ),
                           ),
@@ -138,8 +135,7 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _buildSkeletonRow(),
                                   _buildSkeletonRow(),
@@ -151,8 +147,7 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _buildSkeletonRow(),
                                   _buildSkeletonRow(),
@@ -165,13 +160,13 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
                     ],
                   ),
                   if (state is DeliveryDataLoading)
-                    Positioned(
+                    const Positioned(
                       top: 0,
                       left: 0,
                       right: 0,
                       child: SizedBox(
                         height: 2,
-                        child: const LinearProgressIndicator(),
+                        child: LinearProgressIndicator(),
                       ),
                     ),
                 ],
@@ -183,11 +178,10 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
     );
   }
 
-  Widget _buildLeftColumn(
-    BuildContext context,
-    dynamic customer,
-    DeliveryDataEntity deliveryData,
-  ) {
+  Widget _buildLeftColumn(BuildContext context, DeliveryDataEntity deliveryData) {
+    final storeName = (deliveryData.storeName ?? '').trim();
+    final address = (deliveryData.municipality ?? '').trim();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -196,13 +190,13 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
           context: context,
           icon: Icons.store,
           title: "Store Name",
-          value: customer.name ?? customer.name ?? 'N/A',
+          value: storeName.isEmpty ? 'N/A' : storeName,
         ),
         _buildInfoRow(
           context: context,
-          icon: Icons.person,
+          icon: Icons.location_on,
           title: "Address",
-          value: customer.province ?? customer.province ?? 'N/A',
+          value: address.isEmpty ? 'N/A' : address,
         ),
       ],
     );
@@ -210,9 +204,10 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
 
   Widget _buildRightColumn(
     BuildContext context,
-    dynamic customer,
     DeliveryDataEntity deliveryData,
   ) {
+    final mop = (deliveryData.paymentMode ?? '').trim();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -221,73 +216,40 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
           context: context,
           icon: Icons.payment,
           title: "Mode of Payment",
-          value: customer.paymentMode ?? customer.paymentMode ?? 'N/A',
+          value: mop.isEmpty ? 'N/A' : mop,
         ),
         _buildInfoRow(
           context: context,
           icon: Icons.attach_money,
           title: "Total Amount",
-          value: _calculateTotalAmount(deliveryData),
+          value: _calculateTotalAmountFromInvoices(deliveryData),
         ),
       ],
     );
   }
 
-  // String _getPaymentModeDisplay(dynamic paymentSelection) {
-  //   if (paymentSelection == null) return 'N/A';
-
-  //   return paymentSelection
-  //       .toString()
-  //       .split('.')
-  //       .last
-  //       .split(RegExp(r'(?=[A-Z])'))
-  //       .map((word) => word.capitalize())
-  //       .join(' ')
-  //       .replaceAll('E Wallet', 'E-Wallet');
-  // }
-
-  String _calculateTotalAmount(DeliveryDataEntity deliveryData) {
-    debugPrint('💰 Calculating total amount for delivery: ${deliveryData.id}');
+  /// ✅ Sum ALL invoices totalAmount from deliveryData.invoices
+  /// Shows as "balance"
+  String _calculateTotalAmountFromInvoices(DeliveryDataEntity deliveryData) {
+    debugPrint('💰 [BALANCE] Calculating total from invoices for delivery=${deliveryData.id}');
 
     double total = 0.0;
 
-    // Use invoices relation for total amount calculation
-    if (deliveryData.invoices.isNotEmpty) {
-      for (var invoice in deliveryData.invoices) {
-        final invoiceTotal = invoice.totalAmount ?? 0.0;
-        total += invoiceTotal;
-        debugPrint(
-          '   📄 Invoice: ${invoice.id} - Amount: ₱${invoiceTotal.toStringAsFixed(2)}',
-        );
-      }
-      debugPrint('💵 Total from invoices: ₱${total.toStringAsFixed(2)}');
-    } else {
-      // Fallback to single invoice relation if invoices collection is empty
-      final invoice = deliveryData.invoice.target;
-      if (invoice != null && invoice.totalAmount != null) {
-        total = invoice.totalAmount!;
-        debugPrint(
-          '   📄 Using single invoice total: ₱${total.toStringAsFixed(2)}',
-        );
-      } else {
-        // Last fallback to invoice items if both invoice relations are unavailable
-        final invoiceItems = deliveryData.invoiceItems;
-        if (invoiceItems.isNotEmpty) {
-          for (var item in invoiceItems) {
-            final itemTotal = item.totalAmount ?? 0.0;
-            total += itemTotal;
-            debugPrint(
-              '   📦 Item: ${item.name} - Amount: ₱${itemTotal.toStringAsFixed(2)}',
-            );
-          }
-          debugPrint(
-            '💵 Total from invoice items: ₱${total.toStringAsFixed(2)}',
-          );
-        }
-      }
+    final invoices = deliveryData.invoices;
+
+    debugPrint('🧾 [BALANCE] invoices count=${invoices.length}');
+
+    for (final inv in invoices) {
+      final amt = (inv.totalAmount ?? 0.0);
+      total += amt;
+
+      debugPrint(
+        '   • invoiceId=${inv.id} | totalAmount=${amt.toStringAsFixed(2)}',
+      );
     }
 
-    debugPrint('💵 Final total amount: ₱${total.toStringAsFixed(2)}');
+    debugPrint('✅ [BALANCE] total sum=₱${total.toStringAsFixed(2)}');
+
     return '₱${NumberFormat('#,##0.00').format(total)}';
   }
 

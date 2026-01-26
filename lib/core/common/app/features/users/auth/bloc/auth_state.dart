@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/entity/trip_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/entity/users_entity.dart';
 
 abstract class AuthState extends Equatable {
@@ -78,6 +78,16 @@ class UserTripLoaded extends AuthState {
   final bool isFromLocal;
   
   const UserTripLoaded(this.trip, {this.isFromLocal = false});
+  
+  @override
+  List<Object> get props => [trip, isFromLocal];
+}
+
+class UserTripSynced extends AuthState {
+  final TripEntity trip;
+  final bool isFromLocal;
+  
+  const UserTripSynced(this.trip, {this.isFromLocal = false});
   
   @override
   List<Object> get props => [trip, isFromLocal];

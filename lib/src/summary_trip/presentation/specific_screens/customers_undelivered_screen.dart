@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';
 
 import 'package:x_pro_delivery_app/core/enums/undeliverable_reason.dart';
 
-import '../../../../../../core/common/app/features/Trip_Ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_state.dart';
+import '../../../../core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_state.dart';
 
 class CustomersUndeliveredScreen extends StatefulWidget {
   final String cancelledInvoiceId;
@@ -107,7 +107,7 @@ class _SpecificUndeliveredCustomerScreenState
     final customer = cancelledInvoice.customer.target;
     final invoices = cancelledInvoice.invoices;
     final deliveryData = cancelledInvoice.deliveryData.target;
-    final trip = cancelledInvoice.trip.target;
+   // final trip = cancelledInvoice.trip.target;
 
     debugPrint('🎯 Cancelled Invoice Details:');
     debugPrint('   📦 Cancelled Invoice ID: ${cancelledInvoice.id}');
@@ -156,10 +156,10 @@ class _SpecificUndeliveredCustomerScreenState
             ],
 
             // Trip Information Card
-            if (trip != null) ...[
-              _buildTripInfoCard(context, trip),
-              const SizedBox(height: 16),
-            ],
+            // if (trip != null) ...[
+            //   _buildTripInfoCard(context, trip),
+            //   const SizedBox(height: 16),
+            // ],
 
             // Cancellation Evidence Card
             if (cancelledInvoice.image != null &&
@@ -221,6 +221,7 @@ class _SpecificUndeliveredCustomerScreenState
       ),
     );
   }
+
 
   Widget _buildCustomerInfoCard(BuildContext context, customer) {
     return Card(
@@ -366,47 +367,47 @@ class _SpecificUndeliveredCustomerScreenState
     );
   }
 
-  Widget _buildTripInfoCard(BuildContext context, trip) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.route,
-                  color: Theme.of(context).colorScheme.secondary,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Trip Information',
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            _buildInfoRow('Trip Number', trip.tripNumberId ?? 'Unknown'),
-            _buildInfoRow(
-              'Status',
-              trip.isAccepted == true ? 'Accepted' : 'Pending',
-            ),
-            _buildInfoRow(
-              'End Trip',
-              trip.isEndTrip == true ? 'Completed' : 'In Progress',
-            ),
-            if (trip.timeAccepted != null)
-              _buildInfoRow('Time Accepted', _formatDate(trip.timeAccepted)),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildTripInfoCard(BuildContext context, trip) {
+  //   return Card(
+  //     elevation: 2,
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(16),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Row(
+  //             children: [
+  //               Icon(
+  //                 Icons.route,
+  //                 color: Theme.of(context).colorScheme.secondary,
+  //                 size: 24,
+  //               ),
+  //               const SizedBox(width: 8),
+  //               Text(
+  //                 'Trip Information',
+  //                 style: Theme.of(context).textTheme.titleMedium!.copyWith(
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //           const Divider(height: 24),
+  //           _buildInfoRow('Trip Number', trip.tripNumberId ?? 'Unknown'),
+  //           _buildInfoRow(
+  //             'Status',
+  //             trip.isAccepted == true ? 'Accepted' : 'Pending',
+  //           ),
+  //           _buildInfoRow(
+  //             'End Trip',
+  //             trip.isEndTrip == true ? 'Completed' : 'In Progress',
+  //           ),
+  //           if (trip.timeAccepted != null)
+  //             _buildInfoRow('Time Accepted', _formatDate(trip.timeAccepted)),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildEvidenceCard(BuildContext context, cancelledInvoice) {
     return Card(

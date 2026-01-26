@@ -114,39 +114,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with OfflineFirstMixin<AuthEve
       emit(const AuthError('No stored user data found'));
     }
   }
+Future<void> _onLoadUserById(
+  LoadUserByIdEvent event,
+  Emitter<AuthState> emit,
+) async {
+  debugPrint('🔍 Loading user by ID (OFFLINE ONLY): ${event.userId}');
+  emit(const AuthLoading());
 
-  Future<void> _onLoadUserById(
-    LoadUserByIdEvent event,
-    Emitter<AuthState> emit,
-  ) async {
-    debugPrint('🔍 OFFLINE-FIRST: Loading user by ID: ${event.userId}');
-    emit(const AuthLoading());
+  try {
+    final result = await _getUserById(event.userId);
 
-    await executeOfflineFirst(
-      localOperation: () async {
-        final result = await _getUserById.loadFromLocal(event.userId);
-        result.fold(
-          (failure) => throw Exception(failure.message),
-          (user) => emit(UserByIdLoaded(user)),
-        );
+    result.fold(
+      (failure) {
+        debugPrint('❌ Failed loading user: ${failure.message}');
+        emit(AuthError(failure.message));
       },
-      remoteOperation: () async {
-        final result = await _getUserById(event.userId);
-        result.fold(
-          (failure) => throw Exception(failure.message),
-          (user) => emit(UserByIdLoaded(user)),
-        );
+      (user) {
+        debugPrint('✅ Successfully loaded user offline');
+        debugPrint('   👤 Name: ${user.name}');
+        debugPrint('   📧 Email: ${user.email}');
+        debugPrint('   🆔 PocketBase ID: ${user.id}');
+                debugPrint('   🆔 Trip Number ID: ${user.tripNumberId}');
+
+        emit(UserByIdLoaded(user));
       },
-      onLocalSuccess: (data) {
-        debugPrint('✅ User loaded from local cache');
-      },
-      onRemoteSuccess: (data) {
-        debugPrint('✅ User synced from remote');
-      },
-      onError: (error) => emit(AuthError(error)),
-      connectivity: _connectivity,
     );
+  } catch (e) {
+    debugPrint('❌ Unexpected error during offline load: $e');
+    emit(AuthError(e.toString()));
   }
+}
 
   /// Legacy method - use LoadUserByIdEvent with offline-first pattern instead
   Future<void> _onLoadLocalUserById(
@@ -345,7 +342,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with OfflineFirstMixin<AuthEve
     final result = await _syncUserTripData(event.userId);
     result.fold(
       (failure) {
-        debugPrint('❌ Trip sync failed: ${failure.message}');
+        debugPrint('❌ BLOC Trip sync failed: ${failure.message}');
         emit(AuthError(failure.message));
       },
       (_) {

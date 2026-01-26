@@ -4,9 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/src/app_logs/view/app_logs_screen_view.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
@@ -14,7 +14,7 @@ import 'package:x_pro_delivery_app/src/auth/view/auth_screen_view.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/view/checklist_and_delivery_view.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/view/delivery_and_timeline_view.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/add_delivery_status_dialog.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/undeliverable_dialog.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/undeliverable_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/confirm_order_product_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/product_list_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/view/delivery_and_invoice_view.dart';
@@ -46,6 +46,7 @@ import '../../src/transaction_screen/presentation/view/transaction_view.dart';
 import '../../src/user_performance/view/user_performance_screen.dart';
 import '../common/app/features/delivery_data/invoice_items/presentation/bloc/invoice_items_bloc.dart';
 import '../common/app/features/delivery_data/invoice_items/presentation/bloc/invoice_items_event.dart';
+import '../common/app/features/delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -245,17 +246,35 @@ final router = GoRouter(
           ),
     ),
 
-    GoRoute(
-      path: '/undeliverable/:customerId',
-      name: 'undeliverable',
-      builder: (context, state) {
-        final Map<String, dynamic> extra = state.extra as Map<String, dynamic>;
-        return UndeliverableScreen(
-          customer: extra['customer'] as DeliveryDataEntity,
-          statusId: extra['statusId'] as String,
-        );
-      },
-    ),
+   GoRoute(
+  path: '/undeliverable/:customerId',
+  name: 'undeliverable',
+  builder: (context, state) {
+    final extra = state.extra;
+
+    if (extra == null || extra is! Map<String, dynamic>) {
+      return const Scaffold(
+        body: Center(child: Text('Invalid navigation data')),
+      );
+    }
+
+    final customer = extra['customerId'];
+    final statusId = extra['statusId'];
+
+    if (customer is! DeliveryDataEntity ||
+        statusId is! DeliveryStatusChoicesEntity) {
+      return const Scaffold(
+        body: Center(child: Text('Missing required data')),
+      );
+    }
+
+    return UndeliverableScreen(
+      customer: customer,
+      statusId: statusId,
+    );
+  },
+),
+
 
     GoRoute(
       path: '/update-remark/:statusId',

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
 
@@ -131,21 +132,23 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         debugPrint('   👑 Role: ${roleJson?['name'] ?? 'Unknown'}');
         debugPrint('   🔑 Token: ${authData.token.substring(0, 10)}...');
 
-         // 🕓 NEW STEP — record login event in "authLogs"
-    try {
-      final loginTime = DateTime.now().toUtc().toIso8601String();
-      await _pocketBaseClient.collection('authLogs').create(body: {
-        'user': authData.record.id,  // reference user ID
-        'loginTime': loginTime,       // ISO timestamp
-      });
-      debugPrint('🕓 Login recorded in authLogs: $loginTime');
-    } catch (e) {
-      debugPrint('⚠️ Failed to record login log: $e');
-    }
+        // 🕓 NEW STEP — record login event in "authLogs"
+        try {
+          final loginTime = DateTime.now().toUtc().toIso8601String();
+          await _pocketBaseClient
+              .collection('authLogs')
+              .create(
+                body: {
+                  'user': authData.record.id, // reference user ID
+                  'loginTime': loginTime, // ISO timestamp
+                },
+              );
+          debugPrint('🕓 Login recorded in authLogs: $loginTime');
+        } catch (e) {
+          debugPrint('⚠️ Failed to record login log: $e');
+        }
 
         return LocalUsersModel.fromJson(userData);
-
-       
       } catch (e) {
         debugPrint('⚠️ Error formatting user data: ${e.toString()}');
 
@@ -163,8 +166,6 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         if (roleJson != null) {
           userData['expand'] = {'userRole': roleJson};
         }
-
-        
 
         return LocalUsersModel.fromJson(userData);
       }
@@ -278,31 +279,14 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
 
       final user = await _pocketBaseClient
           .collection('users')
-          .getOne(
-            actualUserId,
-            expand:
-                'checklist,updateTimeline,deliveryTeam,completedCustomer,returnList,endTripChecklists,trips',
-          );
+          .getOne(actualUserId, expand: 'trip,useRole');
 
       debugPrint('   👤 User Found: ${user.id}');
       debugPrint('   📧 Email: ${user.data['email']}');
       debugPrint('   🚚 Trip Number: ${user.data['tripNumberId']}');
 
       debugPrint('📦 Expanded Relations:');
-      debugPrint('   ✓ Checklists: ${user.expand['checklist']?.length ?? 0}');
-      debugPrint(
-        '   ✓ Timeline Updates: ${user.expand['updateTimeline']?.length ?? 0}',
-      );
-      debugPrint(
-        '   ✓ Delivery Teams: ${user.expand['deliveryTeam']?.length ?? 0}',
-      );
-      debugPrint(
-        '   ✓ Completed Customers: ${user.expand['completedCustomer']?.length ?? 0}',
-      );
-      debugPrint('   ✓ Returns: ${user.expand['returnList']?.length ?? 0}');
-      debugPrint(
-        '   ✓ End Trip Checklists: ${user.expand['endTripChecklists']?.length ?? 0}',
-      );
+
       debugPrint(
         '   ✓ Trip: ${user.expand['trip'] != null ? 'Found' : 'Not Found'}',
       );
@@ -325,9 +309,7 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         'returnList':
             user.expand['returnList']?.map((item) => item.id).toList() ?? [],
         'endTripChecklists':
-            user.expand['endTripChecklists']
-                ?.map((item) => item.id)
-                .toList() ??
+            user.expand['endTripChecklists']?.map((item) => item.id).toList() ??
             [],
         'trip': user.expand['trip'],
       };
@@ -350,111 +332,103 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
       final prefs = await SharedPreferences.getInstance();
       final storedUserData = prefs.getString('user_data');
 
-      if (storedUserData != null) {
-        Map<String, dynamic> userData;
-        try {
-          userData = jsonDecode(storedUserData);
-        } catch (e) {
-          final cleanedData = storedUserData
-              .replaceAll('""', '"') // Remove double quotes
-              .replaceAll(RegExp(r':\s+'), '": "')
-              .replaceAll(RegExp(r',\s+'), '", "')
-              .replaceAll('{', '{"')
-              .replaceAll('}', '"}');
-          userData = jsonDecode(cleanedData);
-        }
-
-        final userTripId = userData['tripNumberId'];
-        debugPrint('🎫 User trip number ID: $userTripId');
-
-        final tripRecords = await _pocketBaseClient
-            .collection('tripticket')
-            .getFullList(
-              filter: 'tripNumberId = "$userTripId"',
-              expand: 'customers,deliveryTeam,personels,vehicle,checklist',
-            );
-
-        if (tripRecords.isEmpty) {
-          throw const ServerException(
-            message: 'No trip found for user',
-            statusCode: '404',
-          );
-        }
-
-        final tripRecord = tripRecords.first;
-        final mappedData = {
-          'id': tripRecord.id,  // This is the PocketBase record ID
-          'collectionId': tripRecord.collectionId,
-          'collectionName': tripRecord.collectionName,
-          'tripNumberId': tripRecord.data['tripNumberId'],
-          'isAccepted': tripRecord.data['isAccepted'] ?? false,
-          'isEndTrip': tripRecord.data['isEndTrip'] ?? false,
-          'qrCode': tripRecord.data['qrCode'],
-          'deliveryDate': tripRecord.data['deliveryDate'],
-          'name':tripRecord.data['name'],
-          'customers': _mapExpandedRecord(tripRecord.expand['customers']),
-          'deliveryTeam': _mapExpandedRecord(tripRecord.expand['deliveryTeam']),
-          'personels': _mapExpandedRecord(tripRecord.expand['personels']),
-          'vehicle': _mapExpandedRecord(tripRecord.expand['vehicle']),
-          'checklist': _mapExpandedRecord(tripRecord.expand['checklist']),
-        };
-
-        await prefs.setString('user_trip_data', jsonEncode(mappedData));
-        debugPrint('💾 Trip data cached successfully');
-        debugPrint('🆔 PocketBase Trip ID: ${tripRecord.id}');
-        debugPrint('🎫 Trip Number ID: ${tripRecord.data['tripNumberId']}');
-
-        return TripModel.fromJson(mappedData);
+      if (storedUserData == null) {
+        throw const ServerException(
+          message: 'No stored user data found',
+          statusCode: '404',
+        );
       }
 
-      throw const ServerException(
-        message: 'No stored user data found',
-        statusCode: '404',
-      );
+      final userData = jsonDecode(storedUserData);
+
+      // ✅ FIX: Use user's trip relation ID, not tripNumberId
+      final userTripPBId = userData['trip'];
+      debugPrint('🆔 User relation-based trip PB ID: $userTripPBId');
+
+      if (userTripPBId == null || userTripPBId.toString().isEmpty) {
+        throw const ServerException(
+          message: 'User has no assigned trip (relation field empty)',
+          statusCode: '404',
+        );
+      }
+
+      // 🔥 DIRECT fetch — do NOT filter by tripNumberId
+      final tripRecord = await _pocketBaseClient
+          .collection('tripticket')
+          .getOne(
+            userTripPBId,
+            expand: 'deliveryData,deliveryTeam,personels,vehicle,checklist',
+          );
+
+      debugPrint('🟦 Trip fetched successfully → PB ID: ${tripRecord.id}');
+
+      final mappedData = {
+        'id': tripRecord.id,
+        'collectionId': tripRecord.collectionId,
+        'collectionName': tripRecord.collectionName,
+        ...Map<String, dynamic>.from(tripRecord.data),
+        'deliveryData': _mapExpandedRecord(tripRecord.expand['deliveryData']),
+        'deliveryTeam': _mapExpandedRecord(tripRecord.expand['deliveryTeam']),
+        'personels': _mapExpandedRecord(tripRecord.expand['personels']),
+        'deliveryVehicle': _mapExpandedRecord(tripRecord.expand['deliveryVehicle']),
+        'checklist': _mapExpandedRecord(tripRecord.expand['checklist']),
+      };
+
+      await prefs.setString('user_trip_data', jsonEncode(mappedData));
+      debugPrint('💾 Trip data cached successfully');
+
+      return TripModel.fromJson(mappedData);
     } catch (e) {
       debugPrint('❌ Failed to fetch user trip: $e');
       throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
 
-  Map<String, dynamic>? _mapExpandedRecord(dynamic record) {
+  dynamic _mapExpandedRecord(dynamic record) {
     if (record == null) return null;
 
     if (record is List) {
-      if (record.isEmpty) return null;
-      
-      // Handle List<RecordModel>
-      if (record.first is RecordModel) {
-        final firstRecord = record.first as RecordModel;
-        return {
-          'id': firstRecord.id,
-          'collectionId': firstRecord.collectionId,
-          'collectionName': firstRecord.collectionName,
-          'created': _formatDateField(firstRecord.created),
-          'updated': _formatDateField(firstRecord.updated),
-          ...Map<String, dynamic>.from(firstRecord.data),
-        };
-      }
-      
-      // Handle other list types
-      return {'items': record};
+      if (record.isEmpty) return [];
+
+      return record.map((r) {
+        if (r is RecordModel) {
+          final dataMap = Map<String, dynamic>.from(r.data);
+          // Ensure 'name' exists
+          if (!dataMap.containsKey('name')) {
+            dataMap['name'] = r.data['name'] ?? r.id; // fallback to ID
+          }
+          return {
+            'id': r.id,
+            'collectionId': r.collectionId,
+            'collectionName': r.collectionName,
+            'created': _formatDateField(r.created),
+            'updated': _formatDateField(r.updated),
+            ...dataMap,
+          };
+        }
+
+        if (r is Map<String, dynamic>) return r;
+
+        return {'value': r};
+      }).toList();
     }
 
     if (record is RecordModel) {
+      final dataMap = Map<String, dynamic>.from(record.data);
+      if (!dataMap.containsKey('name')) {
+        dataMap['name'] = record.data['name'] ?? record.id;
+      }
       return {
         'id': record.id,
         'collectionId': record.collectionId,
         'collectionName': record.collectionName,
         'created': _formatDateField(record.created),
         'updated': _formatDateField(record.updated),
-        ...Map<String, dynamic>.from(record.data),
+        ...dataMap,
       };
     }
 
-    // Handle other data types
-    if (record is Map<String, dynamic>) {
-      return record;
-    }
+    if (record is Map<String, dynamic>) return record;
 
     return null;
   }
@@ -472,11 +446,40 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
                 'checklist,updateTimeline,deliveryTeam,completedCustomer,returnList,endTripChecklists,trips',
           );
 
+      // Basic info
       debugPrint('📊 Remote Sync Stats:');
-      debugPrint('   👤 User Found: ${userRecord.id}');
+      debugPrint('   👤 User ID: ${userRecord.id}');
+      debugPrint('   📝 Name: ${userRecord.data['name']}');
       debugPrint('   📧 Email: ${userRecord.data['email']}');
       debugPrint('   🚚 Trip Number: ${userRecord.data['tripNumberId']}');
 
+      // Expanded relationships counts
+      debugPrint(
+        '   📋 Checklist Items: ${userRecord.expand['checklist']?.length ?? 0}',
+      );
+      debugPrint(
+        '   ⏱ Update Timeline Items: ${userRecord.expand['updateTimeline']?.length ?? 0}',
+      );
+      debugPrint(
+        '   👥 Delivery Team Items: ${userRecord.expand['deliveryTeam']?.length ?? 0}',
+      );
+      debugPrint(
+        '   ✅ Completed Customers: ${userRecord.expand['completedCustomer']?.length ?? 0}',
+      );
+      debugPrint(
+        '   🔄 Return List Items: ${userRecord.expand['returnList']?.length ?? 0}',
+      );
+      debugPrint(
+        '   🏁 End Trip Checklists: ${userRecord.expand['endTripChecklists']?.length ?? 0}',
+      );
+      debugPrint('   🛣 Trip Data: ${userRecord.expand['trip'] ?? 'No Trip'}');
+
+      // 4️⃣ Extract DeliveryTeam + nested relations
+      final tripRecord = userRecord.expand['trip']?.firstOrNull;
+      Map<String, dynamic>? tripMapped;
+      if (tripRecord != null) {
+        debugPrint('trip record: ${tripRecord.id}');
+      }
       final Map<String, dynamic> userData = {
         ...userRecord.data,
         'id': userRecord.id,
@@ -508,8 +511,11 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
                 ?.map((item) => item.id)
                 .toList() ??
             [],
-        'trip': userRecord.expand['trip'],
+        'trip': tripMapped,
       };
+
+      // Full data debug
+      debugPrint('📦 Full userData Map: ${userData.toString()}');
 
       debugPrint('✅ User data synced successfully');
       return LocalUsersModel.fromJson(userData);
@@ -518,201 +524,608 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
       throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
-    @override
+
+
+  @override
   Future<TripModel> syncUserTripData(String userId) async {
     try {
-      debugPrint('🔄 Syncing trip data for user: $userId');
+      debugPrint('🔄 [SYNC] Starting user trip sync for user: $userId');
 
+      // 1️⃣ Fetch user & trip
+      debugPrint('📡 Fetching user record...');
       final userRecord = await _pocketBaseClient
           .collection('users')
           .getOne(userId, expand: 'trip');
 
-      final tripNumberId = userRecord.data['tripNumberId'];
-      debugPrint('🎫 Found trip number ID: $tripNumberId');
+      debugPrint('🧩 USER RAW DATA: ${jsonEncode(userRecord.data)}');
+      debugPrint('🧩 USER EXPAND KEYS: ${userRecord.expand.keys.toList()}');
 
-      final tripRecords = await _pocketBaseClient
+   final expandedTrip = userRecord.expand['trip'];
+
+if (expandedTrip == null || expandedTrip.isEmpty) {
+  debugPrint('ℹ️ No trip assigned to user (normal). Clearing local trip cache.');
+
+  final prefs = await SharedPreferences.getInstance();
+
+  // Clear trip cache so UI doesn’t render stale trip
+  await prefs.remove('user_trip_data');
+
+  // Also clear trip reference inside user_data (if exists)
+  final userDataRaw = prefs.getString('user_data');
+  if (userDataRaw != null) {
+    final userData = jsonDecode(userDataRaw);
+    userData.remove('trip'); // or: userData['trip'] = null;
+    await prefs.setString('user_data', jsonEncode(userData));
+    debugPrint('💾 user_data updated → trip cleared');
+  } else {
+    debugPrint('⚠️ user_data not found, skipping trip clear');
+  }
+
+  // Return a safe empty TripModel (prevents UI crash)
+  return TripModel(
+    id: null,
+    name: null,
+    tripNumberId: null,
+    isAccepted: false,
+    isEndTrip: false,
+  );
+}
+
+      final tripId = expandedTrip.first.id;
+      debugPrint('🆔 User’s Trip ID: $tripId');
+
+      // 2️⃣ Fetch FULL expanded trip including relations
+      debugPrint('📡 Fetching full trip from PocketBase...');
+      final fullTripList = await _pocketBaseClient
           .collection('tripticket')
           .getFullList(
-            filter: 'tripNumberId = "$tripNumberId"',
+            filter: 'id = "$tripId"',
             expand:
-                'customers,customers.invoices,customers.deliveryStatus,'
-                'deliveryTeam,deliveryTeam.personels,deliveryTeam.vehicle,'
-                'personels,vehicle,checklist,'
-                'returnList,completedCustomer,undeliverableCustomer,'
-                'tripUpdates,endTripChecklist,'
-                'deliveryData,deliveryData.customer,deliveryData.invoice,'
-                'deliveryData.deliveryUpdates,deliveryData.deliveryReceipt,'
-                'invoices,invoices.products,invoices.customer,'
-                'transactions,transactions.customer,transactions.invoices,'
-                'user,deliveryVehicle,'
-                'otp,endTripOtp',
+                'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates,deliveryData.trip,cancelledInvoice,deliveryData.invoiceItems',
+            sort: '-created',
           );
 
-      if (tripRecords.isEmpty) {
+      if (fullTripList.isEmpty) {
+        debugPrint('❌ Trip not found on server.');
         throw const ServerException(
-          message: 'No trip found for user',
+          message: 'Trip not found.',
           statusCode: '404',
         );
       }
 
-      final tripRecord = tripRecords.first;
-      
-      // FIXED: Properly handle date formatting
-      final mappedData = {
+      final tripRecord = fullTripList.first;
+      debugPrint('📦 TRIP RAW DATA: ${jsonEncode(tripRecord.data)}');
+      debugPrint('📦 TRIP EXPAND KEYS: ${tripRecord.expand.keys.toList()}');
+// 3️⃣ Extract DeliveryData
+final deliveryDataList = tripRecord.expand['deliveryData'] ?? [];
+debugPrint('📦 Delivery Data Count: ${deliveryDataList.length} (with invoiceItems)');
+
+for (final d in deliveryDataList) {
+  // Basic delivery info
+  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  debugPrint('➡️ DeliveryData ID: ${d.id}');
+  debugPrint('   🔑 DeliveryData expand keys: ${d.expand.keys.toList()}');
+
+  // -----------------------------
+  // Customer (expand)
+  // -----------------------------
+  final customerRec =
+      (d.expand['customer'] != null) ? (d.expand['customer'] as List).firstOrNull : null;
+
+  if (customerRec == null) {
+    debugPrint('   👤 customer: ❌ NULL / not expanded');
+    d.data['customer'] = null;
+  } else {
+    debugPrint(
+      '   👤 customer: ✅ id=${customerRec.id} | name=${customerRec.data['name']}',
+    );
+    d.data['customer'] = _mapExpandedRecord(customerRec);
+  }
+
+  // -----------------------------
+  // Trip (expand)
+  // -----------------------------
+  final tripRec =
+      (d.expand['trip'] != null) ? (d.expand['trip'] as List).firstOrNull : null;
+
+  if (tripRec == null) {
+    debugPrint('   🎫 trip: ❌ NULL / not expanded');
+    d.data['trip'] = null;
+  } else {
+    debugPrint(
+      '   🎫 trip: ✅ id=${tripRec.id} | name=${tripRec.data['name']}',
+    );
+    d.data['trip'] = _mapExpandedRecord(tripRec);
+  }
+
+  // -----------------------------
+  // Invoices (expand list)
+  // -----------------------------
+  final invoices = d.expand['invoices'] as List? ?? [];
+  debugPrint('   🧾 invoices: count=${invoices.length}');
+  for (final inv in invoices) {
+    final r = inv as RecordModel;
+    debugPrint(
+      '      • invoice id=${r.id} | name=${r.data['name']} | total=${r.data['totalAmount']}',
+    );
+  }
+  d.data['invoices'] = invoices.map(_mapExpandedRecord).toList();
+
+  // -----------------------------
+  // DeliveryUpdates (expand list)
+  // -----------------------------
+  final updates = d.expand['deliveryUpdates'] as List? ?? [];
+  debugPrint('   🔄 deliveryUpdates: count=${updates.length}');
+  for (final up in updates) {
+    final r = up as RecordModel;
+    debugPrint(
+      '      • update id=${r.id} | title=${r.data['title']} | time=${r.data['time']}',
+    );
+  }
+  d.data['deliveryUpdates'] = updates.map(_mapExpandedRecord).toList();
+
+  // -----------------------------
+  // InvoiceItems (expand list)
+  // -----------------------------
+  final invoiceItems = d.expand['invoiceItems'] as List? ?? [];
+  debugPrint('   📦 invoiceItems: count=${invoiceItems.length}');
+  for (final it in invoiceItems) {
+    final r = it as RecordModel;
+    debugPrint(
+      '      • item id=${r.id} | name=${r.data['name']} | qty=${r.data['quantity']} | baseQty=${r.data['totalBaseQuantity']} | uom=${r.data['uom']}',
+    );
+  }
+  d.data['invoiceItems'] = invoiceItems.map(_mapExpandedRecord).toList();
+
+  // -----------------------------
+  // Final mapped payload check
+  // -----------------------------
+  debugPrint(
+    '   ✅ mapped: customer=${d.data['customer'] != null}, '
+    'trip=${d.data['trip'] != null}, '
+    'invoices=${(d.data['invoices'] as List).length}, '
+    'updates=${(d.data['deliveryUpdates'] as List).length}, '
+    'invoiceItems=${(d.data['invoiceItems'] as List).length}',
+  );
+}
+
+debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+
+       // 3️⃣ Extract CancelledInvoice
+      final cancelledInvoiceList = tripRecord.expand['cancelledInvoice'] ?? [];
+      debugPrint('📦 Cancelled Invoices Data Count: ${cancelledInvoiceList.length}');
+      for (var d in cancelledInvoiceList) {
+        debugPrint('   ➡️ CancelledInvoice ID: ${d.id}');
+        final customer =
+            (d.expand['customer'] != null)
+                ? (d.expand['customer'] as List).firstOrNull
+                : null;
+        d.data['customer'] =
+            customer != null ? _mapExpandedRecord(customer) : null;
+             final deliveryData =
+            (d.expand['deliveryData'] != null)
+                ? (d.expand['deliveryData'] as List).firstOrNull
+                : null;
+        d.data['deliveryData'] =
+            deliveryData != null ? _mapExpandedRecord(deliveryData) : null;
+             final trip =
+            (d.expand['trip'] != null)
+                ? (d.expand['trip'] as List).firstOrNull
+                : null;
+        d.data['trip'] =
+            trip != null ? _mapExpandedRecord(trip) : null;
+
+        final invoices = d.expand['invoices'] as List? ?? [];
+        d.data['invoices'] = invoices.map(_mapExpandedRecord).toList();
+
+       
+      }
+
+
+      // 4️⃣ Extract DeliveryTeam + nested relations
+      final deliveryTeamRecord = tripRecord.expand['deliveryTeam']?.firstOrNull;
+      Map<String, dynamic>? mappedDeliveryTeam;
+      if (deliveryTeamRecord != null) {
+        debugPrint('👥 Delivery Team ID: ${deliveryTeamRecord.id}');
+
+        // Vehicle
+        final vehicleRecord =
+            deliveryTeamRecord.expand['deliveryVehicle']?.firstOrNull;
+        final mappedVehicle =
+            vehicleRecord != null ? _mapExpandedRecord(vehicleRecord) : null;
+        debugPrint(
+          '🚛 DeliveryTeam Vehicle ID: ${vehicleRecord?.id ?? "NONE"}',
+        );
+
+        // Personels
+        final teamPersonels = deliveryTeamRecord.expand['personels'] ?? [];
+        debugPrint(
+          '🧑‍🔧 DeliveryTeam Personels Count: ${teamPersonels.length}',
+        );
+
+        // Checklist
+        final teamChecklist = deliveryTeamRecord.expand['checklist'] ?? [];
+        debugPrint('📋 DeliveryTeam Checklist Count: ${teamChecklist.length}');
+
+        mappedDeliveryTeam = {
+          ..._mapExpandedRecord(deliveryTeamRecord),
+          'deliveryVehicle': mappedVehicle,
+          'personels': _mapExpandedRecord(teamPersonels),
+          'checklist': _mapExpandedRecord(teamChecklist),
+        };
+      }
+
+      // 5️⃣ Extract other relations
+      final personels = tripRecord.expand['personels'] ?? [];
+      final vehicle = tripRecord.expand['deliveryVehicle']?.firstOrNull;
+      final checklistList = tripRecord.expand['checklist'] ?? [];
+      final tripUpdateList = tripRecord.expand['trip_update_list'] ?? [];
+     // final cancelledInvoiceList = tripRecord.expand['cancelledInvoice'] ?? [];
+      final intransitOtp = tripRecord.expand['otp'] ?? [];
+      final endTripOtp = tripRecord.expand['endTripOtp'] ?? [];
+
+      // 6️⃣ Map full trip
+      final mappedTrip = {
         'id': tripRecord.id,
         'collectionId': tripRecord.collectionId,
         'collectionName': tripRecord.collectionName,
-        'tripNumberId': tripRecord.data['tripNumberId'],
-        'name': tripRecord.data['name'],
+        'name': tripRecord.data['name']?.toString() ?? tripRecord.id,
+        'tripNumberId':
+            tripRecord.data['tripNumberId']?.toString() ?? tripRecord.id,
+        'qrCode': tripRecord.data['qrCode']?.toString() ?? '',
         'isAccepted': tripRecord.data['isAccepted'] ?? false,
         'isEndTrip': tripRecord.data['isEndTrip'] ?? false,
-        'qrCode': tripRecord.data['qrCode'],
-        'totalTripDistance': tripRecord.data['totalTripDistance'],
-        'latitude': tripRecord.data['latitude'],
-        'longitude': tripRecord.data['longitude'],
-        
-        // FIXED: Properly format date fields
-        'timeAccepted': _formatDateField(tripRecord.data['timeAccepted']),
-        'timeEndTrip': _formatDateField(tripRecord.data['timeEndTrip']),
-        'created': _formatDateField(tripRecord.created),
-        'updated': _formatDateField(tripRecord.updated),
-        'deliveryDate': _formatDateField(tripRecord.data['deliveryDate']),
-        // Use helper methods to properly convert RecordModel to Map
-        'customers': _mapExpandedList(tripRecord.expand['customers']),
-        'deliveryTeam': _mapExpandedSingleRecord(tripRecord.expand['deliveryTeam']),
-        'personels': _mapExpandedList(tripRecord.expand['personels']),
-        'vehicle': _mapExpandedList(tripRecord.expand['vehicle']),
-        'checklist': _mapExpandedList(tripRecord.expand['checklist']),
-        'returnList': _mapExpandedList(tripRecord.expand['returnList']),
-        'completedCustomer': _mapExpandedList(tripRecord.expand['completedCustomer']),
-        'undeliverableCustomer': _mapExpandedList(tripRecord.expand['undeliverableCustomer']),
-        'tripUpdates': _mapExpandedList(tripRecord.expand['tripUpdates']),
-        'endTripChecklist': _mapExpandedList(tripRecord.expand['endTripChecklist']),
-        'deliveryData': _mapExpandedList(tripRecord.expand['deliveryData']),
-        'invoices': _mapExpandedList(tripRecord.expand['invoices']),
-        'transactions': _mapExpandedList(tripRecord.expand['transactions']),
-        'user': _mapExpandedSingleRecord(tripRecord.expand['user']),
-        'deliveryVehicle': _mapExpandedSingleRecord(tripRecord.expand['deliveryVehicle']),
-        'otp': _mapExpandedSingleRecord(tripRecord.expand['otp']),
-        'endTripOtp': _mapExpandedSingleRecord(tripRecord.expand['endTripOtp']),
+        'deliveryDate': tripRecord.data['deliveryDate'],
+        'latitude': tripRecord.data['latitude'] ?? 0.0,
+        'longitude': tripRecord.data['longitude'] ?? 0.0,
+        'deliveryTeam': mappedDeliveryTeam,
+        'personels': _mapExpandedRecord(personels),
+        'deliveryVehicle': _mapExpandedRecord(vehicle),
+        'checklist': _mapExpandedRecord(checklistList),
+        'deliveryData': _mapExpandedRecord(deliveryDataList),
+        'cancelledInvoice': _mapExpandedRecord(cancelledInvoiceList),
+        'trip_update_list' : _mapExpandedRecord(tripUpdateList),
+        'intransitOtp' : _mapExpandedRecord(intransitOtp),
+        'endTripOtp' : _mapExpandedRecord(endTripOtp),
       };
 
-      debugPrint('✅ Trip data synced successfully');
-      debugPrint('   📊 Sync Stats:');
-      debugPrint('   👥 Customers: ${tripRecord.expand['customers']?.length ?? 0}');
-      debugPrint('   📝 Invoices: ${tripRecord.expand['invoices']?.length ?? 0}');
-      debugPrint('   📦 Delivery Data: ${tripRecord.expand['deliveryData']?.length ?? 0}');
-      debugPrint('   🚛 Delivery Vehicle: ${tripRecord.expand['deliveryVehicle'] != null ? 'Found' : 'Not Found'}');
-      debugPrint('   👨‍💼 Delivery Team: ${tripRecord.expand['deliveryTeam'] != null ? 'Found' : 'Not Found'}');
-      debugPrint('   👥 Personels: ${tripRecord.expand['personels']?.length ?? 0}');
-      debugPrint('   🚗 Vehicles: ${tripRecord.expand['vehicle']?.length ?? 0}');
-      debugPrint('   ✅ Completed: ${tripRecord.expand['completedCustomer']?.length ?? 0}');
-      debugPrint('   ❌ Undeliverable: ${tripRecord.expand['undeliverableCustomer']?.length ?? 0}');
-      debugPrint('   🔄 Returns: ${tripRecord.expand['returnList']?.length ?? 0}');
-      debugPrint('   💰 Transactions: ${tripRecord.expand['transactions']?.length ?? 0}');
-      debugPrint('   📋 End Trip Checklist: ${tripRecord.expand['endTripChecklist']?.length ?? 0}');
-      debugPrint('   📍 Trip Updates: ${tripRecord.expand['tripUpdates']?.length ?? 0}');
-      debugPrint('   🔑 OTP: ${tripRecord.expand['otp'] != null ? 'Found' : 'Not Found'}');
-      debugPrint('   🔐 End Trip OTP: ${tripRecord.expand['endTripOtp'] != null ? 'Found' : 'Not Found'}');
+      debugPrint('📦 FINAL MAPPED TRIP JSON: ${jsonEncode(mappedTrip)}');
 
-      return TripModel.fromJson(mappedData);
-    } catch (e) {
-      debugPrint('❌ Trip sync failed: ${e.toString()}');
-      throw ServerException(message: e.toString(), statusCode: '500');
+      // 7️⃣ Cache locally
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_trip_data', jsonEncode(mappedTrip));
+      debugPrint('💾 Trip cache saved successfully');
+
+      // 8️⃣ Build TripModel
+      final trip = TripModel.fromJson(mappedTrip);
+      debugPrint(
+        '🧪 TripModel BUILT → name="${trip.name}", tripNumberId="${trip.tripNumberId}"',
+      );
+
+      debugPrint('📦 Delivery Data Count: ${trip.deliveryData.length}');
+      debugPrint('👥 Delivery Team ID: ${trip.deliveryTeam.target?.id}');
+      debugPrint('🚛 Vehicle Name: ${trip.deliveryVehicle.target?.name}');
+      debugPrint('🧑‍🔧 Personnels Count: ${trip.personels.length}');
+
+      // 7.5️⃣ Update user_data with resolved trip reference
+//final prefs = await SharedPreferences.getInstance();
+final userDataRaw = prefs.getString('user_data');
+
+if (userDataRaw != null) {
+  final userData = jsonDecode(userDataRaw);
+
+  userData['trip'] = {
+    'id': mappedTrip['id'], // PB ID
+        'name': mappedTrip['name'], // PB ID
+
+    'tripNumberId': mappedTrip['tripNumberId'],
+    'isAccepted': mappedTrip['isAccepted'],
+    'isEndTrip': mappedTrip['isEndTrip'],
+  };
+
+  await prefs.setString('user_data', jsonEncode(userData));
+  debugPrint('💾 user_data updated with resolved trip ID');
+} else {
+  debugPrint('⚠️ user_data not found, skipping trip reference update');
+}
+
+
+      return trip;
+    } catch (e, st) {
+      debugPrint('❌ [SYNC USER TRIP ERROR] $e');
+      debugPrint('STACK TRACE: $st');
+      throw ServerException(
+        message: 'Failed to sync user trip: $e',
+        statusCode: '500',
+      );
     }
   }
+
+
 
   // ADDED: Helper method to safely format date fields
   String? _formatDateField(dynamic dateValue) {
     if (dateValue == null) return null;
-    
+
     try {
-      // If it's already a string, return as is
+      // Directly return ISO8601 if valid string
       if (dateValue is String) {
-        // Validate if it's a proper ISO 8601 format
-        DateTime.parse(dateValue);
-        return dateValue;
+        // Attempt ISO 8601 parse
+        try {
+          final parsed = DateTime.parse(dateValue);
+          return parsed.toIso8601String();
+        } catch (_) {
+          // continue trying other formats below
+        }
+
+        // Try common non-ISO date formats
+        final possibleFormats = [
+          'yyyy-MM-dd HH:mm:ss',
+          'yyyy/MM/dd HH:mm:ss',
+          'yyyy-MM-dd',
+          'yyyy/MM/dd',
+          'MM/dd/yyyy',
+          'MM-dd-yyyy',
+          'dd/MM/yyyy',
+          'dd-MM-yyyy',
+          'dd MMM yyyy',
+          'MMM dd, yyyy',
+        ];
+
+        for (final format in possibleFormats) {
+          try {
+            final parsed = DateFormat(format).parse(dateValue, true);
+            return parsed.toIso8601String();
+          } catch (_) {}
+        }
+
+        // Try parsing numeric string as timestamp
+        final numeric = int.tryParse(dateValue);
+        if (numeric != null) {
+          return _timestampToIso(numeric);
+        }
+
+        debugPrint('⚠️ Unrecognized date string format: $dateValue');
+        return null;
       }
-      
-      // If it's a DateTime object, convert to ISO string
+
+      // If DateTime → ISO string
       if (dateValue is DateTime) {
         return dateValue.toIso8601String();
       }
-      
-      // Try to parse as string if it's another type
+
+      // If numeric timestamp (milliseconds or seconds)
+      if (dateValue is int) {
+        return _timestampToIso(dateValue);
+      }
+
+      // Fallback: try toString() and parse
       final dateString = dateValue.toString();
-      final parsedDate = DateTime.parse(dateString);
-      return parsedDate.toIso8601String();
-      
+      try {
+        final parsed = DateTime.parse(dateString);
+        return parsed.toIso8601String();
+      } catch (_) {
+        debugPrint('⚠️ Could not parse date string: $dateString');
+        return null;
+      }
     } catch (e) {
       debugPrint('⚠️ Invalid date format for value: $dateValue, error: $e');
-      return null; // Return null for invalid dates
+      return null;
     }
   }
 
-  // Helper method for mapping list of RecordModel to List<Map<String, dynamic>>
-  List<Map<String, dynamic>> _mapExpandedList(dynamic records) {
-    if (records == null) return [];
-    
-    if (records is List) {
-      return records.map((record) {
-        if (record is RecordModel) {
-          return <String, dynamic>{
-            'id': record.id,
-            'collectionId': record.collectionId,
-            'collectionName': record.collectionName,
-            'created': _formatDateField(record.created), // FIXED: Format dates in nested records
-            'updated': _formatDateField(record.updated), // FIXED: Format dates in nested records
-            ...Map<String, dynamic>.from(record.data),
-          };
-        }
-        return <String, dynamic>{};
-      }).toList();
+  /// Helper: Converts timestamps (in ms or s) → ISO8601 string
+  String _timestampToIso(int timestamp) {
+    try {
+      // Detect ms vs s
+      final isMilliseconds = timestamp > 1000000000000; // ~Sat Nov 20 2001
+      final dateTime =
+          isMilliseconds
+              ? DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true)
+              : DateTime.fromMillisecondsSinceEpoch(
+                timestamp * 1000,
+                isUtc: true,
+              );
+      return dateTime.toIso8601String();
+    } catch (e) {
+      debugPrint('⚠️ Failed to convert timestamp: $timestamp → $e');
+      return DateTime.now().toIso8601String(); // fallback
     }
-    
-    if (records is RecordModel) {
-      return [<String, dynamic>{
-        'id': records.id,
-        'collectionId': records.collectionId,
-        'collectionName': records.collectionName,
-        'created': _formatDateField(records.created), // FIXED: Format dates
-        'updated': _formatDateField(records.updated), // FIXED: Format dates
-        ...Map<String, dynamic>.from(records.data),
-      }];
-    }
-    
-    return [];
   }
 
-  // Helper method for mapping single RecordModel to Map<String, dynamic>
-  Map<String, dynamic>? _mapExpandedSingleRecord(dynamic record) {
-    if (record == null) return null;
-    
-    if (record is List && record.isNotEmpty) {
-      final firstRecord = record.first;
-      if (firstRecord is RecordModel) {
-        return <String, dynamic>{
-          'id': firstRecord.id,
-          'collectionId': firstRecord.collectionId,
-          'collectionName': firstRecord.collectionName,
-          'created': _formatDateField(firstRecord.created), // FIXED: Format dates
-          'updated': _formatDateField(firstRecord.updated), // FIXED: Format dates
-          ...Map<String, dynamic>.from(firstRecord.data),
-        };
-      }
-    } else if (record is RecordModel) {
-      return <String, dynamic>{
-        'id': record.id,
-        'collectionId': record.collectionId,
-        'collectionName': record.collectionName,
-        'created': _formatDateField(record.created), // FIXED: Format dates
-        'updated': _formatDateField(record.updated), // FIXED: Format dates
-        ...Map<String, dynamic>.from(record.data),
-      };
-    }
-    
-    return null;
-  }
+  // TripModel _mapRecordToTripModel(RecordModel record) {
+  //   try {
+  //     debugPrint('🔄 Mapping record to TripModel: ${record.id}');
 
+  //     // Debug raw data
+  //     debugPrint('📋 Raw record.id: ${record.id}');
+  //     debugPrint('📋 Raw keys: ${record.data.keys.toList()}');
 
+  //     // -----------------------------
+  //     // Safe string converter
+  //     // -----------------------------
+  //     String? safeString(dynamic value) {
+  //       if (value == null) return null;
+  //       if (value is String) return value.isEmpty ? null : value;
+  //       if (value is List && value.isNotEmpty) return value.first.toString();
+  //       return value.toString();
+  //     }
+
+  //     // -----------------------------
+  //     // Safe Date Parser (no more errors!)
+  //     // -----------------------------
+  //     DateTime? _safeDateParse(dynamic value) {
+  //       if (value == null) return null;
+
+  //       if (value is DateTime) return value;
+
+  //       if (value is String) {
+  //         if (value.trim().isEmpty) return null;
+
+  //         try {
+  //           return DateTime.parse(value);
+  //         } catch (_) {
+  //           debugPrint("❌ Invalid date string: $value");
+  //           return null;
+  //         }
+  //       }
+
+  //       debugPrint("❌ Unknown date type: ${value.runtimeType}");
+  //       return null;
+  //     }
+
+  //     // -----------------------------
+  //     // DATE FIELDS (safe)
+  //     // -----------------------------
+  //     final timeAccepted = _safeDateParse(record.data['timeAccepted']);
+  //     //final timeEndTrip = _safeDateParse(record.data['timeEndTrip']);
+  //     final deliveryDate = _safeDateParse(record.data['deliveryDate']);
+  //     final expectedReturnDate = _safeDateParse(
+  //       record.data['expectedReturnDate'],
+  //     );
+
+  //     final created = _safeDateParse(record.data['created']);
+  //     final updated = _safeDateParse(record.data['updated']);
+
+  //     // -----------------------------
+  //     // RELATIONS
+  //     // -----------------------------
+  //     final vehicleJson = _mapExpandedItem(record.expand['deliveryVehicle']);
+  //     DeliveryVehicleModel? vehicle =
+  //         vehicleJson != null
+  //             ? DeliveryVehicleModel.fromJson(vehicleJson)
+  //             : null;
+
+  //     final otpJson = _mapExpandedItem(record.expand['otp']);
+  //     final otp = otpJson != null ? OtpModel.fromJson(otpJson) : null;
+
+  //     final endOtpJson = _mapExpandedItem(record.expand['endTripOtp']);
+  //     final endOtp =
+  //         endOtpJson != null ? EndTripOtpModel.fromJson(endOtpJson) : null;
+
+  //     // -----------------------------
+  //     // FINAL MERGED MAP
+  //     // -----------------------------
+  //     final mappedData = <String, dynamic>{
+  //       ...record.data,
+
+  //       // Strong overrides
+  //       'id': record.id,
+  //       'collectionId': record.collectionId,
+  //       'collectionName': record.collectionName,
+
+  //       // Fix string type issues
+  //       'tripNumberId': safeString(record.data['tripNumberId']),
+  //       'qrCode': safeString(record.data['qrCode']),
+  //       'name': safeString(record.data['name']),
+
+  //       // Relations
+  //       'deliveryVehicle': vehicle,
+  //       'otp': otp,
+  //       'endTripOtp': endOtp,
+  //       'customers': _mapExpandedList(record.expand['customers']),
+  //       'personels': _mapExpandedList(record.expand['personels']),
+  //       'deliveryTeam': _mapExpandedItem(record.expand['deliveryTeam']),
+  //       'deliveryData': _mapExpandedList(record.expand['deliveryData']),
+  //       'checklist': _mapExpandedList(record.expand['checklist']),
+  //       'endTripChecklists': _mapExpandedList(
+  //         record.expand['endTripChecklists'],
+  //       ),
+  //       'trip_update_list': _mapExpandedList(record.expand['trip_update_list']),
+
+  //       // Dates (safe)
+  //       'created': created,
+  //       'updated': updated,
+  //       'timeAccepted': timeAccepted,
+  //       // 'timeEndTrip': timeEndTrip,
+  //       'deliveryDate': deliveryDate,
+  //       'expectedReturnDate': expectedReturnDate,
+  //     };
+
+  //     debugPrint('📦 Final mappedData id: ${mappedData['id']}');
+  //     debugPrint(
+  //       '📦 Final mappedData tripNumberId: ${mappedData['tripNumberId']}',
+  //     );
+
+  //     return TripModel.fromJson(mappedData);
+  //   } catch (e) {
+  //     debugPrint('❌ Error mapping record to TripModel: $e');
+  //     throw ServerException(
+  //       message: 'Failed to map record to TripModel: $e',
+  //       statusCode: '500',
+  //     );
+  //   }
+  // }
+
+  // Safe date parser helper
+  // DateTime? _safeParseDate(dynamic value, {String? fieldName}) {
+  //   if (value == null) return null;
+
+  //   try {
+  //     if (value is DateTime) return value;
+  //     if (value is String && value.trim().isNotEmpty) {
+  //       return DateTime.parse(value);
+  //     }
+  //   } catch (e) {
+  //     debugPrint(
+  //       '❌ [SAFE DATE PARSE ERROR] Failed to parse date for field '
+  //       '${fieldName ?? "unknown"} → value: "$value" | Error: $e',
+  //     );
+  //   }
+  //   return null;
+  // }
+
+  // // Helper method to map expanded list items
+  // List<Map<String, dynamic>> _mapExpandedList(dynamic records) {
+  //   if (records == null) return [];
+
+  //   if (records is List) {
+  //     return records.map((record) {
+  //       if (record is RecordModel) {
+  //         return <String, dynamic>{
+  //           'id': record.id,
+  //           'collectionId': record.collectionId,
+  //           'collectionName': record.collectionName,
+  //           ...Map<String, dynamic>.from(record.data),
+  //           'created': _safeParseDate(record.created, fieldName: 'created'),
+  //           'updated': _safeParseDate(record.updated, fieldName: 'updated'),
+  //         };
+  //       }
+  //       return <String, dynamic>{};
+  //     }).toList();
+  //   }
+
+  //   return [];
+  // }
+
+  // // Helper method to map a single expanded item
+  // Map<String, dynamic>? _mapExpandedItem(dynamic record) {
+  //   if (record == null) return null;
+
+  //   if (record is List && record.isNotEmpty) {
+  //     final item = record.first;
+  //     if (item is RecordModel) {
+  //       return <String, dynamic>{
+  //         'id': item.id,
+  //         'collectionId': item.collectionId,
+  //         'collectionName': item.collectionName,
+  //         ...Map<String, dynamic>.from(item.data),
+  //         'created': _safeParseDate(item.created, fieldName: 'created'),
+  //         'updated': _safeParseDate(item.updated, fieldName: 'updated'),
+  //       };
+  //     }
+  //   } else if (record is RecordModel) {
+  //     return <String, dynamic>{
+  //       'id': record.id,
+  //       'collectionId': record.collectionId,
+  //       'collectionName': record.collectionName,
+  //       ...Map<String, dynamic>.from(record.data),
+  //       'created': _safeParseDate(record.created, fieldName: 'created'),
+  //       'updated': _safeParseDate(record.updated, fieldName: 'updated'),
+  //     };
+  //   }
+
+  //   return null;
+  // }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_collection/presentation/bloc/collections_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_state.dart';
 
 class FinalCollectionSpecScreen extends StatefulWidget {
   final String collectionId;
@@ -15,8 +15,7 @@ class FinalCollectionSpecScreen extends StatefulWidget {
       _FinalCollectionSpecScreenState();
 }
 
-class _FinalCollectionSpecScreenState
-    extends State<FinalCollectionSpecScreen> {
+class _FinalCollectionSpecScreenState extends State<FinalCollectionSpecScreen> {
   @override
   void initState() {
     super.initState();
@@ -104,11 +103,13 @@ class _FinalCollectionSpecScreenState
     debugPrint('   👤 Customer: ${customer?.name ?? 'Unknown'}');
     debugPrint('   💰 Collection Total Amount: ${collection.totalAmount}');
     debugPrint('   📄 Number of invoices: ${invoices.length}');
-    
+
     // Log individual invoice details
     for (int i = 0; i < invoices.length; i++) {
       final invoice = invoices[i];
-      debugPrint('   📋 Invoice ${i + 1}: ${invoice.refId ?? invoice.name} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}');
+      debugPrint(
+        '   📋 Invoice ${i + 1}: ${invoice.refId ?? invoice.name} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+      );
     }
 
     return RefreshIndicator(
@@ -167,9 +168,12 @@ class _FinalCollectionSpecScreenState
         totalInvoicesAmount += invoice.totalAmount ?? 0.0;
       }
     }
-    
+
     // Use invoices total or fallback to collection total
-    final displayAmount = totalInvoicesAmount > 0.0 ? totalInvoicesAmount : (collection.totalAmount ?? 0.0);
+    final displayAmount =
+        totalInvoicesAmount > 0.0
+            ? totalInvoicesAmount
+            : (collection.totalAmount ?? 0.0);
     return Card(
       elevation: 4,
       child: Padding(
@@ -194,10 +198,6 @@ class _FinalCollectionSpecScreenState
               ],
             ),
             const Divider(height: 24),
-            _buildInfoRow(
-              'Delivery Number',
-              deliveryData.deliveryNumber ?? 'Unknown Store',
-            ),
 
             _buildInfoRow(
               'Total Amount',
@@ -295,7 +295,7 @@ class _FinalCollectionSpecScreenState
               'Number of Invoices',
               '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'}',
             ),
-            
+
             // Show individual invoice details
             ...invoices.asMap().entries.map((entry) {
               final index = entry.key;
@@ -309,7 +309,7 @@ class _FinalCollectionSpecScreenState
                 ],
               );
             }),
-            
+
             _buildInfoRow(
               'Total Invoices Amount',
               '₱${totalInvoicesAmount.toStringAsFixed(2)}',

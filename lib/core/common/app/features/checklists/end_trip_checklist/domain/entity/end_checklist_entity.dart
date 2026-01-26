@@ -1,35 +1,50 @@
 import 'package:equatable/equatable.dart';
 import 'package:objectbox/objectbox.dart';
+
+import '../../../../trip_ticket/trip/data/models/trip_models.dart';
+
 @Entity()
 class EndChecklistEntity extends Equatable {
   @Id()
   int dbId = 0;
   EndChecklistEntity({
-    required this.id,
+   this.id,
     required this.objectName,
     required this.isChecked,
-    required this.trip,
+    this.tripId,
     this.description,
     this.status,
     this.timeCompleted,
+    this.tripModel,
   });
 
-  final String id;
-  final String? objectName;
-   bool? isChecked;
-  final String? status;
-  final String? description;
-  final String trip;
+  String? id;
+  String? objectName;
+  bool? isChecked;
+  String? status;
+  String? description;
+  String? tripId;
   DateTime? timeCompleted;
-
+  TripModel? tripModel;
   EndChecklistEntity.empty()
-      : id = '',
-        objectName = '',
-        isChecked = false,
-        description = '',
-        status = '',
-        trip = '';
+    : id = '',
+      objectName = '',
+      isChecked = false,
+      description = '',
+      status = '',
+      tripModel = null,
+      tripId = '';
+
 
   @override
-  List<Object?> get props => [id, objectName, isChecked, trip, timeCompleted, description, status];
+  List<Object?> get props => [
+    id,
+    objectName,
+    isChecked,
+    tripId,
+    timeCompleted,
+    description,
+    status,
+    tripModel?.id,
+  ];
 }

@@ -33,20 +33,34 @@ class LocationService {
     return serviceEnabled;
   }
 
-static Future<bool> requestPermission() async {
-  LocationPermission permission = await Geolocator.checkPermission();
-  debugPrint('Current permission status: $permission');
-  if (permission == LocationPermission.denied) {
-    debugPrint('Requesting permission...');
-    permission = await Geolocator.requestPermission();
-    debugPrint('Permission request result: $permission');
+  static Future<bool> requestPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    debugPrint('Current permission status: $permission');
+
+    // If not determined, request permission
+    if (permission == LocationPermission.denied) {
+      debugPrint('Requesting permission...');
+      permission = await Geolocator.requestPermission();
+      debugPrint('Permission request result: $permission');
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      debugPrint('Permission denied forever');
+      return false;
+    }
+
+    // For background location tracking we require "always" permission.
+    // On newer Android versions (Android 11+), "whileInUse" (only when app in foreground)
+    // is NOT sufficient for background foreground-service based location updates.
+    if (permission != LocationPermission.always) {
+      debugPrint(
+        'Background (ALWAYS) location permission is not granted: $permission',
+      );
+      return false;
+    }
+
+    return true;
   }
-  if (permission == LocationPermission.deniedForever) {
-    debugPrint('Permission denied forever');
-    return false;
-  }
-  return true;
-}
 
   static Stream<double> trackDistance() {
     _locationController = StreamController<Position>.broadcast();
@@ -74,11 +88,9 @@ static Future<bool> requestPermission() async {
       },
     );
 
-   return _locationController!.stream
-    .where((pos) => _isValidPosition(pos))
-    .map((pos) => _processPosition(pos));
-
-
+    return _locationController!.stream
+        .where((pos) => _isValidPosition(pos))
+        .map((pos) => _processPosition(pos));
   }
 
   // Simple position validation for any movement
@@ -265,28 +277,32 @@ static Future<bool> requestPermission() async {
     _locationController?.add(position);
   }
 
- static Future<Position> getCurrentLocation() async {
-  bool serviceEnabled = await enableLocationService();
-  if (!serviceEnabled) {
-    return Future.error('Location services are disabled');
+  static Future<Position> getCurrentLocation() async {
+    bool serviceEnabled = await enableLocationService();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled');
+    }
+    LocationPermission permission = await Geolocator.checkPermission();
+    debugPrint('Current permission status: $permission');
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error('Location permission denied forever');
+    }
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      debugPrint(
+        'Current location: ${position.latitude}, ${position.longitude}',
+      );
+      return position;
+    } catch (e) {
+      debugPrint('Error getting current location: $e');
+      return Future.error('Error getting current location');
+    }
   }
-  LocationPermission permission = await Geolocator.checkPermission();
-  debugPrint('Current permission status: $permission');
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-  }
-  if (permission == LocationPermission.deniedForever) {
-    return Future.error('Location permission denied forever');
-  }
-  try {
-    final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    debugPrint('Current location: ${position.latitude}, ${position.longitude}');
-    return position;
-  } catch (e) {
-    debugPrint('Error getting current location: $e');
-    return Future.error('Error getting current location');
-  }
-}
 
   static void stopTracking() {
     debugPrint('🛑 LOCATION: Stopping location tracking...');

@@ -6,6 +6,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/sync_data/cubit/sync
 import 'package:x_pro_delivery_app/core/common/app/features/sync_data/cubit/sync_state.dart';
 import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
 
+import '../../../../core/common/widgets/sync_loading_indicator.dart';
+
+
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
 
@@ -83,13 +86,16 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   void _startSync() async {
     final syncCubit = context.read<SyncCubit>();
+
     
     // Check if user has trip
     await syncCubit.startSyncProcess(context);
+
   }
 
   void _handleSyncState(SyncState state) {
     switch (state.runtimeType) {
+      
       case CheckingTrip:
         setState(() {
           _statusText = "Checking Tripticket......";
@@ -145,21 +151,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         });
         break;
 
-      case SyncingDeliveryData:
-        final deliverySyncState = state as SyncingDeliveryData;
-        setState(() {
-          _statusText = deliverySyncState.statusMessage;
-          _progress = 0.65 + (deliverySyncState.progress * 0.2); // 0.65 to 0.85
-        });
-        break;
-
-      case SyncingDependentData:
-        final dependentSyncState = state as SyncingDependentData;
-        setState(() {
-          _statusText = dependentSyncState.statusMessage;
-          _progress = 0.85 + (dependentSyncState.progress * 0.1); // 0.85 to 0.95
-        });
-        break;
+     
 
       case ProcessingPendingOperations:
         final pendingState = state as ProcessingPendingOperations;
@@ -303,10 +295,10 @@ class _LoadingScreenState extends State<LoadingScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo Section
-              _buildLogoSection(),
+              // // Logo Section
+              // _buildLogoSection(),
               
-              const SizedBox(height: 48),
+              // const SizedBox(height: 48),
               
               // Status Section
               _buildStatusSection(),
@@ -322,113 +314,124 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
   }
 
-  Widget _buildLogoSection() {
-    return Column(
+  
+
+  // Widget _buildLogoSection() {
+  //   return Column(
+  //     children: [
+  //       AnimatedBuilder(
+  //         animation: _pulseAnimation,
+  //         builder: (context, child) {
+  //           return Transform.scale(
+  //             scale: _pulseAnimation.value,
+  //             child: Icon(
+  //               Icons.local_shipping_rounded,
+  //               size: 80,
+  //               color: Theme.of(context).colorScheme.primary,
+  //             ),
+  //           );
+  //         },
+  //       ),
+        
+  //       const SizedBox(height: 32),
+        
+  //       Text(
+  //         'X Pro Delivery',
+  //         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+  //           color: Theme.of(context).colorScheme.primary,
+  //           fontWeight: FontWeight.bold,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+Widget _buildStatusSection() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 32),
+    child: Column(
       children: [
-        AnimatedBuilder(
-          animation: _pulseAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _pulseAnimation.value,
-              child: Icon(
-                Icons.local_shipping_rounded,
-                size: 80,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            );
-          },
-        ),
+        // NEW: Syncing Pulse Loader
+        if (_isLoading)
+          const SyncLoadingIndicator(),
+
+        // const SizedBox(height: 24),
+
+        // // Your existing rotating loading indicator
+        // if (_isLoading) 
+        //   _buildLoadingIndicator(),
         
-        const SizedBox(height: 32),
-        
-        Text(
-          'X Pro Delivery',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.bold,
+        const SizedBox(height: 20),
+
+        // Progress Bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: _progress,
+            minHeight: 8,
+            backgroundColor: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
           ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Status Text + %
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                _statusText,
+                style: Theme.of(context).textTheme.bodyLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              '${(_progress * 100).toInt()}%',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildStatusSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        children: [
-          // Loading Indicator
-          if (_isLoading) _buildLoadingIndicator(),
-          
-          const SizedBox(height: 20),
-          
-          // Progress Bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: _progress,
-              minHeight: 8,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Status Text and Progress Percentage
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  _statusText,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Text(
-                '${(_progress * 100).toInt()}%',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildLoadingIndicator() {
-    return AnimatedBuilder(
-      animation: _rotationAnimation,
-      builder: (context, child) {
-        return Transform.rotate(
-          angle: _rotationAnimation.value * 2 * 3.14159,
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                width: 3,
-              ),
-            ),
-            child: Container(
-              margin: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // Widget _buildLoadingIndicator() {
+  //   return AnimatedBuilder(
+  //     animation: _rotationAnimation,
+  //     builder: (context, child) {
+  //       return Transform.rotate(
+  //         angle: _rotationAnimation.value * 2 * 3.14159,
+  //         child: Container(
+  //           width: 40,
+  //           height: 40,
+  //           decoration: BoxDecoration(
+  //             shape: BoxShape.circle,
+  //             border: Border.all(
+  //               color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+  //               width: 3,
+  //             ),
+  //           ),
+  //           child: Container(
+  //             margin: const EdgeInsets.all(6),
+  //             decoration: BoxDecoration(
+  //               shape: BoxShape.circle,
+  //               color: Theme.of(context).colorScheme.primary,
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _buildContinueButton() {
     return TextButton(

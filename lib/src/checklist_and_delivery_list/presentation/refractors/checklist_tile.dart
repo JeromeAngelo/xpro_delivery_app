@@ -2,23 +2,21 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/common/app/features/checklists/intransit_checklist/domain/entity/checklist_entity.dart';
 
-class ChecklistTile extends StatefulWidget {
+// ✅ ChecklistTile (X = false, Check = true)
+// Tap only when false -> becomes true (optimistic) then dispatches bloc event.
+// If already true, icon stays check and tap does nothing (or you can allow toggle back if you want).
+class ChecklistTile extends StatelessWidget {
   final ChecklistEntity checklist;
-  final Function(bool?) onChanged;
+  final ValueChanged<bool> onToggleToTrue;
   final bool isChecked;
 
   const ChecklistTile({
     super.key,
     required this.checklist,
-    required this.onChanged,
+    required this.onToggleToTrue,
     required this.isChecked,
   });
 
-  @override
-  State<ChecklistTile> createState() => _ChecklistTileState();
-}
-
-class _ChecklistTileState extends State<ChecklistTile> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -27,29 +25,37 @@ class _ChecklistTileState extends State<ChecklistTile> {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ExpansionTile(
+          maintainState: true, // ✅ important for release stability
           tilePadding: const EdgeInsets.all(16),
           leading: Checkbox(
-            value: widget.isChecked,
+            value: isChecked,
             onChanged: (value) {
-              widget.onChanged(value);
+              // ✅ Only allow unchecked → checked
+              if (isChecked) {
+                debugPrint(
+                  'ℹ️ Checklist already checked: ${checklist.objectName}',
+                );
+                return;
+              }
+
+              debugPrint('✅ Checkbox toggled -> TRUE: ${checklist.objectName}');
+              onToggleToTrue(true);
             },
           ),
           title: Text(
-            widget.checklist.objectName ?? 'No Name',
+            checklist.objectName ?? 'No Name',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-
-           children: [
-            if (widget.checklist.description != null &&
-                widget.checklist.description!.isNotEmpty)
+          children: [
+            if (checklist.description != null &&
+                checklist.description!.isNotEmpty)
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 20, right: 16, bottom: 16),
+                padding: const EdgeInsets.only(left: 20, right: 16, bottom: 16),
                 child: Text(
-                  widget.checklist.description!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                  checklist.description!,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                 ),
               ),
           ],

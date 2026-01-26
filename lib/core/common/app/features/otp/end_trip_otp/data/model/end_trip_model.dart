@@ -1,5 +1,5 @@
 import 'package:objectbox/objectbox.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/entity/end_trip_otp_entity.dart';
 import 'package:x_pro_delivery_app/core/enums/otp_type.dart';
 
@@ -87,28 +87,36 @@ class EndTripOtpModel extends EndTripOtpEntity {
     if (trip != null) this.trip.target = trip;
   }
 
-  factory EndTripOtpModel.fromJson(Map<String, dynamic> json) {
-    return EndTripOtpModel(
-      id: json['id']?.toString(),
-      otpCode: json['otpCode']?.toString(),
-      endTripOdometer: json['endTripOdometer']?.toString(),
-      generatedCode: json['generatedCode']?.toString(),
-      isVerified: json['isVerified'] as bool?,
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt'].toString())
-          : null,
-      expiresAt: json['expiresAt'] != null
-          ? DateTime.parse(json['expiresAt'].toString())
-          : null,
-      otpType: OtpType.values.firstWhere(
-        (type) => type.toString() == json['otpType']?.toString(),
-        orElse: () => OtpType.endDelivery,
-      ),
-      verifiedAt: json['verifiedAt'] != null
-          ? DateTime.parse(json['verifiedAt'].toString())
-          : null,
-    );
+
+factory EndTripOtpModel.fromJson(Map<String, dynamic> json) {
+  DateTime? tryParseDate(dynamic value) {
+  if (value == null) return null;
+
+  final str = value.toString().trim();
+  if (str.isEmpty || str.toLowerCase() == 'null') return null;
+
+  try {
+    return DateTime.parse(str);
+  } catch (_) {
+    return null;
   }
+}
+  return EndTripOtpModel(
+    id: json['id']?.toString(),
+    otpCode: json['otpCode']?.toString(),
+    endTripOdometer: json['endTripOdometer']?.toString(),
+    generatedCode: json['generatedCode']?.toString(),
+    isVerified: json['isVerified'] as bool?,
+    createdAt: tryParseDate(json['createdAt']),
+    expiresAt: tryParseDate(json['expiresAt']),
+    otpType: OtpType.values.firstWhere(
+      (type) => type.toString() == json['otpType']?.toString(),
+      orElse: () => OtpType.endDelivery,
+    ),
+    verifiedAt: tryParseDate(json['verifiedAt']),
+  );
+}
+
 
   Map<String, dynamic> toJson() {
     return {

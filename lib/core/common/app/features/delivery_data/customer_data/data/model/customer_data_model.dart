@@ -4,34 +4,94 @@ import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 
 @Entity()
 class CustomerDataModel extends CustomerDataEntity {
-  @Id()
+  @Id(assignable: true)
   int objectBoxId = 0;
-  
+
+  @override
+  @Property()
+  String? id;
+
+  @override
+  @Property()
+  String? collectionId;
+
+  @override
+  @Property()
+  String? collectionName;
+
+  @override
+  @Property()
+  String? name;
+
+  @override
+  @Property()
+  String? refId;
+
+  @override
+  @Property()
+  String? province;
+
+  @override
+  @Property()
+  String? municipality;
+
+  @override
+  @Property()
+  String? barangay;
+
+  @override
+  @Property()
+  String? ownerName;
+
+  @override
+  @Property()
+  String? contactNumber;
+
+  @override
+  @Property()
+  double? longitude;
+
+  @override
+  @Property()
+  double? latitude;
+
+  @override
+  @Property()
+  String? paymentMode;
+
+  @override
+  @Property()
+  DateTime? created;
+
+  @override
+  @Property()
+  DateTime? updated;
+
+  /// --- Pocketbase ID (for convenience)
   @Property()
   String pocketbaseId;
 
   CustomerDataModel({
-    super.dbId = 0,
-    super.id,
-    super.collectionId,
-    super.collectionName,
-    super.name,
-    super.refId,
-    super.province,
-    super.municipality,
-    super.barangay,
-    super.longitude,
-    super.latitude,
-    super.contactNumber,
-    super.ownerName,
-    super.created,
-    super.paymentMode,
-    super.updated,
+    this.id,
+    this.collectionId,
+    this.collectionName,
+    this.name,
+    this.refId,
+    this.province,
+    this.municipality,
+    this.barangay,
+    this.ownerName,
+    this.contactNumber,
+    this.longitude,
+    this.latitude,
+    this.paymentMode,
+    this.created,
+    this.updated,
     this.objectBoxId = 0,
   }) : pocketbaseId = id ?? '';
 
-  factory CustomerDataModel.fromJson(DataMap json) {
-    // Add safe date parsing
+  /// --- From JSON ---
+  factory CustomerDataModel.fromJson(dynamic json) {
     DateTime? parseDate(dynamic value) {
       if (value == null || value.toString().isEmpty) return null;
       try {
@@ -46,12 +106,12 @@ class CustomerDataModel extends CustomerDataEntity {
       collectionId: json['collectionId']?.toString(),
       collectionName: json['collectionName']?.toString(),
       name: json['name']?.toString(),
-      ownerName: json['ownerName']?.toString(),
-      contactNumber: json['contactNumber']?.toString(),
       refId: json['refID']?.toString(),
       province: json['province']?.toString(),
       municipality: json['municipality']?.toString(),
       barangay: json['barangay']?.toString(),
+      ownerName: json['ownerName']?.toString(),
+      contactNumber: json['contactNumber']?.toString(),
       paymentMode: json['paymentMode']?.toString(),
       longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
       latitude: json['latitude'] != null ? double.tryParse(json['latitude'].toString()) : null,
@@ -60,6 +120,7 @@ class CustomerDataModel extends CustomerDataEntity {
     );
   }
 
+  /// --- To JSON ---
   DataMap toJson() {
     return {
       'id': pocketbaseId,
@@ -68,11 +129,11 @@ class CustomerDataModel extends CustomerDataEntity {
       'name': name ?? '',
       'refId': refId ?? '',
       'province': province ?? '',
-      'paymentMode': paymentMode ?? '',
       'municipality': municipality ?? '',
       'barangay': barangay ?? '',
       'ownerName': ownerName ?? '',
       'contactNumber': contactNumber ?? '',
+      'paymentMode': paymentMode ?? '',
       'longitude': longitude?.toString() ?? '',
       'latitude': latitude?.toString() ?? '',
       'created': created?.toIso8601String(),
@@ -80,6 +141,7 @@ class CustomerDataModel extends CustomerDataEntity {
     };
   }
 
+  /// --- Copy With ---
   CustomerDataModel copyWith({
     String? id,
     String? collectionId,
@@ -105,12 +167,12 @@ class CustomerDataModel extends CustomerDataEntity {
       refId: refId ?? this.refId,
       province: province ?? this.province,
       municipality: municipality ?? this.municipality,
-      paymentMode: paymentMode ?? this.paymentMode,
       barangay: barangay ?? this.barangay,
       ownerName: ownerName ?? this.ownerName,
       contactNumber: contactNumber ?? this.contactNumber,
       longitude: longitude ?? this.longitude,
       latitude: latitude ?? this.latitude,
+      paymentMode: paymentMode ?? this.paymentMode,
       created: created ?? this.created,
       updated: updated ?? this.updated,
       objectBoxId: objectBoxId,

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'dart:typed_data' show Uint8List;
@@ -12,11 +12,19 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:x_pro_delivery_app/core/services/location_services.dart';
 
+import '../../../../../delivery_status_choices/data/model/delivery_status_choices_model.dart';
 import '../../models/delivery_update_model.dart';
 
 abstract class DeliveryUpdateDatasource {
   Future<List<DeliveryUpdateModel>> getDeliveryStatusChoices(String customerId);
-  Future<void> updateDeliveryStatus(String customerId, String statusId);
+  Future<List<DeliveryUpdateModel>> syncDeliveryStatusChoices(
+    String customerId,
+  );
+
+  Future<void> updateDeliveryStatus(
+    String deliveryDataId, // DeliveryData PB ID
+    DeliveryStatusChoicesModel status, // ✅ FULL MODEL
+  );
   Future<void> completeDelivery(DeliveryDataEntity deliveryData);
   Future<DataMap> checkEndDeliverStatus(String tripId);
   Future<void> initializePendingStatus(List<String> customerIds);
@@ -112,6 +120,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
   }
 
   @override
+
   Future<List<DeliveryUpdateModel>> getDeliveryStatusChoices(
     String customerId,
   ) async {
@@ -363,39 +372,40 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
   }
 
   @override
-  Future<void> updateDeliveryStatus(String customerId, String statusId) async {
+  Future<void> updateDeliveryStatus(
+    String deliveryDataId, // DeliveryData PB ID
+    DeliveryStatusChoicesModel status, // ✅ FULL MODEL
+  ) async {
     try {
       debugPrint(
-        '🔄 Processing status update - Customer: $customerId, Status: $statusId',
+        '🔄 Processing status update - DeliveryData: $deliveryDataId, '
+        'Status: ${status.title} (${status.id})',
       );
 
-      // Validate status ID
-      if (statusId.isEmpty) {
-        debugPrint('⚠️ Invalid status ID provided');
+      // ---------------------------------------------------
+      // 0️⃣ VALIDATE
+      // ---------------------------------------------------
+      if (status.id!.isEmpty) {
+        debugPrint('⚠️ Invalid status PB ID provided');
         throw const ServerException(
           message: 'Invalid status ID',
           statusCode: '400',
         );
       }
 
-      // Get the status record
-      final statusRecord = await _pocketBaseClient
-          .collection('deliveryStatusChoices')
-          .getOne(statusId);
-
-      debugPrint('✅ Retrieved status: ${statusRecord.data['title']}');
-
-      // Create delivery update with validated data
+      // ---------------------------------------------------
+      // 1️⃣ CREATE DeliveryUpdate (COPY DATA)
+      // ---------------------------------------------------
       final currentTime = DateTime.now().toIso8601String();
+
       final deliveryUpdateRecord = await _pocketBaseClient
           .collection('deliveryUpdate')
           .create(
             body: {
-              // 'customer': customerId,
-              'deliveryData': customerId,
-              'status': statusId,
-              'title': statusRecord.data['title'],
-              'subtitle': statusRecord.data['subtitle'],
+              'deliveryData': deliveryDataId,
+              'status': status.id, // 🔑 PB relation
+              'title': status.title, // 📋 copied
+              'subtitle': status.subtitle, // 📋 copied
               'created': currentTime,
               'time': currentTime,
               'isAssigned': true,
@@ -404,24 +414,29 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       debugPrint('📝 Created delivery update: ${deliveryUpdateRecord.id}');
 
-      // Update customer record
+      // ---------------------------------------------------
+      // 2️⃣ ATTACH DeliveryUpdate → DeliveryData
+      // ---------------------------------------------------
       await _pocketBaseClient
           .collection('deliveryData')
           .update(
-            customerId,
+            deliveryDataId,
             body: {
               'deliveryUpdates+': [deliveryUpdateRecord.id],
             },
           );
 
-      debugPrint('✅ Successfully updated customer status');
+      debugPrint('✅ Successfully updated deliveryData');
 
-      // 🔍 Get the deliveryData to extract trip info
+      // ---------------------------------------------------
+      // 3️⃣ CREATE NOTIFICATION (REMOTE ONLY)
+      // ---------------------------------------------------
       final deliveryDataRecord = await _pocketBaseClient
           .collection('deliveryData')
-          .getOne(customerId);
+          .getOne(deliveryDataId);
 
       final tripId = deliveryDataRecord.data['trip'];
+
       debugPrint('📦 Found trip for notification: $tripId');
 
       await _pocketBaseClient
@@ -436,7 +451,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
             },
           );
 
-          debugPrint('✅ Successfully created notification');
+      debugPrint('✅ Successfully created notification');
     } catch (e) {
       debugPrint('❌ Operation failed: ${e.toString()}');
       throw ServerException(
@@ -1203,6 +1218,58 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       debugPrint('❌ Failed to pin arrived location: $e');
       throw ServerException(
         message: 'Failed to pin arrived location: $e',
+        statusCode: '500',
+      );
+    }
+  }
+
+  @override
+  Future<List<DeliveryUpdateModel>> syncDeliveryStatusChoices(
+    String customerId,
+  ) async {
+    try {
+      debugPrint(
+        '🔄 [SYNC] Starting delivery update sync for customer: $customerId',
+      );
+
+      // 1️⃣ Get the deliveryData record related to this customer
+      final customerRecord = await _pocketBaseClient
+          .collection('deliveryData')
+          .getOne(customerId, expand: 'deliveryUpdates');
+
+      // 2️⃣ Extract the deliveryUpdates list (history of statuses)
+      final deliveryUpdates = customerRecord.expand['deliveryUpdates'] as List?;
+
+      if (deliveryUpdates == null || deliveryUpdates.isEmpty) {
+        debugPrint('⚠️ No delivery updates found for customer $customerId.');
+        return [];
+      }
+
+      debugPrint(
+        '📦 Found ${deliveryUpdates.length} delivery updates for customer $customerId.',
+      );
+
+      // 3️⃣ Convert each update record to your DeliveryUpdateModel
+      final updates =
+          deliveryUpdates.map((record) {
+            final update = DeliveryUpdateModel.fromJson(record.toJson());
+            debugPrint(
+              '   • Synced Update: ${update.title} (${update.created})',
+            );
+            return update;
+          }).toList();
+
+      debugPrint(
+        '✅ [SYNC COMPLETE] ${updates.length} updates synced for $customerId',
+      );
+      return updates;
+    } catch (e) {
+      debugPrint(
+        '❌ [SYNC ERROR] Failed to sync delivery updates for $customerId: $e',
+      );
+      throw ServerException(
+        message:
+            'Failed to sync delivery updates for $customerId: ${e.toString()}',
         statusCode: '500',
       );
     }

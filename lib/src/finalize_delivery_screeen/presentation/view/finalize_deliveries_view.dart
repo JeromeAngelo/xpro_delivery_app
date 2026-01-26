@@ -212,7 +212,10 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
                         child: Column(
                           children: [
                             ViewCollections(),
+                            SizedBox(height: 8),
                             ViewReturns(),
+                            SizedBox(height: 8),
+
                             ViewUndeliveredCustomers(),
                           ],
                         ),
@@ -329,7 +332,7 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
                       '✅ CHECKLIST: Item ${item.id} toggled to $value',
                     );
                     context.read<EndTripChecklistBloc>().add(
-                      CheckEndTripItemEvent(item.id),
+                      CheckEndTripItemEvent(item.id ?? ''),
                     );
                   },
                 ),

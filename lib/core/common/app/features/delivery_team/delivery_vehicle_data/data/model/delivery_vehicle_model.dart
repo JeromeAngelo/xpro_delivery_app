@@ -1,38 +1,60 @@
 import 'package:objectbox/objectbox.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_vehicle_data/domain/enitity/delivery_vehicle_entity.dart';
-import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
+
+import '../../../../../../../utils/typedefs.dart';
+import '../../domain/enitity/delivery_vehicle_entity.dart';
+
 
 @Entity()
 class DeliveryVehicleModel extends DeliveryVehicleEntity {
   @Id()
   int objectBoxId = 0;
-  
+
   @Property()
   String pocketbaseId;
 
   @Property()
   String tripId;
 
+  @Property()
+  String? name;
+
+  @Property()
+  String? plateNo;
+
+  @Property()
+  String? make;
+
+  @Property()
+  String? type;
+
   DeliveryVehicleModel({
     super.dbId = 0,
     super.id,
     super.collectionId,
     super.collectionName,
-    super.name,
-    super.plateNo,
+    String? name,        // <-- capture name from PB
+    String? plateNo,     // <-- capture plate
+    String? type,        // <-- capture type
     super.make,
-    super.type,
     super.wheels,
     super.volumeCapacity,
     super.weightCapacity,
     super.created,
     super.updated,
     this.objectBoxId = 0,
-  }) : pocketbaseId = id ?? '', tripId = '';
+    String? pocketbaseId,
+    String? tripId,
+  })  : pocketbaseId = pocketbaseId ?? id ?? '',
+        tripId = tripId ?? '',
+        // IMPORTANT: assign local fields
+        name = name,
+        plateNo = plateNo,
+        make = make,
+        type = type;
 
-  // Factory constructor to create a model from JSON data
+
+  // Factory constructor to create a model from JSON
   factory DeliveryVehicleModel.fromJson(DataMap json) {
-    // Add safe date parsing
     DateTime? parseDate(dynamic value) {
       if (value == null || value.toString().isEmpty) return null;
       try {
@@ -44,6 +66,7 @@ class DeliveryVehicleModel extends DeliveryVehicleEntity {
 
     return DeliveryVehicleModel(
       id: json['id']?.toString(),
+      pocketbaseId: json['id']?.toString(),
       collectionId: json['collectionId']?.toString(),
       collectionName: json['collectionName']?.toString(),
       name: json['name']?.toString(),
@@ -51,11 +74,11 @@ class DeliveryVehicleModel extends DeliveryVehicleEntity {
       make: json['make']?.toString(),
       type: json['type']?.toString(),
       wheels: json['wheels']?.toString(),
-      volumeCapacity: json['volumeCapacity'] != null 
-          ? double.tryParse(json['volumeCapacity'].toString()) 
+      volumeCapacity: json['volumeCapacity'] != null
+          ? double.tryParse(json['volumeCapacity'].toString())
           : null,
-      weightCapacity: json['weightCapacity'] != null 
-          ? double.tryParse(json['weightCapacity'].toString()) 
+      weightCapacity: json['weightCapacity'] != null
+          ? double.tryParse(json['weightCapacity'].toString())
           : null,
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
@@ -80,9 +103,10 @@ class DeliveryVehicleModel extends DeliveryVehicleEntity {
     };
   }
 
-  // Create a copy of this model with given fields replaced with new values
+  // Create a copy of this model with new values
   DeliveryVehicleModel copyWith({
     String? id,
+    String? pocketbaseId,
     String? collectionId,
     String? collectionName,
     String? name,
@@ -123,6 +147,6 @@ class DeliveryVehicleModel extends DeliveryVehicleEntity {
 
   @override
   String toString() {
-    return 'DeliveryVehicleModel(id: $id, name: $name, plateNo: $plateNo)';
+    return 'DeliveryVehicleModel(id: $id, name: $name, plateNo: $plateNo, )';
   }
 }

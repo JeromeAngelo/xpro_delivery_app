@@ -24,18 +24,55 @@ class EndTripOtpRepoImpl implements EndTripOtpRepo {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     }
   }
-
 @override
 ResultFuture<EndTripOtpEntity> loadEndTripOtpByTripId(String tripId) async {
   try {
-    debugPrint('🔄 Loading OTP data for trip: $tripId');
-    final remoteOtp = await _remoteDataSource.loadEndTripOtpByTripId(tripId);
+    debugPrint('📱 LOCAL FIRST: Loading EndTrip OTP for trip → $tripId');
+
+    // -------------------------------------------------
+    // 1️⃣ Try LOCAL first
+    // -------------------------------------------------
+    final localOtp =
+        await _localDataSource.getEndTripOtpByTripId(tripId);
+
+    if (localOtp != null) {
+      debugPrint('✅ EndTrip OTP loaded from LOCAL DB');
+      return Right(localOtp);
+    }
+
+    debugPrint('⚠️ No local EndTrip OTP found, fetching REMOTE...');
+  } on CacheException catch (e) {
+    debugPrint('⚠️ Local fetch failed: ${e.message}');
+  }
+
+  // -------------------------------------------------
+  // 2️⃣ REMOTE fallback
+  // -------------------------------------------------
+  try {
+    debugPrint('🌐 REMOTE: Fetching EndTrip OTP for trip → $tripId');
+
+    final remoteOtp =
+        await _remoteDataSource.loadEndTripOtpByTripId(tripId);
+
+    // -------------------------------------------------
+    // 3️⃣ Save to LOCAL
+    // -------------------------------------------------
+   // await _localDataSource.saveEndTripOtp(remoteOtp);
+
+    debugPrint('💾 EndTrip OTP saved to LOCAL DB');
     return Right(remoteOtp);
   } on ServerException catch (e) {
-    debugPrint('❌ Failed to load OTP: ${e.message}');
-    return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    debugPrint('❌ Remote fetch failed: ${e.message}');
+    return Left(
+      ServerFailure(message: e.message, statusCode: e.statusCode),
+    );
+  } on CacheException catch (e) {
+    return Left(
+      CacheFailure(message: e.message, statusCode: e.statusCode),
+    );
   }
 }
+
 
 @override
 ResultFuture<EndTripOtpEntity> loadEndTripOtpById(String otpId) async {

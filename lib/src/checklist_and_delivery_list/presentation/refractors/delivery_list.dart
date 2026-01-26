@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 
 class DeliveryList extends StatelessWidget {
   final List<DeliveryDataEntity> deliveries;
@@ -154,11 +154,11 @@ class DeliveryList extends StatelessWidget {
     BuildContext context,
     DeliveryDataEntity delivery,
   ) {
-    String status = "No Status";
+    String status = "Pending";
 
     // Get status from the delivery updates
     if (delivery.deliveryUpdates.isNotEmpty) {
-      status = delivery.deliveryUpdates.last.title ?? "No Status";
+      status = delivery.deliveryUpdates.last.title ?? "Pending";
     }
 
     return Row(
