@@ -195,48 +195,50 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
   }
 
   @override
-  Future<List<TripModel>> getAllTripTickets() async {
-    try {
-      debugPrint('🔄 Fetching all trip tickets');
+Future<List<TripModel>> getAllTripTickets() async {
+  try {
+    debugPrint('🔄 Fetching all trip tickets');
 
-      // Ensure PocketBase client is authenticated
-      await _ensureAuthenticated();
+    // Ensure PocketBase client is authenticated
+    await _ensureAuthenticated();
 
-      final records = await _pocketBaseClient
-          .collection('tripticket')
-          .getFullList(
-            expand:
-                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
-            sort: '-created',
-          );
+    final records = await _pocketBaseClient.collection('tripticket').getFullList(
+          expand:
+              'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
+          sort: '-created',
+        );
 
-      debugPrint('✅ Retrieved ${records.length} trip tickets from API');
+    debugPrint('✅ Retrieved ${records.length} trip tickets from API');
 
-      // Debug print for each record
-      for (var record in records) {
-        debugPrint('📄 Trip Record ID: ${record.id}');
-        debugPrint('📄 Trip Number ID: ${record.data['tripNumberId']}');
-        debugPrint('📄 Time Accepted: ${record.data['timeAccepted']}');
-        debugPrint('📄 Time End Trip: ${record.data['timeEndTrip']}');
-        debugPrint('📄 Raw User field: ${record.data['user']}');
-        debugPrint('📄 Expanded User: ${record.expand['user']}');
-        debugPrint('📄 Is Accepted: ${record.data['isAccepted']}');
-        debugPrint('📄 Is End Trip: ${record.data['isEndTrip']}');
-        debugPrint('📄 All expand keys: ${record.expand.keys.toList()}');
-        debugPrint('-----------------------------------');
-      }
-
-      return records.map((record) {
-        return _mapRecordToTripModel(record);
-      }).toList();
-    } catch (e) {
-      debugPrint('❌ Failed to fetch all trip tickets: ${e.toString()}');
-      throw ServerException(
-        message: 'Failed to fetch all trip tickets: ${e.toString()}',
-        statusCode: '500',
-      );
+    // Debug print for each record (same content, less overhead)
+    for (final record in records) {
+      debugPrint('📄 Trip Record ID: ${record.id}');
+      debugPrint('📄 Trip Number ID: ${record.data['tripNumberId']}');
+      debugPrint('📄 Time Accepted: ${record.data['timeAccepted']}');
+      debugPrint('📄 Time End Trip: ${record.data['timeEndTrip']}');
+      debugPrint('📄 Raw User field: ${record.data['user']}');
+      debugPrint('📄 Expanded User: ${record.expand['user']}');
+      debugPrint('📄 Is Accepted: ${record.data['isAccepted']}');
+      debugPrint('📄 Is End Trip: ${record.data['isEndTrip']}');
+      // Avoid allocating a new List via keys.toList()
+      debugPrint('📄 All expand keys: ${record.expand.keys}');
+      debugPrint('-----------------------------------');
     }
+
+    // Faster mapping: pre-size result list + for-loop
+    final trips = List<TripModel>.filled(records.length, TripModel.empty(), growable: false);
+    for (var i = 0; i < records.length; i++) {
+      trips[i] = _mapRecordToTripModel(records[i]);
+    }
+    return trips;
+  } catch (e) {
+    debugPrint('❌ Failed to fetch all trip tickets: ${e.toString()}');
+    throw ServerException(
+      message: 'Failed to fetch all trip tickets: ${e.toString()}',
+      statusCode: '500',
+    );
   }
+}
 
   @override
   Future<List<TripModel>> getAllActiveTripTickets() async {

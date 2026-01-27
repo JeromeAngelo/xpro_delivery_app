@@ -79,50 +79,62 @@ class InvoiceDataRemoteDataSourceImpl implements InvoiceDataRemoteDataSource {
       );
     }
   }
+@override
+Future<List<InvoiceDataModel>> getAllInvoiceData() async {
+  try {
+    debugPrint('🔄 Fetching all invoice data');
 
-  @override
-  Future<List<InvoiceDataModel>> getAllInvoiceData() async {
-    try {
-      debugPrint('🔄 Fetching all invoice data');
-      
-      // Ensure PocketBase client is authenticated
-      await _ensureAuthenticated();
+    await _ensureAuthenticated();
 
-      final result = await _pocketBaseClient
-          .collection('invoiceData')
-          .getFullList(expand: 'customer', sort: '-created');
+    const int pageSize = 200; // tune: 100–500
+    int page = 1;
 
-      debugPrint('✅ Retrieved ${result.length} invoice data records');
+    final List<InvoiceDataModel> all = [];
 
-      List<InvoiceDataModel> invoiceDataList = [];
+    while (true) {
+      final res = await _pocketBaseClient.collection('invoiceData').getList(
+            page: page,
+            perPage: pageSize,
+            sort: '-created',
+            expand: 'customer',
+          );
 
-      for (var record in result) {
-        final mappedData = {
-          'id': record.id,
-          'collectionId': record.collectionId,
-          'collectionName': record.collectionName,
-          'refId': record.data['refID'] ?? '',
-          'name': record.data['name'] ?? '',
-          'documentDate': record.data['documentDate'],
-          'totalAmount': record.data['totalAmount'],
-          'volume': record.data['volume'],
-          'weight': record.data['weight'],
+      final items = res.items;
+      if (items.isEmpty) break;
 
-          'expand': {'customer': record.expand['customer']},
-        };
+      all.addAll(items.map(_invoiceFromRecordFast));
+      if (items.length < pageSize) break;
 
-        invoiceDataList.add(InvoiceDataModel.fromJson(mappedData));
-      }
-
-      return invoiceDataList;
-    } catch (e) {
-      debugPrint('❌ Failed to fetch all invoice data: ${e.toString()}');
-      throw ServerException(
-        message: 'Failed to load invoice data: ${e.toString()}',
-        statusCode: '500',
-      );
+      page++;
     }
+
+    debugPrint('✅ Retrieved ${all.length} invoice data records');
+    return all;
+  } catch (e) {
+    debugPrint('❌ Failed to fetch all invoice data: $e');
+    throw ServerException(
+      message: 'Failed to load invoice data: $e',
+      statusCode: '500',
+    );
   }
+}
+
+// Faster mapping (no intermediate Map allocation per field)
+InvoiceDataModel _invoiceFromRecordFast(RecordModel record) {
+  return InvoiceDataModel.fromJson({
+    'id': record.id,
+    'collectionId': record.collectionId,
+    'collectionName': record.collectionName,
+    'refId': record.data['refID'] ?? '',
+    'name': record.data['name'] ?? '',
+    'documentDate': record.data['documentDate'],
+    'totalAmount': record.data['totalAmount'],
+    'volume': record.data['volume'],
+    'weight': record.data['weight'],
+    'expand': {'customer': record.expand['customer']},
+  });
+}
+
 
   @override
   Future<InvoiceDataModel> getInvoiceDataById(String id) async {

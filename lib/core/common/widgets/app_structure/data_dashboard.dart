@@ -165,13 +165,13 @@ class DashboardSummary extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Flexible(
-                  child: Text(
+                  child: SelectableText(
                     item.value,
                     style: Theme.of(context).textTheme.titleLarge!.copyWith(
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.3,
                     ),
-                    overflow: TextOverflow.ellipsis,
+
                     maxLines: 1,
                   ),
                 ),

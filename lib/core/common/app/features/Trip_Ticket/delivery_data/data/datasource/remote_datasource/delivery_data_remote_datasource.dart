@@ -170,33 +170,39 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
   }
 
   @override
-  Future<List<DeliveryDataModel>> getAllDeliveryData() async {
-    return await _retryWithBackoff(() async {
-      debugPrint('🔄 Fetching all delivery data');
+Future<List<DeliveryDataModel>> getAllDeliveryData() async {
+  return _retryWithBackoff(() async {
+    debugPrint('🔄 Fetching all delivery data');
 
-      // Ensure PocketBase client is authenticated
-      await _ensureAuthenticated();
+    await _ensureAuthenticated();
 
-      final result = await _pocketBaseClient
-          .collection('deliveryData')
-          .getFullList(
+    // Use pagination instead of getFullList
+    const perPage = 200;
+    int page = 1;
+
+    final List<RecordModel> all = [];
+
+    while (true) {
+      final res = await _pocketBaseClient.collection('deliveryData').getList(
+            page: page,
+            perPage: perPage,
             filter: 'hasTrip = false',
-            expand:
-                'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
+            expand: 'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
             sort: '-created',
+            // fields: 'id,created,hasTrip,deliveryNumber,customer,invoice,expand.customer,expand.invoice', // enable if possible
           );
 
-      debugPrint('✅ Retrieved ${result.length} delivery data records');
+      all.addAll(res.items);
 
-      List<DeliveryDataModel> deliveryDataList = [];
+      if (res.items.length < perPage) break; // no more pages
+      page++;
+    }
 
-      for (var record in result) {
-        deliveryDataList.add(_processDeliveryDataRecord(record));
-      }
+    debugPrint('✅ Retrieved ${all.length} delivery data records');
 
-      return deliveryDataList;
-    }, 'getAllDeliveryData');
-  }
+    return all.map(_processDeliveryDataRecord).toList(growable: false);
+  }, 'getAllDeliveryData');
+}
 
   @override
   Future<List<DeliveryDataModel>> getDeliveryDataByTripId(String tripId) async {

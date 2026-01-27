@@ -10,6 +10,8 @@ import 'package:xpro_delivery_admin_app/src/master_data/delivery_data/widgets/sp
 import 'package:xpro_delivery_admin_app/src/master_data/delivery_data/widgets/specific_delivery_data_screen.dart/customer_data_table.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/delivery_data/widgets/specific_delivery_data_screen.dart/invoice_delivery_data_table.dart';
 
+import '../widgets/specific_delivery_data_screen.dart/invoice_items_delivery_data_tbl.dart';
+
 class SpecificDeliveryDataScreen extends StatefulWidget {
   final String deliveryId;
 
@@ -154,7 +156,9 @@ class _SpecificDeliveryDataScreenState
                           _handleViewInvoiceItems(deliveryData.invoiceItems);
                         },
                       ),
-
+                      InvoiceItemsDeliveryDataWidget(
+                        deliveryData: deliveryData,
+                      ),
                       // Add some bottom padding
                       const SizedBox(height: 32),
                     ]),

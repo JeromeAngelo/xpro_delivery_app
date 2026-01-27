@@ -119,123 +119,108 @@ class InvoicePresetGroupRemoteDataSourceImpl
       );
     }
   }
-
   @override
-  Future<List<InvoicePresetGroupModel>>
-  getAllUnassignedInvoicePresetGroups() async {
-    try {
-      debugPrint('🔄 Fetching all unassigned invoice preset groups');
+Future<List<InvoicePresetGroupModel>> getAllUnassignedInvoicePresetGroups() async {
+  try {
+    debugPrint('🔄 Fetching all unassigned invoice preset groups (FAST)');
 
-      // Ensure PocketBase client is authenticated
-      await _ensureAuthenticated();
+    await _ensureAuthenticated();
 
-      // 1. First, get all invoice preset groups with their invoices
-      final presetGroups = await _pocketBaseClient
-          .collection('invoicePresetGroup')
-          .getFullList(expand: 'invoices', sort: '-created');
+    // ------------------------------------------------------------
+    // ✅ 1) Fetch preset groups + assigned invoice IDs in PARALLEL
+    // ------------------------------------------------------------
+    final results = await Future.wait([
+      _pocketBaseClient.collection('invoicePresetGroup').getFullList(
+        sort: '-created',
+        expand: 'invoices',
+        // Keep group fields minimal
+        fields: 'id,refID,name,description,created,updated,expand.invoices',
+      ),
 
-      debugPrint('✅ Retrieved ${presetGroups.length} invoice preset groups');
+      // IMPORTANT: DO NOT expand invoiceData (we only need IDs)
+      _pocketBaseClient.collection('invoiceStatus').getFullList(
+        fields: 'invoiceData', // just the relation ids
+      ),
+    ]);
 
-      // 2. Get all invoices that have already been assigned (have an invoiceStatus)
-      final assignedInvoices = await _pocketBaseClient
-          .collection('invoiceStatus')
-          .getFullList(expand: 'invoiceData', fields: 'id,invoiceData');
+    final presetGroups = results[0];
+    final assignedStatus = results[1];
 
-      // Create a set of assigned invoice IDs for faster lookup
-      final Set<String> assignedInvoiceIds = {};
-      for (var statusRecord in assignedInvoices) {
-        // Get the invoice ID from the invoiceData relation
-        if (statusRecord.expand.containsKey('invoiceData') &&
-            statusRecord.expand['invoiceData'] != null) {
-          final invoiceData = statusRecord.expand['invoiceData'];
-          if (invoiceData is List && invoiceData!.isNotEmpty) {
-            for (var invoice in invoiceData) {
-              assignedInvoiceIds.add(invoice.id);
-            }
-          }
-        } else if (statusRecord.data.containsKey('invoiceData') &&
-            statusRecord.data['invoiceData'] != null) {
-          // If not expanded but we have the ID
-          final invoiceId = statusRecord.data['invoiceData'].toString();
-          if (invoiceId.isNotEmpty) {
-            assignedInvoiceIds.add(invoiceId);
-          }
+    debugPrint('✅ Retrieved preset groups: ${presetGroups.length}');
+    debugPrint('✅ Retrieved invoiceStatus rows: ${assignedStatus.length}');
+
+    // ------------------------------------------------------------
+    // ✅ 2) Build a SET of assigned invoice IDs (FAST lookup)
+    // ------------------------------------------------------------
+    final Set<String> assignedInvoiceIds = <String>{};
+
+    for (final statusRecord in assignedStatus) {
+      final v = statusRecord.data['invoiceData'];
+
+      // invoiceData can be String (single rel) or List (multi rel) depending on schema
+      if (v is String) {
+        final id = v.trim();
+        if (id.isNotEmpty) assignedInvoiceIds.add(id);
+      } else if (v is List) {
+        for (final e in v) {
+          final id = e.toString().trim();
+          if (id.isNotEmpty) assignedInvoiceIds.add(id);
         }
       }
+    }
+
+    debugPrint('ℹ️ Assigned invoice IDs count: ${assignedInvoiceIds.length}');
+
+    // ------------------------------------------------------------
+    // ✅ 3) Filter groups → keep only UNASSIGNED invoices
+    // ------------------------------------------------------------
+    final List<InvoicePresetGroupModel> unassignedPresetGroups = [];
+
+    for (final pg in presetGroups) {
+      final invoices = (pg.expand['invoices'] as List?)?.cast<RecordModel>() ?? const <RecordModel>[];
+
+      if (invoices.isEmpty) continue;
+
+      // Only keep invoices NOT in assigned set
+      final unassignedInvoices = invoices.where((inv) {
+        final id = inv.id.trim();
+        return id.isNotEmpty && !assignedInvoiceIds.contains(id);
+      }).toList(growable: false);
+
+      if (unassignedInvoices.isEmpty) continue;
+
+      // Build minimal mapped json with filtered expand
+      final mappedData = <String, dynamic>{
+        'id': pg.id,
+        'collectionId': pg.collectionId,
+        'collectionName': pg.collectionName,
+        'refId': pg.data['refID'] ?? '',
+        'name': pg.data['name'] ?? '',
+        'description': pg.data['description'] ?? '',
+        'created': pg.created,
+        'updated': pg.updated,
+        'expand': {
+          'invoices': unassignedInvoices,
+        },
+      };
+
+      unassignedPresetGroups.add(InvoicePresetGroupModel.fromJson(mappedData));
 
       debugPrint(
-        'ℹ️ Found ${assignedInvoiceIds.length} already assigned invoices',
-      );
-
-      List<InvoicePresetGroupModel> unassignedPresetGroups = [];
-
-      // 3. Filter preset groups to only include those with unassigned invoices
-      for (var presetGroup in presetGroups) {
-        final invoicesData = presetGroup.expand['invoices'] as List?;
-
-        if (invoicesData == null || invoicesData.isEmpty) {
-          debugPrint(
-            '⚠️ Preset group ${presetGroup.id} has no invoices, skipping',
-          );
-          continue;
-        }
-
-        // Check if any invoices in this group are unassigned
-        bool hasUnassignedInvoices = false;
-        List<dynamic> unassignedInvoices = [];
-
-        for (var invoice in invoicesData) {
-          final invoiceRecord = invoice as RecordModel;
-          final invoiceId = invoiceRecord.id;
-
-          if (!assignedInvoiceIds.contains(invoiceId)) {
-            hasUnassignedInvoices = true;
-            unassignedInvoices.add(invoice);
-          }
-        }
-
-        if (hasUnassignedInvoices) {
-          // Create a copy of the preset group with only unassigned invoices
-          final mappedData = {
-            'id': presetGroup.id,
-            'collectionId': presetGroup.collectionId,
-            'collectionName': presetGroup.collectionName,
-            'refId': presetGroup.data['refID'] ?? '',
-            'name': presetGroup.data['name'] ?? '',
-            'description': presetGroup.data['description'] ?? '',
-            'created': presetGroup.created,
-            'updated': presetGroup.updated,
-            'expand': {'invoices': unassignedInvoices},
-          };
-
-          unassignedPresetGroups.add(
-            InvoicePresetGroupModel.fromJson(mappedData),
-          );
-          debugPrint(
-            '✅ Added preset group ${presetGroup.id} with ${unassignedInvoices.length} unassigned invoices',
-          );
-        } else {
-          debugPrint(
-            'ℹ️ Preset group ${presetGroup.id} has no unassigned invoices, skipping',
-          );
-        }
-      }
-
-      debugPrint(
-        '✅ Returning ${unassignedPresetGroups.length} unassigned invoice preset groups',
-      );
-      return unassignedPresetGroups;
-    } catch (e) {
-      debugPrint(
-        '❌ Failed to fetch unassigned invoice preset groups: ${e.toString()}',
-      );
-      throw ServerException(
-        message:
-            'Failed to load unassigned invoice preset groups: ${e.toString()}',
-        statusCode: '500',
+        '✅ PresetGroup ${pg.id}: unassigned invoices=${unassignedInvoices.length}',
       );
     }
+
+    debugPrint('✅ Returning ${unassignedPresetGroups.length} unassigned preset groups');
+    return unassignedPresetGroups;
+  } catch (e) {
+    debugPrint('❌ Failed to fetch unassigned invoice preset groups: $e');
+    throw ServerException(
+      message: 'Failed to load unassigned invoice preset groups: $e',
+      statusCode: '500',
+    );
   }
+}
 
   @override
   Future<void> addAllInvoicesToDelivery({

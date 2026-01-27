@@ -221,125 +221,138 @@ class _SpecificCancelledInvoiceViewState
   }
 
   void _showImageDialog(BuildContext context, String? imageUrl) {
-  if (imageUrl == null || imageUrl.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('No image available'),
-        backgroundColor: Colors.orange,
-      ),
-    );
-    return;
-  }
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      // State for fullscreen toggle
-      bool isFullscreen = false;
-
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            insetPadding: isFullscreen
-                ? EdgeInsets.zero // Fullscreen
-                : const EdgeInsets.symmetric(horizontal: 100, vertical: 60),
-            backgroundColor: Colors.transparent,
-            child: Container(
-              width: isFullscreen ? double.infinity : 800,
-              height: isFullscreen ? double.infinity : 600,
-              decoration: BoxDecoration(
-                color: Theme.of(context).dialogBackgroundColor,
-                borderRadius:
-                    BorderRadius.circular(isFullscreen ? 0 : 8), // Rounded when not fullscreen
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(isFullscreen ? 0 : 8),
-                        topRight: Radius.circular(isFullscreen ? 0 : 8),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Cancelled Invoice Image',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Row(
-                          children: [
-                            // Maximize / Restore Button
-                            IconButton(
-                              icon: Icon(
-                                isFullscreen
-                                    ? Icons.fullscreen_exit
-                                    : Icons.fullscreen,
-                                color: Colors.white,
-                              ),
-                              tooltip: isFullscreen
-                                  ? 'Restore Window'
-                                  : 'Maximize to Fullscreen',
-                              onPressed: () {
-                                setState(() => isFullscreen = !isFullscreen);
-                              },
-                            ),
-                            // Close Button
-                            IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white),
-                              tooltip: 'Close',
-                              onPressed: () => Navigator.of(context).pop(),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Image
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: Colors.red[300],
-                              ),
-                              const SizedBox(height: 16),
-                              const Text('Failed to load image'),
-                            ],
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(child: CircularProgressIndicator());
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+    if (imageUrl == null || imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No image available'),
+          backgroundColor: Colors.orange,
+        ),
       );
-    },
-  );
-}
+      return;
+    }
 
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // State for fullscreen toggle
+        bool isFullscreen = false;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              insetPadding:
+                  isFullscreen
+                      ? EdgeInsets
+                          .zero // Fullscreen
+                      : const EdgeInsets.symmetric(
+                        horizontal: 100,
+                        vertical: 60,
+                      ),
+              backgroundColor: Colors.transparent,
+              child: Container(
+                width: isFullscreen ? double.infinity : 800,
+                height: isFullscreen ? double.infinity : 600,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dialogBackgroundColor,
+                  borderRadius: BorderRadius.circular(
+                    isFullscreen ? 0 : 8,
+                  ), // Rounded when not fullscreen
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(isFullscreen ? 0 : 8),
+                          topRight: Radius.circular(isFullscreen ? 0 : 8),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Proof of Cancellation Image',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              // Maximize / Restore Button
+                              IconButton(
+                                icon: Icon(
+                                  isFullscreen
+                                      ? Icons.fullscreen_exit
+                                      : Icons.fullscreen,
+                                  color: Colors.white,
+                                ),
+                                tooltip:
+                                    isFullscreen
+                                        ? 'Restore Window'
+                                        : 'Maximize to Fullscreen',
+                                onPressed: () {
+                                  setState(() => isFullscreen = !isFullscreen);
+                                },
+                              ),
+                              // Close Button
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                ),
+                                tooltip: 'Close',
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Image
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  size: 64,
+                                  color: Colors.red[300],
+                                ),
+                                const SizedBox(height: 16),
+                                const Text('Failed to load image'),
+                              ],
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }

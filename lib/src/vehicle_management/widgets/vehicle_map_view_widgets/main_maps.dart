@@ -267,8 +267,9 @@ class _VehicleMapWidgetState extends State<VehicleMapWidget> {
                             // Google tile endpoints used here because TripMapWidget expects them.
                             urlTemplate:
                                 _isSatellite
-                                    ? 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
+                                    ? 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}' // satellite + labels
                                     : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+
                             userAgentPackageName: 'com.example.desktop_app',
                             tileProvider: NetworkTileProvider(),
                             maxNativeZoom: 19,
@@ -323,8 +324,9 @@ class _VehicleMapWidgetState extends State<VehicleMapWidget> {
               // Google tile endpoints used here because TripMapWidget expects them.
               urlTemplate:
                   _isSatellite
-                      ? 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
+                      ? 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}' // satellite + labels
                       : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+
               userAgentPackageName: 'com.example.desktop_app',
               tileProvider: NetworkTileProvider(),
               maxNativeZoom: 19,

@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/widgets/app_structure/data_dashboard.dart';
 import 'package:flutter/material.dart';
@@ -41,12 +42,7 @@ class DeliveryDataDashboardWidget extends StatelessWidget {
           label: 'Customer Name',
           iconColor: Colors.orange,
         ),
-        DashboardInfoItem(
-          icon: Icons.receipt_long,
-          value: delivery.invoice?.name ?? 'No Invoice',
-          label: 'Invoice Number',
-          iconColor: Colors.green,
-        ),
+
         DashboardInfoItem(
           icon: Icons.location_on,
           value: _formatAddress(),
@@ -73,25 +69,11 @@ class DeliveryDataDashboardWidget extends StatelessWidget {
         ),
         DashboardInfoItem(
           icon: Icons.attach_money,
-          value:
-              delivery.invoice?.totalAmount != null
-                  ? '₱${delivery.invoice!.totalAmount}'
-                  : 'N/A',
+          value: _formatCurrency(delivery),
           label: 'Invoice Amount',
           iconColor: Colors.green,
         ),
-        DashboardInfoItem(
-          icon: Icons.calendar_today,
-          value: _formatDate(delivery.created),
-          label: 'Created Date',
-          iconColor: Colors.teal,
-        ),
-        DashboardInfoItem(
-          icon: Icons.update,
-          value: _formatDate(delivery.updated),
-          label: 'Last Updated',
-          iconColor: Colors.indigo,
-        ),
+
         DashboardInfoItem(
           icon: Icons.map,
           value: _formatCoordinates(),
@@ -99,10 +81,10 @@ class DeliveryDataDashboardWidget extends StatelessWidget {
           iconColor: Colors.cyan,
         ),
         DashboardInfoItem(
-          icon: Icons.assignment,
-          value: delivery.hasTrip == true ? 'Yes' : 'No',
-          label: 'Has Trip Assignment',
-          iconColor: delivery.hasTrip == true ? Colors.green : Colors.orange,
+          icon: Icons.receipt_long,
+          value: delivery.customer?.refId ?? 'N/A',
+          label: 'Customer Reference ID',
+          iconColor: Colors.cyan,
         ),
       ],
     );
@@ -247,15 +229,53 @@ class DeliveryDataDashboardWidget extends StatelessWidget {
   }
 
   String _getDeliveryStatus() {
+    // 1️⃣ Use latest delivery update if available
+    if (delivery.deliveryUpdates.isNotEmpty) {
+      final updates = List.from(delivery.deliveryUpdates);
+
+      updates.sort((a, b) {
+        final timeA =
+            a.time ?? a.created ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final timeB =
+            b.time ?? b.created ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return timeB.compareTo(timeA); // latest first
+      });
+
+      final latestUpdate = updates.first;
+      final title = latestUpdate.title?.toLowerCase() ?? '';
+
+      switch (title) {
+        case 'arrived':
+          return 'Arrived';
+        case 'unloading':
+          return 'Unloading';
+        case 'mark as undelivered':
+          return 'Undelivered';
+        case 'in transit':
+          return 'In Transit';
+        case 'pending':
+          return 'Pending';
+        case 'mark as received':
+          return 'Received';
+        case 'end delivery':
+          return 'Delivered';
+        default:
+          return latestUpdate.title ?? 'Unknown';
+      }
+    }
+
+    // 2️⃣ Fallback to trip-based logic (original behavior)
     if (delivery.hasTrip == true && delivery.trip != null) {
       if (delivery.trip!.isEndTrip == true) {
         return 'Delivered';
-      } else if (delivery.trip!.isAccepted == true) {
-        return 'In Transit';
-      } else {
-        return 'Assigned';
       }
+      if (delivery.trip!.isAccepted == true) {
+        return 'In Transit';
+      }
+      return 'Assigned';
     }
+
+    // 3️⃣ Default fallback
     return 'Pending';
   }
 
@@ -272,28 +292,48 @@ class DeliveryDataDashboardWidget extends StatelessWidget {
     return Colors.grey;
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
+  String _formatCurrency(DeliveryDataEntity delivery) {
+    double totalAmount = 0.0;
 
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      if (difference.inHours == 0) {
-        if (difference.inMinutes == 0) {
-          return 'Just now';
-        }
-        return '${difference.inMinutes} minutes ago';
-      }
-      return '${difference.inHours} hours ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
+    // Calculate total from all invoices if available
+    if (delivery.invoices != null && delivery.invoices!.isNotEmpty) {
+      totalAmount = delivery.invoices!.fold<double>(
+        0.0,
+        (sum, invoice) => sum + (invoice.totalAmount ?? 0.0),
+      );
+    } else if (delivery.invoice?.totalAmount != null) {
+      // Fallback to single invoice
+      totalAmount = delivery.invoice!.totalAmount!;
     } else {
-      // Format as date
-      final day = date.day.toString().padLeft(2, '0');
-      final month = date.month.toString().padLeft(2, '0');
-      final year = date.year;
-      return '$day/$month/$year';
+      return 'N/A';
     }
+
+    // Format with commas and currency symbol
+    final formatter = NumberFormat('#,##0.00');
+    return '₱${formatter.format(totalAmount)}';
   }
+  // String _formatDate(DateTime? date) {
+  //   if (date == null) return 'N/A';
+
+  //   final now = DateTime.now();
+  //   final difference = now.difference(date);
+
+  //   if (difference.inDays == 0) {
+  //     if (difference.inHours == 0) {
+  //       if (difference.inMinutes == 0) {
+  //         return 'Just now';
+  //       }
+  //       return '${difference.inMinutes} minutes ago';
+  //     }
+  //     return '${difference.inHours} hours ago';
+  //   } else if (difference.inDays < 7) {
+  //     return '${difference.inDays} days ago';
+  //   } else {
+  //     // Format as date
+  //     final day = date.day.toString().padLeft(2, '0');
+  //     final month = date.month.toString().padLeft(2, '0');
+  //     final year = date.year;
+  //     return '$day/$month/$year';
+  //   }
+  // }
 }
