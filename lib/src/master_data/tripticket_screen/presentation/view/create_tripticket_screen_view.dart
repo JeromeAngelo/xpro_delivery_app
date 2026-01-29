@@ -142,7 +142,7 @@ class _CreateTripTicketScreenViewState
       return;
     }
 
-    if (_deliveryDate == null) {
+    if (_expectedReturnDate == null) {
       CoreUtils.showSnackBar(context, 'Please select a expected return date');
       return;
     }
@@ -306,14 +306,13 @@ class _CreateTripTicketScreenViewState
                 // Create Trip Button
                 FormSubmitButton(
                   label: _isLoading ? 'Processing...' : 'Create Trip',
-                  onPressed: () {
-                    debugPrint(
-                      '🔲 Create Trip Button Pressed - Loading: $_isLoading',
-                    );
-                    if (!_isLoading) {
-                      _createTripTicket();
-                    }
-                  },
+                  onPressed:
+                      _isLoading
+                          ? null
+                          : () {
+                            debugPrint('🔲 Create Trip Button Pressed');
+                            _createTripTicket();
+                          },
                   icon: _isLoading ? Icons.hourglass_empty : Icons.add,
                 ),
               ],
@@ -436,110 +435,109 @@ class _CreateTripTicketScreenViewState
   }
 
   Widget _buildDeliveryDateForm() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0),
-    child: Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Delivery Date Section
+          Expanded(
+            child: _buildDatePickerField(
+              label: 'Delivery Date',
+              date: _deliveryDate,
+              onPickDate: (picked) {
+                setState(() => _deliveryDate = picked);
+              },
+              onClear: () {
+                setState(() => _deliveryDate = null);
+              },
+            ),
+          ),
+
+          const SizedBox(width: 24),
+
+          // Expected Return Date Section
+          Expanded(
+            child: _buildDatePickerField(
+              label: 'Expected Return Date',
+              date: _expectedReturnDate,
+              onPickDate: (picked) {
+                setState(() => _expectedReturnDate = picked);
+              },
+              onClear: () {
+                setState(() => _expectedReturnDate = null);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Reusable date picker field widget
+  Widget _buildDatePickerField({
+    required String label,
+    required DateTime? date,
+    required ValueChanged<DateTime> onPickDate,
+    required VoidCallback onClear,
+  }) {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Delivery Date Section
-        Expanded(
-          child: _buildDatePickerField(
-            label: 'Delivery Date',
-            date: _deliveryDate,
-            onPickDate: (picked) {
-              setState(() => _deliveryDate = picked);
-            },
-            onClear: () {
-              setState(() => _deliveryDate = null);
-            },
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-
-        const SizedBox(width: 24),
-
-        // Expected Return Date Section
-        Expanded(
-          child: _buildDatePickerField(
-            label: 'Expected Return Date',
-            date: _expectedReturnDate,
-            onPickDate: (picked) {
-              setState(() => _expectedReturnDate = picked);
-            },
-            onClear: () {
-              setState(() => _expectedReturnDate = null);
-            },
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Reusable date picker field widget
-Widget _buildDatePickerField({
-  required String label,
-  required DateTime? date,
-  required ValueChanged<DateTime> onPickDate,
-  required VoidCallback onClear,
-}) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-      ),
-      const SizedBox(height: 8),
-      Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () async {
-                final DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: date ?? DateTime.now(),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime(2050),
-                );
-                if (pickedDate != null) onPickDate(pickedDate);
-              },
-              child: Container(
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Center(
-                  child: Text(
-                    date != null
-                        ? DateFormat('MM/dd/yyyy').format(date)
-                        : 'Select $label',
-                    style: TextStyle(
-                      fontSize: 16,
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () async {
+                  final DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: date ?? DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2050),
+                  );
+                  if (pickedDate != null) onPickDate(pickedDate);
+                },
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    border: Border.all(
                       color: Theme.of(context).colorScheme.outline,
+                    ),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      date != null
+                          ? DateFormat('MM/dd/yyyy').format(date)
+                          : 'Select $label',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          IconButton(
-            onPressed: onClear,
-            icon: Icon(
-              Icons.clear,
-              color: Theme.of(context).colorScheme.error,
+            IconButton(
+              onPressed: onClear,
+              icon: Icon(
+                Icons.clear,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              tooltip: 'Clear $label',
             ),
-            tooltip: 'Clear $label',
-          ),
-        ],
-      ),
-    ],
-  );
-}
-
+          ],
+        ),
+      ],
+    );
+  }
 }

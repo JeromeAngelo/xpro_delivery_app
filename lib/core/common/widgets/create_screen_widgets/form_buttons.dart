@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class FormSubmitButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isLoading;
   final bool isFullWidth;
   final Color? color;
