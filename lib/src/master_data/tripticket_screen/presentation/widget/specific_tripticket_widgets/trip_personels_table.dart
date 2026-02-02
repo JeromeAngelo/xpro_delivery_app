@@ -97,7 +97,7 @@ class _TripPersonelsTableState extends State<TripPersonelsTable> {
           onCreatePressed: widget.onAddPersonel,
           createButtonText: 'Add Personnel',
           columns: const [
-            DataColumn(label: Text('ID')),
+          //  DataColumn(label: Text('ID')),
             DataColumn(label: Text('Name')),
             DataColumn(label: Text('Role')),
             DataColumn(label: Text('Actions')),
@@ -106,7 +106,7 @@ class _TripPersonelsTableState extends State<TripPersonelsTable> {
               paginatedPersonels.map((personel) {
                 return DataRow(
                   cells: [
-                    DataCell(Text(personel.id ?? 'N/A')),
+                   // DataCell(Text(personel.id ?? 'N/A')),
                     DataCell(Text(personel.name ?? 'N/A')),
                     DataCell(_buildRoleChip(personel.role)),
                     DataCell(

@@ -10,6 +10,7 @@ import 'package:xpro_delivery_admin_app/core/errors/exceptions.dart';
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../../../../../../services/device_metadata.dart';
 import '../../../../users_roles/data/model/user_role_model.dart';
 
 abstract class GeneralUserRemoteDataSource {
@@ -211,22 +212,27 @@ class GeneralUserRemoteDataSourceImpl implements GeneralUserRemoteDataSource {
         // ======================================================
         // ✅ NEW FEATURE: Record login in authLogs collection
         // ======================================================
-        try {
-          await _pocketBaseClient
-              .collection('authLogs')
-              .create(
-                body: {
-                  'user': authData.record!.id,
-                  'loginTime': DateTime.now().toIso8601String(),
-                },
-              );
+        // ======================================================
+// ✅ NEW FEATURE: Record login in authLogs collection
+// ======================================================
+try {
+  final meta = await buildDeviceMetadata();
 
-          debugPrint(
-            '📝 Login recorded in authLogs for user: ${authData.record!.id}',
-          );
-        } catch (logError) {
-          debugPrint('⚠️ Failed to write auth log: $logError');
-        }
+  await _pocketBaseClient.collection('authLogs').create(
+    body: {
+      'user': authData.record!.id,
+      'loginTime': DateTime.now().toIso8601String(),
+
+      // device/app metadata
+      ...meta,
+    },
+  );
+
+  debugPrint('📝 Login recorded with device info for user: ${authData.record!.id}');
+} catch (logError) {
+  debugPrint('⚠️ Failed to write auth log: $logError');
+}
+
 
         return GeneralUserModel.fromJson(userData);
       } catch (e) {

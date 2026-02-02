@@ -93,7 +93,7 @@ class TripCustomersTable extends StatelessWidget {
           onCreatePressed: onAttachCustomer,
           createButtonText: 'Attach Delivery',
           columns: const [
-            DataColumn(label: Text('ID')),
+           // DataColumn(label: Text('ID')),
             DataColumn(label: Text('Customer Name')),
             DataColumn(label: Text('Invoice Number')),
             DataColumn(label: Text('Status')),
@@ -105,11 +105,11 @@ class TripCustomersTable extends StatelessWidget {
                 return DataRow(
                   cells: [
                     // ID
-                    DataCell(
-                      Text(delivery.id ?? 'N/A'),
-                      onTap:
-                          () => _navigateToDeliveryDetails(context, delivery),
-                    ),
+                    // DataCell(
+                    //   Text(delivery.id ?? 'N/A'),
+                    //   onTap:
+                    //       () => _navigateToDeliveryDetails(context, delivery),
+                    // ),
 
                     // Customer Name
                     DataCell(

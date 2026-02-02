@@ -45,8 +45,6 @@ class _TripDataTableState extends State<TripDataTable> {
   DateTime? _filterStartDate;
   DateTime? _filterEndDate;
 
-  
-
   @override
   Widget build(BuildContext context) {
     final headerStyle = TextStyle(
@@ -55,22 +53,20 @@ class _TripDataTableState extends State<TripDataTable> {
     );
 
     return DataTableLayout(
-
       title: 'Trip Tickets',
       searchBar: TripSearchBar(
         controller: widget.searchController,
         searchQuery: widget.searchQuery,
         onSearchChanged: widget.onSearchChanged,
-      
       ),
       onCreatePressed: () {
         context.go('/tripticket-create');
       },
       createButtonText: 'Create Trip Ticket',
       columns: [
-        DataColumn(label: Text('ID', style: headerStyle)),
+        // DataColumn(label: Text('ID', style: headerStyle)),
         DataColumn(label: Text('Trip Number', style: headerStyle)),
-                DataColumn(label: Text('Route Name', style: headerStyle)),
+        DataColumn(label: Text('Route Name', style: headerStyle)),
 
         DataColumn(label: Text('Start Date', style: headerStyle)),
         DataColumn(label: Text('End Date', style: headerStyle)),
@@ -85,7 +81,9 @@ class _TripDataTableState extends State<TripDataTable> {
       isLoading: widget.isLoading,
       enableSelection: true,
       onFiltered: _handleFiltering,
-      onRowsSelected: _handleRowsSelected, dataLength: '${widget.trips.length}', onDeleted: () {  },
+      onRowsSelected: _handleRowsSelected,
+      dataLength: '${widget.trips.length}',
+      onDeleted: () {},
     );
   }
 
@@ -99,7 +97,7 @@ class _TripDataTableState extends State<TripDataTable> {
           DataCell(_buildShimmerCell(60)),
           // Trip Number cell
           DataCell(_buildShimmerCell(100)),
-            // Trip Name
+          // Trip Name
           DataCell(_buildShimmerCell(120)),
           // Start Date cell
           DataCell(_buildShimmerCell(120)),
@@ -172,14 +170,16 @@ class _TripDataTableState extends State<TripDataTable> {
     return widget.trips.map((trip) {
       // Debug print for each trip
       debugPrint('🔍 TABLE: Processing trip: ${trip.id}');
-      debugPrint('🔍 TABLE: User data - Name: ${trip.user?.name}, ID: ${trip.user?.id}');
+      debugPrint(
+        '🔍 TABLE: User data - Name: ${trip.user?.name}, ID: ${trip.user?.id}',
+      );
 
       return DataRow(
         cells: [
-          DataCell(
-            Text(trip.id ?? 'N/A'),
-            onTap: () => _navigateToTripDetails(context, trip),
-          ),
+          // DataCell(
+          //   Text(trip.id ?? 'N/A'),
+          //   onTap: () => _navigateToTripDetails(context, trip),
+          // ),
           DataCell(
             Text(trip.tripNumberId ?? 'N/A'),
             onTap: () => _navigateToTripDetails(context, trip),
@@ -197,7 +197,10 @@ class _TripDataTableState extends State<TripDataTable> {
             onTap: () => _navigateToTripDetails(context, trip),
           ),
           DataCell(
-            Text(trip.user?.name ?? (trip.user?.id != null ? 'User: ${trip.user!.id}' : 'N/A')),
+            Text(
+              trip.user?.name ??
+                  (trip.user?.id != null ? 'User: ${trip.user!.id}' : 'N/A'),
+            ),
             onTap: () => _navigateToTripDetails(context, trip),
           ),
           DataCell(

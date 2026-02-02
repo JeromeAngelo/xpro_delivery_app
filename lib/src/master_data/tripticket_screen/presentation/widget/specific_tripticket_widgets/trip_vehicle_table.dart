@@ -96,7 +96,7 @@ class _TripVehicleTableState extends State<TripVehicleTable> {
             vehicles.map((vehicle) {
               return DataRow(
               cells: [
-              DataCell(Text(vehicle.id ?? 'N/A')),
+             // DataCell(Text(vehicle.id ?? 'N/A')),
               DataCell(Text(vehicle.make ?? 'N/A')),
               DataCell(Text(vehicle.name ?? 'N/A')),
               DataCell(Text(vehicle.type ?? 'N/A')),
@@ -131,7 +131,7 @@ class _TripVehicleTableState extends State<TripVehicleTable> {
           onCreatePressed: widget.onAddVehicle,
           createButtonText: 'Add Vehicle',
           columns: const [
-            DataColumn(label: Text('ID')),
+           // DataColumn(label: Text('ID')),
             DataColumn(label: Text('Name')),
             DataColumn(label: Text('Plate Number')),
             DataColumn(label: Text('Type')),

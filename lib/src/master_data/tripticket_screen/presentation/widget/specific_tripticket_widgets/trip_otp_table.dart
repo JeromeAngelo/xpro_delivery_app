@@ -42,7 +42,7 @@ class TripOtpTable extends StatelessWidget {
       },
       createButtonText: 'Generate New OTP',
       columns: const [
-        DataColumn(label: Text('Id')),
+       // DataColumn(label: Text('Id')),
         DataColumn(label: Text('OTP Code')),
         DataColumn(label: Text('Generated Code')),
         DataColumn(label: Text('Status')),
@@ -54,7 +54,7 @@ class TripOtpTable extends StatelessWidget {
           otps.map((otp) {
             return DataRow(
               cells: [
-                DataCell(Text(otp.id)),
+              //  DataCell(Text(otp.id)),
                 // OTP Code cell with copy button
                 DataCell(
                   Row(
