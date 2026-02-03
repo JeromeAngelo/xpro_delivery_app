@@ -119,112 +119,69 @@ class InvoicePresetGroupRemoteDataSourceImpl
       );
     }
   }
-
-@override
+  @override
 Future<List<InvoicePresetGroupModel>> getAllUnassignedInvoicePresetGroups() async {
   try {
-    debugPrint('🔄 Fetching latest unassigned invoice preset groups (PAGED + FAST)');
+    debugPrint('🔄 Fetching all unassigned invoice preset groups (FAST)');
+
     await _ensureAuthenticated();
 
     // ------------------------------------------------------------
-    // ✅ 1) Fetch ONLY the latest page of preset groups (NOT full list)
+    // ✅ 1) Fetch preset groups + assigned invoice IDs in PARALLEL
     // ------------------------------------------------------------
-    final pgPage = await _pocketBaseClient
-        .collection('invoicePresetGroup')
-        .getList(
-          page: 1,
-          perPage: 30, // tune this
-          sort: '-created', // or '-updated' if you want “latest updated”
-          expand: 'invoices',
-          fields: 'id,refID,name,description,created,updated,expand.invoices',
-        );
+    final results = await Future.wait([
+      _pocketBaseClient.collection('invoicePresetGroup').getFullList(
+        sort: '-created',
+        expand: 'invoices',
+        // Keep group fields minimal
+        fields: 'id,refID,name,description,created,updated,expand.invoices',
+      ),
 
-    final presetGroups = pgPage.items;
+      // IMPORTANT: DO NOT expand invoiceData (we only need IDs)
+      _pocketBaseClient.collection('invoiceStatus').getFullList(
+        fields: 'invoiceData', // just the relation ids
+      ),
+    ]);
 
-    debugPrint('✅ Retrieved preset groups (page 1): ${presetGroups.length}');
+    final presetGroups = results[0];
+    final assignedStatus = results[1];
 
-    if (presetGroups.isEmpty) return [];
-
-    // ------------------------------------------------------------
-    // ✅ 2) Collect ONLY invoice IDs inside this page (so we don’t scan all invoiceStatus)
-    // ------------------------------------------------------------
-    final Set<String> invoiceIdsInPage = <String>{};
-
-    for (final pg in presetGroups) {
-      final invoices =
-          (pg.expand['invoices'] as List?)?.cast<RecordModel>() ?? const <RecordModel>[];
-
-      for (final inv in invoices) {
-        final id = inv.id.trim();
-        if (id.isNotEmpty) invoiceIdsInPage.add(id);
-      }
-    }
-
-    if (invoiceIdsInPage.isEmpty) {
-      debugPrint('ℹ️ No invoices found in latest preset groups.');
-      return [];
-    }
-
-    debugPrint('ℹ️ Invoice IDs in page: ${invoiceIdsInPage.length}');
+    debugPrint('✅ Retrieved preset groups: ${presetGroups.length}');
+    debugPrint('✅ Retrieved invoiceStatus rows: ${assignedStatus.length}');
 
     // ------------------------------------------------------------
-    // ✅ 3) Fetch ONLY invoiceStatus rows that reference invoice IDs in this page
-    //    Uses PocketBase relation contains operator: ?=
-    //    Chunked to avoid long filter strings
+    // ✅ 2) Build a SET of assigned invoice IDs (FAST lookup)
     // ------------------------------------------------------------
-    String buildOrFilter(String field, List<String> ids) {
-      return ids.map((id) => '$field ?= "$id"').join(' || ');
-    }
-
     final Set<String> assignedInvoiceIds = <String>{};
-    final idsList = invoiceIdsInPage.toList(growable: false);
 
-    const int chunkSize = 40; // tune depending on typical ids length + URL limits
+    for (final statusRecord in assignedStatus) {
+      final v = statusRecord.data['invoiceData'];
 
-    for (int i = 0; i < idsList.length; i += chunkSize) {
-      final chunk = idsList.sublist(
-        i,
-        (i + chunkSize > idsList.length) ? idsList.length : i + chunkSize,
-      );
-
-      final filter = buildOrFilter('invoiceData', chunk);
-
-      final statusRows = await _pocketBaseClient
-          .collection('invoiceStatus')
-          .getFullList(
-            filter: filter,
-            fields: 'invoiceData', // relation ids only
-          );
-
-      for (final statusRecord in statusRows) {
-        final v = statusRecord.data['invoiceData'];
-
-        // invoiceData can be String (single rel) or List (multi rel)
-        if (v is String) {
-          final id = v.trim();
+      // invoiceData can be String (single rel) or List (multi rel) depending on schema
+      if (v is String) {
+        final id = v.trim();
+        if (id.isNotEmpty) assignedInvoiceIds.add(id);
+      } else if (v is List) {
+        for (final e in v) {
+          final id = e.toString().trim();
           if (id.isNotEmpty) assignedInvoiceIds.add(id);
-        } else if (v is List) {
-          for (final e in v) {
-            final id = e.toString().trim();
-            if (id.isNotEmpty) assignedInvoiceIds.add(id);
-          }
         }
       }
     }
 
-    debugPrint('ℹ️ Assigned invoice IDs (in page): ${assignedInvoiceIds.length}');
+    debugPrint('ℹ️ Assigned invoice IDs count: ${assignedInvoiceIds.length}');
 
     // ------------------------------------------------------------
-    // ✅ 4) Filter groups → keep only UNASSIGNED invoices
+    // ✅ 3) Filter groups → keep only UNASSIGNED invoices
     // ------------------------------------------------------------
     final List<InvoicePresetGroupModel> unassignedPresetGroups = [];
 
     for (final pg in presetGroups) {
-      final invoices =
-          (pg.expand['invoices'] as List?)?.cast<RecordModel>() ?? const <RecordModel>[];
+      final invoices = (pg.expand['invoices'] as List?)?.cast<RecordModel>() ?? const <RecordModel>[];
 
       if (invoices.isEmpty) continue;
 
+      // Only keep invoices NOT in assigned set
       final unassignedInvoices = invoices.where((inv) {
         final id = inv.id.trim();
         return id.isNotEmpty && !assignedInvoiceIds.contains(id);
@@ -232,6 +189,7 @@ Future<List<InvoicePresetGroupModel>> getAllUnassignedInvoicePresetGroups() asyn
 
       if (unassignedInvoices.isEmpty) continue;
 
+      // Build minimal mapped json with filtered expand
       final mappedData = <String, dynamic>{
         'id': pg.id,
         'collectionId': pg.collectionId,
@@ -263,7 +221,6 @@ Future<List<InvoicePresetGroupModel>> getAllUnassignedInvoicePresetGroups() asyn
     );
   }
 }
-
 
   @override
   Future<void> addAllInvoicesToDelivery({

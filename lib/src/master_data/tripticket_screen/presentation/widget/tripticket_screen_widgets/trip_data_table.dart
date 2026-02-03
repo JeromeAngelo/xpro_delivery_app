@@ -259,16 +259,23 @@ class _TripDataTableState extends State<TripDataTable> {
     }
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    try {
-      // Change the format from "MMM dd, yyyy hh:mm a" to "MM/dd/yyyy hh:mm a"
-      return DateFormat('MM/dd/yyyy hh:mm a').format(date);
-    } catch (e) {
-      debugPrint('❌ Error formatting date: $e');
-      return 'Invalid Date';
-    }
+ String _formatDate(DateTime? date) {
+  if (date == null) return 'N/A';
+
+  try {
+    // Convert to PH time (GMT+8)
+    final phTime = date.toUtc().add(const Duration(hours: 8));
+
+    final formatted =
+        DateFormat('MM/dd/yyyy, hh:mm a').format(phTime);
+
+    return '$formatted GMT+8';
+  } catch (e) {
+    debugPrint('❌ Error formatting date: $e');
+    return 'Invalid Date';
   }
+}
+
 
   // Handle row selection
   void _handleRowsSelected(List<int> selectedIndices) {
