@@ -44,6 +44,154 @@ class _MainScreenViewState extends State<MainScreenView> {
       }
     });
   }
+Future<void> _showNotificationMenu({
+  required BuildContext context,
+  required NotificationState state,
+  required List<NotificationEntity> notifications,
+//  required VoidCallback onNotificationTap,
+}) async {
+  final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+  final box = context.findRenderObject() as RenderBox;
+  final position = box.localToGlobal(Offset.zero, ancestor: overlay);
+
+  // Where the popup should appear (below the bell)
+  final relativeRect = RelativeRect.fromLTRB(
+    position.dx,
+    position.dy + box.size.height,
+    overlay.size.width - position.dx - box.size.width,
+    overlay.size.height - position.dy,
+  );
+
+  // Build menu items (NO ListView inside PopupMenuItem)
+  List<PopupMenuEntry<int>> items;
+
+  if (state is NotificationLoading) {
+    items = [
+      const PopupMenuItem<int>(
+        enabled: false,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12),
+            Text('Loading notifications...'),
+          ],
+        ),
+      ),
+    ];
+  } else if (state is NotificationError) {
+    items = [
+      PopupMenuItem<int>(
+        enabled: false,
+        child: Text('Error: ${state.message}'),
+      ),
+    ];
+  } else if (notifications.isEmpty) {
+    items = const [
+      PopupMenuItem<int>(
+        enabled: false,
+        child: Text('No notifications'),
+      ),
+    ];
+  } else {
+    final showList = notifications.take(30).toList();
+
+    items = [
+      PopupMenuItem<int>(
+        enabled: false,
+        padding: EdgeInsets.zero,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: 380,
+            maxWidth: 460,
+            maxHeight: 420,
+          ),
+          child: Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(showList.length, (index) {
+                  final notif = showList[index];
+
+                  final tripName = notif.trip?.name ??
+                      (notif.trip?.id != null ? notif.trip!.id : 'unknown');
+
+                  final statusText = notif.status?.title ??
+                      (notif.trip?.tripNumberId != null
+                          ? notif.trip!.tripNumberId
+                          : 'unknown');
+
+                  final message =
+                      "The Trip $tripName set status of $statusText "
+                      "in the ${notif.delivery?.customer?.name ?? 'delivery'}";
+
+                  return InkWell(
+                    onTap: () {
+                      Navigator.pop(context); // close menu
+
+                      final id = notif.id;
+                      if (id != null && id.isNotEmpty) {
+                        context.read<NotificationBloc>().add(MarkAsReadEvent(id));
+                      }
+
+                      context.go('/delivery-monitoring');
+                    //  onNotificationTap();
+                    },
+                    child: Column(
+                      children: [
+                        ListTile(
+                          dense: true,
+                          leading: Icon(
+                            (notif.isRead ?? false)
+                                ? Icons.notifications_none
+                                : Icons.notifications_active,
+                            color: (notif.isRead ?? false)
+                                ? Colors.grey
+                                : Colors.red,
+                            size: 22,
+                          ),
+                          title: Text(
+                            message,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: (notif.isRead ?? false)
+                                  ? FontWeight.normal
+                                  : FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: (notif.body != null &&
+                                  notif.body!.trim().isNotEmpty)
+                              ? Text(
+                                  notif.body!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              : null,
+                        ),
+                        const Divider(height: 1),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  await showMenu<int>(
+    context: context,
+    position: relativeRect,
+    items: items,
+  );
+}
 
   // Load saved theme mode preference
 
@@ -82,9 +230,45 @@ class _MainScreenViewState extends State<MainScreenView> {
           ),
         ),
         actions: [
-          // Replace the existing desktop icon button with this:
-          BlocBuilder<NotificationBloc, NotificationState>(
+          // ✅ Updated Notifications UI (with debug + reliable tap handling)
+          BlocConsumer<NotificationBloc, NotificationState>(
+            listener: (context, state) {
+              debugPrint('🔔 NotificationBloc state => ${state.runtimeType}');
+
+              if (state is NotificationLoaded) {
+                debugPrint('✅ NotificationLoaded');
+                debugPrint('   🔴 unreadCount: ${state.unreadCount}');
+                debugPrint(
+                  '   📦 notifications: ${state.notifications.length}',
+                );
+
+                if (state.notifications.isNotEmpty) {
+                  final first = state.notifications.first;
+                  debugPrint('   🧪 first notif id: ${first.id}');
+                  debugPrint('   🧪 first notif createdAt: ${first.createdAt}');
+                  debugPrint('   🧪 first notif type: ${first.type}');
+                }
+              } else if (state is NotificationError) {
+                debugPrint('❌ NotificationError: ${state.message}');
+              } else if (state is NotificationLoading) {
+                debugPrint('⏳ NotificationLoading...');
+              } else if (state is NotificationInitial) {
+                debugPrint('🟦 NotificationInitial');
+              }
+            },
             builder: (context, state) {
+              // ✅ Auto-load once
+              if (state is NotificationInitial) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  debugPrint(
+                    '🚀 Dispatching LoadAllNotificationsEvent() from UI',
+                  );
+                  context.read<NotificationBloc>().add(
+                    LoadAllNotificationsEvent(),
+                  );
+                });
+              }
+
               int unreadCount = 0;
               List<NotificationEntity> notifications = [];
 
@@ -96,96 +280,23 @@ class _MainScreenViewState extends State<MainScreenView> {
               return Stack(
                 alignment: Alignment.center,
                 children: [
-                  PopupMenuButton<int>(
-                    icon: Icon(
-                      Icons.notifications_outlined,
-                      color:
-                          unreadCount > 0
-                              ? Colors
-                                  .red // 🔴 red if there’s unread notifications
-                              : Theme.of(context).colorScheme.surface,
-                    ),
-                    tooltip: 'Notifications',
-                    offset: const Offset(0, 40),
-                    onSelected: (int value) {
-                      // optional: handle click
-                    },
-                    itemBuilder: (context) {
-                      if (notifications.isEmpty) {
-                        return [
-                          const PopupMenuItem<int>(
-                            enabled: false,
-                            child: Text('No notifications'),
-                          ),
-                        ];
-                      }
+                  // inside your Stack children (replaces PopupMenuButton)
+IconButton(
+  tooltip: 'Notifications',
+  icon: Icon(
+    Icons.notifications_outlined,
+    color: unreadCount > 0
+        ? Colors.red
+        : Theme.of(context).colorScheme.surface,
+  ),
+  onPressed: () => _showNotificationMenu(
+    context: context,
+    state: state,
+    notifications: notifications,
+  //  onNotificationTap: onNotificationTap,
+  ),
+),
 
-                      return notifications
-                          .take(5) // show latest 5
-                          .map((notif) {
-                            // Create descriptive message
-                            final statusText =
-                                notif.status ??
-                                (notif.trip?.tripNumberId != null
-                                    ? notif.trip!.tripNumberId
-                                    : 'unknown');
-                            // Create descriptive message
-                            final message =
-                                "The Delivery Team set status of $statusText "
-                                "in the ${notif.delivery?.customer?.name ?? 'delivery'}";
-
-                            return PopupMenuItem<int>(
-                              value: notif.hashCode,
-                              child: ListTile(
-                                leading: Icon(
-                                  notif.isRead ?? false
-                                      ? Icons.notifications_none
-                                      : Icons.notifications_active,
-                                  color:
-                                      notif.isRead ?? false
-                                          ? Colors.grey
-                                          : Colors.red,
-                                  size: 22,
-                                ),
-                                title: Text(
-                                  message,
-                                  style: TextStyle(
-                                    fontWeight:
-                                        notif.isRead ?? false
-                                            ? FontWeight.normal
-                                            : FontWeight.bold,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle:
-                                    notif.body != null
-                                        ? Text(
-                                          notif.body!,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        )
-                                        : null,
-                                onTap: () {
-                                  // Dispatch markAsRead event
-                                  context.read<NotificationBloc>().add(
-                                    MarkAsReadEvent(notif.id!),
-                                  );
-                                  // Optionally navigate to details page
-                                  // context.go('/delivery/${notif.delivery?.id}');
-                                },
-                              ),
-                            );
-                          })
-                          .toList();
-                    },
-                  ),
-
-                  // 🔴 small badge showing count (like Facebook/IG)
                   if (unreadCount > 0)
                     Positioned(
                       right: 6,
@@ -214,6 +325,7 @@ class _MainScreenViewState extends State<MainScreenView> {
               );
             },
           ),
+
           BlocBuilder<GeneralUserBloc, GeneralUserState>(
             builder: (context, state) {
               debugPrint('🏠 MainScreen - Auth state: ${state.runtimeType}');
@@ -474,7 +586,7 @@ class _MainScreenViewState extends State<MainScreenView> {
                         onTap: () => context.go('/delivery-monitoring'),
                         iconSize: iconSize,
                       ),
-                       _buildCategoryCard(
+                      _buildCategoryCard(
                         context,
                         icon: Icons.map_outlined,
                         title: 'Vehicle Monitoring',
@@ -493,7 +605,6 @@ class _MainScreenViewState extends State<MainScreenView> {
                         onTap: () => context.go('/collections-overview'),
                         iconSize: iconSize,
                       ),
-                     
                     ],
                   ),
                   const SizedBox(height: 32),

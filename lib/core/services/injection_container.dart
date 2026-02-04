@@ -32,7 +32,6 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/deliver
 import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/usecase/update_vehicle.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/presentation/bloc/vehicle_bloc.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/cancelled_invoices/domain/usecases/resassign_trip_for_cancelled_invoice.dart';
-
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_update/data/datasource/remote_datasource/delivery_update_datasource.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_update/data/repo/delivery_update_repo_impl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_update/domain/repo/delivery_update_repo.dart';
@@ -1122,6 +1121,7 @@ Future<void> initNotification() async {
 
   // Realtime service
   sl.registerLazySingleton(
-    () => NotificationRealtimeService(pb, sl<NotificationBloc>()),
-  );
+  () => NotificationRealtimeService(sl<PocketBase>(), sl<NotificationBloc>()),
+);
+
 }

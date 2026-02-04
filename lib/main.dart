@@ -99,7 +99,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => sl<CancelledInvoiceBloc>()),
             BlocProvider(create: (_) => sl<DeliveryReceiptBloc>()),
             BlocProvider(create: (_) => sl<PersonnelTripBloc>()),
-            BlocProvider(create: (_) => sl<NotificationBloc>()),
+             BlocProvider<NotificationBloc>.value(value: sl<NotificationBloc>()),
                         BlocProvider(create: (_) => sl<UsersTripCollectionBloc>()),
 
           ],

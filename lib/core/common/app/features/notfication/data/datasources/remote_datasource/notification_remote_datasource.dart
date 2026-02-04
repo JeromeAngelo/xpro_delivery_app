@@ -88,29 +88,166 @@ class NotificationRemoteDatasourceImpl implements NotificationRemoteDatasource {
     );
   }
 
-  NotificationModel _processNotificationRecord(RecordModel record) {
-    return NotificationModel.fromJson({
+ NotificationModel _processNotificationRecord(RecordModel record) {
+  try {
+    debugPrint('🔄 Mapping record to NotificationModel: ${record.id}');
+    debugPrint('🔔 Record expand keys: ${record.expand.keys}');
+
+    // ✅ Single relations: delivery, status, trip
+    final deliveryJson = _mapExpandedSingle(record.expand['delivery'], fieldName: 'delivery');
+    final statusJson = _mapExpandedSingle(record.expand['status'], fieldName: 'status');
+    final tripJson = _mapExpandedSingle(record.expand['trip'], fieldName: 'trip');
+
+    // ✅ Build mapped payload (include created/updated + expand)
+    final mappedData = <String, dynamic>{
       'id': record.id,
       'collectionId': record.collectionId,
       'collectionName': record.collectionName,
-      ...record.data,
-    });
+      'created': record.created,
+      'updated': record.updated,
+      ...Map<String, dynamic>.from(record.data),
+
+      // Keep PB-style expand so NotificationModel.fromJson can read it
+      'expand': <String, dynamic>{
+        if (deliveryJson != null) 'delivery': deliveryJson,
+        if (statusJson != null) 'status': statusJson,
+        if (tripJson != null) 'trip': tripJson,
+      },
+    };
+
+    // ✅ Debug what we mapped (IDs only to keep logs light)
+    debugPrint('✅ Notification mapped: ${record.id}');
+    debugPrint('   📦 delivery expanded: ${deliveryJson?['id'] ?? 'none'}');
+    debugPrint('   📦 status expanded: ${statusJson?['id'] ?? 'none'}');
+    debugPrint('   📦 trip expanded: ${tripJson?['id'] ?? 'none'}');
+
+    return NotificationModel.fromJson(mappedData);
+  } catch (e) {
+    debugPrint('❌ Error mapping record to NotificationModel: $e');
+    throw ServerException(
+      message: 'Failed to map record to NotificationModel: $e',
+      statusCode: '500',
+    );
+  }
+}
+
+/// ✅ Helper: map a SINGLE expanded relation (RecordModel or List<RecordModel>)
+/// - PocketBase expand can sometimes be a RecordModel or a List<RecordModel>
+/// - For your case (single relation), we normalize to a Map<String, dynamic>
+Map<String, dynamic>? _mapExpandedSingle(
+  dynamic expanded, {
+  required String fieldName,
+}) {
+  if (expanded == null) {
+    debugPrint('⚠️ No expanded "$fieldName" found');
+    return null;
   }
 
-  @override
-  Future<List<NotificationModel>> getAllNotifications() async {
-    return await _retryWithBackoff(() async {
-      await _ensureAuthenticated();
-      debugPrint('🔄 Fetching all notifications');
-
-      final result = await _pocketBaseClient
-          .collection('notifications')
-          .getFullList(sort: '-created', expand: 'status,delivery');
-
-      debugPrint('✅ Retrieved ${result.length} notifications');
-      return result.map(_processNotificationRecord).toList();
-    }, 'getAllNotifications');
+  // Sometimes PB expand can be List even for single (depending on schema/client)
+  if (expanded is List) {
+    if (expanded.isEmpty) {
+      debugPrint('⚠️ Expanded "$fieldName" is an empty list');
+      return null;
+    }
+    final first = expanded.first;
+    if (first is RecordModel) {
+      debugPrint('✅ Expanded "$fieldName" is List<RecordModel> (using first: ${first.id})');
+      return <String, dynamic>{
+        'id': first.id,
+        'collectionId': first.collectionId,
+        'collectionName': first.collectionName,
+        'created': first.created,
+        'updated': first.updated,
+        ...Map<String, dynamic>.from(first.data),
+        'expand': first.expand,
+      };
+    }
+    debugPrint('⚠️ Expanded "$fieldName" list item is not RecordModel: ${first.runtimeType}');
+    return null;
   }
+
+  if (expanded is RecordModel) {
+    debugPrint('✅ Expanded "$fieldName" is RecordModel: ${expanded.id}');
+    return <String, dynamic>{
+      'id': expanded.id,
+      'collectionId': expanded.collectionId,
+      'collectionName': expanded.collectionName,
+      'created': expanded.created,
+      'updated': expanded.updated,
+      ...Map<String, dynamic>.from(expanded.data),
+      'expand': expanded.expand,
+    };
+  }
+
+  // If expand is not present but you received only raw ID somewhere,
+  // keep it out of expand and let NotificationModel.fromJson handle raw fields.
+  debugPrint('⚠️ Expanded "$fieldName" unexpected type: ${expanded.runtimeType}');
+  return null;
+}
+
+@override
+Future<List<NotificationModel>> getAllNotifications() async {
+  try {
+    debugPrint('🔄 Fetching notifications (max 30)');
+
+    // Ensure PocketBase client is authenticated
+    await _ensureAuthenticated();
+
+    // ✅ Only fetch latest 30 (faster than getFullList)
+    final result = await _pocketBaseClient.collection('notifications').getList(
+          page: 1,
+          perPage: 30,
+          sort: '-created',
+          expand: 'status,delivery,trip',
+        );
+
+    final records = result.items;
+
+    debugPrint('✅ Retrieved ${records.length} notifications from API (page=1, perPage=30)');
+
+    // Debug print for each record (safe + useful)
+    for (final record in records) {
+      debugPrint('🔔 Notification Record ID: ${record.id}');
+      debugPrint('🔔 Created: ${record.created}');
+      debugPrint('🔔 Updated: ${record.updated}');
+      debugPrint('🔔 Title: ${record.data['title']}');
+      debugPrint('🔔 Body: ${record.data['body']}');
+      debugPrint('🔔 Is Read: ${record.data['isRead']}');
+      debugPrint('🔔 User: ${record.data['user']}');
+      debugPrint('🔔 Expand keys: ${record.expand.keys}');
+      debugPrint('-----------------------------------');
+    }
+
+    // Faster mapping: pre-size list + loop
+    final notifications = List<NotificationModel>.filled(
+      records.length,
+      NotificationModel.empty(),
+      growable: false,
+    );
+
+    for (var i = 0; i < records.length; i++) {
+      notifications[i] = _processNotificationRecord(records[i]);
+    }
+
+    return notifications;
+  } catch (e) {
+    debugPrint('❌ Failed to fetch notifications: ${e.toString()}');
+
+    // Optional auth debug
+    try {
+      debugPrint('🔐 PB Auth Valid: ${_pocketBaseClient.authStore.isValid}');
+      debugPrint(
+        '🔐 PB Token (first 10): ${_pocketBaseClient.authStore.token.isNotEmpty ? _pocketBaseClient.authStore.token.substring(0, 10) : 'EMPTY'}',
+      );
+    } catch (_) {}
+
+    throw ServerException(
+      message: 'Failed to fetch notifications: ${e.toString()}',
+      statusCode: '500',
+    );
+  }
+}
+
 
   @override
   Future<List<NotificationModel>> getUnreadNotifications() async {
