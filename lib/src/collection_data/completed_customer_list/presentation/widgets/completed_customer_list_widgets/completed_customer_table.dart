@@ -66,7 +66,7 @@ class CompletedCustomerDataTable extends StatelessWidget {
       columns: const [
         DataColumn(label: Text('Delivery #')),
         DataColumn(label: Text('Store Name')),
-        DataColumn(label: Text('Trip ID')),
+        DataColumn(label: Text('Trip Name')),
         DataColumn(label: Text('Total Amount')),
         DataColumn(label: Text('Completed At')),
         DataColumn(label: Text('Actions')),
@@ -92,7 +92,7 @@ class CompletedCustomerDataTable extends StatelessWidget {
                       }
                     },
                     child: Text(
-                      collection.trip!.tripNumberId ?? 'N/A',
+                      collection.trip!.name ?? 'N/A',
                       style: const TextStyle(
                         color: Colors.blue,
                         decoration: TextDecoration.underline,

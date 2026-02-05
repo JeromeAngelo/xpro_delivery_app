@@ -34,7 +34,7 @@ class DesktopLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-        final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = adaptiveLayout && screenWidth < 1100;
 
     return Scaffold(
@@ -57,7 +57,9 @@ class DesktopLayout extends StatelessWidget {
                     items: navigationItems,
                     onNavigate: onNavigate,
                     currentRoute: currentRoute,
-                    isCompact: useCompactNavigation || (adaptiveLayout && screenWidth < 1300),
+                    isCompact:
+                        useCompactNavigation ||
+                        (adaptiveLayout && screenWidth < 1300),
                     width: sidebarWidth,
                   ),
 
@@ -72,7 +74,6 @@ class DesktopLayout extends StatelessWidget {
             ),
           ),
 
-
           // Footer
           Container(
             width: double.infinity,
@@ -80,7 +81,7 @@ class DesktopLayout extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
             child: Center(
               child: Text(
-                'Xpro Admin app 2025',
+                '© ${DateTime.now().year} Xpro Delivery. All rights reserved.',
                 style: TextStyle(
                   color: Theme.of(
                     context,
@@ -95,7 +96,7 @@ class DesktopLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context,  bool isCompact) {
+  Widget _buildContent(BuildContext context, bool isCompact) {
     // If scrolling is disabled or the child is already a scrollable widget,
     // just return the child with minimal wrapping
     if (disableScrolling) {

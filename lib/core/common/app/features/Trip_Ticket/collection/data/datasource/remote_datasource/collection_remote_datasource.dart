@@ -206,9 +206,9 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
     // Process delivery data
     DeliveryDataModel? deliveryDataModel;
     if (record.expand['deliveryData'] != null) {
-        final deliveryDataData = record.expand['deliveryData'];
-  if (deliveryDataData is List && deliveryDataData!.isNotEmpty) {
-    final deliveryDataRecord = deliveryDataData[0];
+      final deliveryDataData = record.expand['deliveryData'];
+      if (deliveryDataData is List && deliveryDataData!.isNotEmpty) {
+        final deliveryDataRecord = deliveryDataData[0];
         deliveryDataModel = DeliveryDataModel.fromJson({
           'id': deliveryDataRecord.id,
           'collectionId': deliveryDataRecord.collectionId,
@@ -237,6 +237,7 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
           'collectionId': tripRecord.collectionId,
           'collectionName': tripRecord.collectionName,
           'tripNumberId': tripRecord.data['tripNumberId'],
+          'name': tripRecord.data['name'],
           'qrCode': tripRecord.data['qrCode'],
           'isAccepted': tripRecord.data['isAccepted'],
           'isEndTrip': tripRecord.data['isEndTrip'],
@@ -327,19 +328,18 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
       }
     }
 
-   // Fallback to invoices totalAmount if collection amount is null/0
-if ((totalAmount == null || totalAmount == 0) && invoicesList.isNotEmpty) {
-  final invoicesTotal = invoicesList.fold<double>(
-    0,
-    (sum, invoice) => sum + (invoice.totalAmount ?? 0),
-  );
+    // Fallback to invoices totalAmount if collection amount is null/0
+    if ((totalAmount == null || totalAmount == 0) && invoicesList.isNotEmpty) {
+      final invoicesTotal = invoicesList.fold<double>(
+        0,
+        (sum, invoice) => sum + (invoice.totalAmount ?? 0),
+      );
 
-  if (invoicesTotal > 0) {
-    totalAmount = invoicesTotal;
-    debugPrint('🔄 Using invoices totalAmount as fallback: $totalAmount');
-  }
-}
-
+      if (invoicesTotal > 0) {
+        totalAmount = invoicesTotal;
+        debugPrint('🔄 Using invoices totalAmount as fallback: $totalAmount');
+      }
+    }
 
     debugPrint(
       '💰 Final totalAmount for collection ${record.id}: $totalAmount',
@@ -364,7 +364,7 @@ if ((totalAmount == null || totalAmount == 0) && invoicesList.isNotEmpty) {
       deliveryData: deliveryDataModel,
       trip: tripModel,
       customer: customerModel,
-            invoices: invoicesList,
+      invoices: invoicesList,
 
       invoice: invoiceModel,
       status: record.data['status'],
@@ -376,10 +376,9 @@ if ((totalAmount == null || totalAmount == 0) && invoicesList.isNotEmpty) {
     debugPrint('📊 Collection summary:');
     debugPrint('   - ID: ${collection.id}');
     debugPrint('   - Total Amount: ${collection.totalAmount}');
-  debugPrint('   - Customer: ${collection.customer?.name ?? "null"}');
-debugPrint('   - Invoice: ${collection.invoice?.id ?? "null"}');
-debugPrint('   - Trip: ${collection.trip?.tripNumberId ?? "null"}');
-
+    debugPrint('   - Customer: ${collection.customer?.name ?? "null"}');
+    debugPrint('   - Invoice: ${collection.invoice?.id ?? "null"}');
+    debugPrint('   - Trip: ${collection.trip?.tripNumberId ?? "null"}');
 
     return collection;
   }

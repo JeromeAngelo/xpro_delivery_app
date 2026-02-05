@@ -48,6 +48,8 @@ class InvoiceItemsModel extends InvoiceItemsEntity {
             'id': invoiceData.id,
             'collectionId': invoiceData.collectionId,
             'collectionName': invoiceData.collectionName,
+            'name': invoiceData.data['name'] ?? '',
+            'refId': invoiceData.data['refId'] ?? '',
             ...invoiceData.data,
             'expand': invoiceData.expand,
           });
@@ -65,10 +67,22 @@ class InvoiceItemsModel extends InvoiceItemsEntity {
       brand: json['brand']?.toString(),
       refId: json['refId']?.toString(),
       uom: json['uom']?.toString(),
-      quantity: json['quantity'] != null ? double.tryParse(json['quantity'].toString()) : null,
-      totalBaseQuantity: json['totalBaseQuantity'] != null ? double.tryParse(json['totalBaseQuantity'].toString()) : null,
-      uomPrice: json['uomPrice'] != null ? double.tryParse(json['uomPrice'].toString()) : null,
-      totalAmount: json['totalAmount'] != null ? double.tryParse(json['totalAmount'].toString()) : null,
+      quantity:
+          json['quantity'] != null
+              ? double.tryParse(json['quantity'].toString())
+              : null,
+      totalBaseQuantity:
+          json['totalBaseQuantity'] != null
+              ? double.tryParse(json['totalBaseQuantity'].toString())
+              : null,
+      uomPrice:
+          json['uomPrice'] != null
+              ? double.tryParse(json['uomPrice'].toString())
+              : null,
+      totalAmount:
+          json['totalAmount'] != null
+              ? double.tryParse(json['totalAmount'].toString())
+              : null,
       invoiceData: invoiceDataModel,
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),

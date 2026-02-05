@@ -48,16 +48,17 @@ class _InvoiceItemsDeliveryDataWidgetState
       onCreatePressed: widget.onViewItems,
       createButtonText: 'View Items',
       columns: [
-        DataColumn(label: Text('Item ID', style: headerStyle)),
+        //DataColumn(label: Text('Item ID', style: headerStyle)),
+        DataColumn(label: Text('Ref ID', style: headerStyle)),
+
         DataColumn(label: Text('Item Name', style: headerStyle)),
         DataColumn(label: Text('Brand', style: headerStyle)),
-        DataColumn(label: Text('Ref ID', style: headerStyle)),
         DataColumn(label: Text('UOM', style: headerStyle)),
         DataColumn(label: Text('Qty', style: headerStyle)),
         // DataColumn(label: Text('Base Qty', style: headerStyle)),
         DataColumn(label: Text('UOM Price', style: headerStyle)),
         DataColumn(label: Text('Total', style: headerStyle)),
-        DataColumn(label: Text('Invoice', style: headerStyle)),
+       // DataColumn(label: Text('Invoice', style: headerStyle)),
         // DataColumn(label: Text('Customer', style: headerStyle)),
         // DataColumn(label: Text('Delivery No.', style: headerStyle)),
         // DataColumn(label: Text('Created Date', style: headerStyle)),
@@ -207,15 +208,16 @@ class _InvoiceItemsDeliveryDataWidgetState
     }
 
     return items.map((item) {
-      final invoiceNameOrId =
-          item.invoiceData?.name ?? item.invoiceData?.id ?? 'N/A';
+      // final invoiceNameOrId =
+      //     item.invoiceData?.name ?? item.invoiceData?.id ?? 'N/A';
 
       return DataRow(
         cells: [
-          DataCell(Text(item.id ?? 'N/A'), onTap: () => _onViewItem(item)),
+          // DataCell(Text(item.id ?? 'N/A'), onTap: () => _onViewItem(item)),
+          DataCell(Text(item.refId ?? 'N/A'), onTap: () => _onViewItem(item)),
+
           DataCell(Text(item.name ?? 'N/A'), onTap: () => _onViewItem(item)),
           DataCell(Text(item.brand ?? 'N/A'), onTap: () => _onViewItem(item)),
-          DataCell(Text(item.refId ?? 'N/A'), onTap: () => _onViewItem(item)),
           DataCell(
             _buildChipCell(item.uom ?? 'N/A'),
             onTap: () => _onViewItem(item),
@@ -236,7 +238,7 @@ class _InvoiceItemsDeliveryDataWidgetState
             _buildTotalAmountCell(item.totalAmount),
             onTap: () => _onViewItem(item),
           ),
-          DataCell(Text(invoiceNameOrId), onTap: () => _onViewItem(item)),
+         // DataCell(Text(invoiceNameOrId), onTap: () => _onViewItem(item)),
           // ✅ Still connected to DeliveryData
           // DataCell(
           //   Text(widget.deliveryData?.customer?.name ?? 'N/A'),

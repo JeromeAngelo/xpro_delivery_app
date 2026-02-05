@@ -56,11 +56,7 @@ class _SpecificCompletedCustomerDataState
     debugPrint('🔍 Loading collection details for ID: $collectionId');
 
     // Load collection details
-    context.read<CollectionsBloc>().add(
-      GetCollectionByIdEvent(collectionId),
-    );
-
-    
+    context.read<CollectionsBloc>().add(GetCollectionByIdEvent(collectionId));
   }
 
   @override
@@ -136,7 +132,6 @@ class _SpecificCompletedCustomerDataState
                           context.go('/completed-collections');
                         },
                       ),
-                      Text('Collection: ${collection.collectionName ?? 'N/A'}'),
                     ],
                   ),
                   actions: [
@@ -149,37 +144,39 @@ class _SpecificCompletedCustomerDataState
                         );
                         if (collection.customer?.id != null) {
                           context.read<InvoiceDataBloc>().add(
-                            GetInvoiceDataByCustomerIdEvent(collection.customer!.id!),
+                            GetInvoiceDataByCustomerIdEvent(
+                              collection.customer!.id!,
+                            ),
                           );
                         }
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.print),
-                      tooltip: 'Print Collection Receipt',
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Printing receipt for ${collection.collectionName ?? 'collection'}...',
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.picture_as_pdf),
-                      tooltip: 'Export PDF',
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Exporting PDF for ${collection.collectionName ?? 'collection'}...',
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    // IconButton(
+                    //   icon: const Icon(Icons.print),
+                    //   tooltip: 'Print Collection Receipt',
+                    //   onPressed: () {
+                    //     ScaffoldMessenger.of(context).showSnackBar(
+                    //       SnackBar(
+                    //         content: Text(
+                    //           'Printing receipt for ${collection.collectionName ?? 'collection'}...',
+                    //         ),
+                    //       ),
+                    //     );
+                    //   },
+                    // ),
+                    // IconButton(
+                    //   icon: const Icon(Icons.picture_as_pdf),
+                    //   tooltip: 'Export PDF',
+                    //   onPressed: () {
+                    //     ScaffoldMessenger.of(context).showSnackBar(
+                    //       SnackBar(
+                    //         content: Text(
+                    //           'Exporting PDF for ${collection.collectionName ?? 'collection'}...',
+                    //         ),
+                    //       ),
+                    //     );
+                    //   },
+                    // ),
                   ],
                 ),
 
@@ -193,178 +190,99 @@ class _SpecificCompletedCustomerDataState
 
                       const SizedBox(height: 16),
 
-                      // Customer Information Card
-                      if (collection.customer != null)
-                        Card(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Customer Information',
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ListTile(
-                                        leading: const Icon(
-                                          Icons.store,
-                                          color: Colors.blue,
-                                        ),
-                                        title: Text(
-                                          'Store: ${collection.customer?.name ?? 'N/A'}',
-                                        ),
-                                        subtitle: Text(
-                                          'Owner: ${collection.customer?.ownerName ?? 'N/A'}',
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: ListTile(
-                                        leading: const Icon(
-                                          Icons.phone,
-                                          color: Colors.green,
-                                        ),
-                                        title: Text(
-                                          'Contact: ${collection.customer?.contactNumber ?? 'N/A'}',
-                                        ),
-                                        subtitle: Text(
-                                          'Address: ${collection.customer?.province ?? 'N/A'}',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      // // Customer Information Card
+                      // if (collection.customer != null)
+                      //   Card(
+                      //     margin: const EdgeInsets.only(bottom: 16),
+                      //     child: Padding(
+                      //       padding: const EdgeInsets.all(16.0),
+                      //       child: Column(
+                      //         crossAxisAlignment: CrossAxisAlignment.start,
+                      //         children: [
+                      //           Text(
+                      //             'Customer Information',
+                      //             style: Theme.of(context).textTheme.titleLarge
+                      //                 ?.copyWith(fontWeight: FontWeight.bold),
+                      //           ),
+                      //           const SizedBox(height: 16),
+                      //           Row(
+                      //             children: [
+                      //               Expanded(
+                      //                 child: ListTile(
+                      //                   leading: const Icon(
+                      //                     Icons.store,
+                      //                     color: Colors.blue,
+                      //                   ),
+                      //                   title: Text(
+                      //                     'Store: ${collection.customer?.name ?? 'N/A'}',
+                      //                   ),
+                      //                   subtitle: Text(
+                      //                     'Owner: ${collection.customer?.ownerName ?? 'N/A'}',
+                      //                   ),
+                      //                 ),
+                      //               ),
+                      //               Expanded(
+                      //                 child: ListTile(
+                      //                   leading: const Icon(
+                      //                     Icons.phone,
+                      //                     color: Colors.green,
+                      //                   ),
+                      //                   title: Text(
+                      //                     'Contact: ${collection.customer?.contactNumber ?? 'N/A'}',
+                      //                   ),
+                      //                   subtitle: Text(
+                      //                     'Address: ${collection.customer?.province ?? 'N/A'}',
+                      //                   ),
+                      //                 ),
+                      //               ),
+                      //             ],
+                      //           ),
+                      //         ],
+                      //       ),
+                      //     ),
+                      //   ),
 
-                      // Trip Information Card
-                      if (collection.trip != null)
-                        Card(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Trip Information',
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 16),
-                                ListTile(
-                                  leading: const Icon(
-                                    Icons.local_shipping,
-                                    color: Colors.orange,
-                                  ),
-                                  title: Text(
-                                    'Trip Number: ${collection.trip?.tripNumberId ?? 'N/A'}',
-                                  ),
-                                  subtitle: Text(
-                                    'Status: ${collection.trip?.isEndTrip == true ? 'Completed' : 'Active'}',
-                                  ),
-                                  trailing: ElevatedButton(
-                                    onPressed: () {
-                                      if (collection.trip?.id != null) {
-                                        context.go(
-                                          '/collections/${collection.trip!.id}',
-                                        );
-                                      }
-                                    },
-                                    child: const Text('View Trip'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                      // Invoice Information Card
-                      if (collection.invoice != null)
-                        Card(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Invoice Information',
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ListTile(
-                                        leading: const Icon(
-                                          Icons.receipt,
-                                          color: Colors.purple,
-                                        ),
-                                        title: Text(
-                                          'Invoice: ${collection.invoice?.refId ?? 'N/A'}',
-                                        ),
-                                        subtitle: Text(
-                                          'Amount: ₱${collection.invoice?.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: ListTile(
-                                        leading: const Icon(
-                                          Icons.verified,
-                                          color: Colors.teal,
-                                        ),
-                                        title: Text(
-                                          'Confirmed: ₱${collection.invoice?.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
-                                        ),
-                                        subtitle: Text(
-                                          'Ref id: ${collection.invoice?.refId ?? 'N/A'}',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    ElevatedButton.icon(
-                                      onPressed: () {
-                                        if (collection.invoice?.id != null) {
-                                          context.go('/invoice/${collection.invoice!.id}');
-                                        }
-                                      },
-                                      icon: const Icon(Icons.visibility),
-                                      label: const Text('View Invoice'),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton.icon(
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Printing invoice...'),
-                                          ),
-                                        );
-                                      },
-                                      icon: const Icon(Icons.print),
-                                      label: const Text('Print Invoice'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      // // Trip Information Card
+                      // if (collection.trip != null)
+                      //   Card(
+                      //     margin: const EdgeInsets.only(bottom: 16),
+                      //     child: Padding(
+                      //       padding: const EdgeInsets.all(16.0),
+                      //       child: Column(
+                      //         crossAxisAlignment: CrossAxisAlignment.start,
+                      //         children: [
+                      //           Text(
+                      //             'Trip Information',
+                      //             style: Theme.of(context).textTheme.titleLarge
+                      //                 ?.copyWith(fontWeight: FontWeight.bold),
+                      //           ),
+                      //           const SizedBox(height: 16),
+                      //           ListTile(
+                      //             leading: const Icon(
+                      //               Icons.local_shipping,
+                      //               color: Colors.orange,
+                      //             ),
+                      //             title: Text(
+                      //               'Trip Number: ${collection.trip?.tripNumberId ?? 'N/A'}',
+                      //             ),
+                      //             subtitle: Text(
+                      //               'Status: ${collection.trip?.isEndTrip == true ? 'Completed' : 'Active'}',
+                      //             ),
+                      //             trailing: ElevatedButton(
+                      //               onPressed: () {
+                      //                 if (collection.trip?.id != null) {
+                      //                   context.go(
+                      //                     '/collections/${collection.trip!.id}',
+                      //                   );
+                      //                 }
+                      //               },
+                      //               child: const Text('View Trip'),
+                      //             ),
+                      //           ),
+                      //         ],
+                      //       ),
+                      //     ),
+                      //   ),
 
                       // Related Collections Table (if needed)
                       Card(
@@ -374,37 +292,7 @@ class _SpecificCompletedCustomerDataState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Collection Details',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge
-                                        ?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.print),
-                                    tooltip: 'Print Collection Report',
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Printing collection report...',
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
                               // Collection Invoice Table
-                                                            // Collection Invoice Table
                               BlocBuilder<CollectionsBloc, CollectionsState>(
                                 builder: (context, collectionState) {
                                   List<CollectionEntity> collections = [];
@@ -413,13 +301,16 @@ class _SpecificCompletedCustomerDataState
 
                                   if (collectionState is CollectionsLoading) {
                                     isLoadingCollections = true;
-                                  } else if (collectionState is CollectionLoaded) {
+                                  } else if (collectionState
+                                      is CollectionLoaded) {
                                     // Use the current collection from the state
                                     collections = [collectionState.collection];
-                                  } else if (collectionState is CollectionsLoaded) {
+                                  } else if (collectionState
+                                      is CollectionsLoaded) {
                                     // If multiple collections are loaded, use them
                                     collections = collectionState.collections;
-                                  } else if (collectionState is CollectionsError) {
+                                  } else if (collectionState
+                                      is CollectionsError) {
                                     collectionError = collectionState.message;
                                   }
 
@@ -438,9 +329,11 @@ class _SpecificCompletedCustomerDataState
                                     onRetry: () {
                                       // Retry loading the collection
                                       context.read<CollectionsBloc>().add(
-                                        GetCollectionByIdEvent(widget.collectionId),
+                                        GetCollectionByIdEvent(
+                                          widget.collectionId,
+                                        ),
                                       );
-                                      
+
                                       // Also retry loading invoices if customer ID exists
                                       if (collection.customer?.id != null) {
                                         context.read<InvoiceDataBloc>().add(
@@ -453,7 +346,6 @@ class _SpecificCompletedCustomerDataState
                                   );
                                 },
                               ),
-
                             ],
                           ),
                         ),
@@ -512,130 +404,142 @@ class _SpecificCompletedCustomerDataState
                       //   ),
 
                       // Action Buttons Card
-                      Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Actions',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 16),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Printing receipt for ${collection.collectionName ?? 'collection'}...',
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.print),
-                                    label: const Text('Print Receipt'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Exporting PDF for ${collection.collectionName ?? 'collection'}...',
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.picture_as_pdf),
-                                    label: const Text('Export PDF'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Sending email for ${collection.collectionName ?? 'collection'}...',
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.email),
-                                    label: const Text('Send Email'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                  if (collection.invoice != null)
-                                    ElevatedButton.icon(
-                                      onPressed: () {
-                                        if (collection.invoice?.id != null) {
-                                          context.go('/invoice/${collection.invoice!.id}');
-                                        }
-                                      },
-                                      icon: const Icon(Icons.receipt_long),
-                                      label: const Text('View Invoice'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.purple,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  if (collection.trip != null)
-                                    ElevatedButton.icon(
-                                      onPressed: () {
-                                        if (collection.trip?.id != null) {
-                                          context.go('/trips/${collection.trip!.id}');
-                                        }
-                                      },
-                                      icon: const Icon(Icons.local_shipping),
-                                      label: const Text('View Trip'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.orange,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      context.read<CollectionsBloc>().add(
-                                        GetCollectionByIdEvent(widget.collectionId),
-                                      );
-                                      if (collection.customer?.id != null) {
-                                        context.read<InvoiceDataBloc>().add(
-                                          GetInvoiceDataByCustomerIdEvent(
-                                            collection.customer!.id!,
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Refresh Data'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      // Card(
+                      //   margin: const EdgeInsets.only(bottom: 16),
+                      //   child: Padding(
+                      //     padding: const EdgeInsets.all(16.0),
+                      //     child: Column(
+                      //       crossAxisAlignment: CrossAxisAlignment.start,
+                      //       children: [
+                      //         Text(
+                      //           'Actions',
+                      //           style: Theme.of(context).textTheme.titleLarge
+                      //               ?.copyWith(fontWeight: FontWeight.bold),
+                      //         ),
+                      //         const SizedBox(height: 16),
+                      //         Wrap(
+                      //           spacing: 8,
+                      //           runSpacing: 8,
+                      //           children: [
+                      //             ElevatedButton.icon(
+                      //               onPressed: () {
+                      //                 ScaffoldMessenger.of(
+                      //                   context,
+                      //                 ).showSnackBar(
+                      //                   SnackBar(
+                      //                     content: Text(
+                      //                       'Printing receipt for ${collection.collectionName ?? 'collection'}...',
+                      //                     ),
+                      //                   ),
+                      //                 );
+                      //               },
+                      //               icon: const Icon(Icons.print),
+                      //               label: const Text('Print Receipt'),
+                      //               style: ElevatedButton.styleFrom(
+                      //                 backgroundColor: Colors.blue,
+                      //                 foregroundColor: Colors.white,
+                      //               ),
+                      //             ),
+                      //             ElevatedButton.icon(
+                      //               onPressed: () {
+                      //                 ScaffoldMessenger.of(
+                      //                   context,
+                      //                 ).showSnackBar(
+                      //                   SnackBar(
+                      //                     content: Text(
+                      //                       'Exporting PDF for ${collection.collectionName ?? 'collection'}...',
+                      //                     ),
+                      //                   ),
+                      //                 );
+                      //               },
+                      //               icon: const Icon(Icons.picture_as_pdf),
+                      //               label: const Text('Export PDF'),
+                      //               style: ElevatedButton.styleFrom(
+                      //                 backgroundColor: Colors.red,
+                      //                 foregroundColor: Colors.white,
+                      //               ),
+                      //             ),
+                      //             ElevatedButton.icon(
+                      //               onPressed: () {
+                      //                 ScaffoldMessenger.of(
+                      //                   context,
+                      //                 ).showSnackBar(
+                      //                   SnackBar(
+                      //                     content: Text(
+                      //                       'Sending email for ${collection.collectionName ?? 'collection'}...',
+                      //                     ),
+                      //                   ),
+                      //                 );
+                      //               },
+                      //               icon: const Icon(Icons.email),
+                      //               label: const Text('Send Email'),
+                      //               style: ElevatedButton.styleFrom(
+                      //                 backgroundColor: Colors.green,
+                      //                 foregroundColor: Colors.white,
+                      //               ),
+                      //             ),
+                      //             if (collection.invoice != null)
+                      //               ElevatedButton.icon(
+                      //                 onPressed: () {
+                      //                   if (collection.invoice?.id != null) {
+                      //                     context.go(
+                      //                       '/invoice/${collection.invoice!.id}',
+                      //                     );
+                      //                   }
+                      //                 },
+                      //                 icon: const Icon(Icons.receipt_long),
+                      //                 label: const Text('View Invoice'),
+                      //                 style: ElevatedButton.styleFrom(
+                      //                   backgroundColor: Colors.purple,
+                      //                   foregroundColor: Colors.white,
+                      //                 ),
+                      //               ),
+                      //             if (collection.trip != null)
+                      //               ElevatedButton.icon(
+                      //                 onPressed: () {
+                      //                   if (collection.trip?.id != null) {
+                      //                     context.go(
+                      //                       '/trips/${collection.trip!.id}',
+                      //                     );
+                      //                   }
+                      //                 },
+                      //                 icon: const Icon(Icons.local_shipping),
+                      //                 label: const Text('View Trip'),
+                      //                 style: ElevatedButton.styleFrom(
+                      //                   backgroundColor: Colors.orange,
+                      //                   foregroundColor: Colors.white,
+                      //                 ),
+                      //               ),
+                      //             ElevatedButton.icon(
+                      //               onPressed: () {
+                      //                 context.read<CollectionsBloc>().add(
+                      //                   GetCollectionByIdEvent(
+                      //                     widget.collectionId,
+                      //                   ),
+                      //                 );
+                      //                 if (collection.customer?.id != null) {
+                      //                   context.read<InvoiceDataBloc>().add(
+                      //                     GetInvoiceDataByCustomerIdEvent(
+                      //                       collection.customer!.id!,
+                      //                     ),
+                      //                   );
+                      //                 }
+                      //               },
+                      //               icon: const Icon(Icons.refresh),
+                      //               label: const Text('Refresh Data'),
+                      //               style: ElevatedButton.styleFrom(
+                      //                 backgroundColor: Colors.grey,
+                      //                 foregroundColor: Colors.white,
+                      //               ),
+                      //             ),
+                      //           ],
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // ),
 
-                      const SizedBox(height: 32),
+                      // const SizedBox(height: 32),
                     ]),
                   ),
                 ),
