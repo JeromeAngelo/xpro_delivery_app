@@ -120,12 +120,12 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
 
       // Ensure PocketBase client is authenticated
       await _ensureAuthenticated();
-      debugPrint('📅 Start Date: ${startDate.toIso8601String()}');
-      debugPrint('📅 End Date: ${endDate.toIso8601String()}');
+      debugPrint('📅 Start Date: ${startDate.toUtc().toIso8601String()}');
+      debugPrint('📅 End Date: ${endDate.toUtc().toIso8601String()}');
 
       // Build filter string for date range using timeAccepted and timeEndTrip
-      final startDateStr = startDate.toIso8601String();
-      final endDateStr = endDate.toIso8601String();
+      final startDateStr = startDate.toUtc().toIso8601String();
+      final endDateStr = endDate.toUtc().toIso8601String();
 
       final filterString =
           '(timeAccepted >= "$startDateStr" && timeAccepted <= "$endDateStr") || (timeEndTrip >= "$startDateStr" && timeEndTrip <= "$endDateStr")';
@@ -195,50 +195,56 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
   }
 
   @override
-Future<List<TripModel>> getAllTripTickets() async {
-  try {
-    debugPrint('🔄 Fetching all trip tickets');
+  Future<List<TripModel>> getAllTripTickets() async {
+    try {
+      debugPrint('🔄 Fetching all trip tickets');
 
-    // Ensure PocketBase client is authenticated
-    await _ensureAuthenticated();
+      // Ensure PocketBase client is authenticated
+      await _ensureAuthenticated();
 
-    final records = await _pocketBaseClient.collection('tripticket').getFullList(
-          expand:
-              'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
-          sort: '-created',
-        );
+      final records = await _pocketBaseClient
+          .collection('tripticket')
+          .getFullList(
+            expand:
+                'customers,deliveryTeam,personels,deliveryVehicle,checklist,invoices,user,cancelledInvoice,deliveryCollection,deliveryData',
+            sort: '-created',
+          );
 
-    debugPrint('✅ Retrieved ${records.length} trip tickets from API');
+      debugPrint('✅ Retrieved ${records.length} trip tickets from API');
 
-    // Debug print for each record (same content, less overhead)
-    for (final record in records) {
-      debugPrint('📄 Trip Record ID: ${record.id}');
-      debugPrint('📄 Trip Number ID: ${record.data['tripNumberId']}');
-      debugPrint('📄 Time Accepted: ${record.data['timeAccepted']}');
-      debugPrint('📄 Time End Trip: ${record.data['timeEndTrip']}');
-      debugPrint('📄 Raw User field: ${record.data['user']}');
-      debugPrint('📄 Expanded User: ${record.expand['user']}');
-      debugPrint('📄 Is Accepted: ${record.data['isAccepted']}');
-      debugPrint('📄 Is End Trip: ${record.data['isEndTrip']}');
-      // Avoid allocating a new List via keys.toList()
-      debugPrint('📄 All expand keys: ${record.expand.keys}');
-      debugPrint('-----------------------------------');
+      // Debug print for each record (same content, less overhead)
+      for (final record in records) {
+        debugPrint('📄 Trip Record ID: ${record.id}');
+        debugPrint('📄 Trip Number ID: ${record.data['tripNumberId']}');
+        debugPrint('📄 Time Accepted: ${record.data['timeAccepted']}');
+        debugPrint('📄 Time End Trip: ${record.data['timeEndTrip']}');
+        debugPrint('📄 Raw User field: ${record.data['user']}');
+        debugPrint('📄 Expanded User: ${record.expand['user']}');
+        debugPrint('📄 Is Accepted: ${record.data['isAccepted']}');
+        debugPrint('📄 Is End Trip: ${record.data['isEndTrip']}');
+        // Avoid allocating a new List via keys.toList()
+        debugPrint('📄 All expand keys: ${record.expand.keys}');
+        debugPrint('-----------------------------------');
+      }
+
+      // Faster mapping: pre-size result list + for-loop
+      final trips = List<TripModel>.filled(
+        records.length,
+        TripModel.empty(),
+        growable: false,
+      );
+      for (var i = 0; i < records.length; i++) {
+        trips[i] = _mapRecordToTripModel(records[i]);
+      }
+      return trips;
+    } catch (e) {
+      debugPrint('❌ Failed to fetch all trip tickets: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to fetch all trip tickets: ${e.toString()}',
+        statusCode: '500',
+      );
     }
-
-    // Faster mapping: pre-size result list + for-loop
-    final trips = List<TripModel>.filled(records.length, TripModel.empty(), growable: false);
-    for (var i = 0; i < records.length; i++) {
-      trips[i] = _mapRecordToTripModel(records[i]);
-    }
-    return trips;
-  } catch (e) {
-    debugPrint('❌ Failed to fetch all trip tickets: ${e.toString()}');
-    throw ServerException(
-      message: 'Failed to fetch all trip tickets: ${e.toString()}',
-      statusCode: '500',
-    );
   }
-}
 
   @override
   Future<List<TripModel>> getAllActiveTripTickets() async {
@@ -305,18 +311,18 @@ Future<List<TripModel>> getAllTripTickets() async {
       tripData['dispatcher'] =
           _pocketBaseClient.authStore.model?.data['name'] ?? 'Unknown';
       debugPrint('📄 Dispatcher set to: ${tripData['dispatcher']}');
-      tripData['created'] = DateTime.now().toIso8601String();
-      tripData['updated'] = DateTime.now().toIso8601String();
+      tripData['created'] = DateTime.now().toUtc().toIso8601String();
+      tripData['updated'] = DateTime.now().toUtc().toIso8601String();
       tripData['isAccepted'] = false;
       tripData['isEndTrip'] = false;
 
       // Add deliveryDate fields
       if (trip.deliveryDate != null) {
-        tripData['deliveryDate'] = trip.deliveryDate!.toIso8601String();
+        tripData['deliveryDate'] = trip.deliveryDate!.toUtc().toIso8601String();
       }
       if (trip.expectedReturnDate != null) {
         tripData['expectedReturnDate'] =
-            trip.expectedReturnDate!.toIso8601String();
+            trip.expectedReturnDate!.toUtc().toIso8601String();
       }
 
       // Generate QR code (using trip number as the QR code value)
@@ -486,8 +492,8 @@ Future<List<TripModel>> getAllTripTickets() async {
                       'status': pendingStatus.id,
                       'title': pendingStatus.data['title'],
                       'subtitle': pendingStatus.data['subtitle'],
-                      'created': DateTime.now().toIso8601String(),
-                      'time': DateTime.now().toIso8601String(),
+                      'created': DateTime.now().toUtc().toIso8601String(),
+                      'time': DateTime.now().toUtc().toIso8601String(),
                       'isAssigned': true,
                     },
                   )
@@ -818,10 +824,10 @@ Future<List<TripModel>> getAllTripTickets() async {
       }
 
       if (startDate != null) {
-        filters.add('created >= "${startDate.toIso8601String()}"');
+        filters.add('created >= "${startDate.toUtc().toIso8601String()}"');
       }
       if (endDate != null) {
-        filters.add('created <= "${endDate.toIso8601String()}"');
+        filters.add('created <= "${endDate.toUtc().toIso8601String()}"');
       }
       if (isAccepted != null) {
         filters.add('isAccepted = $isAccepted');
@@ -927,7 +933,7 @@ Future<List<TripModel>> getAllTripTickets() async {
       tripData.remove('created');
 
       // Set update timestamp
-      tripData['updated'] = DateTime.now().toIso8601String();
+      tripData['updated'] = DateTime.now().toUtc().toIso8601String();
 
       await _pocketBaseClient
           .collection('tripticket')
@@ -1296,15 +1302,15 @@ Future<List<TripModel>> getAllTripTickets() async {
         'dispatcher': record.data['dispatcher'],
         'created': record.created,
         'updated': record.updated,
-        'timeAccepted': timeAccepted?.toIso8601String(),
-        'timeEndTrip': timeEndTrip?.toIso8601String(),
+        'timeAccepted': timeAccepted?.toUtc().toIso8601String(),
+        'timeEndTrip': timeEndTrip?.toUtc().toIso8601String(),
         'name': record.data['name'],
         'longitude': record.data['longitude'],
         'latitude': record.data['latitude'],
         'volumeRate': record.data['volumeRate'],
         'weightRate': record.data['weightRate'],
         'averageFillRate': record.data['averageFillRate'],
-        'deliveryDate': deliveryDate?.toIso8601String(),
+        'deliveryDate': deliveryDate?.toUtc().toIso8601String(),
         'expectedReturnDate': expectedReturnDate,
       };
 

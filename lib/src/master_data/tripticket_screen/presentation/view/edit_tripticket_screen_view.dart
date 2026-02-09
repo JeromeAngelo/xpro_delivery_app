@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/data/models/trip_models.dart'
     show TripModel;
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
@@ -34,7 +35,10 @@ class EditTripTicketScreenView extends StatefulWidget {
   final TripEntity? trip;
 
   const EditTripTicketScreenView({super.key, this.tripId, this.trip})
-      : assert(tripId != null || trip != null, 'Either tripId or trip must be provided');
+    : assert(
+        tripId != null || trip != null,
+        'Either tripId or trip must be provided',
+      );
 
   @override
   State<EditTripTicketScreenView> createState() =>
@@ -53,6 +57,10 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
   List<PersonelModel> _selectedPersonnel = [];
   List<ChecklistModel> _selectedChecklists = [];
 
+  //Date and time
+  DateTime? _deliveryDate;
+  DateTime? _expectedReturnDate;
+
   bool _isLoading = false;
   String? _errorMessage;
   bool _hasNavigated = false;
@@ -62,7 +70,7 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
   void initState() {
     super.initState();
     _currentTrip = widget.trip;
-    
+
     if (widget.trip != null) {
       // If trip is provided directly, initialize with existing data
       _initializeWithExistingData();
@@ -82,25 +90,31 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
 
   void _initializeWithExistingData() {
     if (_currentTrip == null) return;
-    
+
     // Pre-fill form fields with existing trip data
     _tripIdController.text = _currentTrip!.tripNumberId ?? '';
     _qrCodeController.text = _currentTrip!.qrCode ?? '';
     _tripNameController.text = _currentTrip!.name ?? '';
+    // ✅ NEW: initialize delivery/return dates (this makes UI show existing values)
+  _deliveryDate = _currentTrip!.deliveryDate;
+  _expectedReturnDate = _currentTrip!.expectedReturnDate;
 
     // Initialize with actual trip data instead of empty collections
     if (_currentTrip!.deliveryData.isNotEmpty) {
-      _selectedDeliveries = _currentTrip!.deliveryData
-          .map((delivery) => DeliveryDataModel(
-                id: delivery.id,
-                collectionId: delivery.collectionId,
-                collectionName: delivery.collectionName,
-                deliveryNumber: delivery.deliveryNumber,
-                hasTrip: delivery.hasTrip,
-                created: delivery.created,
-                updated: delivery.updated,
-              ))
-          .toList();
+      _selectedDeliveries =
+          _currentTrip!.deliveryData
+              .map(
+                (delivery) => DeliveryDataModel(
+                  id: delivery.id,
+                  collectionId: delivery.collectionId,
+                  collectionName: delivery.collectionName,
+                  deliveryNumber: delivery.deliveryNumber,
+                  hasTrip: delivery.hasTrip,
+                  created: delivery.created,
+                  updated: delivery.updated,
+                ),
+              )
+              .toList();
     }
 
     if (_currentTrip!.vehicle != null) {
@@ -121,38 +135,54 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
     }
 
     if (_currentTrip!.personels.isNotEmpty) {
-      _selectedPersonnel = _currentTrip!.personels
-          .map((personnel) => PersonelModel(
-                id: personnel.id,
-                collectionId: personnel.collectionId,
-                collectionName: personnel.collectionName,
-                name: personnel.name,
-                role: personnel.role,
-                isAssigned: personnel.isAssigned,
-                deliveryTeamModel: personnel.deliveryTeam,
-                created: personnel.created,
-                updated: personnel.updated,
-              ))
-          .toList();
+      _selectedPersonnel =
+          _currentTrip!.personels
+              .map(
+                (personnel) => PersonelModel(
+                  id: personnel.id,
+                  collectionId: personnel.collectionId,
+                  collectionName: personnel.collectionName,
+                  name: personnel.name,
+                  role: personnel.role,
+                  isAssigned: personnel.isAssigned,
+                  deliveryTeamModel: personnel.deliveryTeam,
+                  created: personnel.created,
+                  updated: personnel.updated,
+                ),
+              )
+              .toList();
     }
 
     if (_currentTrip!.checklist.isNotEmpty) {
-      _selectedChecklists = _currentTrip!.checklist
-          .map((checklist) => ChecklistModel(
-                id: checklist.id,
-                objectName: checklist.objectName,
-                status: checklist.status,
-                isChecked: checklist.isChecked,
-                timeCompleted: checklist.timeCompleted,
-              ))
-          .toList();
+      _selectedChecklists =
+          _currentTrip!.checklist
+              .map(
+                (checklist) => ChecklistModel(
+                  id: checklist.id,
+                  objectName: checklist.objectName,
+                  status: checklist.status,
+                  isChecked: checklist.isChecked,
+                  timeCompleted: checklist.timeCompleted,
+                ),
+              )
+              .toList();
     }
 
-    debugPrint('🔄 Initialized edit form with trip: ${_currentTrip!.tripNumberId}');
-    debugPrint('📦 Trip has ${_currentTrip!.deliveryData.length} deliveries -> Selected: ${_selectedDeliveries.length}');
-    debugPrint('🚗 Trip has vehicle: ${_currentTrip!.vehicle?.name ?? 'None'} -> Selected: ${_selectedVehicle?.name ?? 'None'}');
-    debugPrint('👥 Trip has ${_currentTrip!.personels.length} personnel -> Selected: ${_selectedPersonnel.length}');
-    debugPrint('📋 Trip has ${_currentTrip!.checklist.length} checklists -> Selected: ${_selectedChecklists.length}');
+    debugPrint(
+      '🔄 Initialized edit form with trip: ${_currentTrip!.tripNumberId}',
+    );
+    debugPrint(
+      '📦 Trip has ${_currentTrip!.deliveryData.length} deliveries -> Selected: ${_selectedDeliveries.length}',
+    );
+    debugPrint(
+      '🚗 Trip has vehicle: ${_currentTrip!.vehicle?.name ?? 'None'} -> Selected: ${_selectedVehicle?.name ?? 'None'}',
+    );
+    debugPrint(
+      '👥 Trip has ${_currentTrip!.personels.length} personnel -> Selected: ${_selectedPersonnel.length}',
+    );
+    debugPrint(
+      '📋 Trip has ${_currentTrip!.checklist.length} checklists -> Selected: ${_selectedChecklists.length}',
+    );
   }
 
   // Function to update a trip ticket
@@ -178,7 +208,16 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
       CoreUtils.showSnackBar(context, 'Maximum of 3 personnel allowed');
       return;
     }
+    // Check if more than 3 personnel are selected
+    if (_deliveryDate == null) {
+      CoreUtils.showSnackBar(context, 'Please select a delivery date');
+      return;
+    }
 
+    if (_expectedReturnDate == null) {
+      CoreUtils.showSnackBar(context, 'Please select an expected return date');
+      return;
+    }
     // Set loading state
     setState(() {
       _errorMessage = null;
@@ -189,12 +228,17 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
     final updatedTripModel = TripModel(
       id: _currentTrip?.id, // Keep the original ID
       tripNumberId: _tripIdController.text,
-      name: _tripNameController.text.trim().isEmpty ? null : _tripNameController.text.trim(),
+      name:
+          _tripNameController.text.trim().isEmpty
+              ? null
+              : _tripNameController.text.trim(),
       qrCode: _qrCodeController.text,
       vehicleModel: _selectedVehicle,
       deliveryDataList: _selectedDeliveries,
       personelsList: _selectedPersonnel,
       checklistItems: _selectedChecklists,
+      deliveryDate: _deliveryDate,
+      expectedReturnDate: _expectedReturnDate,
       // Preserve other existing data
       timeAccepted: _currentTrip?.timeAccepted,
       timeEndTrip: _currentTrip?.timeEndTrip,
@@ -207,8 +251,6 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
     );
     context.read<TripBloc>().add(UpdateTripTicketEvent(updatedTripModel));
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +339,8 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
           child: Form(
             key: _formKey,
             child: FormLayout(
-              title: 'Edit Trip Ticket: ${_currentTrip?.tripNumberId ?? 'Loading...'}',
+              title:
+                  'Edit Trip Ticket: ${_currentTrip?.tripNumberId ?? 'Loading...'}',
               actions: [
                 // Cancel Button
                 FormCancelButton(
@@ -401,19 +444,18 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
-                const Icon(Icons.info_outline, size: 24),
-                const SizedBox(width: 8),
-                const Text(
+              children: const [
+                Icon(Icons.info_outline, size: 24),
+                SizedBox(width: 8),
+                Text(
                   'Trip Details',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
+
             // First row: Trip ID and QR Code
             Row(
               children: [
@@ -425,7 +467,7 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.confirmation_number),
                     ),
-                    readOnly: true, // Trip ID should not be editable
+                    readOnly: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Trip Number ID is required';
@@ -453,9 +495,9 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Second row: Trip Name
             Row(
               children: [
@@ -468,19 +510,133 @@ class _EditTripTicketScreenViewState extends State<EditTripTicketScreenView> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.label_outline),
                     ),
-                    validator: null, // Optional field, no validation needed
+                    validator: null,
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Empty expanded to maintain layout balance
-                const Expanded(
-                  child: SizedBox(),
-                ),
+                const Expanded(child: SizedBox()),
               ],
             ),
+
+            const SizedBox(height: 16),
+
+            // ✅ Third row: Delivery Date + Expected Return Date (editable)
+            _buildDeliveryDateForm(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDeliveryDateForm() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Delivery Date Section
+          Expanded(
+            child: _buildDatePickerField(
+              label: 'Delivery Date',
+              date: _deliveryDate,
+              onPickDate: (picked) {
+                setState(() => _deliveryDate = picked);
+              },
+              onClear: () {
+                setState(() => _deliveryDate = null);
+              },
+            ),
+          ),
+
+          const SizedBox(width: 24),
+
+          // Expected Return Date Section
+          Expanded(
+            child: _buildDatePickerField(
+              label: 'Expected Return Date',
+              date: _expectedReturnDate,
+              onPickDate: (picked) {
+                setState(() => _expectedReturnDate = picked);
+              },
+              onClear: () {
+                setState(() => _expectedReturnDate = null);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String formatDate(DateTime? date) {
+    if (date == null) return 'Not set';
+    return DateFormat('MM/dd/yyyy hh:mm a').format(date);
+  }
+
+  /// Reusable date picker field widget
+  Widget _buildDatePickerField({
+    required String label,
+    required DateTime? date,
+    required ValueChanged<DateTime> onPickDate,
+    required VoidCallback onClear,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () async {
+                  final DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: date ?? DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2050),
+                  );
+                  if (pickedDate != null) onPickDate(pickedDate);
+                },
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      date != null
+                          ? DateFormat('MM/dd/yyyy').format(date)
+                          : 'Select $label',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: onClear,
+              icon: Icon(
+                Icons.clear,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              tooltip: 'Clear $label',
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
