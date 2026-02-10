@@ -11,7 +11,6 @@ import 'package:xpro_delivery_admin_app/core/common/widgets/app_structure/data_t
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
-import 'package:intl/intl.dart';
 
 class TripDataTable extends StatefulWidget {
   final List<TripEntity> trips;
@@ -189,11 +188,11 @@ class _TripDataTableState extends State<TripDataTable> {
             onTap: () => _navigateToTripDetails(context, trip),
           ),
           DataCell(
-            Text(_formatDate(trip.timeAccepted)),
+            Text(_formatDateTime(trip.timeAccepted)),
             onTap: () => _navigateToTripDetails(context, trip),
           ),
           DataCell(
-            Text(_formatDate(trip.timeEndTrip)),
+            Text(_formatDateTime(trip.timeEndTrip)),
             onTap: () => _navigateToTripDetails(context, trip),
           ),
           DataCell(
@@ -259,23 +258,27 @@ class _TripDataTableState extends State<TripDataTable> {
     }
   }
 
- String _formatDate(DateTime? date) {
-  if (date == null) return 'N/A';
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) return 'N/A';
 
-  try {
-    // Convert to PH time (GMT+8)
-    final phTime = date.toUtc().add(const Duration(hours: 8));
+    final hour24 = dateTime.hour;
+    final hour12 =
+        hour24 == 0
+            ? 12
+            : hour24 > 12
+            ? hour24 - 12
+            : hour24;
 
-    final formatted =
-        DateFormat('MM/dd/yyyy, hh:mm a').format(phTime);
+    final amPm = hour24 >= 12 ? 'PM' : 'AM';
 
-    return '$formatted GMT+8';
-  } catch (e) {
-    debugPrint('❌ Error formatting date: $e');
-    return 'Invalid Date';
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final year = dateTime.year;
+
+    return '$month/$day/$year '
+        '${hour12.toString().padLeft(2, '0')}:'
+        '${dateTime.minute.toString().padLeft(2, '0')} $amPm';
   }
-}
-
 
   // Handle row selection
   void _handleRowsSelected(List<int> selectedIndices) {

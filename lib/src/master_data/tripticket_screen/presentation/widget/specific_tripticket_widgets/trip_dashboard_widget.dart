@@ -32,9 +32,26 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
       return _buildLoadingSkeleton(context);
     }
 
-    String formatDate(DateTime? date) {
-      if (date == null) return 'Not set';
-      return DateFormat('MM/dd/yyyy hh:mm a').format(date);
+   String formatDateTime(DateTime? dateTime) {
+      if (dateTime == null) return 'N/A';
+
+      final hour24 = dateTime.hour;
+      final hour12 =
+          hour24 == 0
+              ? 12
+              : hour24 > 12
+              ? hour24 - 12
+              : hour24;
+
+      final amPm = hour24 >= 12 ? 'PM' : 'AM';
+
+      final month = dateTime.month.toString().padLeft(2, '0');
+      final day = dateTime.day.toString().padLeft(2, '0');
+      final year = dateTime.year;
+
+      return '$month/$day/$year '
+          '${hour12.toString().padLeft(2, '0')}:'
+          '${dateTime.minute.toString().padLeft(2, '0')} $amPm';
     }
 
     String dateFormat(DateTime? date) {
@@ -252,17 +269,17 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
             ),
             DashboardInfoItem(
               icon: Icons.local_shipping,
-              value: formatDate(widget.trip?.otp?.verifiedAt),
+              value: formatDateTime(widget.trip?.otp?.verifiedAt),
               label: 'Dispatch Time',
             ),
             DashboardInfoItem(
               icon: Icons.play_circle_filled,
-              value: formatDate(widget.trip?.timeAccepted),
+              value: formatDateTime(widget.trip?.timeAccepted),
               label: 'Start of Trip',
             ),
             DashboardInfoItem(
               icon: Icons.stop_circle,
-              value: formatDate(widget.trip?.timeEndTrip),
+              value: formatDateTime(widget.trip?.timeEndTrip),
               label: 'End of Trip',
             ),
             DashboardInfoItem(
@@ -296,6 +313,16 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
               value: widget.trip?.dispatcher ?? 'N/A',
               label: 'Dispatched By',
             ),
+            DashboardInfoItem(
+              icon: Icons.play_circle_filled,
+              value: formatDateTime(widget.trip?.created),
+              label: 'Created At',
+            ),
+            DashboardInfoItem(
+              icon: Icons.play_circle_filled,
+              value: formatDateTime(widget.trip?.updated),
+              label: 'Updated At',
+            )
           ],
         ),
       ],
