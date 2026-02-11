@@ -32,7 +32,7 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
       return _buildLoadingSkeleton(context);
     }
 
-   String formatDateTime(DateTime? dateTime) {
+    String formatDateTime(DateTime? dateTime) {
       if (dateTime == null) return 'N/A';
 
       final hour24 = dateTime.hour;
@@ -314,15 +314,15 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
               label: 'Dispatched By',
             ),
             DashboardInfoItem(
-              icon: Icons.play_circle_filled,
+              icon: Icons.calendar_view_day,
               value: formatDateTime(widget.trip?.created),
               label: 'Created At',
             ),
             DashboardInfoItem(
-              icon: Icons.play_circle_filled,
+              icon: Icons.update_outlined,
               value: formatDateTime(widget.trip?.updated),
               label: 'Updated At',
-            )
+            ),
           ],
         ),
       ],
