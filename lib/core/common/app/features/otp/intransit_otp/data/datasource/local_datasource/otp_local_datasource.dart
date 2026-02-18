@@ -35,40 +35,68 @@ class OtpLocalDatasourceImpl implements OtpLocalDatasource {
   final ObjectBoxStore objectBoxStore;
 
   OtpLocalDatasourceImpl(this.objectBoxStore);
+@override
+Future<bool> verifyInTransitOtp({
+  required String enteredOtp,
+  required String generatedOtp,
+  required String tripId,
+  required String otpId,
+  required String odometerReading,
+}) async {
+  try {
+    debugPrint('📱 LOCAL: Verifying In-Transit OTP');
 
-  @override
-  Future<bool> verifyInTransitOtp({
-    required String enteredOtp,
-    required String generatedOtp,
-    required String tripId,
-    required String otpId,
-    required String odometerReading,
-  }) async {
-    try {
-      debugPrint('📱 LOCAL: Verifying In-Transit OTP');
-      final query = otpBox.query(OtpModel_.id.equals(otpId)).build();
-      final otp = query.findFirst();
-      query.close();
+    // ✅ device local time (PH if device is PH)
+    final now = DateTime.now();
+    debugPrint('🕒 Device time now: ${now.toIso8601String()} (offset: ${now.timeZoneOffset})');
 
-      if (otp != null && enteredOtp == otp.generatedCode) {
-        otp.otpCode = enteredOtp;
-        otp.isVerified = true;
-        otp.verifiedAt = DateTime.now();
-        otp.intransitOdometer = odometerReading;
-        otp.id = tripId;
-        
-        otpBox.put(otp);
-        debugPrint('✅ LOCAL: OTP verified and data saved');
-        return true;
-      }
+    final query = otpBox.query(OtpModel_.id.equals(otpId)).build();
+    final otp = query.findFirst();
+    query.close();
 
-      debugPrint('❌ LOCAL: OTP verification failed');
-      return false;
-    } catch (e) {
-      debugPrint('❌ LOCAL: Verification error: $e');
-      throw CacheException(message: e.toString());
+    if (otp != null && enteredOtp == otp.generatedCode) {
+      otp.otpCode = enteredOtp;
+      otp.isVerified = true;
+
+      // ✅ save device local time
+      otp.verifiedAt = now;
+
+      otp.intransitOdometer = odometerReading;
+
+      // ⚠️ NOTE: this looks wrong — you're overwriting OTP PB id with tripId
+      // Keep original otp.id (ObjectBox internal/PB id). If you need tripId, store it in a trip field instead.
+      // otp.id = tripId;
+
+      otpBox.put(otp);
+
+      debugPrint('✅ LOCAL: OTP verified and data saved');
+      debugPrint('   • verifiedAt(local): ${otp.verifiedAt}');
+      return true;
     }
+
+    debugPrint('❌ LOCAL: OTP verification failed');
+    return false;
+  } catch (e) {
+    debugPrint('❌ LOCAL: Verification error: $e');
+    throw CacheException(message: e.toString());
   }
+}
+
+String _two(int n) => n.toString().padLeft(2, '0');
+
+/// ISO8601 WITH timezone offset (ex: 2026-02-09T11:20:00.123+08:00)
+String isoDeviceNow() => _isoWithOffset(DateTime.now());
+
+String _isoWithOffset(DateTime dt) {
+  final local = dt; // device local
+  final o = local.timeZoneOffset;
+  final sign = o.isNegative ? '-' : '+';
+  final hh = _two(o.inHours.abs());
+  final mm = _two((o.inMinutes.abs()) % 60);
+
+  // Dart local iso has no "+08:00" → append it
+  return '${local.toIso8601String()}$sign$hh:$mm';
+}
 
   @override
   Future<bool> verifyEndDeliveryOtp({

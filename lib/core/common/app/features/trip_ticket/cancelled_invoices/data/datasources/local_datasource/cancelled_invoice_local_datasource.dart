@@ -592,6 +592,25 @@ class CancelledInvoiceLocalDataSourceImpl
     }
   }
 
+  String _two(int n) => n.toString().padLeft(2, '0');
+
+/// ISO8601 WITH timezone offset (ex: 2026-02-09T11:20:00.123+08:00)
+String isoDeviceNow() => _isoWithOffset(DateTime.now());
+
+String _isoWithOffset(DateTime dt) {
+  final local = dt; // device local
+  final o = local.timeZoneOffset;
+  final sign = o.isNegative ? '-' : '+';
+  final hh = _two(o.inHours.abs());
+  final mm = _two((o.inMinutes.abs()) % 60);
+
+  // Dart local iso has no "+08:00" → append it
+  return '${local.toIso8601String()}$sign$hh:$mm';
+}
+
+
+
+
   Future<void> _linkCancelledInvoiceToTrip(
     TripModel trip,
     CancelledInvoiceModel invoice,

@@ -399,6 +399,7 @@ Future<TripModel> scanTripByQR(String qrData) async {
       );
     }
   }
+
 @override
 Future<(TripModel, String)> acceptTrip(String tripId) async {
   try {
@@ -521,7 +522,7 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
         'isChecked': false,
         'status': 'pending',
         'description': 'Check the number of Invoices',
-        'created': DateTime.now().toIso8601String(),
+'created': nowDeviceIso(),
       },
       {
         'trip': actualTripId,
@@ -529,7 +530,7 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
         'isChecked': false,
         'status': 'pending',
         'description': 'Check the number of Pushcarts',
-        'created': DateTime.now().toIso8601String(),
+'created': nowDeviceIso(),
       },
       {
         'trip': actualTripId,
@@ -537,7 +538,7 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
         'isChecked': false,
         'description': 'Follow the BLOWBAGETS instructions for safety',
         'status': 'pending',
-        'created': DateTime.now().toIso8601String(),
+'created': nowDeviceIso(),
       },
     ];
 
@@ -632,7 +633,8 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
                 'title': inTransitStatus.data['title'],
                 'subtitle': inTransitStatus.data['subtitle'],
                 'created': DateTime.now().toIso8601String(),
-                'time': DateTime.now().toIso8601String(),
+                'time': nowDeviceIso(),
+
                 'isAssigned': true,
               },
             ),
@@ -668,8 +670,8 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
             'generatedCode': '123456',
             'trip': tripRecord.id,
             'intransitOdometer': null,
-            'created': DateTime.now().toIso8601String(),
-            'updated': DateTime.now().toIso8601String(),
+            'created':nowDeviceIso(),
+            'updated':nowDeviceIso(),
           },
         ),
         label: 'CREATE otp',
@@ -683,8 +685,8 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
             'generatedCode': '123456',
             'trip': tripRecord.id,
             'endTripOdometer': null,
-            'created': DateTime.now().toIso8601String(),
-            'updated': DateTime.now().toIso8601String(),
+            'created': nowDeviceIso(),
+            'updated': nowDeviceIso(),
             'otpType': 'endDelivery',
           },
         ),
@@ -702,7 +704,7 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
       () => _pocketBaseClient.collection('tripUpdates').create(
         body: {
           'description': 'Start of trip',
-          'date': DateTime.now().toIso8601String(),
+          'date': nowDeviceIso(),
           'trip': tripRecord.id,
           'status': 'generalUpdate',
           'latitude': 15.0531273,
@@ -786,7 +788,7 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
         body: {
           'users': userId,
           'trips': [tripRecord.id],
-          'assignedAt': DateTime.now().toIso8601String(),
+          'assignedAt': nowDeviceIso(),
           'isActive': true,
         },
       ),
@@ -867,6 +869,25 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
     );
   }
 }
+
+String _two(int n) => n.toString().padLeft(2, '0');
+
+/// ISO8601 WITH timezone offset (ex: 2026-02-09T11:20:00+08:00)
+String _isoWithOffset(DateTime dt) {
+  final local = dt; // device local time
+  final o = local.timeZoneOffset;
+  final sign = o.isNegative ? '-' : '+';
+  final hh = _two(o.inHours.abs());
+  final mm = _two((o.inMinutes.abs()) % 60);
+
+  // dt.toIso8601String() for local has no offset → we append it
+  final base = local.toIso8601String(); // "YYYY-MM-DDTHH:mm:ss.mmm"
+  return '$base$sign$hh:$mm';
+}
+
+/// device "now" saved as local time with offset (PH device => +08:00)
+String nowDeviceIso() => _isoWithOffset(DateTime.now());
+
 
 
 
@@ -1016,7 +1037,7 @@ if (expandedTrip == null || expandedTrip.isEmpty) {
           .getFullList(
             filter: 'id = "$tripId"',
             expand:
-                'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates,deliveryData.trip,cancelledInvoice,deliveryData.invoiceItems',
+                'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates,deliveryData.trip,cancelledInvoice,deliveryData.invoiceItems,otp,endTripOtp',
             sort: '-created',
           );
 
@@ -1197,8 +1218,8 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
       final checklistList = tripRecord.expand['checklist'] ?? [];
       final tripUpdateList = tripRecord.expand['trip_update_list'] ?? [];
      // final cancelledInvoiceList = tripRecord.expand['cancelledInvoice'] ?? [];
-      final intransitOtp = tripRecord.expand['otp'] ?? [];
-      final endTripOtp = tripRecord.expand['endTripOtp'] ?? [];
+      final intransitOtp = tripRecord.expand['otp']?.firstOrNull;
+      final endTripOtp = tripRecord.expand['endTripOtp']?.firstOrNull;
 
       // 6️⃣ Map full trip
       final mappedTrip = {
@@ -1221,7 +1242,7 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
         'deliveryData': _mapExpandedRecord(deliveryDataList),
         'cancelledInvoice': _mapExpandedRecord(cancelledInvoiceList),
         'trip_update_list' : _mapExpandedRecord(tripUpdateList),
-        'intransitOtp' : _mapExpandedRecord(intransitOtp),
+        'otp' : _mapExpandedRecord(intransitOtp),
         'endTripOtp' : _mapExpandedRecord(endTripOtp),
       };
 

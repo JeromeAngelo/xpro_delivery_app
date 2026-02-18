@@ -24,6 +24,8 @@ class EndTripOtpRepoImpl implements EndTripOtpRepo {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     }
   }
+
+  
 @override
 ResultFuture<EndTripOtpEntity> loadEndTripOtpByTripId(String tripId) async {
   try {

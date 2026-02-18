@@ -10,6 +10,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delive
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:path/path.dart' as p;
 
 abstract class DeliveryReceiptRemoteDatasource {
   /// Get delivery receipt by trip ID
@@ -225,29 +226,26 @@ class DeliveryReceiptRemoteDatasourceImpl
         debugPrint('📸 Processing ${customerImages.length} customer images...');
 
         for (int i = 0; i < customerImages.length; i++) {
-          try {
-            final imagePath = customerImages[i];
-            final imageFile = File(imagePath);
-            if (await imageFile.exists()) {
-              final compressedImageBytes = await _compressImageToSmallSize(imagePath);
-              if (compressedImageBytes != null) {
-                files.add(
-                  MultipartFile.fromBytes(
-                    'customerImages',
-                    compressedImageBytes,
-                    filename:
-                        'customer_image_${i}_${DateTime.now().millisecondsSinceEpoch}.jpg',
-                  ),
-                );
-                debugPrint(
-                  '✅ Added compressed customer image ${i + 1}/${customerImages.length} (${compressedImageBytes.length} bytes)',
-                );
-              }
-            }
-          } catch (e) {
-            debugPrint('⚠️ Error processing customer image $i: $e');
-          }
-        }
+  final imagePath = customerImages[i];
+
+  final rawBytes = await _readImageBytes(imagePath);
+  if (rawBytes == null) {
+    debugPrint('❌ SKIP image[$i] unreadable: $imagePath');
+    continue;
+  }
+
+  final compressed = await _compressImageBytesToSmallSize(rawBytes); // better (see #2)
+  final bytesToUpload = compressed ?? rawBytes;
+
+  files.add(MultipartFile.fromBytes(
+    'customerImages',
+    bytesToUpload,
+    filename: 'customer_image_${i}_${DateTime.now().millisecondsSinceEpoch}${p.extension(imagePath).isNotEmpty ? p.extension(imagePath) : ".jpg"}',
+  ));
+
+  debugPrint('✅ Added image[$i] bytes=${bytesToUpload.length}');
+}
+
       }
 
       // Calculate total file size
@@ -351,6 +349,39 @@ class DeliveryReceiptRemoteDatasourceImpl
     }
   }
 
+Future<Uint8List?> _readImageBytes(String imagePath) async {
+  try {
+    final f = File(imagePath);
+    if (await f.exists()) return await f.readAsBytes();
+  } catch (_) {}
+
+  // fallback for content:// or non-file paths
+  try {
+    final xf = XFile(imagePath);
+    return await xf.readAsBytes();
+  } catch (e) {
+    debugPrint('❌ Failed to read image bytes: $imagePath | $e');
+    return null;
+  }
+}
+
+Future<Uint8List?> _compressImageBytesToSmallSize(Uint8List bytes) async {
+  try {
+    final out = await FlutterImageCompress.compressWithList(
+      bytes,
+      quality: 50,
+      minWidth: 600,
+      minHeight: 400,
+      format: CompressFormat.jpeg,
+    );
+    return out;
+  } catch (e) {
+    debugPrint('⚠️ compressWithList failed: $e');
+    return null;
+  }
+}
+
+
   /// Compress image file to very small size for delivery status
   Future<Uint8List?> _compressImageToSmallSize(String imagePath) async {
     try {
@@ -405,7 +436,7 @@ class DeliveryReceiptRemoteDatasourceImpl
         if (secondPassBytes != null) {
           final originalSize = await File(imagePath).length();
           debugPrint(
-            '📊 Delivery status image compressed (2 passes): ${originalSize} bytes -> ${secondPassBytes.length} bytes',
+            '📊 Delivery status image compressed (2 passes): $originalSize bytes -> ${secondPassBytes.length} bytes',
           );
           debugPrint(
             '📉 Compression ratio: ${((originalSize - secondPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
@@ -417,7 +448,7 @@ class DeliveryReceiptRemoteDatasourceImpl
           );
           final originalSize = await File(imagePath).length();
           debugPrint(
-            '📊 Delivery status image compressed (1 pass): ${originalSize} bytes -> ${firstPassBytes.length} bytes',
+            '📊 Delivery status image compressed (1 pass): $originalSize bytes -> ${firstPassBytes.length} bytes',
           );
           debugPrint(
             '📉 Compression ratio: ${((originalSize - firstPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
@@ -427,7 +458,7 @@ class DeliveryReceiptRemoteDatasourceImpl
       } else {
         final originalSize = await File(imagePath).length();
         debugPrint(
-          '📊 Delivery status image compressed: ${originalSize} bytes -> ${firstPassBytes.length} bytes',
+          '📊 Delivery status image compressed: $originalSize bytes -> ${firstPassBytes.length} bytes',
         );
         debugPrint(
           '📉 Compression ratio: ${((originalSize - firstPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',

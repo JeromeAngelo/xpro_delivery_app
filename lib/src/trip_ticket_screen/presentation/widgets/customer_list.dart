@@ -53,20 +53,23 @@ class CustomerListTile extends StatelessWidget {
                 ? loadedDeliveryData[customer.id]
                 : customer;
 
-        return Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCustomerInfo(context, loadedCustomer ?? customer),
-                const SizedBox(height: 16),
-                _buildDeliveryStatus(context, loadedCustomer ?? customer),
-              ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCustomerInfo(context, loadedCustomer ?? customer),
+                  const SizedBox(height: 16),
+                  _buildDeliveryStatus(context, loadedCustomer ?? customer),
+                ],
+              ),
             ),
           ),
         );

@@ -33,7 +33,7 @@ abstract class TripLocalDatasource {
   Future<String?> getTrackingId();
   Future<bool> checkEndTripOtpStatus(String tripId);
   Future<TripModel> getTripById(String id);
- Future<void> endTrip(String tripId);
+  Future<void> endTrip(String tripId);
   Future<TripModel> updateTripLocationLocal(
     String tripId,
     double latitude,
@@ -243,7 +243,7 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
       await _syncEndTripOtpForTrip(trip);
       await _syncEndTripChecklistForTrip(trip);
       await _syncIntransitChecklistForTrip(trip);
-      await _syncOtpForTrip(trip);
+      await _syncInTransitOtpForTrip(trip);
       // ---------------------------------------------------------
       // STEP 5 — Save Trip to ObjectBox
       // ---------------------------------------------------------
@@ -390,6 +390,7 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
       await _cleanDeliveryTeam();
       await _cleanPersonnel();
       await _cleanTripUpdates();
+      await _cleanInTransitOtp();
       //   await _cleanChecklistData();
 
       // ---------------------------------------------------------
@@ -399,7 +400,7 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
       await _syncDeliveryTeamForTrip(trip);
       await _syncVehicleForTrip(trip);
       await _syncPersonnelsForTrip(trip);
-      await _syncOtpForTrip(trip);
+      await _syncInTransitOtpForTrip(trip);
       await _syncEndTripOtpForTrip(trip);
       await _syncTripUpdatesForTrip(trip);
 
@@ -1423,48 +1424,85 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
     );
   }
 
-  Future<void> _syncOtpForTrip(TripModel trip) async {
+  Future<void> _syncInTransitOtpForTrip(TripModel trip) async {
     final otp = trip.otp.target;
     if (otp == null) return;
 
-    debugPrint('🔐 Syncing OTP → Trip: ${trip.name}, PB: ${otp.id}');
+    debugPrint(
+      '🔍 Syncing InTransit OTP for trip "${trip.name}" '
+      '→ OTP ID: ${otp.id}, Verified: ${otp.isVerified}',
+    );
 
-    final existing =
+    // -------------------------------------------------
+    // 1️⃣ Find existing OTP by PB ID
+    // -------------------------------------------------
+    final existingOtp =
         otpBox.query(OtpModel_.id.equals(otp.id)).build().findFirst();
 
-    OtpModel updated;
+    OtpModel syncedOtp;
 
-    if (existing != null) {
-      final full = otpBox.get(existing.dbId);
-      if (full != null) {
-        full.otpCode = otp.otpCode;
-        full.expiresAt = otp.expiresAt;
-        full.tripId = trip.id;
-
-        otpBox.put(full);
-        updated = full;
-
-        debugPrint('🔁 OTP updated → OBX: ${updated.dbId}');
-      } else {
+    if (existingOtp != null) {
+      // -------------------------------------------------
+      // 2️⃣ Update existing OTP
+      // -------------------------------------------------
+      final fullOtp = otpBox.get(existingOtp.dbId);
+      if (fullOtp == null) {
+        debugPrint('⚠️ Failed to load existing OTP from ObjectBox');
         return;
       }
-    } else {
-      otp.tripId = trip.id;
-      final newId = otpBox.put(otp);
-      updated = otpBox.get(newId)!;
 
-      debugPrint('✅ New OTP saved → OBX: ${updated.dbId}');
+      fullOtp
+        ..otpCode = otp.otpCode
+        ..generatedCode = otp.generatedCode
+        ..isVerified = otp.isVerified
+        ..createdAt = otp.createdAt
+        ..expiresAt = otp.expiresAt
+        ..verifiedAt = otp.verifiedAt
+        ..otpType = otp.otpType;
+
+      // Link trip
+      fullOtp.trip.target = trip;
+      fullOtp.trip.targetId = trip.objectBoxId;
+
+      otpBox.put(fullOtp);
+      syncedOtp = fullOtp;
+
+      debugPrint(
+        '🔁 OTP updated → PB: ${syncedOtp.id}, OBX: ${syncedOtp.dbId}, '
+        'Verified: ${syncedOtp.isVerified}',
+      );
+    } else {
+      // -------------------------------------------------
+      // 3️⃣ New OTP
+      // -------------------------------------------------
+      otp.trip.target = trip;
+      otp.trip.targetId = trip.objectBoxId;
+
+      final newOtpId = otpBox.put(otp);
+      syncedOtp = otpBox.get(newOtpId)!;
+
+      debugPrint(
+        '✅ New OTP saved → PB: ${syncedOtp.id}, OBX: $newOtpId, '
+        'Verified: ${syncedOtp.isVerified}',
+      );
     }
 
-    // Assign fully updated OTP to trip
-    trip.otp.target = updated;
+    // -------------------------------------------------
+    // 4️⃣ Attach OTP back to Trip
+    // -------------------------------------------------
+    trip.otp.target = syncedOtp;
+    trip.otp.targetId = syncedOtp.dbId;
     tripBox.put(trip);
 
     debugPrint(
-      '🟦 Trip saved → Trip ID: ${trip.id}, ObjectBox ID: ${trip.objectBoxId}, '
-      'OTP OBX ID: ${trip.otp.target?.dbId}',
+      '🟦 OTP linked to Trip → '
+      'Trip ID: ${trip.id}, OBX: ${trip.objectBoxId}, '
+      'OTP OBX: ${trip.otp.targetId}, '
+      'OTP Code: ${syncedOtp.otpCode}, '
+      'Verified: ${syncedOtp.isVerified}',
     );
   }
+
 
   Future<void> _syncEndTripOtpForTrip(TripModel trip) async {
     final endOtp = trip.endTripOtp.target;
@@ -1725,6 +1763,47 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
       );
     } catch (e) {
       debugPrint('❌ _cleanDeliveryData error: $e');
+    }
+  }
+
+  Future<void> _cleanInTransitOtp() async {
+    try {
+      final allOtps = otpBox.getAll();
+
+      final seen = <String, OtpModel>{};
+
+      for (final otp in allOtps) {
+        final pbId = otp.id.trim();
+
+        // 🔴 Step 1 — Remove OTP with no PB ID
+        if (pbId.isEmpty) {
+          debugPrint(
+            '🗑️ Removing NULL InTransit OTP → '
+            'OBX: ${otp.dbId}, Code: ${otp.otpCode}',
+          );
+          otpBox.remove(otp.dbId);
+          continue;
+        }
+
+        // 🔁 Step 2 — Remove duplicate OTPs
+        if (seen.containsKey(pbId)) {
+          debugPrint(
+            '⚠️ Duplicate InTransit OTP → Removing '
+            '(PB: $pbId, OBX: ${otp.dbId})',
+          );
+          otpBox.remove(otp.dbId);
+          continue;
+        }
+
+        // First valid occurrence
+        seen[pbId] = otp;
+      }
+
+      debugPrint(
+        '🟢 InTransit OTP cleanup complete — duplicates & null PB IDs removed.',
+      );
+    } catch (e, st) {
+      debugPrint('❌ _cleanInTransitOtp ERROR: $e\n$st');
     }
   }
 
@@ -2183,134 +2262,145 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
       throw CacheException(message: e.toString());
     }
   }
-@override
-Future<void> endTrip(String tripId) async {
-  final safeTripId = tripId.trim();
 
-  try {
-    debugPrint('🧹 Starting complete data cleanup (endTrip) tripId=$safeTripId');
+  @override
+  Future<void> endTrip(String tripId) async {
+    final safeTripId = tripId.trim();
 
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      debugPrint(
+        '🧹 Starting complete data cleanup (endTrip) tripId=$safeTripId',
+      );
 
-    // ------------------------------------------------------------------
-    // 0) Guard: still allow cleanup even if tripId is empty
-    // ------------------------------------------------------------------
-    if (safeTripId.isEmpty) {
-      debugPrint('⚠️ endTrip called with empty tripId — will still cleanup safely');
-    }
+      final prefs = await SharedPreferences.getInstance();
 
-    // ------------------------------------------------------------------
-    // 1) CLEAR USER TRIP ASSIGNMENT (OBJECTBOX + PREFS VIA saveUser)
-    //    ✅ Only clear if user is actually assigned to THIS trip (or if tripId empty -> clear all)
-    // ------------------------------------------------------------------
-    final users = userBox.getAll();
+      // ------------------------------------------------------------------
+      // 0) Guard: still allow cleanup even if tripId is empty
+      // ------------------------------------------------------------------
+      if (safeTripId.isEmpty) {
+        debugPrint(
+          '⚠️ endTrip called with empty tripId — will still cleanup safely',
+        );
+      }
 
-    if (users.isEmpty) {
-      debugPrint('ℹ️ No local users found in ObjectBox');
-    } else {
-      for (final user in users) {
-        try {
-          // Determine user trip match safely
-          final userTripPbId = (user.trip.target?.id ?? '').toString().trim();
-          final shouldClear = safeTripId.isEmpty || userTripPbId == safeTripId;
+      // ------------------------------------------------------------------
+      // 1) CLEAR USER TRIP ASSIGNMENT (OBJECTBOX + PREFS VIA saveUser)
+      //    ✅ Only clear if user is actually assigned to THIS trip (or if tripId empty -> clear all)
+      // ------------------------------------------------------------------
+      final users = userBox.getAll();
 
-          debugPrint(
-            '👤 User=${user.pocketbaseId} '
-            '| userTrip=$userTripPbId '
-            '| shouldClear=$shouldClear',
-          );
+      if (users.isEmpty) {
+        debugPrint('ℹ️ No local users found in ObjectBox');
+      } else {
+        for (final user in users) {
+          try {
+            // Determine user trip match safely
+            final userTripPbId = (user.trip.target?.id ?? '').toString().trim();
+            final shouldClear =
+                safeTripId.isEmpty || userTripPbId == safeTripId;
 
-          if (!shouldClear) continue;
+            debugPrint(
+              '👤 User=${user.pocketbaseId} '
+              '| userTrip=$userTripPbId '
+              '| shouldClear=$shouldClear',
+            );
 
-          // ✅ Clear ToOne safely
-          user.trip
-            ..target = null
-            ..targetId = 0;
+            if (!shouldClear) continue;
 
-          // ✅ Clear other trip fields safely (only if they exist in your model)
-          user.tripId = null;
-          user.tripNumberId = null;
+            // ✅ Clear ToOne safely
+            user.trip
+              ..target = null
+              ..targetId = 0;
 
-          // ✅ Persist using your unified offline-first function
-          await saveUser(user);
+            // ✅ Clear other trip fields safely (only if they exist in your model)
+            user.tripId = null;
+            user.tripNumberId = null;
 
-          debugPrint('✅ Cleared trip assignment + synced user: ${user.pocketbaseId}');
-        } catch (e) {
-          // Do NOT crash cleanup because of one user record
-          debugPrint('⚠️ Failed to clear trip for user=${user.pocketbaseId}: $e');
+            // ✅ Persist using your unified offline-first function
+            await saveUser(user);
+
+            debugPrint(
+              '✅ Cleared trip assignment + synced user: ${user.pocketbaseId}',
+            );
+          } catch (e) {
+            // Do NOT crash cleanup because of one user record
+            debugPrint(
+              '⚠️ Failed to clear trip for user=${user.pocketbaseId}: $e',
+            );
+          }
         }
       }
-    }
 
-    // ------------------------------------------------------------------
-    // 2) REMOVE OLD TRIP-RELATED SHARED PREF KEYS
-    // ------------------------------------------------------------------
-    await prefs.remove('trip');
-    await prefs.remove('tripNumberId');
-    await prefs.remove('tripId');
-    debugPrint('✅ Removed trip-related SharedPref keys');
+      // ------------------------------------------------------------------
+      // 2) REMOVE OLD TRIP-RELATED SHARED PREF KEYS
+      // ------------------------------------------------------------------
+      await prefs.remove('trip');
+      await prefs.remove('tripNumberId');
+      await prefs.remove('tripId');
+      debugPrint('✅ Removed trip-related SharedPref keys');
 
-    // ------------------------------------------------------------------
-    // 3) CLEAR ALL OBJECTBOX TABLES (trip-scoped)
-    //    NOTE: do this AFTER saveUser so user write is not lost
-    // ------------------------------------------------------------------
-    tripBox.removeAll();
-    deliveryTeamBox.removeAll();
-    personnelBox.removeAll();
-    checklistBox.removeAll();
-    deliveryUpdateBox.removeAll();
-    endTripChecklistBox.removeAll();
-    deliveryDataBox.removeAll();
-    vehicleBox.removeAll();
-    otpBox.removeAll();
-    endTripOtpBox.removeAll();
+      // ------------------------------------------------------------------
+      // 3) CLEAR ALL OBJECTBOX TABLES (trip-scoped)
+      //    NOTE: do this AFTER saveUser so user write is not lost
+      // ------------------------------------------------------------------
+      tripBox.removeAll();
+      deliveryTeamBox.removeAll();
+      personnelBox.removeAll();
+      checklistBox.removeAll();
+      deliveryUpdateBox.removeAll();
+      endTripChecklistBox.removeAll();
+      deliveryDataBox.removeAll();
+      vehicleBox.removeAll();
+      otpBox.removeAll();
+      endTripOtpBox.removeAll();
 
-    debugPrint('✅ Cleared all ObjectBox trip-scoped data');
+      debugPrint('✅ Cleared all ObjectBox trip-scoped data');
 
-    // ------------------------------------------------------------------
-    // 4) CLEAR IN-MEMORY CACHE
-    // ------------------------------------------------------------------
-    _cachedTrip = null;
-    _trackingId = null;
+      // ------------------------------------------------------------------
+      // 4) CLEAR IN-MEMORY CACHE
+      // ------------------------------------------------------------------
+      _cachedTrip = null;
+      _trackingId = null;
 
-    // ------------------------------------------------------------------
-    // 5) CLEAR OTHER SHARED PREFERENCES CACHES
-    // ------------------------------------------------------------------
-    await prefs.remove('user_trip_data');
-    await prefs.remove('trip_cache');
-    await prefs.remove('delivery_status_cache');
-    await prefs.remove('customer_cache');
-    await prefs.remove('active_trip');
-    await prefs.remove('last_trip_id');
-    await prefs.remove('last_trip_number');
+      // ------------------------------------------------------------------
+      // 5) CLEAR OTHER SHARED PREFERENCES CACHES
+      // ------------------------------------------------------------------
+      await prefs.remove('user_trip_data');
+      await prefs.remove('trip_cache');
+      await prefs.remove('delivery_status_cache');
+      await prefs.remove('customer_cache');
+      await prefs.remove('active_trip');
+      await prefs.remove('last_trip_id');
+      await prefs.remove('last_trip_number');
 
-    // ------------------------------------------------------------------
-    // 6) VERIFICATION LOGS
-    // ------------------------------------------------------------------
-    final tripCount = tripBox.count();
-    final userDataAfterCleanup = prefs.getString('user_data');
+      // ------------------------------------------------------------------
+      // 6) VERIFICATION LOGS
+      // ------------------------------------------------------------------
+      final tripCount = tripBox.count();
+      final userDataAfterCleanup = prefs.getString('user_data');
 
-    if (userDataAfterCleanup != null) {
-      try {
-        final parsed = jsonDecode(userDataAfterCleanup);
-        debugPrint('✅ Verification - User data after cleanup:');
-        debugPrint('   👤 Name: ${parsed['name']}');
-        debugPrint('   📧 Email: ${parsed['email']}');
-        debugPrint('   🎫 Trip Number: ${parsed['tripNumberId']}');
-        debugPrint('   🎫 Trip: ${parsed['trip']}');
-      } catch (e) {
-        debugPrint('⚠️ Verification - Failed to parse user_data: $e');
+      if (userDataAfterCleanup != null) {
+        try {
+          final parsed = jsonDecode(userDataAfterCleanup);
+          debugPrint('✅ Verification - User data after cleanup:');
+          debugPrint('   👤 Name: ${parsed['name']}');
+          debugPrint('   📧 Email: ${parsed['email']}');
+          debugPrint('   🎫 Trip Number: ${parsed['tripNumberId']}');
+          debugPrint('   🎫 Trip: ${parsed['trip']}');
+        } catch (e) {
+          debugPrint('⚠️ Verification - Failed to parse user_data: $e');
+        }
+      } else {
+        debugPrint(
+          '⚠️ Verification - user_data is missing in SharedPreferences',
+        );
       }
-    } else {
-      debugPrint('⚠️ Verification - user_data is missing in SharedPreferences');
+
+      debugPrint('✅ Verification - Trip count after cleanup: $tripCount');
+      debugPrint('✅ endTrip cleanup completed successfully');
+    } catch (e) {
+      debugPrint('❌ Error clearing data (endTrip): $e');
+      throw CacheException(message: e.toString());
     }
-
-    debugPrint('✅ Verification - Trip count after cleanup: $tripCount');
-    debugPrint('✅ endTrip cleanup completed successfully');
-  } catch (e) {
-    debugPrint('❌ Error clearing data (endTrip): $e');
-    throw CacheException(message: e.toString());
   }
-}
-
 }

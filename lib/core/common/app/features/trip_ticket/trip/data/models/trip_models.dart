@@ -403,17 +403,32 @@ if (deliveryTeamData != null) {
   }
 }
 
+dynamic _firstFromList(dynamic v) {
+  if (v is List && v.isNotEmpty) return v.first;
+  return v;
+}
+
 // OTP
 OtpModel? otpModel;
-final otpData = expandedData?['otp'] ?? json['otp'];
+dynamic otpData = expandedData?['otp'] ?? json['otp'];
+
+// ✅ normalize if list
+otpData = _firstFromList(otpData);
+
 if (otpData != null) {
   if (otpData is Map<String, dynamic>) {
     otpModel = OtpModel.fromJson(otpData);
   } else if (otpData is OtpModel) {
     otpModel = otpData;
-  } else if (otpData is String && otpData.isNotEmpty) {
-    // Only an ID provided
-    otpModel = OtpModel(id: otpData);
+  } else if (otpData is String && otpData.trim().isNotEmpty) {
+    otpModel = OtpModel(id: otpData.trim());
+  } else if (otpData.runtimeType.toString() == 'RecordModel') {
+    // ✅ PocketBase RecordModel support (avoid import issues)
+    final rec = otpData as dynamic;
+    otpModel = OtpModel.fromJson({
+      'id': rec.id,
+      ...Map<String, dynamic>.from(rec.data),
+    });
   } else {
     debugPrint("❌ Unsupported OTP data type: ${otpData.runtimeType}");
   }
@@ -421,19 +436,31 @@ if (otpData != null) {
 
 // End Trip OTP
 EndTripOtpModel? endTripOtpModel;
-final endTripOtpData = expandedData?['endTripOtp'] ?? json['endTripOtp'];
+dynamic endTripOtpData = expandedData?['endTripOtp'] ?? json['endTripOtp'];
+
+// ✅ normalize if list
+endTripOtpData = _firstFromList(endTripOtpData);
+
 if (endTripOtpData != null) {
   if (endTripOtpData is Map<String, dynamic>) {
     endTripOtpModel = EndTripOtpModel.fromJson(endTripOtpData);
   } else if (endTripOtpData is EndTripOtpModel) {
     endTripOtpModel = endTripOtpData;
-  } else if (endTripOtpData is String && endTripOtpData.isNotEmpty) {
-    // Only an ID provided
-    endTripOtpModel = EndTripOtpModel(id: endTripOtpData);
+  } else if (endTripOtpData is String && endTripOtpData.trim().isNotEmpty) {
+    endTripOtpModel = EndTripOtpModel(id: endTripOtpData.trim());
+  } else if (endTripOtpData.runtimeType.toString() == 'RecordModel') {
+    final rec = endTripOtpData as dynamic;
+    endTripOtpModel = EndTripOtpModel.fromJson({
+      'id': rec.id,
+      ...Map<String, dynamic>.from(rec.data),
+    });
   } else {
-    debugPrint("❌ Unsupported End Trip OTP data type: ${endTripOtpData.runtimeType}");
+    debugPrint(
+      "❌ Unsupported End Trip OTP data type: ${endTripOtpData.runtimeType}",
+    );
   }
 }
+
 
   // -----------------------------
   // Personnels

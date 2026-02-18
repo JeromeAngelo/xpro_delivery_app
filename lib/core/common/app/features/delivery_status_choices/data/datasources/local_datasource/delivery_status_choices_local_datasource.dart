@@ -100,7 +100,10 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       }
 
       debugPrint('✅ DeliveryData resolved → OBX ID: ${deliveryData.id}');
-
+      // ✅ One timestamp used across this operation (consistent time)
+      final now = DateTime.now(); // device local
+      final nowIso = _isoWithOffset(now);
+      debugPrint('🕒 Device time now: $nowIso');
       // ---------------------------------------------------
       // 2️⃣ CREATE NEW DeliveryUpdate (COPY DATA)
       // ---------------------------------------------------
@@ -108,10 +111,13 @@ class DeliveryStatusChoicesLocalDatasourceImpl
         id: statusChoice.id,
         title: statusChoice.title,
         subtitle: statusChoice.subtitle,
-        deliveryDataId: deliveryDataPbId, // ✅ IMPORTANT: set deliveryDataId
-        syncStatus: SyncStatus.pending.name, // mark pending for sync
+        deliveryDataId: deliveryDataPbId,
+        syncStatus: SyncStatus.pending.name,
         retryCount: 0,
-        lastLocalUpdatedAt: DateTime.now(),
+        // ✅ store device time (local)
+        lastLocalUpdatedAt: now,
+        // If your model has a string field, prefer saving nowIso too:
+        // lastLocalUpdatedAtIso: nowIso,
       );
 
       // ---------------------------------------------------
@@ -120,7 +126,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       final deliveryUpdate = DeliveryUpdateModel(
         title: newUpdate.title,
         subtitle: newUpdate.subtitle,
-        time: DateTime.now(),
+        time: now,
         isAssigned: true,
         id: '', // ⏳ will be set after remote sync
       );
@@ -133,7 +139,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       deliveryUpdate.retryCount = 0;
       deliveryUpdate.customer = deliveryData.pocketbaseId;
       // Mark local last-updated timestamp so UI can prefer this update
-      deliveryUpdate.lastLocalUpdatedAt = DateTime.now();
+      deliveryUpdate.lastLocalUpdatedAt = now;
 
       // Add to the parent relation and persist
       deliveryData.deliveryUpdates.add(deliveryUpdate);
@@ -226,6 +232,22 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       debugPrint('STACK TRACE: $st');
       throw CacheException(message: e.toString());
     }
+  }
+
+  String _two(int n) => n.toString().padLeft(2, '0');
+
+  /// ISO8601 WITH timezone offset (ex: 2026-02-09T11:20:00.123+08:00)
+  String isoDeviceNow() => _isoWithOffset(DateTime.now());
+
+  String _isoWithOffset(DateTime dt) {
+    final local = dt; // device local
+    final o = local.timeZoneOffset;
+    final sign = o.isNegative ? '-' : '+';
+    final hh = _two(o.inHours.abs());
+    final mm = _two((o.inMinutes.abs()) % 60);
+
+    // Dart local iso has no "+08:00" → append it
+    return '${local.toIso8601String()}$sign$hh:$mm';
   }
 
   /// 🆕 Load Delivery Status Choices locally (offline filtering)
@@ -361,7 +383,11 @@ class DeliveryStatusChoicesLocalDatasourceImpl
           break;
 
         case 'mark as undelivered':
+          allowedTitles.addAll([]);
+          break;
         case 'end delivery':
+          allowedTitles.addAll([]);
+
           return [];
 
         default:
@@ -531,22 +557,18 @@ class DeliveryStatusChoicesLocalDatasourceImpl
             case 'arrived':
               allowedTitles.addAll([
                 'unloading',
-                
+
                 'waiting for customer',
                 'invoices in queue',
               ]);
               break;
 
             case 'waiting for customer':
-              allowedTitles.addAll([
-                'unloading',
-               
-                'invoices in queue',
-              ]);
+              allowedTitles.addAll(['unloading', 'invoices in queue']);
               break;
 
             case 'invoices in queue':
-              allowedTitles.addAll(['unloading', ]);
+              allowedTitles.addAll(['unloading']);
               break;
 
             case 'unloading':
@@ -558,9 +580,10 @@ class DeliveryStatusChoicesLocalDatasourceImpl
               break;
 
             case 'mark as undelivered':
+              allowedTitles.addAll([]);
+              break;
             case 'end delivery':
-              result[customerId] = [];
-              continue;
+              allowedTitles.addAll([]);
 
             default:
               debugPrint(

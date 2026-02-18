@@ -10,32 +10,31 @@ import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 class AcceptTripButton extends StatelessWidget {
   final String tripId;
 
-  const AcceptTripButton({
-    super.key,
-    required this.tripId,
-  });
+  const AcceptTripButton({super.key, required this.tripId});
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<TripBloc, TripState>(
       listener: (context, state) {
         if (state is TripAccepted) {
-          
-
           // Start location tracking for the accepted trip
-          context.read<TripBloc>().add(StartLocationTrackingEvent(
-                tripId: state.tripId,
-                // Optional: customize update interval and distance filter
-                // updateInterval: const Duration(minutes: 3),
-                // distanceFilter: 500.0, // 500 meters
-              ));
+          context.read<TripBloc>().add(
+            StartLocationTrackingEvent(
+              tripId: state.tripId,
+              // Optional: customize update interval and distance filter
+              // updateInterval: const Duration(minutes: 3),
+              // distanceFilter: 500.0, // 500 meters
+            ),
+          );
 
           debugPrint('✅ Trip successfully accepted');
           debugPrint('📦 Trip ID: ${state.tripId}');
           debugPrint('📦 Personnel count: ${state.trip.personels.length}');
           debugPrint('🔄 Starting location tracking for trip');
-          CoreUtils.showSnackBar(context,
-              'Trip successfully accepted. Location tracking started.');
+          CoreUtils.showSnackBar(
+            context,
+            'Trip successfully accepted. Location tracking started.',
+          );
         }
 
         if (state is TripError) {
@@ -52,7 +51,9 @@ class AcceptTripButton extends StatelessWidget {
         if (state is LocationTrackingError) {
           debugPrint('❌ Error with location tracking: ${state.message}');
           CoreUtils.showSnackBar(
-              context, 'Location tracking error: ${state.message}');
+            context,
+            'Location tracking error: ${state.message}',
+          );
         }
       },
       builder: (context, state) {
@@ -61,17 +62,18 @@ class AcceptTripButton extends StatelessWidget {
             state is TripAccepting || state is TripLocationUpdating;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : RoundedButton(
-                  label: 'Accept Trip',
-                  onPressed: () {
-                    debugPrint('🔘 Accept button pressed for trip: $tripId');
-                    // Navigate to accepting screen with tripId as path parameter
-                    context.go('/accepting-trip/$tripId');
-                  },
-                ),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          child:
+              isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RoundedButton(
+                    label: 'Accept Trip',
+                    onPressed: () {
+                      debugPrint('🔘 Accept button pressed for trip: $tripId');
+                      // Navigate to accepting screen with tripId as path parameter
+                      context.go('/accepting-trip/$tripId');
+                    },
+                  ),
         );
       },
     );

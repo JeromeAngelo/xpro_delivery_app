@@ -23,6 +23,7 @@ import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_tri
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_otp_instructions.dart';
 
 import '../../../start_trip_otp_screen/presentation/widgets/trip_details_dialog.dart';
+
 class EndTripOtpScreen extends StatefulWidget {
   const EndTripOtpScreen({super.key});
 

@@ -372,6 +372,8 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         'personels': _mapExpandedRecord(tripRecord.expand['personels']),
         'deliveryVehicle': _mapExpandedRecord(tripRecord.expand['deliveryVehicle']),
         'checklist': _mapExpandedRecord(tripRecord.expand['checklist']),
+        'otp': _mapExpandedRecord(tripRecord.expand['otp']),
+        'endTripOtp': _mapExpandedRecord(tripRecord.expand['endTripOtp']),
       };
 
       await prefs.setString('user_trip_data', jsonEncode(mappedData));
@@ -581,7 +583,7 @@ if (expandedTrip == null || expandedTrip.isEmpty) {
           .getFullList(
             filter: 'id = "$tripId"',
             expand:
-                'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates,deliveryData.trip,cancelledInvoice,deliveryData.invoiceItems',
+                'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates,deliveryData.trip,cancelledInvoice,deliveryData.invoiceItems,endTripOtp,otp',
             sort: '-created',
           );
 
@@ -762,8 +764,8 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
       final checklistList = tripRecord.expand['checklist'] ?? [];
       final tripUpdateList = tripRecord.expand['trip_update_list'] ?? [];
      // final cancelledInvoiceList = tripRecord.expand['cancelledInvoice'] ?? [];
-      final intransitOtp = tripRecord.expand['otp'] ?? [];
-      final endTripOtp = tripRecord.expand['endTripOtp'] ?? [];
+      final intransitOtp = tripRecord.expand['otp']?.firstOrNull;
+      final endTripOtp = tripRecord.expand['endTripOtp']?.firstOrNull;
 
       // 6️⃣ Map full trip
       final mappedTrip = {
@@ -786,7 +788,7 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
         'deliveryData': _mapExpandedRecord(deliveryDataList),
         'cancelledInvoice': _mapExpandedRecord(cancelledInvoiceList),
         'trip_update_list' : _mapExpandedRecord(tripUpdateList),
-        'intransitOtp' : _mapExpandedRecord(intransitOtp),
+        'otp' : _mapExpandedRecord(intransitOtp),
         'endTripOtp' : _mapExpandedRecord(endTripOtp),
       };
 

@@ -274,58 +274,39 @@ ResultFuture<TripEntity> endTrip(String tripId) async {
   debugPrint('🔄 REPO: endTrip($safeTripId)');
 
   // ---------------------------------------------------
-  // 1️⃣ REMOTE FIRST
+  // 1️⃣ LOCAL FIRST (optimistic UI / offline-ready)
+  // ---------------------------------------------------
+  try {
+    debugPrint('💾 REPO: Ending trip locally first for tripId=$safeTripId');
+    await _localDatasource.endTrip(safeTripId);
+    debugPrint('✅ REPO: Local endTrip success → tripId=$safeTripId');
+  } on CacheException catch (ce) {
+    // Decide: block remote call or still try remote?
+    // Here: still try remote, but log local failure
+    debugPrint('⚠️ REPO: Local endTrip failed (continuing remote): ${ce.message}');
+  }
+
+  // ---------------------------------------------------
+  // 2️⃣ REMOTE AFTER LOCAL
   // ---------------------------------------------------
   try {
     debugPrint('🌐 REPO: Ending trip remotely for ID: $safeTripId');
     final remoteTrip = await _remoteDatasource.endTrip(safeTripId);
     debugPrint('✅ REPO: Remote endTrip success → tripId=$safeTripId');
 
-    // ---------------------------------------------------
-    // 2️⃣ LOCAL AFTER REMOTE SUCCESS
-    //    ✅ pass tripId so local clears only the correct trip safely
-    // ---------------------------------------------------
-    try {
-      debugPrint('💾 REPO: Clearing local trip data for tripId=$safeTripId');
-      await _localDatasource.endTrip(safeTripId);
-      debugPrint('✅ REPO: Local cleanup success → tripId=$safeTripId');
-    } on CacheException catch (ce) {
-      // Remote already succeeded, so we return success but log local failure.
-      // (Avoids “trip ended remotely but app shows error” UX.)
-      debugPrint(
-        '⚠️ REPO: Local cleanup failed AFTER remote success: ${ce.message}',
-      );
-    }
-
-    debugPrint('✅ REPO: Trip ended successfully (remote-first)');
+    debugPrint('✅ REPO: Trip ended successfully (local-first)');
     return Right(remoteTrip);
   } on ServerException catch (e) {
     debugPrint('❌ REPO: Remote endTrip failed: ${e.message}');
 
-    // ---------------------------------------------------
-    // 3️⃣ REMOTE FAIL → OPTIONAL LOCAL FALLBACK (best effort)
-    //    Only do local cleanup if you want app to proceed offline.
-    //    If you prefer STRICT remote-first, remove this block.
-    // ---------------------------------------------------
-    try {
-      debugPrint('📱 REPO: Remote failed → attempting local cleanup (offline fallback)');
-      await _localDatasource.endTrip(safeTripId);
-      debugPrint('✅ REPO: Local cleanup success (offline fallback)');
-
-      // If you want: treat this as success offline:
-      // return Right(TripEntity.empty());  // only if you have an empty factory
-    } catch (e2) {
-      debugPrint('⚠️ REPO: Local fallback cleanup also failed: $e2');
-    }
-
+    // Local already ran; keep app consistent offline, but return server failure
     return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
   } on CacheException catch (e) {
-    // This only triggers if remote succeeded but local threw a CacheException
-    // and you want to surface it as an error. (We already catch local above.)
-    debugPrint('❌ REPO: Local cleanup failed: ${e.message}');
+    debugPrint('❌ REPO: Local endTrip threw CacheException: ${e.message}');
     return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
   }
 }
+
 
 
  @override

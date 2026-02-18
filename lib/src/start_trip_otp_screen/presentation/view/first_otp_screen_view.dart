@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
@@ -33,14 +32,19 @@ class FirstOtpScreenView extends StatefulWidget {
 class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
   late final AuthBloc _authBloc;
   late final OtpBloc _otpBloc;
+
   bool _isInitialized = false;
+
   String enteredOtp = '';
   String enteredOdometer = '';
+
   String? generatedOtp;
   String? otpId;
   String? tripId;
+
   AuthState? _cachedAuthState;
   OtpState? _cachedOtpState;
+
   StreamSubscription? _authSubscription;
   StreamSubscription? _otpSubscription;
 
@@ -62,36 +66,38 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
     _authSubscription = _authBloc.stream.listen((state) {
       if (!mounted) return;
 
-      if (state is UserTripLoaded && state.trip.id != null) {
-        setState(() => _cachedAuthState = state);
-        debugPrint('🎫 Loading OTP for trip: ${state.trip.id}');
+      // Cache auth state (optional)
+      _cachedAuthState = state;
 
-        // Set the trip ID from the auth state
+      if (state is UserTripLoaded && state.trip.id != null) {
+        final tId = state.trip.id!.toString().trim();
+        if (tId.isEmpty) return;
+
+        debugPrint('🎫 Trip loaded -> Load OTP by tripId=$tId');
+
         setState(() {
-          tripId = state.trip.id;
+          tripId = tId;
         });
 
-        // Load OTP for this trip
-        _otpBloc.add(LoadOtpByTripIdEvent(state.trip.id!));
+        // ✅ Only use trip-based OTP loader
+        _otpBloc.add(LoadOtpByTripIdEvent(tId));
       }
     });
 
     _otpSubscription = _otpBloc.stream.listen((state) {
       if (!mounted) return;
 
+      // Cache otp state (optional)
+      _cachedOtpState = state;
+
+      // ✅ Only listen for trip-based loaded state
       if (state is OtpDataLoaded) {
-        debugPrint('🔑 OTP data loaded - ID: ${state.otp.id}');
+        debugPrint('🔑 OTP loaded by trip');
+        debugPrint('   🆔 otpId=${state.otp.id}');
+        debugPrint('   🔐 generatedCode=${state.otp.generatedCode}');
+
         setState(() {
           otpId = state.otp.id;
-        });
-        if (otpId != null) {
-          _otpBloc.add(LoadOtpByIdEvent(otpId!));
-        }
-      } else if (state is OtpByIdLoaded) {
-        debugPrint(
-          '🔑 OTP loaded - Generated code: ${state.otp.generatedCode}',
-        );
-        setState(() {
           generatedOtp = state.otp.generatedCode;
         });
       }
@@ -104,32 +110,45 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
     final prefs = await SharedPreferences.getInstance();
     final storedData = prefs.getString('user_data');
 
-    if (mounted && storedData != null) {
-      final userData = jsonDecode(storedData);
-      final userId = userData['id'];
-      final tripData = userData['trip'] as Map<String, dynamic>?;
+    if (!mounted) return;
 
-      if (userId != null) {
-        debugPrint('👤 Loading user data for ID: $userId');
+    if (storedData == null || storedData.trim().isEmpty) {
+      debugPrint('⚠️ No user_data in prefs');
+      _isInitialized = true;
+      return;
+    }
 
-        // First load local user data
-        _authBloc.add(LoadLocalUserByIdEvent(userId));
+    final userData = jsonDecode(storedData);
+    final userId = userData['id'];
+    final tripData = userData['trip'] as Map<String, dynamic>?;
 
-        // Then load the user's trip from local storage
-        if (tripData != null && tripData['id'] != null) {
-          debugPrint('🚚 Loading trip data for ID: ${tripData['id']}');
-          _authBloc.add(LoadLocalUserTripEvent(userId));
+    if (userId == null) {
+      debugPrint('⚠️ No userId found in prefs');
+      _isInitialized = true;
+      return;
+    }
 
-          // Also set the trip ID directly from stored data
-          setState(() {
-            tripId = tripData['id'];
-          });
+    debugPrint('👤 Loading local user data: $userId');
+    _authBloc.add(LoadLocalUserByIdEvent(userId));
 
-          // Load OTP for this trip
-          _otpBloc.add(LoadOtpByTripIdEvent(tripData['id']));
-        }
+    // Load trip from local storage (offline-first)
+    if (tripData != null && tripData['id'] != null) {
+      final tId = tripData['id'].toString().trim();
+      if (tId.isNotEmpty) {
+        debugPrint('🚚 Loading local user trip for user=$userId');
+        _authBloc.add(LoadLocalUserTripEvent(userId));
+
+        // Also set tripId so UI knows
+        setState(() {
+          tripId = tId;
+        });
+
+        // ✅ Only trip-based OTP load
+        debugPrint('🔑 Loading OTP by tripId from prefs: $tId');
+        _otpBloc.add(LoadOtpByTripIdEvent(tId));
       }
     }
+
     _isInitialized = true;
   }
 
@@ -185,7 +204,6 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                         const SizedBox(height: 20),
                         const OTPInstructions(),
 
-                        // Trip Details Button
                         Align(
                           alignment: Alignment.center,
                           child: TextButton.icon(
@@ -229,131 +247,30 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                     ),
                   ),
                 ),
-                BlocBuilder<OtpBloc, OtpState>(
+
+                // ✅ Confirm button uses ONLY OtpDataLoaded (trip-based)
+                BlocBuilder<AuthBloc, AuthState>(
                   builder: (context, state) {
-                    debugPrint('🔄 OTP State: $state');
-                    debugPrint('📍 Current Trip ID: $tripId');
-                    debugPrint('🔑 Current OTP ID: $otpId');
-
+                    debugPrint('🔄 Auth State: $state');
                     final effectiveState =
-                        (state is OtpByIdLoaded) ? state : _cachedOtpState;
+                        (state is UserTripLoaded) ? state : _cachedAuthState;
 
-                    if (effectiveState is OtpByIdLoaded &&
-                        tripId != null &&
-                        otpId != null) {
+                    if (effectiveState is UserTripLoaded &&
+                        effectiveState.trip.id != null &&
+                        generatedOtp != null) {
+                      debugPrint(
+                        '🎯 Rendering button with Trip ID: ${effectiveState.trip.id}',
+                      );
+
                       return ConfirmButtonOtp(
                         enteredOtp: enteredOtp,
-                        generatedOtp: effectiveState.otp.generatedCode ?? '',
+                        generatedOtp: generatedOtp!,
+                        tripId: effectiveState.trip.id!,
+                        otpId: otpId ?? '',
                         odometerReading: enteredOdometer,
-                        tripId: tripId!,
-                        otpId: otpId!,
                       );
                     }
-
-                    // Show trip loading indicator
-                    return BlocBuilder<AuthBloc, AuthState>(
-                      builder: (context, state) {
-                        if (state is UserTripLoading) {
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  const CircularProgressIndicator(),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "Loading trip data...",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        if (state is UserTripLoaded) {
-                          // Trip is loaded, but OTP might still be loading
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  const CircularProgressIndicator(),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "Loading OTP data...",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        if (state is AuthError) {
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.error_outline,
-                                    color: Theme.of(context).colorScheme.error,
-                                    size: 48,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "Error loading trip: ${state.message}",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(context).colorScheme.error,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Retry loading user trip
-                                      _loadInitialData();
-                                    },
-                                    child: const Text("Retry"),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        return Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                const CircularProgressIndicator(),
-                                const SizedBox(height: 16),
-                                Text(
-                                  "Loading trip data...",
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
+                    return const SizedBox.shrink();
                   },
                 ),
               ],
@@ -363,6 +280,24 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
       ),
     );
   }
+
+  // Widget _loadingFooter(BuildContext context, String text) {
+  //   return Padding(
+  //     padding: const EdgeInsets.all(16.0),
+  //     child: Center(
+  //       child: Column(
+  //         children: [
+  //           const CircularProgressIndicator(),
+  //           const SizedBox(height: 16),
+  //           Text(
+  //             text,
+  //             style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   @override
   void dispose() {

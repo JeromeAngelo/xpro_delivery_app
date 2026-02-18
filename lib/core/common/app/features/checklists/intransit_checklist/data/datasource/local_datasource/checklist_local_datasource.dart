@@ -55,7 +55,6 @@ class ChecklistLocalDatasourceImpl implements ChecklistLocalDatasource {
 
       // ✅ toggle properly
       checklist.isChecked = current;
-
       checklistBox.put(checklist);
 
       debugPrint(
@@ -68,6 +67,25 @@ class ChecklistLocalDatasourceImpl implements ChecklistLocalDatasource {
       throw CacheException(message: e.toString());
     }
   }
+
+
+String _two(int n) => n.toString().padLeft(2, '0');
+
+/// ISO8601 WITH timezone offset (ex: 2026-02-09T11:20:00+08:00)
+String _isoWithOffset(DateTime dt) {
+  final local = dt; // device local time
+  final o = local.timeZoneOffset;
+  final sign = o.isNegative ? '-' : '+';
+  final hh = _two(o.inHours.abs());
+  final mm = _two((o.inMinutes.abs()) % 60);
+
+  // dt.toIso8601String() for local has no offset → we append it
+  final base = local.toIso8601String(); // "YYYY-MM-DDTHH:mm:ss.mmm"
+  return '$base$sign$hh:$mm';
+}
+
+/// device "now" saved as local time with offset (PH device => +08:00)
+String nowDeviceIso() => _isoWithOffset(DateTime.now());
 
   @override
   Future<List<ChecklistModel>> loadChecklistByTripId(String tripId) async {
