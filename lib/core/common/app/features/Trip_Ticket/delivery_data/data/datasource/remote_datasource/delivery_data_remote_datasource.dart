@@ -151,7 +151,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
             filter:
                 'hasTrip = true', // ← ONLY DIFFERENCE: true instead of false
             expand:
-                'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems',
+                'customer,invoice,invoices,trip,deliveryUpdates,invoiceItems,trip.user', // ← ALSO EXPAND TRIP.USER
             sort: '-created',
           );
 
@@ -395,6 +395,28 @@ Future<bool> deleteDeliveryData(String id) async {
       invoiceModel = InvoiceDataModel(id: record.data['invoice'].toString());
     }
 
+    // Process  user trip data
+    // GeneralUserModel? userModel;
+    // if (record.expand['user'] != null) {
+    //   final userData = record.expand['user'];
+    //   if (userData is List && userData!.isNotEmpty) {
+    //     final userRecord = userData[0];
+    //     userModel = GeneralUserModel  .fromJson({
+    //       'id': userRecord.id,
+    //       'collectionId': userRecord.collectionId,
+    //       'collectionName': userRecord.collectionName,
+    //       'tripNumberId': userRecord.data['tripNumberId'],
+    //       'name': userRecord.data['name'],
+    //       // 'isAccepted': userRecord.data['isAccepted'],
+    //       // 'isEndTrip': userRecord.data['isEndTrip'],
+          
+    //       ...userRecord.data,
+    //     });
+    //   }
+    // } else if (record.data['user'] != null) {
+    //   userModel = GeneralUserModel(id: record.data['user'].toString());
+    // }
+
     // Process trip data
     TripModel? tripModel;
     if (record.expand['trip'] != null) {
@@ -409,6 +431,8 @@ Future<bool> deleteDeliveryData(String id) async {
           'qrCode': tripRecord.data['qrCode'],
           'isAccepted': tripRecord.data['isAccepted'],
           'isEndTrip': tripRecord.data['isEndTrip'],
+          'user':tripRecord.data['user'],
+
           ...tripRecord.data,
         });
       }

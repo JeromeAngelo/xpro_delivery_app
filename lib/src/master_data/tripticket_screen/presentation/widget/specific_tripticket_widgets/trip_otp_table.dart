@@ -46,6 +46,7 @@ class TripOtpTable extends StatelessWidget {
         DataColumn(label: Text('OTP Code')),
         DataColumn(label: Text('Generated Code')),
         DataColumn(label: Text('Status')),
+        DataColumn(label: Text('Odometer')),
         DataColumn(label: Text('Created')),
         DataColumn(label: Text('Expires')),
         DataColumn(label: Text('Actions')),
@@ -85,6 +86,7 @@ class TripOtpTable extends StatelessWidget {
 
                 // Status
                 DataCell(_buildStatusChip(otp.isVerified)),
+                DataCell(Text(otp.intransitOdometer != null ? '${otp.intransitOdometer} km' : 'N/A')),
 
                 // Created At
                 DataCell(Text(_formatDate(otp.createdAt))),

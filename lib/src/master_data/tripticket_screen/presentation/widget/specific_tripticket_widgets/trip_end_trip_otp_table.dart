@@ -27,17 +27,18 @@ class TripEndTripOtpTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DataTableLayout(
-      title: 'End Trip OTP Codes',
+      title: 'End Trip OTP Data',
       onCreatePressed: () {
         // Navigate to create End Trip OTP screen
         context.go('/end-trip-otp/create');
       },
       createButtonText: 'Generate New End Trip OTP',
       columns: const [
-       // DataColumn(label: Text('Id')),
+        // DataColumn(label: Text('Id')),
         DataColumn(label: Text('OTP Code')),
         DataColumn(label: Text('Generated Code')),
         DataColumn(label: Text('Status')),
+        DataColumn(label: Text('Odometer')),
 
         //    DataColumn(label: Text('End Trip Odometer')),
         DataColumn(label: Text('Created')),
@@ -48,7 +49,7 @@ class TripEndTripOtpTable extends StatelessWidget {
           endTripOtps.map((otp) {
             return DataRow(
               cells: [
-               // DataCell(Text(otp.id)),
+                // DataCell(Text(otp.id)),
                 // OTP Code cell with copy button
                 DataCell(
                   Row(
@@ -77,7 +78,13 @@ class TripEndTripOtpTable extends StatelessWidget {
                 DataCell(Text(otp.generatedCode ?? 'N/A')),
 
                 DataCell(_buildStatusChip(otp.isVerified)),
-
+                DataCell(
+                  Text(
+                    otp.endTripOdometer != null
+                        ? '${otp.endTripOdometer} km'
+                        : 'N/A',
+                  ),
+                ),
                 // End Trip Odometer
                 //       DataCell(Text(otp.endTripOdometer ?? 'Not recorded')),
 
@@ -146,7 +153,9 @@ class TripEndTripOtpTable extends StatelessWidget {
       onFiltered: () {
         // Show filter dialog
         _showFilterDialog(context);
-      }, dataLength: '', onDeleted: () {  },
+      },
+      dataLength: '',
+      onDeleted: () {},
     );
   }
 

@@ -33,6 +33,7 @@ import 'package:xpro_delivery_admin_app/src/users/presentation/view/update_user_
 import 'package:xpro_delivery_admin_app/src/vehicle_management/view/vehicle_map_view/vehicle_map_view.dart';
 
 import '../../src/master_data/delivery_data/view/specific_delivery_data_screen.dart';
+import '../../src/master_data/invoice_status_screen/view/invoice_status_screen.dart';
 import '../../src/master_data/tripticket_screen/presentation/view/edit_tripticket_screen_view.dart';
 import '../../src/return_data/undelivered_customer_data/presentation/view/specific_cancelled_invoice_view.dart';
 
@@ -132,6 +133,12 @@ final router = GoRouter(
       pageBuilder:
           (context, state) =>
               _createSmoothTransition(InvoiceScreenListView(), state),
+    ),
+    GoRoute(
+      path: '/invoice-status',
+      pageBuilder:
+          (context, state) =>
+              _createSmoothTransition(InvoiceStatusScreen(), state),
     ),
     GoRoute(
       path: '/invoice-preset-groups',

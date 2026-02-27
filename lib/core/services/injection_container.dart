@@ -19,7 +19,8 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/p
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/set_role.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/domain/usecase/update_personels.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Delivery_Team/personels/presentation/bloc/personel_bloc.dart';
-import 'package:xpro_delivery_admin_app/core/common/app/features/users_trip_collection/domain/repo/user_trip_collection_repo.dart' show UserTripCollectionRepo;
+import 'package:xpro_delivery_admin_app/core/common/app/features/users_trip_collection/domain/repo/user_trip_collection_repo.dart'
+    show UserTripCollectionRepo;
 import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/data/datasource/remote_datasource/vehicle_remote_datasource.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/data/repo/vehicle_repo_impl.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/vehicle/delivery_vehicle_data/domain/repo/vehicle_repo.dart';
@@ -273,8 +274,20 @@ import '../common/app/features/Trip_Ticket/delivery_receipt/domain/repo/delivery
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/filter_trips_by_user.dart';
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/fiter_trips_by_data_range.dart';
 import '../common/app/features/Trip_Ticket/trip/domain/usecase/get_all_active_trips.dart';
+import '../common/app/features/invoice_status/data/datasource/remote_datasource/invoice_status_remote_datasource.dart';
+import '../common/app/features/invoice_status/data/repo/invoice_status_repo_impl.dart';
+import '../common/app/features/invoice_status/domain/repo/invoice_status_repo.dart'
+    show InvoiceStatusRepo;
+import '../common/app/features/invoice_status/domain/usecases/export_invoice_status_csv.dart';
+import '../common/app/features/invoice_status/domain/usecases/export_invoice_status_excel.dart';
+import '../common/app/features/invoice_status/domain/usecases/get_all_invoice_status.dart';
+import '../common/app/features/invoice_status/domain/usecases/get_invoice_status_by_id.dart';
+import '../common/app/features/invoice_status/presentation/bloc/invoice_status_bloc.dart';
 import '../common/app/features/notfication/domain/usecases/get_all_notification.dart';
-import '../common/app/features/users_trip_collection/data/datasources/remote_datasource/users_trip_collection_remote_datasource.dart' show UsersTripCollectionRemoteDataSource, UsersTripCollectionRemoteDataSourceImpl;
+import '../common/app/features/users_trip_collection/data/datasources/remote_datasource/users_trip_collection_remote_datasource.dart'
+    show
+        UsersTripCollectionRemoteDataSource,
+        UsersTripCollectionRemoteDataSourceImpl;
 import '../common/app/features/users_trip_collection/data/repo/users_trip_collection_repo_impl.dart';
 import '../common/app/features/users_trip_collection/domain/usecases/get_user_trip_collection_usecase.dart';
 import '../common/app/features/users_trip_collection/presentation/bloc/users_trip_collection_bloc.dart';
@@ -308,6 +321,7 @@ Future<void> init() async {
 
   //new entities
   await initInvoiceData();
+  await initInvoiceStatus();
   await initCustomerData();
   await initInvoiceItems();
   await initInvoicePresetGroup();
@@ -370,7 +384,9 @@ Future<void> initUserRoles() async {
 }
 
 Future<void> initUsertrips() async {
-    sl.registerLazySingleton(() => UsersTripCollectionBloc(getUserTripCollectionUsecase: sl()));
+  sl.registerLazySingleton(
+    () => UsersTripCollectionBloc(getUserTripCollectionUsecase: sl()),
+  );
 
   sl.registerLazySingleton(() => GetUserTripCollectionUsecase(sl()));
 
@@ -382,8 +398,6 @@ Future<void> initUsertrips() async {
     () => UsersTripCollectionRemoteDataSourceImpl(pocketBaseClient: sl()),
   );
 }
-
-
 
 Future<void> initDeliveryTeam() async {
   // BLoC
@@ -846,6 +860,29 @@ Future<void> initInvoiceData() async {
   );
 }
 
+Future<void> initInvoiceStatus() async {
+  sl.registerLazySingleton(
+    () => InvoiceStatusBloc(
+      getAllInvoiceStatus: sl(),
+      getInvoiceStatusById: sl(),
+      exportInvoiceStatusesCsv: sl(),
+      exportInvoiceStatusesExcel: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetAllInvoiceStatus(sl()));
+  sl.registerLazySingleton(() => GetInvoiceStatusById(sl()));
+  sl.registerLazySingleton(() => ExportInvoiceStatusesCsv(sl()));
+  sl.registerLazySingleton(() => ExportInvoiceStatusesExcel(sl()));
+
+  sl.registerLazySingleton<InvoiceStatusRepo>(
+    () => InvoiceStatusRepoImpl(sl()),
+  );
+  sl.registerLazySingleton<InvoiceStatusRemoteDatasource>(
+    () => InvoiceStatusRemoteDatasourceImpl(sl()),
+  );
+}
+
 // Add this function to the init section
 Future<void> initInvoiceItems() async {
   // BLoC
@@ -1121,7 +1158,6 @@ Future<void> initNotification() async {
 
   // Realtime service
   sl.registerLazySingleton(
-  () => NotificationRealtimeService(sl<PocketBase>(), sl<NotificationBloc>()),
-);
-
+    () => NotificationRealtimeService(sl<PocketBase>(), sl<NotificationBloc>()),
+  );
 }

@@ -31,6 +31,7 @@ import 'package:xpro_delivery_admin_app/core/services/router.dart';
 import 'package:xpro_delivery_admin_app/core/services/auth_interceptor.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'core/common/app/features/invoice_status/presentation/bloc/invoice_status_bloc.dart';
 import 'core/common/app/features/notfication/presentation/bloc/notification_bloc.dart';
 import 'core/common/app/features/users_trip_collection/presentation/bloc/users_trip_collection_bloc.dart';
 import 'core/common/app/features/vehicle/vehicle_profile/presentation/bloc/vehicle_profile_bloc.dart';
@@ -72,9 +73,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => sl<GeneralUserBloc>()),
             BlocProvider(create: (_) => sl<DeliveryTeamBloc>()),
             BlocProvider(create: (_) => sl<UserRolesBloc>()),
-
             BlocProvider(create: (_) => sl<TripBloc>()),
-
             BlocProvider(create: (_) => sl<TripUpdatesBloc>()),
             BlocProvider(create: (_) => sl<ReturnBloc>()),
             BlocProvider(create: (_) => sl<DeliveryUpdateBloc>()),
@@ -84,14 +83,13 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => sl<EndTripOtpBloc>()),
             BlocProvider(create: (_) => sl<VehicleBloc>()),
             BlocProvider(create: (_) => sl<VehicleProfileBloc>()),
-
             BlocProvider(create: (_) => sl<PersonelBloc>()),
             BlocProvider(create: (_) => sl<TripCoordinatesUpdateBloc>()),
-
             //new entities
             BlocProvider(create: (_) => sl<CustomerDataBloc>()),
             BlocProvider(create: (_) => sl<InvoiceDataBloc>()),
             BlocProvider(create: (_) => sl<InvoiceItemsBloc>()),
+            BlocProvider(create: (_) => sl<InvoiceStatusBloc>()),
             BlocProvider(create: (_) => sl<DeliveryDataBloc>()),
             BlocProvider(create: (_) => sl<InvoicePresetGroupBloc>()),
             BlocProvider(create: (_) => sl<DeliveryVehicleBloc>()),
@@ -99,8 +97,8 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => sl<CancelledInvoiceBloc>()),
             BlocProvider(create: (_) => sl<DeliveryReceiptBloc>()),
             BlocProvider(create: (_) => sl<PersonnelTripBloc>()),
-             BlocProvider<NotificationBloc>.value(value: sl<NotificationBloc>()),
-                        BlocProvider(create: (_) => sl<UsersTripCollectionBloc>()),
+            BlocProvider<NotificationBloc>.value(value: sl<NotificationBloc>()),
+            BlocProvider(create: (_) => sl<UsersTripCollectionBloc>()),
 
           ],
           child: MaterialApp.router(

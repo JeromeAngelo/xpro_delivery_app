@@ -79,10 +79,15 @@ class AppNavigationItems {
             route: '/invoice-preset-groups',
           ),
           NavigationItem(
-            title: 'Invoices',
+            title: 'Invoices ',
             icon: Icons.receipt_long_outlined,
-            route: '/invoice-list',
+            route: '/invoice-status',
           ),
+          // NavigationItem(
+          //   title: 'Invoices',
+          //   icon: Icons.receipt_long_outlined,
+          //   route: '/invoice-list',
+          // ),
           NavigationItem(
             title: 'Products',
             icon: Icons.shopping_bag,
