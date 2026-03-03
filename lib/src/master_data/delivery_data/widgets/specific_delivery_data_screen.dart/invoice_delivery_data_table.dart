@@ -60,7 +60,6 @@ class _InvoiceDeliveryDataWidgetState extends State<InvoiceDeliveryDataWidget> {
       },
       isLoading: widget.isLoading,
       dataLength: '1',
-      onFiltered: () {},
       onDeleted: () {},
     );
   }

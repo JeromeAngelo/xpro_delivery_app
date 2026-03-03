@@ -121,12 +121,7 @@ class _InvoiceProductsDataTableState extends State<InvoiceProductsDataTable> {
       isLoading: widget.isLoading,
       errorMessage: widget.errorMessage,
       onRetry: widget.onRetry,
-      onFiltered: () {
-        // Show filter options dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Filter options coming soon')),
-        );
-      }, dataLength: '', onDeleted: () {  },
+     dataLength: '', onDeleted: () {  },
     );
   }
 

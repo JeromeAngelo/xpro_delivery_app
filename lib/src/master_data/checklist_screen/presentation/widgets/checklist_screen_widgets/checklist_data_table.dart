@@ -105,12 +105,7 @@ class ChecklistDataTable extends StatelessWidget {
       totalPages: totalPages,
       onPageChanged: onPageChanged,
       isLoading: isLoading,
-      onFiltered: () {
-        // Show filter options
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Filter options coming soon')),
-        );
-      }, dataLength: '${checklists.length}', onDeleted: () {  },
+     dataLength: '${checklists.length}', onDeleted: () {  },
     );
   }
 

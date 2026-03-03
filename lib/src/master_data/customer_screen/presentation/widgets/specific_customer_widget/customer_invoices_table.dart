@@ -106,7 +106,6 @@ class _CustomerInvoicesTableState extends State<CustomerInvoicesTable> {
         });
       },
       isLoading: true,
-      onFiltered: () {}, 
       dataLength: '0', 
       onDeleted: () {},
     );
@@ -130,7 +129,6 @@ class _CustomerInvoicesTableState extends State<CustomerInvoicesTable> {
       isLoading: false,
       errorMessage: errorMessage,
       onRetry: _loadInvoices,
-      onFiltered: () {}, 
       dataLength: '0', 
       onDeleted: () {},
     );
@@ -175,7 +173,6 @@ class _CustomerInvoicesTableState extends State<CustomerInvoicesTable> {
         });
       },
       isLoading: false,
-      onFiltered: () {}, 
       dataLength: '${filteredInvoices.length}', 
       onDeleted: () {},
     );

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/common/app/features/invoice_status/domain/entity/invoice_status_entity.dart';
 import '../../../../core/common/widgets/app_structure/data_table_layout.dart';
+import '../../../../core/common/widgets/filter_widgets/filter_option.dart';
 import 'invoice_status_search_bar.dart';
 
 class InvoiceStatusTable extends StatelessWidget {
@@ -18,6 +19,7 @@ class InvoiceStatusTable extends StatelessWidget {
   final VoidCallback? onRetry;
   final VoidCallback? customFunction;
   final IconData? customIcon;
+  final Function(String?)? onStatusFilterChanged; // ✅ NEW
   const InvoiceStatusTable({
     super.key,
     required this.invoices,
@@ -28,6 +30,7 @@ class InvoiceStatusTable extends StatelessWidget {
     required this.searchController,
     required this.searchQuery,
     required this.onSearchChanged,
+    this.onStatusFilterChanged,
     this.errorMessage,
     this.onRetry,
     this.customFunction,
@@ -56,6 +59,35 @@ class InvoiceStatusTable extends StatelessWidget {
         // Function for exporting data to Excel
       },
       createButtonText: 'Create Invoice',
+      filterCategories: [
+  FilterCategory(
+    id: 'invoice_status',
+    title: 'Delivery Status',
+    icon: Icons.flag_outlined,
+    allowMultiple: false,
+    options:  [
+      FilterOption(id: 'pending', label: 'Pending', value: 'pending'),
+      FilterOption(id: 'arrived', label: 'Arrived', value: 'arrived'),
+      FilterOption(id: 'unloading', label: 'Unloading', value: 'unloading'),
+      FilterOption(id: 'received', label: 'Received', value: 'received'),
+      FilterOption(id: 'delivered', label: 'Delivered', value: 'delivered'),
+      FilterOption(id: 'cancelled', label: 'Cancelled', value: 'cancelled'),
+      FilterOption(id: 'none', label: 'None', value: 'none'),
+    ],
+  ),
+],
+
+onFilterApplied: (filters) {
+  final values = filters['invoice_status'];
+  final String? selected =
+      (values != null && values.isNotEmpty) ? values.first.toString() : null;
+
+  // ✅ send to parent (parent will filter full list + paginate)
+  onStatusFilterChanged?.call(selected);
+},
+
+// optional
+onFiltered: () {},
 
       columns: const [
         //DataColumn(label: Text('ID')),
@@ -127,16 +159,13 @@ class InvoiceStatusTable extends StatelessWidget {
       isLoading: isLoading,
       errorMessage: errorMessage,
       onRetry: onRetry,
-      onFiltered: () {
-        // Show filter options dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Filter options coming soon')),
-        );
-      },
+     
       dataLength: '${invoices.length}',
       onDeleted: () {},
     );
   }
+
+  
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'N/A';

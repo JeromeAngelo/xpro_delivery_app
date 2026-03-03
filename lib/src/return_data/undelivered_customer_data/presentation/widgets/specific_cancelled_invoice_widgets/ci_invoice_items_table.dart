@@ -99,9 +99,7 @@ class _CancelledInvoiceItemsTableState extends State<CancelledInvoiceItemsTable>
             errorMessage: state is InvoiceItemsError ? state.message : null,
             onRetry: _loadInvoiceItems,
             dataLength: _allItems.length.toString(),
-            onFiltered: () {
-              // Handle filter action
-            },
+           
             onDeleted: () {
               // Handle delete action
             },

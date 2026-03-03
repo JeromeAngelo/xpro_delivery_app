@@ -1,3 +1,8 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:file_selector/file_selector.dart';
+import 'package:flutter/rendering.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/domain/entity/trip_entity.dart';
 import 'package:xpro_delivery_admin_app/core/common/widgets/app_structure/data_dashboard.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +30,65 @@ class TripDashboardWidget extends StatefulWidget {
 class _TripDashboardWidgetState extends State<TripDashboardWidget> {
   bool _isQrExpanded = false;
   bool _isQrVisible = true;
+  final GlobalKey _qrBoundaryKey = GlobalKey();
+
+  Future<void> _saveQrAsPng({
+    required BuildContext context,
+    required String fileNameBase, // e.g. trip number
+  }) async {
+    try {
+      final boundary =
+          _qrBoundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('QR image is not ready yet. Please try again.'),
+          ),
+        );
+        return;
+      }
+
+      // Higher pixelRatio = sharper image
+      final ui.Image image = await boundary.toImage(pixelRatio: 4.0);
+
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) throw Exception('Failed to convert image to PNG.');
+
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
+
+      final suggestedName = '$fileNameBase-qr.png'.replaceAll(
+        RegExp(r'[\\/:*?"<>|]'),
+        '_',
+      );
+
+      final FileSaveLocation? saveLocation = await getSaveLocation(
+        suggestedName: suggestedName,
+        acceptedTypeGroups: const [
+          XTypeGroup(label: 'PNG Image', extensions: ['png']),
+        ],
+      );
+
+      if (saveLocation == null) return; // user canceled
+
+      final XFile xfile = XFile.fromData(
+        pngBytes,
+        mimeType: 'image/png',
+        name: suggestedName,
+      );
+
+      await xfile.saveTo(saveLocation.path);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Saved: ${saveLocation.path}')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save QR image: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,11 +204,14 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
                             ],
                           ),
                           padding: const EdgeInsets.all(12),
-                          child: QrImageView(
-                            data: widget.trip!.qrCode!,
-                            version: QrVersions.auto,
-                            size: _isQrExpanded ? 250 : 150,
-                            backgroundColor: Colors.white,
+                          child: RepaintBoundary(
+                            key: _qrBoundaryKey,
+                            child: QrImageView(
+                              data: widget.trip!.qrCode!,
+                              version: QrVersions.auto,
+                              size: _isQrExpanded ? 250 : 150,
+                              backgroundColor: Colors.white,
+                            ),
                           ),
                         ),
 
@@ -186,15 +253,13 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
                                     icon: const Icon(Icons.save_alt),
                                     label: const Text('Save as Image'),
                                     onPressed: () {
-                                      // Implement save functionality
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Save functionality will be implemented soon',
-                                          ),
-                                        ),
+                                      final tripNo =
+                                          widget.trip?.tripNumberId ??
+                                          widget.trip?.id ??
+                                          'trip';
+                                      _saveQrAsPng(
+                                        context: context,
+                                        fileNameBase: tripNo.toString(),
                                       );
                                     },
                                   ),

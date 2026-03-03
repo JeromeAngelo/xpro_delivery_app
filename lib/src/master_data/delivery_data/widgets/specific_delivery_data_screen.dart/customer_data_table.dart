@@ -59,7 +59,6 @@ class _CustomerDataTableWidgetState extends State<CustomerDataTableWidget> {
       },
       isLoading: widget.isLoading,
       dataLength: '1',
-      onFiltered: () {},
       onDeleted: () {},
     );
   }

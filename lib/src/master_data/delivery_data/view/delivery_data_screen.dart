@@ -9,7 +9,6 @@ import 'package:xpro_delivery_admin_app/core/common/widgets/app_structure/deskto
 import 'package:xpro_delivery_admin_app/core/common/widgets/reusable_widgets/app_navigation_items.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/delivery_data/widgets/delivery_data_screen_widget/delivery_data_error_widget.dart';
 import 'package:xpro_delivery_admin_app/src/master_data/delivery_data/widgets/delivery_data_screen_widget/delivery_data_table.dart';
-
 class DeliveryDataScreen extends StatefulWidget {
   const DeliveryDataScreen({super.key});
 
@@ -21,22 +20,97 @@ class _DeliveryDataScreenState extends State<DeliveryDataScreen> {
   int _currentPage = 1;
   int _totalPages = 1;
   final int _itemsPerPage = 10;
+
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  String? _statusFilter; // ✅ NEW (null = no filter)
 
   @override
   void initState() {
     super.initState();
-    // Load delivery data when the screen initializes
-    context.read<DeliveryDataBloc>().add(
-      const GetAllDeliveryDataWithTripsEvent(),
-    );
+    context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  // ✅ Same status logic as DeliveryDataStatusChip, but returns label for filtering
+  String _getLatestDeliveryStatusLabel(DeliveryDataEntity delivery) {
+    if (delivery.deliveryUpdates.isNotEmpty) {
+      final sortedUpdates = List.of(delivery.deliveryUpdates);
+      sortedUpdates.sort((a, b) {
+        final timeA = a.time ?? a.created ?? DateTime.now();
+        final timeB = b.time ?? b.created ?? DateTime.now();
+        return timeB.compareTo(timeA);
+      });
+
+      final latestUpdate = sortedUpdates.first;
+      final updateTitle = latestUpdate.title?.toLowerCase().trim() ?? '';
+
+      switch (updateTitle) {
+        case 'arrived':
+          return 'Arrived';
+        case 'unloading':
+          return 'Unloading';
+        case 'mark as undelivered':
+          return 'Undelivered';
+        case 'in transit':
+          return 'In Transit';
+        case 'pending':
+          return 'Pending';
+        case 'mark as received':
+          return 'Received';
+        case 'end delivery':
+          return 'Delivered';
+        default:
+          return latestUpdate.title ?? 'Unknown';
+      }
+    }
+    return 'No Updates';
+  }
+
+  // ✅ Apply search + status filter on FULL list
+  List<DeliveryDataEntity> _applyFilters(List<DeliveryDataEntity> list) {
+    var data = list;
+
+    // Search filter
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      data = data.where((delivery) {
+        return (delivery.deliveryNumber?.toLowerCase().contains(query) ?? false) ||
+            (delivery.customer?.name?.toLowerCase().contains(query) ?? false) ||
+            (delivery.invoice?.name?.toLowerCase().contains(query) ?? false) ||
+            (delivery.refID?.toLowerCase().contains(query) ?? false) ||
+            (delivery.trip?.tripNumberId?.toLowerCase().contains(query) ?? false) ||
+            (delivery.customer?.municipality?.toLowerCase().contains(query) ?? false) ||
+            (delivery.customer?.province?.toLowerCase().contains(query) ?? false);
+      }).toList();
+    }
+
+    // ✅ Status filter (ONLY if user set a filter)
+    if (_statusFilter != null && _statusFilter!.isNotEmpty) {
+      data = data
+          .where((delivery) => _getLatestDeliveryStatusLabel(delivery) == _statusFilter)
+          .toList();
+    }
+
+    return data;
+  }
+
+  // ✅ Paginate after filtering
+  List<DeliveryDataEntity> _paginate(List<DeliveryDataEntity> data) {
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+    if (startIndex >= data.length) return const <DeliveryDataEntity>[];
+
+    final endIndex = (startIndex + _itemsPerPage > data.length)
+        ? data.length
+        : startIndex + _itemsPerPage;
+
+    return data.sublist(startIndex, endIndex);
   }
 
   @override
@@ -46,47 +120,37 @@ class _DeliveryDataScreenState extends State<DeliveryDataScreen> {
     return DesktopLayout(
       navigationItems: navigationItems,
       currentRoute: '/delivery-list',
-      onNavigate: (route) {
-        // Handle navigation using GoRouter
-        context.go(route);
-      },
-      onThemeToggle: () {
-        // Handle theme toggle
-      },
-      onNotificationTap: () {
-        // Handle notification tap
-      },
-      onProfileTap: () {
-        // Handle profile tap
-      },
+      onNavigate: (route) => context.go(route),
+      onThemeToggle: () {},
+      onNotificationTap: () {},
+      onProfileTap: () {},
       child: BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
         builder: (context, state) {
-          // Handle different states - SAME FORMAT AS INVOICE PRESET GROUPS
           if (state is DeliveryDataInitial) {
-            // Initial state, trigger loading
-            context.read<DeliveryDataBloc>().add(
-              const GetAllDeliveryDataWithTripsEvent(),
-            );
+            context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
             return const Center(child: CircularProgressIndicator());
           }
 
           if (state is DeliveryDataLoading) {
-            // Return the table directly with loading state - NO WRAPPING
             return DeliveryDataTable(
               deliveryData: const <DeliveryDataEntity>[],
               isLoading: true,
               currentPage: _currentPage,
               totalPages: _totalPages,
-              onPageChanged: (page) {
-                setState(() {
-                  _currentPage = page;
-                });
-              },
+              onPageChanged: (page) => setState(() => _currentPage = page),
               searchController: _searchController,
               searchQuery: _searchQuery,
               onSearchChanged: (value) {
                 setState(() {
                   _searchQuery = value;
+                  _currentPage = 1;
+                });
+              },
+              // ✅ NEW: table will call this when filter applied
+              onStatusFilterChanged: (status) {
+                setState(() {
+                  _statusFilter = status; // null clears filter
+                  _currentPage = 1;
                 });
               },
             );
@@ -96,166 +160,56 @@ class _DeliveryDataScreenState extends State<DeliveryDataScreen> {
             return DeliveryDataErrorWidget(
               errorMessage: state.message,
               onRetry: () {
-                context.read<DeliveryDataBloc>().add(
-                  const GetAllDeliveryDataWithTripsEvent(),
-                );
+                context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
               },
             );
           }
 
-          if (state is AllDeliveryDataWithTripsLoaded) {
-            List<DeliveryDataEntity> deliveryData = state.deliveryData;
+          // ✅ Handles both AllDeliveryDataWithTripsLoaded and DeliveryDataByTripLoaded
+          final List<DeliveryDataEntity>? baseList = switch (state) {
+            AllDeliveryDataWithTripsLoaded s => s.deliveryData,
+            DeliveryDataByTripLoaded s => s.deliveryData,
+            _ => null,
+          };
 
-            // Filter delivery data based on search query
-            if (_searchQuery.isNotEmpty) {
-              deliveryData =
-                  deliveryData.where((delivery) {
-                    final query = _searchQuery.toLowerCase();
-                    return (delivery.deliveryNumber?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                        (delivery.customer?.name?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                        (delivery.invoice?.name?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                            (delivery.refID?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                        (delivery.trip?.tripNumberId?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                        (delivery.customer?.municipality
-                                ?.toLowerCase()
-                                .contains(query) ??
-                            false) ||
-                        (delivery.customer?.province?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false);
-                  }).toList();
-            }
+          if (baseList != null) {
+            // ✅ 1) filter full list
+            final filtered = _applyFilters(baseList);
 
-            // Calculate total pages
-            _totalPages = (deliveryData.length / _itemsPerPage).ceil();
+            // ✅ 2) compute pages AFTER filtering
+            _totalPages = (filtered.length / _itemsPerPage).ceil();
             if (_totalPages == 0) _totalPages = 1;
 
-            // Paginate delivery data
-            final startIndex = (_currentPage - 1) * _itemsPerPage;
-            final endIndex =
-                startIndex + _itemsPerPage > deliveryData.length
-                    ? deliveryData.length
-                    : startIndex + _itemsPerPage;
+            // ✅ keep current page valid
+            if (_currentPage > _totalPages) _currentPage = 1;
 
-            final paginatedDeliveryData =
-                startIndex < deliveryData.length
-                    ? deliveryData.sublist(startIndex, endIndex)
-                    : <DeliveryDataEntity>[];
+            // ✅ 3) paginate AFTER filtering
+            final paginated = _paginate(filtered);
 
-            // Return the table directly - NO WRAPPING WITH COLUMN/SINGLECHILDSCROLLVIEW
             return DeliveryDataTable(
-              deliveryData: paginatedDeliveryData,
+              deliveryData: paginated,
               isLoading: false,
               currentPage: _currentPage,
               totalPages: _totalPages,
-              onPageChanged: (page) {
-                setState(() {
-                  _currentPage = page;
-                });
-              },
+              onPageChanged: (page) => setState(() => _currentPage = page),
               searchController: _searchController,
               searchQuery: _searchQuery,
               onSearchChanged: (value) {
                 setState(() {
                   _searchQuery = value;
-                  _currentPage = 1; // Reset to first page when searching
+                  _currentPage = 1;
+                });
+              },
+              // ✅ NEW: full filtering trigger
+              onStatusFilterChanged: (status) {
+                setState(() {
+                  _statusFilter = status;
+                  _currentPage = 1;
                 });
               },
             );
           }
 
-          // Handle other states
-          if (state is DeliveryDataByTripLoaded) {
-            // If we get trip-specific data, show it
-            List<DeliveryDataEntity> deliveryData = state.deliveryData;
-
-            // Filter delivery data based on search query
-            if (_searchQuery.isNotEmpty) {
-              deliveryData =
-                  deliveryData.where((delivery) {
-                    final query = _searchQuery.toLowerCase();
-                    return (delivery.deliveryNumber?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                        (delivery.customer?.name?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                        (delivery.invoice?.name?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                        (delivery.trip?.tripNumberId?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false) ||
-                        (delivery.customer?.municipality
-                                ?.toLowerCase()
-                                .contains(query) ??
-                            false) ||
-                        (delivery.customer?.province?.toLowerCase().contains(
-                              query,
-                            ) ??
-                            false);
-                  }).toList();
-            }
-
-            // Calculate total pages
-            _totalPages = (deliveryData.length / _itemsPerPage).ceil();
-            if (_totalPages == 0) _totalPages = 1;
-
-            // Paginate delivery data
-            final startIndex = (_currentPage - 1) * _itemsPerPage;
-            final endIndex =
-                startIndex + _itemsPerPage > deliveryData.length
-                    ? deliveryData.length
-                    : startIndex + _itemsPerPage;
-
-            final paginatedDeliveryData =
-                startIndex < deliveryData.length
-                    ? deliveryData.sublist(startIndex, endIndex)
-                    : <DeliveryDataEntity>[];
-
-            // Return the table directly - NO WRAPPING
-            return DeliveryDataTable(
-              deliveryData: paginatedDeliveryData,
-              isLoading: false,
-              currentPage: _currentPage,
-              totalPages: _totalPages,
-              onPageChanged: (page) {
-                setState(() {
-                  _currentPage = page;
-                });
-              },
-              searchController: _searchController,
-              searchQuery: _searchQuery,
-              onSearchChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  _currentPage = 1; // Reset to first page when searching
-                });
-              },
-            );
-          }
-
-          // Default fallback
           return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

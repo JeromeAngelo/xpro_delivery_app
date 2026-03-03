@@ -132,7 +132,6 @@ class _UserTripCollectionTableState extends State<UserTripCollectionTable> {
       totalPages: totalPages > 0 ? totalPages : 1,
       onPageChanged: (page) => setState(() => _currentPage = page),
       isLoading: widget.isLoading,
-      onFiltered: () {},
       onDeleted: () {},
       dataLength: filtered.length.toString(),
     );

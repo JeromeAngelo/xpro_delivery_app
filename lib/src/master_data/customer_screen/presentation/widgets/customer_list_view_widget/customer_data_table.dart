@@ -138,7 +138,7 @@ class CustomerDataTable extends StatelessWidget {
       isLoading: isLoading,
       errorMessage: errorMessage,
       onRetry: onRetry,
-      onFiltered: () {}, 
+      
       dataLength: '${customers.length}', 
       onDeleted: () {},
     );

@@ -153,12 +153,7 @@ class CompletedCustomerDataTable extends StatelessWidget {
       isLoading: isLoading,
       errorMessage: errorMessage,
       onRetry: onRetry,
-      onFiltered: () {
-        // Show filter options
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Filter options coming soon')),
-        );
-      },
+     
       dataLength: '${collections.length}',
       onDeleted: () {},
     );

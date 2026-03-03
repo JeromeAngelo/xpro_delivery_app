@@ -71,7 +71,6 @@ class _InvoiceItemsDeliveryDataWidgetState
       onPageChanged: (_) {},
       isLoading: widget.isLoading,
       dataLength: items.isEmpty ? '0' : '${items.length}',
-      onFiltered: () {},
       onDeleted: () {},
     );
   }

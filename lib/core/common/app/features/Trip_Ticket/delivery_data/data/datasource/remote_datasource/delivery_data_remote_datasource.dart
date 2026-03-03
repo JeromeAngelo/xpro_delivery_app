@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -9,7 +8,6 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/cus
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/delivery_data/data/model/delivery_data_model.dart';
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/invoice_data/data/model/invoice_data_model.dart';
 import 'package:xpro_delivery_admin_app/core/errors/exceptions.dart';
-
 import '../../../../invoice_items/data/model/invoice_items_model.dart';
 
 abstract class DeliveryDataRemoteDataSource {
@@ -162,7 +160,7 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       List<DeliveryDataModel> deliveryDataList = [];
 
       for (var record in result) {
-        deliveryDataList.add(_processDeliveryDataRecord(record));
+        deliveryDataList.add(_processDeliveryDataRecordFull(record));
       }
 
       return deliveryDataList;
@@ -200,7 +198,7 @@ Future<List<DeliveryDataModel>> getAllDeliveryData() async {
 
     debugPrint('✅ Retrieved ${all.length} delivery data records');
 
-    return all.map(_processDeliveryDataRecord).toList(growable: false);
+    return all.map(_processDeliveryDataRecordFull).toList(growable: false);
   }, 'getAllDeliveryData');
 }
 
@@ -225,7 +223,7 @@ Future<List<DeliveryDataModel>> getAllDeliveryData() async {
       List<DeliveryDataModel> deliveryDataList = [];
 
       for (var record in result) {
-        deliveryDataList.add(_processDeliveryDataRecord(record));
+        deliveryDataList.add(_processDeliveryDataRecordFull(record));
       }
 
       return deliveryDataList;
@@ -247,7 +245,7 @@ Future<List<DeliveryDataModel>> getAllDeliveryData() async {
 
       debugPrint('✅ Retrieved delivery data with ID: $id');
 
-      return _processDeliveryDataRecord(record);
+      return _processDeliveryDataRecordFull(record);
     }, 'getDeliveryDataById');
   }
 @override
@@ -357,196 +355,182 @@ Future<bool> deleteDeliveryData(String id) async {
       }
     }, 'addDeliveryDataToTrip');
   }
+// ✅ Helpers (compile-safe with PB Dart typing)
 
-  // Helper method to process a delivery data record
-  DeliveryDataModel _processDeliveryDataRecord(RecordModel record) {
-    // Process customer data
-    CustomerDataModel? customerModel;
-    if (record.expand['customer'] != null) {
-      final customerData = record.expand['customer'];
-      if (customerData is List && customerData!.isNotEmpty) {
-        final customerRecord = customerData[0];
-        customerModel = CustomerDataModel.fromJson({
-          'id': customerRecord.id,
-          'collectionId': customerRecord.collectionId,
-          'collectionName': customerRecord.collectionName,
-          'refId': customerRecord.data['refID'],
-          ...customerRecord.data,
-        });
-      }
-    } else if (record.data['customer'] != null) {
-      customerModel = CustomerDataModel(id: record.data['customer'].toString());
-    }
+RecordModel? _firstExpanded(RecordModel record, String key) {
+  // Force dynamic so analyzer doesn't lock the type to List<RecordModel>
+  final dynamic exp = record.expand[key];
+  if (exp == null) return null;
 
-    // Process invoice data
-    InvoiceDataModel? invoiceModel;
-    if (record.expand['invoice'] != null) {
-      final invoiceData = record.expand['invoice'];
-      if (invoiceData is List && invoiceData!.isNotEmpty) {
-        final invoiceRecord = invoiceData[0];
-        invoiceModel = InvoiceDataModel.fromJson({
-          'id': invoiceRecord.id,
-          'collectionId': invoiceRecord.collectionId,
-          'collectionName': invoiceRecord.collectionName,
-          ...invoiceRecord.data,
-        });
-      }
-    } else if (record.data['invoice'] != null) {
-      invoiceModel = InvoiceDataModel(id: record.data['invoice'].toString());
-    }
+  // Case 1: PB returns a single RecordModel
+  if (exp is RecordModel) return exp;
 
-    // Process  user trip data
-    // GeneralUserModel? userModel;
-    // if (record.expand['user'] != null) {
-    //   final userData = record.expand['user'];
-    //   if (userData is List && userData!.isNotEmpty) {
-    //     final userRecord = userData[0];
-    //     userModel = GeneralUserModel  .fromJson({
-    //       'id': userRecord.id,
-    //       'collectionId': userRecord.collectionId,
-    //       'collectionName': userRecord.collectionName,
-    //       'tripNumberId': userRecord.data['tripNumberId'],
-    //       'name': userRecord.data['name'],
-    //       // 'isAccepted': userRecord.data['isAccepted'],
-    //       // 'isEndTrip': userRecord.data['isEndTrip'],
-          
-    //       ...userRecord.data,
-    //     });
-    //   }
-    // } else if (record.data['user'] != null) {
-    //   userModel = GeneralUserModel(id: record.data['user'].toString());
-    // }
-
-    // Process trip data
-    TripModel? tripModel;
-    if (record.expand['trip'] != null) {
-      final tripData = record.expand['trip'];
-      if (tripData is List && tripData!.isNotEmpty) {
-        final tripRecord = tripData[0];
-        tripModel = TripModel.fromJson({
-          'id': tripRecord.id,
-          'collectionId': tripRecord.collectionId,
-          'collectionName': tripRecord.collectionName,
-          'tripNumberId': tripRecord.data['tripNumberId'],
-          'qrCode': tripRecord.data['qrCode'],
-          'isAccepted': tripRecord.data['isAccepted'],
-          'isEndTrip': tripRecord.data['isEndTrip'],
-          'user':tripRecord.data['user'],
-
-          ...tripRecord.data,
-        });
-      }
-    } else if (record.data['trip'] != null) {
-      tripModel = TripModel(id: record.data['trip'].toString());
-    }
-
-    // Process delivery updates
-    List<DeliveryUpdateModel> deliveryUpdatesList = [];
-    if (record.expand['deliveryUpdates'] != null) {
-      final deliveryUpdatesData = record.expand['deliveryUpdates'];
-      if (deliveryUpdatesData is List) {
-        deliveryUpdatesList =
-            deliveryUpdatesData!.map((update) {
-              return DeliveryUpdateModel.fromJson({
-                'id': update.id,
-                'collectionId': update.collectionId,
-                'collectionName': update.collectionName,
-                'title': update.data['title'],
-                'subtitle': update.data['subtitle'],
-                'time': update.data['time'],
-                'remarks': update.data['remarks'],
-                'customer': update.data['customer'],
-                'isAssigned': update.data['isAssigned'],
-              });
-            }).toList();
-      }
-    } else if (record.data['deliveryUpdates'] != null &&
-        record.data['deliveryUpdates'] is List) {
-      deliveryUpdatesList =
-          (record.data['deliveryUpdates'] as List)
-              .map((id) => DeliveryUpdateModel(id: id.toString()))
-              .toList();
-    }
-
-    // Process invoices (multiple relation)
-    List<InvoiceDataModel> invoicesList = [];
-    if (record.expand['invoices'] != null) {
-      final invoicesData = record.expand['invoices'];
-      if (invoicesData is List) {
-        invoicesList =
-            invoicesData!.map((invoice) {
-              return InvoiceDataModel.fromJson({
-                'id': invoice.id,
-                'collectionId': invoice.collectionId,
-                'collectionName': invoice.collectionName,
-                ...invoice.data,
-                'expand': invoice.expand,
-              });
-            }).toList();
-      }
-    } else if (record.data['invoices'] != null &&
-        record.data['invoices'] is List) {
-      invoicesList =
-          (record.data['invoices'] as List)
-              .map((id) => InvoiceDataModel(id: id.toString()))
-              .toList();
-    }
-
-    // Add this after the deliveryUpdates processing section:
-
-    // Process invoice items
-    List<InvoiceItemsModel> invoiceItemsList = [];
-    if (record.expand['invoiceItems'] != null) {
-      final invoiceItemsData = record.expand['invoiceItems'];
-      if (invoiceItemsData is List) {
-        invoiceItemsList =
-            invoiceItemsData!.map((item) {
-              return InvoiceItemsModel.fromJson({
-                'id': item.id,
-                'collectionId': item.collectionId,
-                'collectionName': item.collectionName,
-                'name': item.data['name'],
-                'brand': item.data['brand'],
-                'refId': item.data['refID'],
-                'uom': item.data['uom'],
-                'quantity': item.data['quantity'],
-                'totalBaseQuantity': item.data['totalBaseQuantity'],
-                'uomPrice': item.data['uomPrice'],
-                'totalAmount': item.data['totalAmount'],
-                'invoiceData': item.data['invoiceData'],
-                'created': item.data['created'],
-                'updated': item.data['updated'],
-              });
-            }).toList();
-      }
-    } else if (record.data['invoiceItems'] != null &&
-        record.data['invoiceItems'] is List) {
-      invoiceItemsList =
-          (record.data['invoiceItems'] as List)
-              .map((id) => InvoiceItemsModel(id: id.toString()))
-              .toList();
-    }
-
-    return DeliveryDataModel(
-      id: record.id,
-      collectionId: record.collectionId,
-      collectionName: record.collectionName,
-      deliveryNumber: record.data['deliveryNumber'],
-      refID: record.data['refID'],
-      pinLang:
-          record.data['pinLang'] != null
-              ? double.tryParse(record.data['pinLang'].toString())
-              : null,
-      pinLong:
-          record.data['pinLong'] != null
-              ? double.tryParse(record.data['pinLong'].toString())
-              : null,
-      customer: customerModel,
-      invoice: invoiceModel,
-      invoices: invoicesList,
-      trip: tripModel,
-      invoiceItems: invoiceItemsList,
-      deliveryUpdates: deliveryUpdatesList,
-    );
+  // Case 2: PB returns a list of RecordModel
+  if (exp is List) {
+    if (exp.isEmpty) return null;
+    final first = exp.first;
+    return first is RecordModel ? first : null;
   }
+
+  return null;
+}
+
+List<RecordModel> _listExpanded(RecordModel record, String key) {
+  final dynamic exp = record.expand[key];
+  if (exp == null) return const [];
+
+  // Case 1: list relation expand
+  if (exp is List) {
+    return exp.whereType<RecordModel>().toList(growable: false);
+  }
+
+  // Case 2: single relation expand
+  if (exp is RecordModel) return [exp];
+
+  return const [];
+}
+
+/// ✅ FULL mapper: use for details view (your old logic, but safer)
+DeliveryDataModel _processDeliveryDataRecordFull(RecordModel record) {
+  // ---------------- Customer ----------------
+  CustomerDataModel? customerModel;
+  final customerRecord = _firstExpanded(record, 'customer');
+  if (customerRecord != null) {
+    customerModel = CustomerDataModel.fromJson({
+      'id': customerRecord.id,
+      'collectionId': customerRecord.collectionId,
+      'collectionName': customerRecord.collectionName,
+      'refId': customerRecord.data['refID'],
+      ...customerRecord.data,
+    });
+  } else if (record.data['customer'] != null) {
+    customerModel = CustomerDataModel(id: record.data['customer'].toString());
+  }
+
+  // ---------------- Invoice (single) ----------------
+  InvoiceDataModel? invoiceModel;
+  final invoiceRecord = _firstExpanded(record, 'invoice');
+  if (invoiceRecord != null) {
+    invoiceModel = InvoiceDataModel.fromJson({
+      'id': invoiceRecord.id,
+      'collectionId': invoiceRecord.collectionId,
+      'collectionName': invoiceRecord.collectionName,
+      ...invoiceRecord.data,
+    });
+  } else if (record.data['invoice'] != null) {
+    invoiceModel = InvoiceDataModel(id: record.data['invoice'].toString());
+  }
+
+  // ---------------- Trip (single) ----------------
+  TripModel? tripModel;
+  final tripRecord = _firstExpanded(record, 'trip');
+  if (tripRecord != null) {
+    tripModel = TripModel.fromJson({
+      'id': tripRecord.id,
+      'collectionId': tripRecord.collectionId,
+      'collectionName': tripRecord.collectionName,
+
+      // keep your custom mapped fields (if your TripModel expects them)
+      'tripNumberId': tripRecord.data['tripNumberId'],
+      'qrCode': tripRecord.data['qrCode'],
+      'isAccepted': tripRecord.data['isAccepted'],
+      'isEndTrip': tripRecord.data['isEndTrip'],
+      'user': tripRecord.data['user'],
+
+      ...tripRecord.data,
+    });
+  } else if (record.data['trip'] != null) {
+    tripModel = TripModel(id: record.data['trip'].toString());
+  }
+
+  // ---------------- Delivery Updates (many) ----------------
+  List<DeliveryUpdateModel> deliveryUpdatesList = [];
+  final deliveryUpdateRecords = _listExpanded(record, 'deliveryUpdates');
+  if (deliveryUpdateRecords.isNotEmpty) {
+    deliveryUpdatesList = deliveryUpdateRecords.map((update) {
+      return DeliveryUpdateModel.fromJson({
+        'id': update.id,
+        'collectionId': update.collectionId,
+        'collectionName': update.collectionName,
+        'title': update.data['title'],
+        'subtitle': update.data['subtitle'],
+        'time': update.data['time'],
+        'remarks': update.data['remarks'],
+        'customer': update.data['customer'],
+        'isAssigned': update.data['isAssigned'],
+      });
+    }).toList(growable: false);
+  } else if (record.data['deliveryUpdates'] is List) {
+    deliveryUpdatesList = (record.data['deliveryUpdates'] as List)
+        .map((id) => DeliveryUpdateModel(id: id.toString()))
+        .toList(growable: false);
+  }
+
+  // ---------------- Invoices (many) ----------------
+  List<InvoiceDataModel> invoicesList = [];
+  final invoicesRecords = _listExpanded(record, 'invoices');
+  if (invoicesRecords.isNotEmpty) {
+    invoicesList = invoicesRecords.map((invoice) {
+      return InvoiceDataModel.fromJson({
+        'id': invoice.id,
+        'collectionId': invoice.collectionId,
+        'collectionName': invoice.collectionName,
+        ...invoice.data,
+        'expand': invoice.expand,
+      });
+    }).toList(growable: false);
+  } else if (record.data['invoices'] is List) {
+    invoicesList = (record.data['invoices'] as List)
+        .map((id) => InvoiceDataModel(id: id.toString()))
+        .toList(growable: false);
+  }
+
+  // ---------------- Invoice Items (many) ----------------
+  List<InvoiceItemsModel> invoiceItemsList = [];
+  final invoiceItemsRecords = _listExpanded(record, 'invoiceItems');
+  if (invoiceItemsRecords.isNotEmpty) {
+    invoiceItemsList = invoiceItemsRecords.map((item) {
+      return InvoiceItemsModel.fromJson({
+        'id': item.id,
+        'collectionId': item.collectionId,
+        'collectionName': item.collectionName,
+        'name': item.data['name'],
+        'brand': item.data['brand'],
+        'refId': item.data['refID'],
+        'uom': item.data['uom'],
+        'quantity': item.data['quantity'],
+        'totalBaseQuantity': item.data['totalBaseQuantity'],
+        'uomPrice': item.data['uomPrice'],
+        'totalAmount': item.data['totalAmount'],
+        'invoiceData': item.data['invoiceData'],
+        'created': item.data['created'],
+        'updated': item.data['updated'],
+      });
+    }).toList(growable: false);
+  } else if (record.data['invoiceItems'] is List) {
+    invoiceItemsList = (record.data['invoiceItems'] as List)
+        .map((id) => InvoiceItemsModel(id: id.toString()))
+        .toList(growable: false);
+  }
+
+  return DeliveryDataModel(
+    id: record.id,
+    collectionId: record.collectionId,
+    collectionName: record.collectionName,
+    deliveryNumber: record.data['deliveryNumber'],
+    refID: record.data['refID'],
+    pinLang: record.data['pinLang'] != null
+        ? double.tryParse(record.data['pinLang'].toString())
+        : null,
+    pinLong: record.data['pinLong'] != null
+        ? double.tryParse(record.data['pinLong'].toString())
+        : null,
+    customer: customerModel,
+    invoice: invoiceModel,
+    invoices: invoicesList,
+    trip: tripModel,
+    invoiceItems: invoiceItemsList,
+    deliveryUpdates: deliveryUpdatesList,
+  );
+}
 }

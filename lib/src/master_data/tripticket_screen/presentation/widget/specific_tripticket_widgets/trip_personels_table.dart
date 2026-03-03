@@ -142,7 +142,6 @@ class _TripPersonelsTableState extends State<TripPersonelsTable> {
             });
           },
           isLoading: state is TripLoading,
-          onFiltered: () {},
           dataLength: '${personels.length}',
           onDeleted: () {},
         );

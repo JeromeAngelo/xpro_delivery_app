@@ -11,7 +11,7 @@ import 'package:xpro_delivery_admin_app/core/common/widgets/app_structure/data_t
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
-
+import '../../../../../../core/common/widgets/filter_widgets/filter_option.dart';
 class TripDataTable extends StatefulWidget {
   final List<TripEntity> trips;
   final bool isLoading;
@@ -21,6 +21,9 @@ class TripDataTable extends StatefulWidget {
   final TextEditingController searchController;
   final String searchQuery;
   final Function(String) onSearchChanged;
+
+  /// Optional: notify parent when filter changes (e.g. reset page)
+  final Function(String?)? onFiltered;
 
   const TripDataTable({
     super.key,
@@ -32,6 +35,7 @@ class TripDataTable extends StatefulWidget {
     required this.searchController,
     required this.searchQuery,
     required this.onSearchChanged,
+    this.onFiltered,
   });
 
   @override
@@ -44,12 +48,16 @@ class _TripDataTableState extends State<TripDataTable> {
   DateTime? _filterStartDate;
   DateTime? _filterEndDate;
 
+  String? _statusFilter; // null = no filter (show all)
+
   @override
   Widget build(BuildContext context) {
-    final headerStyle = TextStyle(
+    final headerStyle = const TextStyle(
       fontWeight: FontWeight.bold,
-      color: Colors.black, // or any color you prefer
+      color: Colors.black,
     );
+
+    final visibleTrips = _visibleTrips();
 
     return DataTableLayout(
       title: 'Trip Tickets',
@@ -58,55 +66,127 @@ class _TripDataTableState extends State<TripDataTable> {
         searchQuery: widget.searchQuery,
         onSearchChanged: widget.onSearchChanged,
       ),
-      onCreatePressed: () {
-        context.go('/tripticket-create');
-      },
+      onCreatePressed: () => context.go('/tripticket-create'),
       createButtonText: 'Create Trip Ticket',
       columns: [
-        // DataColumn(label: Text('ID', style: headerStyle)),
         DataColumn(label: Text('Trip Number', style: headerStyle)),
         DataColumn(label: Text('Route Name', style: headerStyle)),
-
         DataColumn(label: Text('Start Date', style: headerStyle)),
         DataColumn(label: Text('End Date', style: headerStyle)),
         DataColumn(label: Text('User', style: headerStyle)),
         DataColumn(label: Text('Status', style: headerStyle)),
         DataColumn(label: Text('Actions', style: headerStyle)),
       ],
-      rows: widget.isLoading ? _buildLoadingRows() : _buildDataRows(),
+      rows: widget.isLoading ? _buildLoadingRows() : _buildDataRows(visibleTrips),
       currentPage: widget.currentPage,
       totalPages: widget.totalPages,
       onPageChanged: widget.onPageChanged,
       isLoading: widget.isLoading,
       enableSelection: true,
-      onFiltered: _handleFiltering,
+
+      // ✅ Enable filter UI only when you provide categories
+      filterCategories: _tripFilterCategories(),
+
+      // ✅ This receives selected values from DataTableLayout
+      onFilterApplied: _handleFilterApplied,
+
+      // optional: DataTableLayout calls this on Apply/Clear (no values)
+      // keep it as empty to avoid double triggers
+      onFiltered: () {},
+
       onRowsSelected: _handleRowsSelected,
-      dataLength: '${widget.trips.length}',
+      dataLength: '${visibleTrips.length}', // ✅ show filtered count (only if filter selected)
       onDeleted: () {},
     );
   }
 
+  // ----------------------------
+  // ✅ FILTERING (ONLY IF USER SELECTED A FILTER)
+  // ----------------------------
+
+  void _handleFilterApplied(Map<String, List<dynamic>> filters) {
+    final statusValues = filters['status'];
+
+    final String? newStatus =
+        (statusValues != null && statusValues.isNotEmpty)
+            ? statusValues.first.toString()
+            : null;
+
+    // ✅ Only rebuild when something actually changed
+    if (newStatus == _statusFilter) return;
+
+    setState(() {
+      _statusFilter = newStatus;
+      _selectedRows = []; // optional: clear selection when filter changes
+    });
+
+    // optional: notify parent (ex: reset page)
+    widget.onFiltered?.call(_statusFilter);
+  }
+
+  String _mapTripStatus(TripEntity trip) {
+    // Adjust mapping if you have direct status field
+    if (trip.isEndTrip == true) return 'Completed';
+    if (trip.isAccepted == true) return 'In progress';
+    return 'Pending';
+  }
+
+  /// ✅ Returns all trips if user DID NOT select a filter.
+  /// ✅ Returns filtered trips only when _statusFilter is set.
+  List<TripEntity> _visibleTrips() {
+    final trips = widget.trips;
+
+    if (_statusFilter == null) return trips;
+
+    return trips.where((t) => _mapTripStatus(t) == _statusFilter).toList();
+  }
+
+  List<FilterCategory> _tripFilterCategories() {
+    return [
+      FilterCategory(
+        id: 'status',
+        title: 'Status',
+        icon: Icons.flag_outlined,
+        allowMultiple: false,
+        options: [
+          FilterOption(
+            icon: Icons.timer_outlined,
+            id: 'in_progress',
+            label: 'In progress',
+            value: 'In progress',
+          ),
+          FilterOption(
+            icon: Icons.pending_outlined,
+            id: 'pending',
+            label: 'Pending',
+            value: 'Pending',
+          ),
+          FilterOption(
+            icon: Icons.check_circle_outline,
+            id: 'completed',
+            label: 'Completed',
+            value: 'Completed',
+          ),
+        ],
+      ),
+    ];
+  }
+
+  // ----------------------------
+  // ROW BUILDERS
+  // ----------------------------
+
   List<DataRow> _buildLoadingRows() {
-    // Create 10 shimmer loading rows (or however many you want to show during loading)
     return List.generate(
       10,
       (index) => DataRow(
         cells: [
-          // ID cell
-          DataCell(_buildShimmerCell(60)),
-          // Trip Number cell
           DataCell(_buildShimmerCell(100)),
-          // Trip Name
           DataCell(_buildShimmerCell(120)),
-          // Start Date cell
           DataCell(_buildShimmerCell(120)),
-          // End Date cell
           DataCell(_buildShimmerCell(120)),
-          // User cell
           DataCell(_buildShimmerCell(100)),
-          // Status cell
           DataCell(_buildStatusShimmer()),
-          // Actions cell
           DataCell(
             Row(
               children: [
@@ -123,62 +203,10 @@ class _TripDataTableState extends State<TripDataTable> {
     );
   }
 
-  Widget _buildShimmerCell(double width) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Container(
-        width: width,
-        height: 16,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusShimmer() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Container(
-        width: 80,
-        height: 24,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmerIcon() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-      ),
-    );
-  }
-
-  List<DataRow> _buildDataRows() {
-    return widget.trips.map((trip) {
-      // Debug print for each trip
-      debugPrint('🔍 TABLE: Processing trip: ${trip.id}');
-      debugPrint(
-        '🔍 TABLE: User data - Name: ${trip.user?.name}, ID: ${trip.user?.id}',
-      );
-
+  List<DataRow> _buildDataRows(List<TripEntity> trips) {
+    return trips.map((trip) {
       return DataRow(
         cells: [
-          // DataCell(
-          //   Text(trip.id ?? 'N/A'),
-          //   onTap: () => _navigateToTripDetails(context, trip),
-          // ),
           DataCell(
             Text(trip.tripNumberId ?? 'N/A'),
             onTap: () => _navigateToTripDetails(context, trip),
@@ -218,7 +246,6 @@ class _TripDataTableState extends State<TripDataTable> {
                   icon: const Icon(Icons.edit, color: Colors.orange),
                   tooltip: 'Edit',
                   onPressed: () {
-                    // Navigate to edit trip screen
                     if (trip.id != null) {
                       context.go('/tripticket-edit/${trip.id}');
                     }
@@ -228,14 +255,10 @@ class _TripDataTableState extends State<TripDataTable> {
                   icon: const Icon(Icons.delete, color: Colors.red),
                   tooltip: 'Delete',
                   onPressed: () {
-                    // We need to check if trip is TripModel before showing delete dialog
                     if (trip is TripModel) {
                       showTripDeleteDialog(context, trip);
                     } else if (trip.id != null) {
-                      // Alternative approach if it's not a TripModel
-                      context.read<TripBloc>().add(
-                        DeleteTripTicketEvent(trip.id!),
-                      );
+                      context.read<TripBloc>().add(DeleteTripTicketEvent(trip.id!));
                     }
                   },
                 ),
@@ -247,13 +270,13 @@ class _TripDataTableState extends State<TripDataTable> {
     }).toList();
   }
 
-  // Helper method to navigate to trip details
+  // ----------------------------
+  // Utilities / existing code
+  // ----------------------------
+
   void _navigateToTripDetails(BuildContext context, TripEntity trip) {
     if (trip.id != null) {
-      // First load the trip data
       context.read<TripBloc>().add(GetTripTicketByIdEvent(trip.id!));
-
-      // Then navigate to the specific trip view
       context.go('/tripticket/${trip.id}');
     }
   }
@@ -262,13 +285,7 @@ class _TripDataTableState extends State<TripDataTable> {
     if (dateTime == null) return 'N/A';
 
     final hour24 = dateTime.hour;
-    final hour12 =
-        hour24 == 0
-            ? 12
-            : hour24 > 12
-            ? hour24 - 12
-            : hour24;
-
+    final hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
     final amPm = hour24 >= 12 ? 'PM' : 'AM';
 
     final month = dateTime.month.toString().padLeft(2, '0');
@@ -280,111 +297,63 @@ class _TripDataTableState extends State<TripDataTable> {
         '${dateTime.minute.toString().padLeft(2, '0')} $amPm';
   }
 
-  // Handle row selection
   void _handleRowsSelected(List<int> selectedIndices) {
     setState(() {
       _selectedRows = selectedIndices;
     });
 
-    // You can perform actions with the selected rows here
-    debugPrint('Selected ${_selectedRows.length} rows: $_selectedRows');
-
-    // Example: Get the selected trip entities
-    final selectedTrips =
-        _selectedRows
-            .map(
-              (index) =>
-                  index < widget.trips.length ? widget.trips[index] : null,
-            )
-            .where((trip) => trip != null)
-            .toList();
+    final trips = _visibleTrips(); // ✅ selection matches what is displayed
+    final selectedTrips = _selectedRows
+        .map((index) => index < trips.length ? trips[index] : null)
+        .whereType<TripEntity>()
+        .toList();
 
     debugPrint('Selected ${selectedTrips.length} trips');
   }
 
-  // Handle filtering action
-  void _handleFiltering() {
-    // Implement filtering logic here
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Filter Options'),
-            content: SizedBox(
-              width: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Add filter options here
-                  const TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Trip Number',
-                      hintText: 'Filter by trip number',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Add date range picker
-                  Row(
-                    children: [
-                      const Text('Date Range:'),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () {
-                          // Show date picker
-                        },
-                        child: const Text('Select Dates'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Add status filter
-                  const Text('Status:'),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      FilterChip(
-                        label: const Text('Pending'),
-                        selected: false,
-                        onSelected: (selected) {
-                          // Handle selection
-                        },
-                      ),
-                      FilterChip(
-                        label: const Text('In Progress'),
-                        selected: false,
-                        onSelected: (selected) {
-                          // Handle selection
-                        },
-                      ),
-                      FilterChip(
-                        label: const Text('Completed'),
-                        selected: false,
-                        onSelected: (selected) {
-                          // Handle selection
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // Apply filters
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Apply'),
-              ),
-            ],
-          ),
+  // shimmer helpers (unchanged)
+  Widget _buildShimmerCell(double width) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        width: width,
+        height: 16,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        width: 80,
+        height: 24,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerIcon() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+      ),
     );
   }
 }

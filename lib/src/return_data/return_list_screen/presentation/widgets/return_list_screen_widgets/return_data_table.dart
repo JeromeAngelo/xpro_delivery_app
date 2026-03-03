@@ -121,7 +121,7 @@ class ReturnDataTable extends StatelessWidget {
       currentPage: currentPage,
       totalPages: totalPages,
       onPageChanged: onPageChanged,
-      isLoading: isLoading, onFiltered: () {  }, dataLength: '${returns.length}', onDeleted: () {  },
+      isLoading: isLoading,  dataLength: '${returns.length}', onDeleted: () {  },
     );
   }
 

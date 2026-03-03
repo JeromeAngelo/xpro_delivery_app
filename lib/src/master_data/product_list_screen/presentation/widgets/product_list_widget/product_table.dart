@@ -126,12 +126,7 @@ class ProductDataTable extends StatelessWidget {
       isLoading: isLoading,
       errorMessage: errorMessage,
       onRetry: onRetry,
-      onFiltered: () {
-        // Show filter options
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Filter options coming soon')),
-        );
-      },
+     
       dataLength: '${products.length}',
       onDeleted: () {},
     );

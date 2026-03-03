@@ -108,9 +108,7 @@ class _UndeliveredCustomerTableState extends State<UndeliveredCustomerTable> {
         totalPages: widget.totalPages,
         onPageChanged: widget.onPageChanged,
         isLoading: widget.isLoading,
-        onFiltered: () {
-          _showFilterDialog(context);
-        },
+       
         dataLength: '${widget.cancelledInvoices.length}',
         onDeleted: () {
           _showBulkDeleteDialog(context);
@@ -644,49 +642,6 @@ class _UndeliveredCustomerTableState extends State<UndeliveredCustomerTable> {
     );
   }
 
-  void _showFilterDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Filter Options'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Add filter options here
-              ListTile(
-                title: const Text('Filter by Reason'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  // Implement reason filter
-                },
-              ),
-              ListTile(
-                title: const Text('Filter by Date Range'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  // Implement date range filter
-                },
-              ),
-              ListTile(
-                title: const Text('Filter by Trip'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  // Implement trip filter
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   void _showDeleteConfirmationDialog(
     BuildContext context,

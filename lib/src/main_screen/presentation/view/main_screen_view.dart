@@ -44,154 +44,155 @@ class _MainScreenViewState extends State<MainScreenView> {
       }
     });
   }
-Future<void> _showNotificationMenu({
-  required BuildContext context,
-  required NotificationState state,
-  required List<NotificationEntity> notifications,
-//  required VoidCallback onNotificationTap,
-}) async {
-  final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-  final box = context.findRenderObject() as RenderBox;
-  final position = box.localToGlobal(Offset.zero, ancestor: overlay);
 
-  // Where the popup should appear (below the bell)
-  final relativeRect = RelativeRect.fromLTRB(
-    position.dx,
-    position.dy + box.size.height,
-    overlay.size.width - position.dx - box.size.width,
-    overlay.size.height - position.dy,
-  );
+  Future<void> _showNotificationMenu({
+    required BuildContext context,
+    required NotificationState state,
+    required List<NotificationEntity> notifications,
+    //  required VoidCallback onNotificationTap,
+  }) async {
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final box = context.findRenderObject() as RenderBox;
+    final position = box.localToGlobal(Offset.zero, ancestor: overlay);
 
-  // Build menu items (NO ListView inside PopupMenuItem)
-  List<PopupMenuEntry<int>> items;
+    // Where the popup should appear (below the bell)
+    final relativeRect = RelativeRect.fromLTRB(
+      position.dx,
+      position.dy + box.size.height,
+      overlay.size.width - position.dx - box.size.width,
+      overlay.size.height - position.dy,
+    );
 
-  if (state is NotificationLoading) {
-    items = [
-      const PopupMenuItem<int>(
-        enabled: false,
-        child: Row(
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            SizedBox(width: 12),
-            Text('Loading notifications...'),
-          ],
-        ),
-      ),
-    ];
-  } else if (state is NotificationError) {
-    items = [
-      PopupMenuItem<int>(
-        enabled: false,
-        child: Text('Error: ${state.message}'),
-      ),
-    ];
-  } else if (notifications.isEmpty) {
-    items = const [
-      PopupMenuItem<int>(
-        enabled: false,
-        child: Text('No notifications'),
-      ),
-    ];
-  } else {
-    final showList = notifications.take(30).toList();
+    // Build menu items (NO ListView inside PopupMenuItem)
+    List<PopupMenuEntry<int>> items;
 
-    items = [
-      PopupMenuItem<int>(
-        enabled: false,
-        padding: EdgeInsets.zero,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: 380,
-            maxWidth: 460,
-            maxHeight: 420,
+    if (state is NotificationLoading) {
+      items = [
+        const PopupMenuItem<int>(
+          enabled: false,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 12),
+              Text('Loading notifications...'),
+            ],
           ),
-          child: Scrollbar(
-            thumbVisibility: true,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(showList.length, (index) {
-                  final notif = showList[index];
+        ),
+      ];
+    } else if (state is NotificationError) {
+      items = [
+        PopupMenuItem<int>(
+          enabled: false,
+          child: Text('Error: ${state.message}'),
+        ),
+      ];
+    } else if (notifications.isEmpty) {
+      items = const [
+        PopupMenuItem<int>(enabled: false, child: Text('No notifications')),
+      ];
+    } else {
+      final showList = notifications.take(30).toList();
 
-                  final tripName = notif.trip?.name ??
-                      (notif.trip?.id != null ? notif.trip!.id : 'unknown');
+      items = [
+        PopupMenuItem<int>(
+          enabled: false,
+          padding: EdgeInsets.zero,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: 380,
+              maxWidth: 460,
+              maxHeight: 420,
+            ),
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(showList.length, (index) {
+                    final notif = showList[index];
 
-                  final statusText = notif.status?.title ??
-                      (notif.trip?.tripNumberId != null
-                          ? notif.trip!.tripNumberId
-                          : 'unknown');
+                    final tripName =
+                        notif.trip?.name ??
+                        (notif.trip?.id != null ? notif.trip!.id : 'unknown');
 
-                  final message =
-                      "The Trip $tripName set status of $statusText "
-                      "in the ${notif.delivery?.customer?.name ?? 'delivery'}";
+                    final statusText =
+                        notif.status?.title ??
+                        (notif.trip?.tripNumberId != null
+                            ? notif.trip!.tripNumberId
+                            : 'unknown');
 
-                  return InkWell(
-                    onTap: () {
-                      Navigator.pop(context); // close menu
+                    final message =
+                        "The Trip $tripName set status of $statusText "
+                        "in the ${notif.delivery?.customer?.name ?? 'delivery'}";
 
-                      final id = notif.id;
-                      if (id != null && id.isNotEmpty) {
-                        context.read<NotificationBloc>().add(MarkAsReadEvent(id));
-                      }
+                    return InkWell(
+                      onTap: () {
+                        Navigator.pop(context); // close menu
 
-                      context.go('/delivery-monitoring');
-                    //  onNotificationTap();
-                    },
-                    child: Column(
-                      children: [
-                        ListTile(
-                          dense: true,
-                          leading: Icon(
-                            (notif.isRead ?? false)
-                                ? Icons.notifications_none
-                                : Icons.notifications_active,
-                            color: (notif.isRead ?? false)
-                                ? Colors.grey
-                                : Colors.red,
-                            size: 22,
-                          ),
-                          title: Text(
-                            message,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: (notif.isRead ?? false)
-                                  ? FontWeight.normal
-                                  : FontWeight.bold,
+                        final id = notif.id;
+                        if (id != null && id.isNotEmpty) {
+                          context.read<NotificationBloc>().add(
+                            MarkAsReadEvent(id),
+                          );
+                        }
+
+                        context.go('/delivery-monitoring');
+                        //  onNotificationTap();
+                      },
+                      child: Column(
+                        children: [
+                          ListTile(
+                            dense: true,
+                            leading: Icon(
+                              (notif.isRead ?? false)
+                                  ? Icons.notifications_none
+                                  : Icons.notifications_active,
+                              color:
+                                  (notif.isRead ?? false)
+                                      ? Colors.grey
+                                      : Colors.red,
+                              size: 22,
                             ),
+                            title: Text(
+                              message,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight:
+                                    (notif.isRead ?? false)
+                                        ? FontWeight.normal
+                                        : FontWeight.bold,
+                              ),
+                            ),
+                            subtitle:
+                                (notif.body != null &&
+                                        notif.body!.trim().isNotEmpty)
+                                    ? Text(
+                                      notif.body!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                    : null,
                           ),
-                          subtitle: (notif.body != null &&
-                                  notif.body!.trim().isNotEmpty)
-                              ? Text(
-                                  notif.body!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                )
-                              : null,
-                        ),
-                        const Divider(height: 1),
-                      ],
-                    ),
-                  );
-                }),
+                          const Divider(height: 1),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
               ),
             ),
           ),
         ),
-      ),
-    ];
-  }
+      ];
+    }
 
-  await showMenu<int>(
-    context: context,
-    position: relativeRect,
-    items: items,
-  );
-}
+    await showMenu<int>(context: context, position: relativeRect, items: items);
+  }
 
   // Load saved theme mode preference
 
@@ -281,21 +282,23 @@ Future<void> _showNotificationMenu({
                 alignment: Alignment.center,
                 children: [
                   // inside your Stack children (replaces PopupMenuButton)
-IconButton(
-  tooltip: 'Notifications',
-  icon: Icon(
-    Icons.notifications_outlined,
-    color: unreadCount > 0
-        ? Colors.red
-        : Theme.of(context).colorScheme.surface,
-  ),
-  onPressed: () => _showNotificationMenu(
-    context: context,
-    state: state,
-    notifications: notifications,
-  //  onNotificationTap: onNotificationTap,
-  ),
-),
+                  IconButton(
+                    tooltip: 'Notifications',
+                    icon: Icon(
+                      Icons.notifications_outlined,
+                      color:
+                          unreadCount > 0
+                              ? Colors.red
+                              : Theme.of(context).colorScheme.surface,
+                    ),
+                    onPressed:
+                        () => _showNotificationMenu(
+                          context: context,
+                          state: state,
+                          notifications: notifications,
+                          //  onNotificationTap: onNotificationTap,
+                        ),
+                  ),
 
                   if (unreadCount > 0)
                     Positioned(
@@ -582,7 +585,7 @@ IconButton(
                         icon: Icons.monitor,
                         title: 'Delivery Monitoring',
                         subtitle: 'View customer\'s status',
-                        color: Colors.green,
+                        color: Colors.redAccent,
                         onTap: () => context.go('/delivery-monitoring'),
                         iconSize: iconSize,
                       ),
@@ -598,10 +601,10 @@ IconButton(
                       ),
                       _buildCategoryCard(
                         context,
-                        icon: Icons.receipt_long_outlined,
+                        icon: Icons.money_outlined,
                         title: 'Collections',
                         subtitle: 'View and Manage transactions',
-                        color: Colors.purple,
+                        color: Colors.green,
                         onTap: () => context.go('/collections-overview'),
                         iconSize: iconSize,
                       ),

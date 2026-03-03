@@ -95,12 +95,7 @@ class CollectionDataTable extends StatelessWidget {
       totalPages: totalPages,
       onPageChanged: onPageChanged,
       isLoading: isLoading,
-      onFiltered: () {
-        // Show filter options
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Filter options coming soon')),
-        );
-      }, dataLength: '${trips.length}', onDeleted: () {  },
+      dataLength: '${trips.length}', onDeleted: () {  },
     );
   }
 

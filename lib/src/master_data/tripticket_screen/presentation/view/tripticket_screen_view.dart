@@ -9,7 +9,6 @@ import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/tri
 import 'package:xpro_delivery_admin_app/core/common/app/features/Trip_Ticket/trip/presentation/bloc/trip_state.dart';
 import 'package:xpro_delivery_admin_app/core/common/widgets/app_structure/desktop_layout.dart';
 import 'package:go_router/go_router.dart';
-
 class TripTicketScreenView extends StatefulWidget {
   const TripTicketScreenView({super.key});
 
@@ -20,14 +19,16 @@ class TripTicketScreenView extends StatefulWidget {
 class _TripTicketScreenViewState extends State<TripTicketScreenView> {
   int _currentPage = 1;
   int _totalPages = 1;
-  final int _itemsPerPage = 25; // Changed from 10 to 25
+  final int _itemsPerPage = 25;
+
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  String? _statusFilter; // null = All
 
   @override
   void initState() {
     super.initState();
-    // Load trip tickets when the screen initializes
     context.read<TripBloc>().add(const GetAllTripTicketsEvent());
   }
 
@@ -37,52 +38,95 @@ class _TripTicketScreenViewState extends State<TripTicketScreenView> {
     super.dispose();
   }
 
+  // ✅ Map TripEntity to UI status labels used in your filter dialog
+  String _mapTripStatus(TripEntity trip) {
+    // Adjust if you already have trip.status or trip.statusTitle etc.
+    if (trip.isEndTrip == true) return 'Completed';
+    if (trip.isAccepted == true) return 'In progress';
+    return 'Pending';
+  }
+
+  // ✅ Apply search + status filters
+  List<TripEntity> _applyFilters(List<TripEntity> trips) {
+    var filtered = trips;
+
+    // Search
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((trip) {
+        return (trip.id?.toLowerCase().contains(query) ?? false) ||
+            (trip.tripNumberId?.toLowerCase().contains(query) ?? false) ||
+            (trip.user?.name?.toLowerCase().contains(query) ?? false) ||
+            (trip.name?.toLowerCase().contains(query) ?? false);
+      }).toList();
+    }
+
+    // Status filter
+    if (_statusFilter != null && _statusFilter!.isNotEmpty) {
+      filtered = filtered.where((trip) {
+        return _mapTripStatus(trip) == _statusFilter;
+      }).toList();
+    }
+
+    return filtered;
+  }
+
+  // ✅ Paginate list based on _currentPage/_itemsPerPage
+  List<TripEntity> _paginateTrips(List<TripEntity> trips) {
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+    if (startIndex >= trips.length) return const <TripEntity>[];
+
+    final endIndex = (startIndex + _itemsPerPage > trips.length)
+        ? trips.length
+        : startIndex + _itemsPerPage;
+
+    return List<TripEntity>.from(trips.sublist(startIndex, endIndex));
+  }
+
+  void _handleFiltered(String? status) {
+    setState(() {
+      // If your DataTableLayout sends "All" string, normalize it to null:
+      if (status == null || status.isEmpty || status.toLowerCase() == 'all') {
+        _statusFilter = null;
+      } else {
+        _statusFilter = status;
+      }
+      _currentPage = 1;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Define navigation items
     final navigationItems = AppNavigationItems.generalTripItems();
 
     return DesktopLayout(
       navigationItems: navigationItems,
-      currentRoute: '/tripticket', // Match the route in router.dart
-      onNavigate: (route) {
-        // Handle navigation using GoRouter
-        context.go(route);
-      },
-      onThemeToggle: () {
-        // Handle theme toggle
-      },
-      onNotificationTap: () {
-        // Handle notification tap
-      },
-      onProfileTap: () {
-        // Handle profile tap
-      },
+      currentRoute: '/tripticket',
+      onNavigate: (route) => context.go(route),
+      onThemeToggle: () {},
+      onNotificationTap: () {},
+      onProfileTap: () {},
       child: BlocBuilder<TripBloc, TripState>(
         builder: (context, state) {
-          // Handle different states
           if (state is TripInitial) {
-            // Initial state, trigger loading
             context.read<TripBloc>().add(const GetAllTripTicketsEvent());
             return const Center(child: CircularProgressIndicator());
           }
 
           if (state is TripLoading) {
             return TripDataTable(
-              trips: [],
+              trips: const [],
               isLoading: true,
               currentPage: _currentPage,
               totalPages: _totalPages,
-              onPageChanged: (page) {
-                setState(() {
-                  _currentPage = page;
-                });
-              },
+              onFiltered: _handleFiltered,
+              onPageChanged: (page) => setState(() => _currentPage = page),
               searchController: _searchController,
               searchQuery: _searchQuery,
               onSearchChanged: (value) {
                 setState(() {
                   _searchQuery = value;
+                  _currentPage = 1;
                 });
               },
             );
@@ -92,67 +136,41 @@ class _TripTicketScreenViewState extends State<TripTicketScreenView> {
             return TripErrorWidget(errorMessage: state.message);
           }
 
-          if (state is AllTripTicketsLoaded ||
-              state is TripTicketsSearchResults) {
-            List<TripEntity> trips = [];
+          if (state is AllTripTicketsLoaded || state is TripTicketsSearchResults) {
+            final List<TripEntity> baseTrips =
+                (state is AllTripTicketsLoaded) ? state.trips : (state as TripTicketsSearchResults).trips;
 
-            if (state is AllTripTicketsLoaded) {
-              trips = state.trips; // No need to cast now
-            } else if (state is TripTicketsSearchResults) {
-              trips = state.trips; // No need to cast now
-            }
+            // ✅ Apply search + status filters
+            final filteredTrips = _applyFilters(baseTrips);
 
-            // Filter trips based on search query
-            if (_searchQuery.isNotEmpty) {
-              trips =
-                  trips.where((trip) {
-                    final query = _searchQuery.toLowerCase();
-                    return (trip.id?.toLowerCase().contains(query) ?? false) ||
-                        (trip.tripNumberId?.toLowerCase().contains(query) ??
-                            false) ||
-                        (trip.user?.name?.toLowerCase().contains(query) ??
-                            false) ||
-                        (trip.name?.toLowerCase().contains(query) ?? false);
-                  }).toList();
-            }
-
-            // Calculate total pages
-            _totalPages = (trips.length / _itemsPerPage).ceil();
+            // ✅ Calculate total pages (after filtering)
+            _totalPages = (filteredTrips.length / _itemsPerPage).ceil();
             if (_totalPages == 0) _totalPages = 1;
 
-            // Paginate trips
-            final startIndex = (_currentPage - 1) * _itemsPerPage;
-            final endIndex =
-                startIndex + _itemsPerPage > trips.length
-                    ? trips.length
-                    : startIndex + _itemsPerPage;
+            // ✅ Ensure current page stays valid after filtering
+            if (_currentPage > _totalPages) _currentPage = 1;
 
-            final List<TripEntity> paginatedTrips =
-                startIndex < trips.length
-                    ? List<TripEntity>.from(trips.sublist(startIndex, endIndex))
-                    : <TripEntity>[];
+            // ✅ Paginate after filtering
+            final paginatedTrips = _paginateTrips(filteredTrips);
 
             return TripDataTable(
               trips: paginatedTrips,
               isLoading: false,
               currentPage: _currentPage,
               totalPages: _totalPages,
-              onPageChanged: (page) {
-                setState(() {
-                  _currentPage = page;
-                });
-              },
+              onFiltered: _handleFiltered,
+              onPageChanged: (page) => setState(() => _currentPage = page),
               searchController: _searchController,
               searchQuery: _searchQuery,
               onSearchChanged: (value) {
                 setState(() {
                   _searchQuery = value;
+                  _currentPage = 1;
                 });
               },
             );
           }
 
-          // Default fallback
           return const Center(child: Text('Unknown state'));
         },
       ),

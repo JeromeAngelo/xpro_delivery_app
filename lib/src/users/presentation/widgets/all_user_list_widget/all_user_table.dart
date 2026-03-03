@@ -188,7 +188,6 @@ class DeliveryUserDataTable extends StatelessWidget {
       totalPages: totalPages,
       onPageChanged: onPageChanged,
       isLoading: isLoading,
-      onFiltered: () {},
       dataLength: '${users.length}',
       onDeleted: () {},
     );

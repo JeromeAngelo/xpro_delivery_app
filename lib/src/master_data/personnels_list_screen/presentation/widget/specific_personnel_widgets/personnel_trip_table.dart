@@ -76,7 +76,6 @@ class _PersonnelTripTableState extends State<PersonnelTripTable> {
       enableSelection: false,
       dataLength: widget.showError ? '0' : '${widget.personnelTrips.length}',
       onDeleted: () {},
-      onFiltered: () {},
       onRowsSelected: (selectedIndices) {},
     );
   }

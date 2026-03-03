@@ -9,8 +9,9 @@ import 'package:xpro_delivery_admin_app/src/master_data/delivery_data/widgets/de
 import 'package:shimmer/shimmer.dart';
 import 'package:intl/intl.dart';
 
-import 'delivery_update_chip.dart';
 
+import '../../../../../core/common/widgets/filter_widgets/filter_option.dart';
+import 'delivery_update_chip.dart';
 class DeliveryDataTable extends StatefulWidget {
   final List<DeliveryDataEntity> deliveryData;
   final bool isLoading;
@@ -20,7 +21,7 @@ class DeliveryDataTable extends StatefulWidget {
   final TextEditingController searchController;
   final String searchQuery;
   final Function(String) onSearchChanged;
-
+final Function(String?)? onStatusFilterChanged; // ✅ NEW
   const DeliveryDataTable({
     super.key,
     required this.deliveryData,
@@ -31,6 +32,7 @@ class DeliveryDataTable extends StatefulWidget {
     required this.searchController,
     required this.searchQuery,
     required this.onSearchChanged,
+     this.onStatusFilterChanged, // ✅ NEW
   });
 
   @override
@@ -40,12 +42,16 @@ class DeliveryDataTable extends StatefulWidget {
 class _DeliveryDataTableState extends State<DeliveryDataTable> {
   List<int> _selectedRows = [];
 
+  String? _deliveryStatusFilter; // null = no filter (show all)
+
   @override
   Widget build(BuildContext context) {
-    final headerStyle = TextStyle(
+    final headerStyle = const TextStyle(
       fontWeight: FontWeight.bold,
       color: Colors.black,
     );
+
+    final visibleDeliveries = _visibleDeliveries();
 
     return DataTableLayout(
       title: 'Delivery Data',
@@ -55,7 +61,6 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
         onSearchChanged: widget.onSearchChanged,
       ),
       onCreatePressed: () {
-        // Navigate to create delivery screen
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Create delivery feature coming soon')),
         );
@@ -72,15 +77,27 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
         DataColumn(label: Text('Created', style: headerStyle)),
         DataColumn(label: Text('Actions', style: headerStyle)),
       ],
-      rows: widget.isLoading ? _buildLoadingRows() : _buildDataRows(),
+
+      rows: widget.isLoading
+          ? _buildLoadingRows()
+          : _buildDataRows(visibleDeliveries),
+
       currentPage: widget.currentPage,
       totalPages: widget.totalPages,
       onPageChanged: widget.onPageChanged,
       isLoading: widget.isLoading,
       enableSelection: true,
-      onFiltered: _handleFiltering,
+
+      // ✅ Enable filter icon + menu
+      filterCategories: _deliveryFilterCategories(),
+
+      // ✅ Receive filter selections
+      onFilterApplied: _handleFilterApplied,
+      // optional: Apply/Clear callback (no values)
+      onFiltered: () {},
+
       onRowsSelected: _handleRowsSelected,
-      dataLength: '${widget.deliveryData.length}',
+      dataLength: '${visibleDeliveries.length}', // ✅ reflects filtered count
       onDeleted: () {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Bulk delete feature coming soon')),
@@ -89,27 +106,100 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
     );
   }
 
+  // ----------------------------
+  // ✅ FILTERING (ONLY IF USER SETS FILTER)
+  // ----------------------------
+
+void _handleFilterApplied(Map<String, List<dynamic>> filters) {
+  final values = filters['delivery_status'];
+  final String? newStatus =
+      (values != null && values.isNotEmpty) ? values.first.toString() : null;
+
+  // notify parent (screen) so it can filter FULL list and paginate correctly
+  widget.onStatusFilterChanged?.call(newStatus);
+}
+
+  List<FilterCategory> _deliveryFilterCategories() {
+    return [
+      FilterCategory(
+        id: 'delivery_status',
+        title: 'Status',
+        icon: Icons.local_shipping_outlined,
+        allowMultiple: false,
+        options: [
+          FilterOption(id: 'pending', label: 'Pending', value: 'Pending'),
+          FilterOption(id: 'in_transit', label: 'In Transit', value: 'In Transit'),
+          FilterOption(id: 'arrived', label: 'Arrived', value: 'Arrived'),
+          FilterOption(id: 'unloading', label: 'Unloading', value: 'Unloading'),
+          FilterOption(id: 'received', label: 'Received', value: 'Received'),
+          FilterOption(id: 'delivered', label: 'Delivered', value: 'Delivered'),
+          FilterOption(id: 'undelivered', label: 'Undelivered', value: 'Undelivered'),
+          FilterOption(id: 'no_updates', label: 'No Updates', value: 'No Updates'),
+        ],
+      ),
+    ];
+  }
+
+  /// Same logic as DeliveryDataStatusChip, but returns the label string
+  String _getLatestDeliveryStatusLabel(DeliveryDataEntity delivery) {
+  if (delivery.deliveryUpdates.isNotEmpty) {
+    final sorted = List.of(delivery.deliveryUpdates);
+    sorted.sort((a, b) {
+      final ta = a.time ?? a.created ?? DateTime.now();
+      final tb = b.time ?? b.created ?? DateTime.now();
+      return tb.compareTo(ta);
+    });
+
+    final title = sorted.first.title?.toLowerCase().trim() ?? '';
+    switch (title) {
+      case 'arrived':
+        return 'Arrived';
+      case 'unloading':
+        return 'Unloading';
+      case 'mark as undelivered':
+        return 'Undelivered';
+      case 'in transit':
+        return 'In Transit';
+      case 'pending':
+        return 'Pending';
+      case 'mark as received':
+        return 'Received';
+      case 'end delivery':
+        return 'Delivered';
+      default:
+        return sorted.first.title ?? 'Unknown';
+    }
+  }
+  return 'No Updates';
+}
+  /// ✅ Returns all deliveries if user DID NOT select a filter
+  List<DeliveryDataEntity> _visibleDeliveries() {
+    final list = widget.deliveryData;
+
+    if (_deliveryStatusFilter == null) return list;
+
+    return list
+        .where((d) => _getLatestDeliveryStatusLabel(d) == _deliveryStatusFilter)
+        .toList();
+  }
+
+  // ----------------------------
+  // ROW BUILDERS
+  // ----------------------------
+
   List<DataRow> _buildLoadingRows() {
-    // Create 10 shimmer loading rows
     return List.generate(
       10,
       (index) => DataRow(
         cells: [
-          // Delivery Number cell
           DataCell(_buildShimmerCell(120)),
-          // Customer cell
           DataCell(_buildShimmerCell(150)),
-          // Invoice cell
           DataCell(_buildShimmerCell(100)),
-          // Trip cell
           DataCell(_buildStatusShimmer()),
-          // Status cell
           DataCell(_buildStatusShimmer()),
-          // Items cell
           DataCell(_buildShimmerCell(60)),
-          // Created cell
-          DataCell(_buildShimmerCell(100)),
-          // Actions cell
+          DataCell(_buildShimmerCell(80)),  // ref id shimmer
+          DataCell(_buildShimmerCell(100)), // created shimmer
           DataCell(
             Row(
               children: [
@@ -126,6 +216,170 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
     );
   }
 
+  List<DataRow> _buildDataRows(List<DeliveryDataEntity> deliveries) {
+    return deliveries.map((delivery) {
+      debugPrint('🔍 TABLE: Processing delivery: ${delivery.id}');
+
+      return DataRow(
+        cells: [
+          DataCell(
+            Text(delivery.deliveryNumber ?? 'N/A'),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  delivery.customer?.name ?? 'No Customer',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                if (delivery.customer?.municipality != null)
+                  Text(
+                    delivery.customer!.municipality!,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+              ],
+            ),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${delivery.invoices?.length ?? 0}',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                if (delivery.invoice?.totalAmount != null)
+                  Text(
+                    '₱${delivery.invoice!.totalAmount}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            delivery.trip?.tripNumberId != null
+                ? Chip(
+                    label: Text(
+                      delivery.trip!.tripNumberId!,
+                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                    ),
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  )
+                : const Text('No Trip'),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            DeliveryDataStatusChip(delivery: delivery),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            Text(
+              '${delivery.invoiceItems?.length ?? 0}',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            Text(delivery.refID ?? 'N/A'),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            Text(_formatDate(delivery.created)),
+            onTap: () => _navigateToDeliveryDetails(context, delivery),
+          ),
+          DataCell(
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.visibility, color: Colors.blue),
+                  tooltip: 'View Details',
+                  onPressed: () => _navigateToDeliveryDetails(context, delivery),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.orange),
+                  tooltip: 'Edit',
+                  onPressed: () {
+                    if (delivery.id != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Edit delivery feature coming soon'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  tooltip: 'Delete',
+                  onPressed: () {
+                    if (delivery.id != null) {
+                      // showDeliveryDeleteDialog(context, delivery);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }).toList();
+  }
+
+  // ----------------------------
+  // Utilities / existing code
+  // ----------------------------
+
+  void _navigateToDeliveryDetails(
+    BuildContext context,
+    DeliveryDataEntity delivery,
+  ) {
+    if (delivery.id != null) {
+      context.read<DeliveryDataBloc>().add(
+            GetDeliveryDataByIdEvent(delivery.id!),
+          );
+
+      context.go('/delivery-details/${delivery.id}');
+    }
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    try {
+      return DateFormat('MM/dd/yyyy hh:mm a').format(date);
+    } catch (e) {
+      debugPrint('❌ Error formatting date: $e');
+      return 'Invalid Date';
+    }
+  }
+
+  void _handleRowsSelected(List<int> selectedIndices) {
+    setState(() {
+      _selectedRows = selectedIndices;
+    });
+
+    debugPrint('Selected ${_selectedRows.length} rows: $_selectedRows');
+
+    final deliveries = _visibleDeliveries(); // ✅ selection matches visible list
+    final selectedDeliveries = _selectedRows
+        .map((index) => index < deliveries.length ? deliveries[index] : null)
+        .whereType<DeliveryDataEntity>()
+        .toList();
+
+    debugPrint('Selected ${selectedDeliveries.length} deliveries');
+  }
+
+  // shimmer helpers (unchanged)
   Widget _buildShimmerCell(double width) {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
@@ -163,254 +417,11 @@ class _DeliveryDataTableState extends State<DeliveryDataTable> {
       child: Container(
         width: 24,
         height: 24,
-        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
       ),
-    );
-  }
-
-  List<DataRow> _buildDataRows() {
-    return widget.deliveryData.map((delivery) {
-      // Debug print for each delivery
-      debugPrint('🔍 TABLE: Processing delivery: ${delivery.id}');
-
-      return DataRow(
-        cells: [
-          DataCell(
-            Text(delivery.deliveryNumber ?? 'N/A'),
-            onTap: () => _navigateToDeliveryDetails(context, delivery),
-          ),
-          DataCell(
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  delivery.customer?.name ?? 'No Customer',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                if (delivery.customer?.municipality != null)
-                  Text(
-                    delivery.customer!.municipality!,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-              ],
-            ),
-            onTap: () => _navigateToDeliveryDetails(context, delivery),
-          ),
-          DataCell(
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${delivery.invoices!.length} ',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                if (delivery.invoice?.totalAmount != null)
-                  Text(
-                    '₱${delivery.invoice!.totalAmount}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.green[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-              ],
-            ),
-            onTap: () => _navigateToDeliveryDetails(context, delivery),
-          ),
-          DataCell(
-            delivery.trip?.tripNumberId != null
-                ? Chip(
-                  label: Text(
-                    delivery.trip!.tripNumberId!,
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
-                  ),
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                )
-                : const Text('No Trip'),
-            onTap: () => _navigateToDeliveryDetails(context, delivery),
-          ),
-          DataCell(
-            DeliveryDataStatusChip(delivery: delivery),
-            onTap: () => _navigateToDeliveryDetails(context, delivery),
-          ),
-          DataCell(
-            Text(
-              '${delivery.invoiceItems?.length ?? 0}',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-            onTap: () => _navigateToDeliveryDetails(context, delivery),
-          ),
-          DataCell(
-            Text(delivery.refID ?? 'N/A'),
-            onTap: () => _navigateToDeliveryDetails(context, delivery),
-          ),
-          DataCell(
-            Text(_formatDate(delivery.created)),
-            onTap: () => _navigateToDeliveryDetails(context, delivery),
-          ),
-          DataCell(
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.visibility, color: Colors.blue),
-                  tooltip: 'View Details',
-                  onPressed:
-                      () => _navigateToDeliveryDetails(context, delivery),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.orange),
-                  tooltip: 'Edit',
-                  onPressed: () {
-                    // Edit delivery
-                    if (delivery.id != null) {
-                      // Navigate to edit screen with delivery data
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Edit delivery feature coming soon'),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  tooltip: 'Delete',
-                  onPressed: () {
-                    if (delivery.id != null) {
-                      //  showDeliveryDeleteDialog(context, delivery);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }).toList();
-  }
-
-  // Helper method to navigate to delivery details
-  void _navigateToDeliveryDetails(
-    BuildContext context,
-    DeliveryDataEntity delivery,
-  ) {
-    if (delivery.id != null) {
-      // First load the delivery data
-      context.read<DeliveryDataBloc>().add(
-        GetDeliveryDataByIdEvent(delivery.id!),
-      );
-
-      context.go('/delivery-details/${delivery.id}');
-
-      // Show details dialog for now (can be changed to navigation later)
-      //  _showDeliveryDetailsDialog(context, delivery);
-    }
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    try {
-      return DateFormat('MM/dd/yyyy hh:mm a').format(date);
-    } catch (e) {
-      debugPrint('❌ Error formatting date: $e');
-      return 'Invalid Date';
-    }
-  }
-
-  // Handle row selection
-  void _handleRowsSelected(List<int> selectedIndices) {
-    setState(() {
-      _selectedRows = selectedIndices;
-    });
-
-    debugPrint('Selected ${_selectedRows.length} rows: $_selectedRows');
-
-    // Get the selected delivery entities
-    final selectedDeliveries =
-        _selectedRows
-            .map(
-              (index) =>
-                  index < widget.deliveryData.length
-                      ? widget.deliveryData[index]
-                      : null,
-            )
-            .where((delivery) => delivery != null)
-            .toList();
-
-    debugPrint('Selected ${selectedDeliveries.length} deliveries');
-  }
-
-  // Handle filtering action
-  void _handleFiltering() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Filter Options'),
-            content: SizedBox(
-              width: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Delivery Number',
-                      hintText: 'Filter by delivery number',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Customer Name',
-                      hintText: 'Filter by customer name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Trip Status',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'all', child: Text('All')),
-                      DropdownMenuItem(
-                        value: 'with_trip',
-                        child: Text('With Trip'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'without_trip',
-                        child: Text('Without Trip'),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      // Handle filter change
-                    },
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  // Apply filters
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Filters applied')),
-                  );
-                },
-                child: const Text('Apply'),
-              ),
-            ],
-          ),
     );
   }
 }

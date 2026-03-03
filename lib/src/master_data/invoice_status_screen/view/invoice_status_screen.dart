@@ -24,8 +24,11 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
   int _currentPage = 1;
   int _totalPages = 1;
   final int _itemsPerPage = 25;
+
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  String? _invoiceStatusFilter; // ✅ NEW (null = no filter)
 
   // keep last loaded list so export doesn’t break the UI state
   List<InvoiceStatusEntity> _cachedInvoices = const [];
@@ -42,32 +45,35 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
     super.dispose();
   }
 
- Future<String?> _saveBytesToFile({
-  required List<int> bytes,
-  required String suggestedName,
-  required String extension,
-}) async {
-  if (kIsWeb) return null;
+  Future<String?> _saveBytesToFile({
+    required List<int> bytes,
+    required String suggestedName,
+    required String extension,
+  }) async {
+    if (kIsWeb) return null;
 
-  final fileName = '$suggestedName.$extension';
+    final fileName = '$suggestedName.$extension';
 
-  // ✅ file_selector uses XFile + save dialog
-  final location = await getSaveLocation(suggestedName: fileName);
-  if (location == null) return null; // user cancelled
+    final location = await getSaveLocation(suggestedName: fileName);
+    if (location == null) return null;
 
-  final xFile = XFile.fromData(
-    Uint8List.fromList(bytes),
-    name: fileName,
-    mimeType: extension == 'csv'
-        ? 'text/csv'
-        : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  );
+    final xFile = XFile.fromData(
+      Uint8List.fromList(bytes),
+      name: fileName,
+      mimeType: extension == 'csv'
+          ? 'text/csv'
+          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
 
-  await xFile.saveTo(location.path);
-  return location.path;
-}
+    await xFile.saveTo(location.path);
+    return location.path;
+  }
 
-  void _showSnackBar(BuildContext context, String message, {bool isError = false}) {
+  void _showSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
     ScaffoldMessenger.of(context)
       ..removeCurrentSnackBar()
       ..showSnackBar(
@@ -94,30 +100,23 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
       onProfileTap: () {},
       child: BlocConsumer<InvoiceStatusBloc, InvoiceStatusState>(
         listener: (context, state) async {
-          // ✅ Error snackbar
           if (state is InvoiceStatusError) {
             _showSnackBar(context, state.message, isError: true);
           }
-
-          // ✅ Export success: ask BLoC for bytes again? (No)
-          // Better approach: make BLoC emit bytes OR store bytes in cubit/state.
-          // If your current export success does NOT include bytes, do saving here
-          // by triggering the export and saving in the UI instead (see below).
         },
         builder: (context, state) {
-          // ✅ loading UI (but keep showing cached list if available)
           final bool isBusy =
               state is InvoiceStatusLoading || state is InvoiceStatusExporting;
 
-          // ✅ if list loaded, cache it
+          // cache loaded list
           if (state is AllInvoiceStatusLoaded) {
             _cachedInvoices = state.invoiceStatusList;
           }
 
-          // ✅ choose data source for table (cached if not loaded yet)
+          // choose data source (cached if not loaded yet)
           var invoices = List<InvoiceStatusEntity>.from(_cachedInvoices);
 
-          // filter
+          // ✅ Search filter
           if (_searchQuery.isNotEmpty) {
             final query = _searchQuery.toLowerCase();
             invoices = invoices.where((invoice) {
@@ -128,9 +127,22 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
             }).toList();
           }
 
-          // pagination
+          // ✅ Status filter (ONLY if user set filter)
+          if (_invoiceStatusFilter != null && _invoiceStatusFilter!.isNotEmpty) {
+            final selected = _invoiceStatusFilter!.toLowerCase().trim();
+            invoices = invoices.where((invoice) {
+              final s = (invoice.tripStatus ?? 'none').toLowerCase().trim();
+              return s == selected;
+            }).toList();
+          }
+
+          // ✅ Recompute pages AFTER filtering
           _totalPages = (invoices.length / _itemsPerPage).ceil();
           if (_totalPages == 0) _totalPages = 1;
+
+          if (_currentPage > _totalPages) {
+            _currentPage = 1;
+          }
 
           final startIndex = (_currentPage - 1) * _itemsPerPage;
           final endIndex = (startIndex + _itemsPerPage) > invoices.length
@@ -141,12 +153,10 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
               ? invoices.sublist(startIndex, endIndex)
               : <InvoiceStatusEntity>[];
 
-          // ✅ handle initial (no cache, not loading yet)
           if (state is InvoiceStatusInitial && _cachedInvoices.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // ✅ show hard error widget only if nothing cached
           if (state is InvoiceStatusError && _cachedInvoices.isEmpty) {
             return InvoiceStatusErrorWidget(errorMessage: state.message);
           }
@@ -166,6 +176,15 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
                   _currentPage = 1;
                 });
               },
+
+              // ✅ NEW: receive filter from table (filter full list, then paginate)
+              onStatusFilterChanged: (status) {
+                setState(() {
+                  _invoiceStatusFilter = status; // null clears filter
+                  _currentPage = 1;
+                });
+              },
+
               customIcon: Icons.upload_file_rounded,
               customFunction: () {
                 ExportInvoiceStatusDialog.show(
@@ -175,13 +194,12 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
                       _showSnackBar(context, 'Preparing CSV export...');
 
                       final bloc = context.read<InvoiceStatusBloc>();
-                      final bytesResult = await bloc.exportCsvBytesDirect(); 
-                      // ✅ see below note
+                      final bytesResult = await bloc.exportCsvBytesDirect();
 
                       final savedPath = await _saveBytesToFile(
                         bytes: bytesResult,
-                        suggestedName: 'invoice_status_${DateTime.now().millisecondsSinceEpoch}',
-                        
+                        suggestedName:
+                            'invoice_status_${DateTime.now().millisecondsSinceEpoch}',
                         extension: 'csv',
                       );
 
@@ -192,7 +210,11 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
 
                       _showSnackBar(context, 'CSV exported: $savedPath');
                     } catch (e) {
-                      _showSnackBar(context, 'CSV export failed: $e', isError: true);
+                      _showSnackBar(
+                        context,
+                        'CSV export failed: $e',
+                        isError: true,
+                      );
                     }
                   },
                   onExportExcel: () async {
@@ -201,12 +223,11 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
 
                       final bloc = context.read<InvoiceStatusBloc>();
                       final bytesResult = await bloc.exportExcelBytesDirect();
-                      // ✅ see below note
 
                       final savedPath = await _saveBytesToFile(
                         bytes: bytesResult,
-                        suggestedName: 'invoice_status_${DateTime.now().millisecondsSinceEpoch}',
-                       
+                        suggestedName:
+                            'invoice_status_${DateTime.now().millisecondsSinceEpoch}',
                         extension: 'xlsx',
                       );
 
@@ -217,13 +238,19 @@ class _InvoiceStatusScreenState extends State<InvoiceStatusScreen> {
 
                       _showSnackBar(context, 'Excel exported: $savedPath');
                     } catch (e) {
-                      _showSnackBar(context, 'Excel export failed: $e', isError: true);
+                      _showSnackBar(
+                        context,
+                        'Excel export failed: $e',
+                        isError: true,
+                      );
                     }
                   },
                 );
               },
               errorMessage: null,
-              onRetry: () => context.read<InvoiceStatusBloc>().add(GetAllInvoiceStatusEvent()),
+              onRetry: () => context
+                  .read<InvoiceStatusBloc>()
+                  .add(GetAllInvoiceStatusEvent()),
             ),
           );
         },
