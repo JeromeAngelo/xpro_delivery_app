@@ -299,6 +299,16 @@ class _TripDashboardWidgetState extends State<TripDashboardWidget> {
                     foregroundColor: Colors.white,
                   ),
                 ),
+                SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Others'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
               ],
             ),
           ),

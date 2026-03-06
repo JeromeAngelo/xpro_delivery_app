@@ -146,6 +146,8 @@ class _UndeliveredCustomerTableState extends State<UndeliveredCustomerTable> {
       // Select All Checkbox
       const DataColumn(label: Text('Store Name')),
       const DataColumn(label: Text('Delivery Number')),
+            const DataColumn(label: Text('Trip')),
+
       const DataColumn(label: Text('Address')),
       const DataColumn(label: Text('Reason')),
       const DataColumn(label: Text('Time')),
@@ -184,6 +186,14 @@ class _UndeliveredCustomerTableState extends State<UndeliveredCustomerTable> {
           ),
           DataCell(
             Text(cancelledInvoice.deliveryData?.deliveryNumber ?? 'N/A'),
+            onTap:
+                () => _onNavigateToSpecificCancelledInvoice(
+                  cancelledInvoice,
+                  context,
+                ),
+          ),
+           DataCell(
+            Text(cancelledInvoice.trip?.name ?? 'N/A'),
             onTap:
                 () => _onNavigateToSpecificCancelledInvoice(
                   cancelledInvoice,

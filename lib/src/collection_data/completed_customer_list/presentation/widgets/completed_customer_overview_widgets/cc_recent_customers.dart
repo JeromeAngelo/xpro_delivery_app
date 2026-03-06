@@ -17,9 +17,8 @@ class RecentCompletedCustomers extends StatelessWidget {
   Widget build(BuildContext context) {
     // Sort collections by creation date (newest first)
     final sortedCollections = List<CollectionEntity>.from(collections)..sort(
-      (a, b) => (b.created ?? DateTime.now()).compareTo(
-        a.created ?? DateTime.now(),
-      ),
+      (a, b) =>
+          (b.created ?? DateTime.now()).compareTo(a.created ?? DateTime.now()),
     );
 
     // Take only the 5 most recent collections
@@ -99,8 +98,9 @@ class RecentCompletedCustomers extends StatelessWidget {
                     decoration: BoxDecoration(color: Colors.grey[100]),
                     children: [
                       _buildTableHeader(context, 'Store Name'),
-                      _buildTableHeader(context, 'Collection'),
                       _buildTableHeader(context, 'Delivery #'),
+                      _buildTableHeader(context, 'Trip'),
+
                       _buildTableHeader(context, 'Created Date'),
                       _buildTableHeader(context, 'Amount'),
                       _buildTableHeader(context, 'Actions'),
@@ -110,9 +110,21 @@ class RecentCompletedCustomers extends StatelessWidget {
                   ...recentCollections.map(
                     (collection) => TableRow(
                       children: [
-                        _buildTableCell(context, collection.customer?.name ?? 'N/A'),
-                        _buildTableCell(context, collection.collectionName ?? 'N/A'),
-                        _buildTableCell(context, collection.deliveryData?.deliveryNumber ?? 'N/A'),
+                        _buildTableCell(
+                          context,
+                          collection.customer?.name ?? 'N/A',
+                        ),
+                        _buildTableCell(
+                          context,
+                          collection.deliveryData?.deliveryNumber ?? 'N/A',
+                        ),
+                        _buildTableCell(
+                          context,
+                          collection.trip?.name ??
+                              collection.trip?.tripNumberId ??
+                              'N/A',
+                        ),
+
                         _buildTableCell(
                           context,
                           _formatDate(collection.created),
@@ -153,10 +165,7 @@ class RecentCompletedCustomers extends StatelessWidget {
     );
   }
 
-  Widget _buildActionCell(
-    BuildContext context,
-    CollectionEntity collection,
-  ) {
+  Widget _buildActionCell(BuildContext context, CollectionEntity collection) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: Row(

@@ -55,6 +55,7 @@ class TripModel extends TripEntity {
     super.created,
     super.name,
     super.updated,
+    super.changeStatusCode,
     super.qrCode,
     super.isAccepted,
   }) : super(
@@ -292,6 +293,7 @@ class TripModel extends TripEntity {
       dispatcher: json['dispatcher']?.toString(),
       cancelledInvoiceList: cancelledInvoiceModels,
       deliveryCollectionList: deliveryCollectionModels,
+      changeStatusCode: json['changeStatusCode']?.toString(),
       tripUpdateList: tripUpdatesList,
       latitude: json['latitude'] != null
           ? double.tryParse(json['latitude'].toString())
@@ -406,7 +408,7 @@ static DateTime? _parseDateTime(dynamic value) {
      'deliveryCollection': deliveryCollection!.map((collection) => collection.id).toList(),
       'cancelledInvoice': cancelledInvoice!.map((invoice) => invoice.id).toList(),
       'returns': returns.map((returnItem) => returnItem.id).toList(),
-     
+     'changeStatusCode': changeStatusCode,
       'endTripChecklist':
           endTripChecklist.map((item) => item.id).toList(),
       'trip_update_list': tripUpdates.map((update) => update.id).toList(),
@@ -445,6 +447,8 @@ static DateTime? _parseDateTime(dynamic value) {
       deliveryDataList: entity.deliveryData.cast<DeliveryDataModel>(), // Added: Cast deliveryData to DeliveryDataModel
       endTripChecklistItems: entity.endTripChecklist,
       tripUpdateList: entity.tripUpdates,
+      changeStatusCode: entity.changeStatusCode,
+       deliveryCollectionList: entity.deliveryCollection!.cast<delivery_collection.CollectionModel>(),
       latitude: entity.latitude,
       longitude: entity.longitude,
       volumeRate: entity.volumeRate,
@@ -482,6 +486,7 @@ static DateTime? _parseDateTime(dynamic value) {
     endTripChecklistItems: [],
     tripUpdateList: [],
     deliveryCollectionList: [],
+    changeStatusCode: '',
     cancelledInvoiceList: [],
     latitude: null,
     longitude: null,
@@ -528,6 +533,7 @@ static DateTime? _parseDateTime(dynamic value) {
     double? averageFillRate,
     GeneralUserModel? user,
     String? totalTripDistance,
+    String? changeStatusCode,
     OtpModel? otp,
     EndTripOtpModel? endTripOtp,
     DeliveryTeamModel? deliveryTeam,
@@ -561,6 +567,7 @@ static DateTime? _parseDateTime(dynamic value) {
       longitude: longitude ?? this.longitude,
       volumeRate: volumeRate ?? this.volumeRate,
       dispatcher: dispatcher ?? this.dispatcher,
+      changeStatusCode: changeStatusCode ?? this.changeStatusCode,
       weightRate: weightRate ?? this.weightRate,
       averageFillRate: averageFillRate ?? this.averageFillRate,
       user: user ?? this.user,

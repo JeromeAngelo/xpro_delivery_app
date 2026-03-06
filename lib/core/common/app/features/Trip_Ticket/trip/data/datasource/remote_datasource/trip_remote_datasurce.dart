@@ -13,6 +13,7 @@ import 'package:xpro_delivery_admin_app/core/errors/exceptions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../../../../../../../utils/id_generator.dart';
 import '../../../../../otp/data/models/otp_models.dart';
 
 abstract class TripRemoteDatasurce {
@@ -298,13 +299,25 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
 
       // Prepare data for creation
       final Map<String, dynamic> tripData = {};
+
       String tripNumberId =
-          trip.tripNumberId ?? 'TRIP-${DateTime.now().millisecondsSinceEpoch}';
+          trip.tripNumberId ?? 'T${IdGenerator.generateShortNumericId()}';
+
+      String changeStatusCode =
+          trip.changeStatusCode ??
+          IdGenerator.generateShortNumericId(length: 6);
+
+      debugPrint('📄 Trip Number ID: $tripNumberId');
 
       // Set basic fields
       tripData['tripNumberId'] = tripNumberId;
       if (trip.name != null && trip.name!.isNotEmpty) {
         tripData['name'] = trip.name;
+      }
+
+      tripData['changeStatusCode'] = changeStatusCode;
+      if (trip.changeStatusCode != null && trip.changeStatusCode!.isNotEmpty) {
+        tripData['changeStatusCode'] = trip.changeStatusCode;
       }
 
       // Add dispatcher
@@ -1305,6 +1318,7 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
         'timeAccepted': timeAccepted?.toUtc(),
         'timeEndTrip': timeEndTrip?.toUtc(),
         'name': record.data['name'],
+        'changeStatusCode': record.data['changeStatusCode'],
         'longitude': record.data['longitude'],
         'latitude': record.data['latitude'],
         'volumeRate': record.data['volumeRate'],

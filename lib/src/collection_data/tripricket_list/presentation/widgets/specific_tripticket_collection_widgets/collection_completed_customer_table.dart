@@ -99,11 +99,11 @@ class _CollectionCompletedCustomersTableState
           ),
           onCreatePressed: null, // No create button for collections view
           columns: const [
-            //  DataColumn(label: Text('Delivery #')),
+            DataColumn(label: Text('Delivery #')),
             DataColumn(label: Text('Store Name')),
-            DataColumn(label: Text('Owner')),
+            DataColumn(label: Text('Ref ID')),
             DataColumn(label: Text('Invoices')), // ✅ added
-         //   DataColumn(label: Text('Mode of Payment')),
+            //   DataColumn(label: Text('Mode of Payment')),
             DataColumn(label: Text('Amount')),
             DataColumn(label: Text('Completed At')),
             DataColumn(label: Text('Actions')),
@@ -111,7 +111,7 @@ class _CollectionCompletedCustomersTableState
           rows:
               collections.map((customer) {
                 final deliveryData = customer.deliveryData;
-              //  final customerData = customer.customer;
+                final customerData = customer.customer;
 
                 return DataRow(
                   cells: [
@@ -120,7 +120,11 @@ class _CollectionCompletedCustomersTableState
                       onTap: () => _navigateToCustomerData(context, customer),
                     ),
                     DataCell(
-                      Text(deliveryData.customer!.name ?? 'N/A'),
+                      Text(customerData?.name ?? 'N/A'),
+                      onTap: () => _navigateToCustomerData(context, customer),
+                    ),
+                    DataCell(
+                      Text(customerData?.refId ?? 'N/A'),
                       onTap: () => _navigateToCustomerData(context, customer),
                     ),
                     DataCell(
@@ -186,7 +190,7 @@ class _CollectionCompletedCustomersTableState
               _currentPage = page;
             });
           },
-          isLoading: widget.isLoading,
+          isLoading: loading,
           dataLength: '${collections.length}',
           onDeleted: () {},
         );
@@ -338,63 +342,6 @@ class _CollectionCompletedCustomersTableState
           ),
     );
   }
-
-  // Widget _buildModeOfPaymentChip(String? modeOfPaymentStr) {
-  //   // Default values
-  //   Color backgroundColor = Colors.grey[100]!;
-  //   Color textColor = Colors.grey[800]!;
-  //   String label = 'N/A';
-  //   IconData icon = Icons.help_outline;
-
-  //   if (modeOfPaymentStr != null) {
-  //     String paymentMode = _formatModeOfPayment(modeOfPaymentStr);
-
-  //     switch (paymentMode) {
-  //       case 'Cash On Delivery':
-  //         backgroundColor = Colors.green[100]!;
-  //         textColor = Colors.green[800]!;
-  //         label = 'COD';
-  //         icon = Icons.payments;
-  //         break;
-  //       case 'Bank Transfer':
-  //         backgroundColor = Colors.blue[100]!;
-  //         textColor = Colors.blue[800]!;
-  //         label = 'Bank';
-  //         icon = Icons.account_balance;
-  //         break;
-  //       case 'Cheque':
-  //         backgroundColor = Colors.purple[100]!;
-  //         textColor = Colors.purple[800]!;
-  //         label = 'Cheque';
-  //         icon = Icons.money;
-  //         break;
-  //       case 'E-Wallet':
-  //         backgroundColor = Colors.orange[100]!;
-  //         textColor = Colors.orange[800]!;
-  //         label = 'E-Wallet';
-  //         icon = Icons.account_balance_wallet;
-  //         break;
-  //       default:
-  //         label = paymentMode;
-  //     }
-  //   }
-
-  //   return Chip(
-  //     avatar: Icon(icon, size: 16, color: textColor),
-  //     label: Text(
-  //       label,
-  //       style: TextStyle(
-  //         color: textColor,
-  //         fontSize: 12,
-  //         fontWeight: FontWeight.bold,
-  //       ),
-  //     ),
-  //     backgroundColor: backgroundColor,
-  //     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-  //     visualDensity: VisualDensity.compact,
-  //     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-  //   );
-  // }
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(

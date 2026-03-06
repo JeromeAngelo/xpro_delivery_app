@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../widgets/delivery_timeline_drawer.dart';
+import '../widgets/search_customer_dialog.dart';
 
 class DeliveryMonitoringScreen extends StatefulWidget {
   const DeliveryMonitoringScreen({super.key});
@@ -26,34 +27,28 @@ class _DeliveryMonitoringScreenState extends State<DeliveryMonitoringScreen> {
 
   Timer? _autoRefreshTimer;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-
+  final TextEditingController searchController = TextEditingController();
   // Auto-refresh duration - 2 minutes
   static const Duration autoRefreshDuration = Duration(minutes: 2);
 
+  String _formatDateTime(DateTime dateTime) {
+    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
+    final amPm = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $amPm';
+  }
 
-String _formatDateTime(DateTime dateTime) {
-  final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
-  final amPm = dateTime.hour >= 12 ? 'PM' : 'AM';
-  return '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $amPm';
-}
+  void _openTimelineDrawer(BuildContext context) {
+    // ✅ trigger load before opening
+    // context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
 
-void _openTimelineDrawer(BuildContext context) {
-  // ✅ trigger load before opening
- // context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
-
-  // ✅ open drawer
-  _scaffoldKey.currentState?.openEndDrawer();
-}
+    // ✅ open drawer
+    _scaffoldKey.currentState?.openEndDrawer();
+  }
 
   @override
   void initState() {
     super.initState();
-/*************  ✨ Windsurf Command ⭐  *************/
-/// Called when the widget is inserted into the tree.
-///
-/// Loads all delivery data and sets up an auto-refresh timer.
-/// The auto-refresh timer will fire every 2 minutes, refreshing the data.
-/*******  b6c1d1a4-6ded-4524-a5d4-ee4c9a6ab217  *******/    // Load all delivery data when the screen initializes
+
     context.read<DeliveryDataBloc>().add(
       const GetAllDeliveryDataWithTripsEvent(),
     );
@@ -104,12 +99,14 @@ void _openTimelineDrawer(BuildContext context) {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-  endDrawer: DeliveryTimelineDrawer(
-    onRefresh: () {
-      context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataWithTripsEvent());
-    },
-    formatDate: _formatDateTime,
-  ),
+      endDrawer: DeliveryTimelineDrawer(
+        onRefresh: () {
+          context.read<DeliveryDataBloc>().add(
+            const GetAllDeliveryDataWithTripsEvent(),
+          );
+        },
+        formatDate: _formatDateTime,
+      ),
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
         iconTheme: IconThemeData(color: Theme.of(context).colorScheme.surface),
@@ -154,6 +151,27 @@ void _openTimelineDrawer(BuildContext context) {
               // Manually refresh delivery data
               context.read<DeliveryDataBloc>().add(
                 const GetAllDeliveryDataWithTripsEvent(),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.repeat_rounded,
+              color: Theme.of(context).colorScheme.surface,
+            ),
+            tooltip: 'Change Delivery Status',
+            onPressed: () {
+              CustomerSearchDialog.show(
+                context,
+                controller: searchController,
+                onSearch: () {
+                  final query = searchController.text;
+
+                  // later: dispatch bloc event
+                  // context.read<CustomerBloc>().add(SearchCustomerEvent(query));
+
+                  debugPrint('Searching customer: $query');
+                },
               );
             },
           ),
@@ -249,15 +267,6 @@ void _openTimelineDrawer(BuildContext context) {
           );
         },
       ),
-      // Add a floating action button to manually refresh
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     // Manually refresh delivery data
-      //     context.read<DeliveryDataBloc>().add(const GetAllDeliveryDataEvent());
-      //   },
-      //   tooltip: 'Refresh delivery data',
-      //   child: const Icon(Icons.sync),
-      // ),
     );
   }
 

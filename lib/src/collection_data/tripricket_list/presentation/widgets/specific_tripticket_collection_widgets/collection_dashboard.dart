@@ -44,7 +44,7 @@ class CollectionTripDashboardWidget extends StatelessWidget {
       items: [
         DashboardInfoItem(
           icon: Icons.receipt_long,
-          value: trip.tripNumberId ?? 'N/A',
+          value: trip.name ?? trip.tripNumberId ?? 'N/A',
           label: 'Trip Number',
           iconColor: Colors.blue,
         ),
@@ -81,7 +81,7 @@ class CollectionTripDashboardWidget extends StatelessWidget {
         DashboardInfoItem(
           icon: Icons.person,
           value: trip.user?.name ?? 'N/A',
-          label: 'Assigned To',
+          label: 'Collected by',
           iconColor: Colors.indigo,
         ),
       ],

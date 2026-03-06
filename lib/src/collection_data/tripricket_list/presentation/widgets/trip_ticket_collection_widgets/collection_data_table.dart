@@ -41,11 +41,11 @@ class CollectionDataTable extends StatelessWidget {
       ),
       onCreatePressed: null, // No create button for collections view
       columns: const [
-        DataColumn(label: Text('ID')),
-        DataColumn(label: Text('Trip Number')),
+        DataColumn(label: Text('Trip ID')),
+        DataColumn(label: Text('Trip Name')),
         DataColumn(label: Text('Start Date')),
         DataColumn(label: Text('End Date')),
-     //   DataColumn(label: Text('Payment Modes')),
+        //   DataColumn(label: Text('Payment Modes')),
         DataColumn(label: Text('Status')),
         DataColumn(label: Text('Actions')),
       ],
@@ -54,11 +54,11 @@ class CollectionDataTable extends StatelessWidget {
             return DataRow(
               cells: [
                 DataCell(
-                  Text(trip.id ?? 'N/A'),
+                  Text(trip.tripNumberId ?? 'N/A'),
                   onTap: () => _navigateToTripData(context, trip),
                 ),
                 DataCell(
-                  Text(trip.tripNumberId ?? 'N/A'),
+                  Text(trip.name ?? 'N/A'),
                   onTap: () => _navigateToTripData(context, trip),
                 ),
                 DataCell(
@@ -95,7 +95,8 @@ class CollectionDataTable extends StatelessWidget {
       totalPages: totalPages,
       onPageChanged: onPageChanged,
       isLoading: isLoading,
-      dataLength: '${trips.length}', onDeleted: () {  },
+      dataLength: '${trips.length}',
+      onDeleted: () {},
     );
   }
 
@@ -136,5 +137,4 @@ class CollectionDataTable extends StatelessWidget {
       visualDensity: VisualDensity.compact,
     );
   }
-
 }

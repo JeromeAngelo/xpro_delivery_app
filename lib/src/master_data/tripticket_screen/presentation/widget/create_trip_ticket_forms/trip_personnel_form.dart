@@ -22,28 +22,35 @@ class PersonnelForm extends StatelessWidget {
     required this.onHelpersChanged,
   });
 
+  String formatRoleName(String? role) {
+    if (role == null || role.isEmpty) return 'Unknown';
+
+    final withSpaces = role.replaceAllMapped(
+      RegExp(r'([A-Z])'),
+      (match) => ' ${match.group(0)}',
+    );
+
+    return withSpaces[0].toUpperCase() + withSpaces.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const FormSectionTitle(title: 'Assign Personnel'),
-        
+
         // Team Leader and Helpers sections in one row
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Team Leader section (left half)
-            Expanded(
-              child: _buildTeamLeaderDropdown(context),
-            ),
-            
+            Expanded(child: _buildTeamLeaderDropdown(context)),
+
             const SizedBox(width: 24),
-            
+
             // Helpers section (right half)
-            Expanded(
-              child: _buildHelpersDropdown(context),
-            ),
+            Expanded(child: _buildHelpersDropdown(context)),
           ],
         ),
       ],
@@ -53,33 +60,48 @@ class PersonnelForm extends StatelessWidget {
   void _showTeamLeaderSelectionDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => TeamLeaderSelectionDialog(
-        availablePersonnel: availablePersonnel.where((p) => 
-          p.role?.name.toLowerCase().contains('leader') ?? false
-        ).toList(),
-        selectedTeamLeader: selectedTeamLeader,
-        onTeamLeaderChanged: onTeamLeaderChanged,
-      ),
+      builder:
+          (context) => TeamLeaderSelectionDialog(
+            availablePersonnel:
+                availablePersonnel
+                    .where(
+                      (p) =>
+                          p.role?.name.toLowerCase().contains('leader') ??
+                          false,
+                    )
+                    .toList(),
+            selectedTeamLeader: selectedTeamLeader,
+            onTeamLeaderChanged: onTeamLeaderChanged,
+          ),
     );
   }
 
   void _showHelpersSelectionDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => PersonnelSelectionDialog(
-        availablePersonnel: availablePersonnel.where((p) => 
-          !(p.role?.name.toLowerCase().contains('leader') ?? false)
-        ).toList(),
-        selectedPersonnel: selectedHelpers,
-        onPersonnelChanged: onHelpersChanged,
-      ),
+      builder:
+          (context) => PersonnelSelectionDialog(
+            availablePersonnel:
+                availablePersonnel
+                    .where(
+                      (p) =>
+                          !(p.role?.name.toLowerCase().contains('leader') ??
+                              false),
+                    )
+                    .toList(),
+            selectedPersonnel: selectedHelpers,
+            onPersonnelChanged: onHelpersChanged,
+          ),
     );
   }
 
   Widget _buildTeamLeaderDropdown(BuildContext context) {
-    final teamLeaders = availablePersonnel.where((p) => 
-      p.role?.name.toLowerCase().contains('leader') ?? false
-    ).toList();
+    final teamLeaders =
+        availablePersonnel
+            .where(
+              (p) => p.role?.name.toLowerCase().contains('leader') ?? false,
+            )
+            .toList();
 
     if (teamLeaders.isEmpty) {
       return const AppTextField(
@@ -139,17 +161,15 @@ class PersonnelForm extends StatelessWidget {
                               ? 'Select Team Leader'
                               : selectedTeamLeader!.name ?? 'Unknown',
                           style: TextStyle(
-                            color: selectedTeamLeader == null
-                                ? Colors.grey
-                                : Colors.black,
+                            color:
+                                selectedTeamLeader == null
+                                    ? Colors.grey
+                                    : Colors.black,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.grey.shade600,
-                      ),
+                      Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
                     ],
                   ),
                 ),
@@ -177,7 +197,7 @@ class PersonnelForm extends StatelessWidget {
                     color: Colors.blue,
                   ),
                   label: Text(
-                    '${selectedTeamLeader!.name} (${selectedTeamLeader!.role?.name ?? 'Unknown'})',
+                    '${selectedTeamLeader!.name} (${formatRoleName(selectedTeamLeader!.role?.name)})',
                     style: const TextStyle(fontSize: 12),
                   ),
                   deleteIcon: const Icon(Icons.close, size: 16),
@@ -194,10 +214,7 @@ class PersonnelForm extends StatelessWidget {
           padding: const EdgeInsets.only(top: 8.0),
           child: Text(
             'Select one team leader for this trip',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
         ),
       ],
@@ -205,10 +222,13 @@ class PersonnelForm extends StatelessWidget {
   }
 
   Widget _buildHelpersDropdown(BuildContext context) {
-    final helpers = availablePersonnel.where((p) => 
-      !(p.role?.name.toLowerCase().contains('leader') ?? false)
-    ).toList();
-    
+    final helpers =
+        availablePersonnel
+            .where(
+              (p) => !(p.role?.name.toLowerCase().contains('leader') ?? false),
+            )
+            .toList();
+
     if (helpers.isEmpty) {
       return const AppTextField(
         label: 'Helpers',
@@ -267,17 +287,15 @@ class PersonnelForm extends StatelessWidget {
                               ? 'Select Helpers'
                               : '${selectedHelpers.length} helpers selected',
                           style: TextStyle(
-                            color: selectedHelpers.isEmpty
-                                ? Colors.grey
-                                : Colors.black,
+                            color:
+                                selectedHelpers.isEmpty
+                                    ? Colors.grey
+                                    : Colors.black,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.grey.shade600,
-                      ),
+                      Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
                     ],
                   ),
                 ),
@@ -301,32 +319,39 @@ class PersonnelForm extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: selectedHelpers.map((personnel) {
-                    final assignmentStatus =
-                        (personnel.isAssigned ?? false) ? 'Trip Assigned' : 'Available';
-                    final statusColor =
-                        (personnel.isAssigned ?? false) ? Colors.orange : Colors.green;
+                  children:
+                      selectedHelpers.map((personnel) {
+                        final assignmentStatus =
+                            (personnel.isAssigned ?? false)
+                                ? 'Trip Assigned'
+                                : 'Available';
+                        final statusColor =
+                            (personnel.isAssigned ?? false)
+                                ? Colors.orange
+                                : Colors.green;
 
-                    return Chip(
-                      avatar: Icon(
-                        (personnel.isAssigned ?? false)
-                            ? Icons.assignment_turned_in
-                            : Icons.person_outline,
-                        size: 16,
-                        color: statusColor,
-                      ),
-                      label: Text(
-                        '${personnel.name} (${personnel.role?.name ?? 'Unknown'}) - $assignmentStatus',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        final updatedList = List<PersonelModel>.from(selectedHelpers);
-                        updatedList.remove(personnel);
-                        onHelpersChanged(updatedList);
-                      },
-                    );
-                  }).toList(),
+                        return Chip(
+                          avatar: Icon(
+                            (personnel.isAssigned ?? false)
+                                ? Icons.assignment_turned_in
+                                : Icons.person_outline,
+                            size: 16,
+                            color: statusColor,
+                          ),
+                          label: Text(
+                            '${personnel.name} (${formatRoleName(personnel.role?.name)}) - $assignmentStatus',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          deleteIcon: const Icon(Icons.close, size: 16),
+                          onDeleted: () {
+                            final updatedList = List<PersonelModel>.from(
+                              selectedHelpers,
+                            );
+                            updatedList.remove(personnel);
+                            onHelpersChanged(updatedList);
+                          },
+                        );
+                      }).toList(),
                 ),
               ],
             ),
@@ -337,10 +362,7 @@ class PersonnelForm extends StatelessWidget {
           padding: const EdgeInsets.only(top: 8.0),
           child: Text(
             'Select helpers for this trip. 🟢 Available | 🟠 Trip Assigned',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
         ),
       ],

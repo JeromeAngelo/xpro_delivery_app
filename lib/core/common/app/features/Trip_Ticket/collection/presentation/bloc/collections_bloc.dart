@@ -72,43 +72,34 @@ class CollectionsBloc extends Bloc<CollectionsEvent, CollectionsState> {
       }
     },
   );
+}Future<void> _onGetCollectionsByTripId(
+  GetCollectionsByTripIdEvent event,
+  Emitter<CollectionsState> emit,
+) async {
+  debugPrint('🔄 BLoC: Fetching collections for trip: ${event.tripId}');
+
+  emit(const CollectionsLoading());
+
+  final result = await _getCollectionsByTripId(event.tripId);
+
+  result.fold(
+    (failure) {
+      debugPrint('❌ BLoC: Failed to fetch collections: ${failure.message}');
+      emit(CollectionsError(
+        message: failure.message,
+        errorCode: failure.statusCode,
+      ));
+    },
+    (collections) {
+      debugPrint(
+        '✅ BLoC: Successfully loaded ${collections.length} collections',
+      );
+
+      // ✅ ALWAYS emit CollectionLoadedByTrip for this event
+      emit(CollectionLoadedByTrip(event.tripId, collections: collections));
+    },
+  );
 }
-
-
-  Future<void> _onGetCollectionsByTripId(
-    GetCollectionsByTripIdEvent event,
-    Emitter<CollectionsState> emit,
-  ) async {
-    debugPrint('🔄 BLoC: Fetching collections for trip: ${event.tripId}');
-    
-    emit(const CollectionsLoading());
-
-    final result = await _getCollectionsByTripId(event.tripId);
-
-    result.fold(
-      (failure) {
-        debugPrint('❌ BLoC: Failed to fetch collections: ${failure.message}');
-        emit(CollectionsError(
-          message: failure.message,
-          errorCode: failure.statusCode,
-        ));
-      },
-      (collections) {
-        debugPrint('✅ BLoC: Successfully loaded ${collections.length} collections');
-        
-        if (collections.isEmpty) {
-          emit(CollectionLoadedByTrip(event.tripId, collections: collections ));
-        } else {
-          final newState = CollectionsLoaded(
-            collections: collections,
-            isFromCache: false,
-          );
-          emit(newState);
-          _cachedState = newState;
-        }
-      },
-    );
-  }
 
   Future<void> _onGetCollectionById(
     GetCollectionByIdEvent event,

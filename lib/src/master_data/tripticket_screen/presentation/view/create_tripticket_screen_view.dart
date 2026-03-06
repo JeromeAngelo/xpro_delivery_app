@@ -35,6 +35,7 @@ import 'package:go_router/go_router.dart';
 import 'package:xpro_delivery_admin_app/core/services/core_utils.dart';
 
 // Form widgets
+import '../../../../../core/utils/id_generator.dart';
 import '../widget/create_trip_ticket_forms/trip_details_form.dart';
 import '../widget/create_trip_ticket_forms/trip_vehicle_forms.dart';
 import '../widget/create_trip_ticket_forms/trip_personnel_form.dart';
@@ -84,8 +85,7 @@ class _CreateTripTicketScreenViewState
 
   void _generateTripIdAndQrCode() {
     // Generate a unique trip ID based on timestamp
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final tripId = 'TRIP-$timestamp';
+    final tripId = 'T${IdGenerator.generateShortNumericId()}';
 
     // Set the trip ID
     _tripIdController.text = tripId;

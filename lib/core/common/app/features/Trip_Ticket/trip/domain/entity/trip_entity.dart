@@ -46,6 +46,7 @@ class TripEntity extends Equatable {
   double? weightRate;
   double? averageFillRate;
   String? totalTripDistance;
+  String? changeStatusCode;
   bool? isAccepted;
   bool? isEndTrip;
   DateTime? timeEndTrip;
@@ -64,6 +65,7 @@ class TripEntity extends Equatable {
     this.deliveryTeam,
     this.deliveryDate,
     this.name,
+    this.changeStatusCode,
     List<PersonelModel>? personels,
     List<ChecklistModel>? checklist,
     List<TripUpdateModel>? tripUpdates,

@@ -261,6 +261,8 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
           'id': customerRecord.id,
           'collectionId': customerRecord.collectionId,
           'collectionName': customerRecord.collectionName,
+          'name': customerRecord.data['name'],
+          'refId': customerRecord.data['refID'],
           ...customerRecord.data,
         });
         debugPrint(
