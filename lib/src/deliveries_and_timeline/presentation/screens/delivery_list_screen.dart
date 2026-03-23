@@ -41,7 +41,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
   StreamSubscription? _authSubscription;
   StreamSubscription? _deliveryDataSubscription;
   StreamSubscription? _deliverySubscription;
-EndDeliveryStatusChecked? _endDeliveryStatus;
+  EndDeliveryStatusChecked? _endDeliveryStatus;
 
   Set<String> selectedDeliveries = {};
   bool selectionMode = false;
@@ -126,10 +126,15 @@ EndDeliveryStatusChecked? _endDeliveryStatus;
           _currentDeliveries = state.deliveryData;
           _isLoading = false;
           _isDataInitialized = true;
+
+          // 🔥 Keep only valid selected IDs
+          final validIds =
+              _currentDeliveries.map((e) => e.id).whereType<String>().toSet();
+
+          selectedDeliveries =
+              selectedDeliveries.where((id) => validIds.contains(id)).toSet();
         });
       }
-
-      
 
       if (state is DeliveryDataError) {
         setState(() => _isLoading = false);
@@ -153,8 +158,7 @@ EndDeliveryStatusChecked? _endDeliveryStatus;
   void _loadDeliveryDataForTrip(String tripId) {
     _deliveryDataBloc.add(GetDeliveryDataByTripIdEvent(tripId));
     _deliveryUpdateBloc.add(CheckEndDeliveryStatusEvent(tripId));
-        _deliveryDataBloc.add(WatchAllDeliveryDataEvent());
-
+    _deliveryDataBloc.add(WatchAllDeliveryDataEvent());
   }
 
   @override
@@ -173,22 +177,18 @@ EndDeliveryStatusChecked? _endDeliveryStatus;
             }
           },
         ),
-       BlocListener<DeliveryUpdateBloc, DeliveryUpdateState>(
-  listener: (context, state) {
-    if (state is EndDeliveryStatusChecked) {
-      setState(() {
-        _endDeliveryStatus = state; // store latest, not cached
-      });
-    }
-  },
-),
-
+        BlocListener<DeliveryUpdateBloc, DeliveryUpdateState>(
+          listener: (context, state) {
+            if (state is EndDeliveryStatusChecked) {
+              setState(() {
+                _endDeliveryStatus = state; // store latest, not cached
+              });
+            }
+          },
+        ),
       ],
       child: Scaffold(
-        body: RefreshIndicator(
-          onRefresh: _refreshData,
-          child: _buildBody(),
-        ),
+        body: RefreshIndicator(onRefresh: _refreshData, child: _buildBody()),
       ),
     );
   }
@@ -201,91 +201,94 @@ EndDeliveryStatusChecked? _endDeliveryStatus;
     return _buildDeliveryList();
   }
 
- Widget _buildDeliveryList() {
-  // Default values
-  bool isEndTripButtonEnabled = false;
-  String endTripButtonTooltip = 'Complete all deliveries to end trip';
+  Widget _buildDeliveryList() {
+    // Default values
+    bool isEndTripButtonEnabled = false;
+    String endTripButtonTooltip = 'Complete all deliveries to end trip';
 
-  if (_endDeliveryStatus != null) {
-    final stats = _endDeliveryStatus!.stats;
+    if (_endDeliveryStatus != null) {
+      final stats = _endDeliveryStatus!.stats;
 
-    final total = stats['total'] as int? ?? 0;
-    final completed = stats['completed'] as int? ?? 0;
-    final pending = stats['pending'] as int? ?? 0;
+      final total = stats['total'] as int? ?? 0;
+      final completed = stats['completed'] as int? ?? 0;
+      final pending = stats['pending'] as int? ?? 0;
 
-    debugPrint('📊 Delivery Status: total=$total, completed=$completed, pending=$pending');
+      debugPrint(
+        '📊 Delivery Status: total=$total, completed=$completed, pending=$pending',
+      );
 
-    isEndTripButtonEnabled = total > 0 && pending == 0;
+      isEndTripButtonEnabled = total > 0 && pending == 0;
 
-    if (total == 0) {
-      endTripButtonTooltip = 'No deliveries assigned to this trip';
-    } else if (pending > 0) {
-      endTripButtonTooltip =
-          '$pending deliveries still pending. Complete all to end trip.';
-    } else {
-      endTripButtonTooltip = 'All deliveries completed. Ready to end trip.';
+      if (total == 0) {
+        endTripButtonTooltip = 'No deliveries assigned to this trip';
+      } else if (pending > 0) {
+        endTripButtonTooltip =
+            '$pending deliveries still pending. Complete all to end trip.';
+      } else {
+        endTripButtonTooltip = 'All deliveries completed. Ready to end trip.';
+      }
+
+      debugPrint('🔘 End Trip Button enabled: $isEndTripButtonEnabled');
+      debugPrint('💬 Tooltip: $endTripButtonTooltip');
     }
 
-    debugPrint('🔘 End Trip Button enabled: $isEndTripButtonEnabled');
-    debugPrint('💬 Tooltip: $endTripButtonTooltip');
-  }
-
-  return Column(
-    children: [
-      Expanded(
-        child: ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: _currentDeliveries.length,
-          itemBuilder: (context, index) {
-            final delivery = _currentDeliveries[index];
-            return DeliveryListTile(
-              delivery: delivery,
-              selectionMode: selectionMode,
-              isSelected: selectedDeliveries.contains(delivery.id),
-              onSelectionChanged: (selected) {
-                if (delivery.id != null) {
-                  _toggleSelection(delivery.id!, selected);
-                }
-              },
-              onLongPress: _enableSelectionMode,
-              onTap: () {
-                if (delivery.id != null) {
-                  context.go(
-                    '/delivery-and-invoice/${delivery.id}',
-                    extra: delivery,
-                  );
-                }
-              },
-            );
-          },
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _currentDeliveries.length,
+            itemBuilder: (context, index) {
+              final delivery = _currentDeliveries[index];
+              return DeliveryListTile(
+                delivery: delivery,
+                selectionMode: selectionMode,
+                isSelected: selectedDeliveries.contains(delivery.id),
+                onSelectionChanged: (selected) {
+                  if (delivery.id != null) {
+                    _toggleSelection(delivery.id!, selected);
+                  }
+                },
+                onLongPress: _enableSelectionMode,
+                onTap: () {
+                  if (delivery.id != null) {
+                    context.go(
+                      '/delivery-and-invoice/${delivery.id}',
+                      extra: delivery,
+                    );
+                  }
+                },
+              );
+            },
+          ),
         ),
-      ),
 
-      // Switch buttons depending on mode
-      selectionMode
-          ? QuickActionButton(
+        // Switch buttons depending on mode
+        selectionMode
+            ? QuickActionButton(
               bulkEnabled: selectedDeliveries.isNotEmpty,
               onBulkUpdate: () async {
                 final result = await showDialog(
                   context: context,
-                  builder: (_) => QuickUpdateDialog(
-                    selectedDeliveryIds: selectedDeliveries.toList(),
-                  ),
+                  builder:
+                      (_) => QuickUpdateDialog(
+                        selectedDeliveryIds: selectedDeliveries.toList(),
+                      ),
                 );
                 if (result == true) {
+                  await _refreshData(); // 🔥 reload deliveries
                   _disableSelectionMode();
                 }
               },
               onCancel: _disableSelectionMode,
             )
-          : EndTripButton(
+            : EndTripButton(
               isEnabled: isEndTripButtonEnabled,
               tooltip: endTripButtonTooltip,
             ),
-    ],
-  );
-}
-
+      ],
+    );
+  }
 
   Widget _buildLoadingState() {
     return const Center(child: CircularProgressIndicator());
@@ -296,9 +299,16 @@ EndDeliveryStatusChecked? _endDeliveryStatus;
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined, size: 64, color: Theme.of(context).colorScheme.secondary),
+          Icon(
+            Icons.inbox_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.secondary,
+          ),
           const SizedBox(height: 16),
-          Text('No deliveries available', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'No deliveries available',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
         ],
       ),
     );
@@ -324,4 +334,3 @@ EndDeliveryStatusChecked? _endDeliveryStatus;
   @override
   bool get wantKeepAlive => true;
 }
-
