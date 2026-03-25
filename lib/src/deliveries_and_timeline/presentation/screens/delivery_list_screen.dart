@@ -118,28 +118,28 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
       }
     });
 
-    _deliveryDataSubscription = _deliveryDataBloc.stream.listen((state) {
-      if (!mounted) return;
+    // _deliveryDataSubscription = _deliveryDataBloc.stream.listen((state) {
+    //   if (!mounted) return;
 
-      if (state is DeliveryDataByTripLoaded) {
-        setState(() {
-          _currentDeliveries = state.deliveryData;
-          _isLoading = false;
-          _isDataInitialized = true;
+    //   if (state is DeliveryDataByTripLoaded) {
+    //     setState(() {
+    //       _currentDeliveries = state.deliveryData;
+    //       _isLoading = false;
+    //       _isDataInitialized = true;
 
-          // 🔥 Keep only valid selected IDs
-          final validIds =
-              _currentDeliveries.map((e) => e.id).whereType<String>().toSet();
+    //       // 🔥 Keep only valid selected IDs
+    //       final validIds =
+    //           _currentDeliveries.map((e) => e.id).whereType<String>().toSet();
 
-          selectedDeliveries =
-              selectedDeliveries.where((id) => validIds.contains(id)).toSet();
-        });
-      }
+    //       selectedDeliveries =
+    //           selectedDeliveries.where((id) => validIds.contains(id)).toSet();
+    //     });
+    //   }
 
-      if (state is DeliveryDataError) {
-        setState(() => _isLoading = false);
-      }
-    });
+    //   if (state is DeliveryDataError) {
+    //     setState(() => _isLoading = false);
+    //   }
+    // });
 
     _deliverySubscription = _deliveryUpdateBloc.stream.listen((state) {
       if (!mounted) return;
@@ -158,7 +158,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
   void _loadDeliveryDataForTrip(String tripId) {
     _deliveryDataBloc.add(GetDeliveryDataByTripIdEvent(tripId));
     _deliveryUpdateBloc.add(CheckEndDeliveryStatusEvent(tripId));
-    _deliveryDataBloc.add(WatchAllDeliveryDataEvent());
+    //_deliveryDataBloc.add(WatchAllDeliveryDataEvent());
   }
 
   @override
