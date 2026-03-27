@@ -304,4 +304,41 @@ class DeliveryStatusChoicesRepoImpl implements DeliveryStatusChoicesRepo {
       ));
     }
   }
+  
+  @override
+  ResultFuture<void> revertUpdateDeliveryStatus(String deliveryDataId, DeliveryStatusChoicesEntity status) async {
+    try {
+      final statusModel = status as DeliveryStatusChoicesModel;
+
+      // ---------------------------------------------------
+      // 1️⃣ Update LOCAL first (offline-first)
+      // ---------------------------------------------------
+      debugPrint('💾 Updating local delivery status');
+      await _localDatasource.revertUpdateCustomerStatus(deliveryDataId, statusModel);
+
+      // ---------------------------------------------------
+      // 2️⃣ Queue REMOTE sync in background worker
+      // ---------------------------------------------------
+      debugPrint('🟡 Queuing remote sync for background worker');
+
+      // Mark status as pending for sync
+      statusModel.syncStatus = SyncStatus.pending.name;
+      statusModel.lastLocalUpdatedAt = DateTime.now();
+      statusModel.retryCount = 0;
+
+      await _localDatasource.deliveryStatusChoicesBox.put(statusModel);
+
+      // Enqueue in worker
+      _syncWorker.start();
+
+      debugPrint('✅ Status update queued for background sync');
+
+      return const Right(null);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
+    } on ServerException catch (e) {
+      debugPrint('⚠️ Remote update failed, local update succeeded');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    }
+  }
 }

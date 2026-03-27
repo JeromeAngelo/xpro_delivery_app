@@ -418,9 +418,7 @@ Future<void> initUserPerformance() async {
   );
 
   sl.registerLazySingleton<UserPerformanceLocalDataSource>(
-    () => UserPerformanceLocalDataSourceImpl(
-      objectBoxStore
-    ),
+    () => UserPerformanceLocalDataSourceImpl(objectBoxStore),
   );
 }
 
@@ -448,9 +446,7 @@ Future<void> initChecklist() async {
   );
 
   sl.registerLazySingleton<ChecklistLocalDatasource>(
-    () => ChecklistLocalDatasourceImpl(
-      objectBoxStore,
-    ),
+    () => ChecklistLocalDatasourceImpl(objectBoxStore),
   );
 }
 
@@ -633,6 +629,7 @@ Future<void> initDeliveryUpdate() async {
     () => DeliveryUpdateLocalDatasourceImpl(objectBoxStore),
   );
 }
+
 Future<void> initDeliveryStatusChoices() async {
   // 1️⃣ Initialize ObjectBox
   final objectBoxStore = await ObjectBoxStore.create();
@@ -649,8 +646,9 @@ Future<void> initDeliveryStatusChoices() async {
       getAssignedDeliveryStatusChoices: sl(),
       updateCustomerStatus: sl(),
       getAllBulkDeliveryStatusChoices: sl(),
-      bulkUpdateDeliveryStatus: sl(), completeDelivery: sl(),
-      
+      bulkUpdateDeliveryStatus: sl(),
+      completeDelivery: sl(),
+      revertUpdateDeliveryStatus: sl()
     ),
   );
 
@@ -667,8 +665,12 @@ Future<void> initDeliveryStatusChoices() async {
   );
 
   // 6️⃣ Register local datasource under both abstract and concrete types
-  sl.registerLazySingleton<DeliveryStatusChoicesLocalDatasource>(() => localImpl);
-  sl.registerLazySingleton<DeliveryStatusChoicesLocalDatasourceImpl>(() => localImpl);
+  sl.registerLazySingleton<DeliveryStatusChoicesLocalDatasource>(
+    () => localImpl,
+  );
+  sl.registerLazySingleton<DeliveryStatusChoicesLocalDatasourceImpl>(
+    () => localImpl,
+  );
 
   // 7️⃣ Register repository
   sl.registerLazySingleton<DeliveryStatusChoicesRepo>(
@@ -684,7 +686,6 @@ Future<void> initDeliveryStatusChoices() async {
     ),
   );
 }
-
 
 Future<void> initOtp() async {
   final objectBoxStore = await ObjectBoxStore.create();
@@ -744,9 +745,7 @@ Future<void> initEndTripOtp() async {
   );
 
   sl.registerLazySingleton<EndTripOtpLocalDatasource>(
-    () => EndTripOtpLocalDatasourceImpl(
-      objectBoxStore,
-    ),
+    () => EndTripOtpLocalDatasourceImpl(objectBoxStore),
   );
 }
 
@@ -778,9 +777,7 @@ Future<void> initEndTripChecklist() async {
   );
 
   sl.registerLazySingleton<EndTripChecklistLocalDataSource>(
-    () => EndTripChecklistLocalDataSourceImpl(
-      objectBoxStore,
-    ),
+    () => EndTripChecklistLocalDataSourceImpl(objectBoxStore),
   );
 }
 
@@ -803,8 +800,7 @@ Future<void> initTripUpdate() async {
   );
 
   sl.registerLazySingleton<TripUpdateLocalDatasource>(
-    () => TripUpdateLocalDatasourceImpl(
-objectBoxStore    ),
+    () => TripUpdateLocalDatasourceImpl(objectBoxStore),
   );
 }
 
@@ -829,7 +825,7 @@ Future<void> initDeliveryData() async {
       setInvoiceIntoCancelled: sl(),
       watchLocalDeliveryDataByTripId: sl(),
       watchLocalDeliveryDataById: sl(),
-      watchAllLocalDeliveryData: sl()
+      watchAllLocalDeliveryData: sl(),
     ),
   );
 
@@ -837,7 +833,7 @@ Future<void> initDeliveryData() async {
   sl.registerLazySingleton(() => GetAllDeliveryData(sl()));
   sl.registerLazySingleton(() => GetDeliveryDataByTripId(sl()));
   sl.registerLazySingleton(() => WatchLocalDeliveryDataByTripId(sl()));
-    sl.registerLazySingleton(() => WatchAllLocalDeliveryData(sl()));
+  sl.registerLazySingleton(() => WatchAllLocalDeliveryData(sl()));
 
   sl.registerLazySingleton(() => WatchLocalDeliveryDataById(sl()));
   sl.registerLazySingleton(() => GetDeliveryDataById(sl()));
@@ -846,7 +842,7 @@ Future<void> initDeliveryData() async {
   sl.registerLazySingleton(() => CalculateDeliveryTimeByDeliveryId(sl()));
   sl.registerLazySingleton(() => SyncDeliveryDataByTripId(sl()));
   sl.registerLazySingleton(() => SetInvoiceIntoUnloading(sl()));
-    sl.registerLazySingleton(() => SetInvoiceIntoCancelled(sl()));
+  sl.registerLazySingleton(() => SetInvoiceIntoCancelled(sl()));
 
   sl.registerLazySingleton(() => UpdateDeliveryLocation(sl()));
   sl.registerLazySingleton(() => SetInvoiceIntoUnloaded(sl()));
@@ -1035,21 +1031,17 @@ Future<void> initDeliveryReceipt() async {
   );
 
   sl.registerLazySingleton<DeliveryReceiptLocalDatasource>(
-    () => DeliveryReceiptLocalDatasourceImpl(
-      objectBoxStore,
-    ),
+    () => DeliveryReceiptLocalDatasourceImpl(objectBoxStore),
   );
 }
 
 Future<void> initCancelledInvoice() async {
   final objectBoxStore = await ObjectBoxStore.create();
- // 2️⃣ Local datasource instance
-  final localImpl = CancelledInvoiceLocalDataSourceImpl(
-     objectBoxStore,
-  );
+  // 2️⃣ Local datasource instance
+  final localImpl = CancelledInvoiceLocalDataSourceImpl(objectBoxStore);
 
-   final remoteImpl = CancelledInvoiceRemoteDataSourceImpl(
-     pocketBaseClient: sl(),
+  final remoteImpl = CancelledInvoiceRemoteDataSourceImpl(
+    pocketBaseClient: sl(),
   );
   sl.registerLazySingleton(
     () => CancelledInvoiceBloc(
@@ -1068,27 +1060,26 @@ Future<void> initCancelledInvoice() async {
   sl.registerLazySingleton(() => DeleteCancelledInvoice(sl()));
 
   sl.registerLazySingleton<CancelledInvoiceRepo>(
-    () =>
-        CancelledInvoiceRepoImpl(localDataSource: sl(), remoteDataSource: sl(), syncWorker: sl()), 
+    () => CancelledInvoiceRepoImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+      syncWorker: sl(),
+    ),
   );
 
-  sl.registerLazySingleton<CancelledInvoiceLocalDataSource>(
+  sl.registerLazySingleton<CancelledInvoiceLocalDataSource>(() => localImpl);
+
+  sl.registerLazySingleton<CancelledInvoiceLocalDataSourceImpl>(
     () => localImpl,
   );
 
-   sl.registerLazySingleton<CancelledInvoiceLocalDataSourceImpl>(
-    () => localImpl,
-  );
-
-  sl.registerLazySingleton<CancelledInvoiceRemoteDataSource>(
-    () => remoteImpl,
-  );
+  sl.registerLazySingleton<CancelledInvoiceRemoteDataSource>(() => remoteImpl);
 
   sl.registerLazySingleton<CancelledInvoiceRemoteDataSourceImpl>(
     () => remoteImpl,
   );
 
-   // 8️⃣ Register sync worker
+  // 8️⃣ Register sync worker
   sl.registerLazySingleton<CancelledInvoiceSyncWorker>(
     () => CancelledInvoiceSyncWorker(
       local: sl<CancelledInvoiceLocalDataSourceImpl>(),
@@ -1124,8 +1115,6 @@ Future<void> initCollection() async {
   sl.registerLazySingleton<CollectionRemoteDataSource>(
     () => CollectionRemoteDataSourceImpl(pocketBaseClient: sl()),
   );
-
- 
 }
 
 Future<void> initReturnItems() async {

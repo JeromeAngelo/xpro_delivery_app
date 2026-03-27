@@ -29,6 +29,11 @@ abstract class DeliveryStatusChoicesLocalDatasource {
     String deliveryDataPbId, // DeliveryData PB ID
     DeliveryStatusChoicesModel statusChoice, // ✅ FULL STATUS MODEL
   );
+
+  Future<void> revertUpdateCustomerStatus(
+    String deliveryDataPbId, // DeliveryData PB ID
+    DeliveryStatusChoicesModel statusChoice, // ✅ FULL STATUS MODEL
+  );
   Future<void> setEndDelivery(DeliveryDataEntity deliveryData);
 
   /// Bulk versions for offline use
@@ -1145,4 +1150,101 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       throw CacheException(message: e.toString());
     }
   }
+  
+ @override
+Future<void> revertUpdateCustomerStatus(
+  String deliveryDataPbId,
+  DeliveryStatusChoicesModel statusChoice,
+) async {
+  try {
+    debugPrint('🔄 START: revertUpdateCustomerStatus()');
+    debugPrint('   📌 DeliveryData PB ID: $deliveryDataPbId');
+
+    // ---------------------------------------------------
+    // 1️⃣ RESOLVE DELIVERY DATA
+    // ---------------------------------------------------
+    final deliveryData = deliveryDataBox
+        .query(DeliveryDataModel_.pocketbaseId.equals(deliveryDataPbId))
+        .build()
+        .findFirst();
+
+    if (deliveryData == null) {
+      debugPrint('❌ DeliveryData not found locally');
+      return;
+    }
+
+    debugPrint('✅ DeliveryData resolved → OBX ID: ${deliveryData.objectBoxId}');
+    debugPrint('📊 Current updates count: ${deliveryData.deliveryUpdates.length}');
+
+    // ---------------------------------------------------
+    // 2️⃣ CHECK IF THERE IS A STATUS TO REVERT
+    // ---------------------------------------------------
+    if (deliveryData.deliveryUpdates.isEmpty) {
+      debugPrint('⚠️ No delivery updates to revert');
+      return;
+    }
+
+    // ---------------------------------------------------
+    // 🔥 3️⃣ GET LAST UPDATE (LATEST)
+    // ---------------------------------------------------
+    final lastUpdate = deliveryData.deliveryUpdates.last;
+
+    debugPrint(
+      '🗑️ Reverting LAST update → OBX=${lastUpdate.objectBoxId}, '
+      'title=${lastUpdate.title}',
+    );
+
+    // ---------------------------------------------------
+    // 🔥 4️⃣ REMOVE FROM RELATION FIRST
+    // ---------------------------------------------------
+    deliveryData.deliveryUpdates.removeLast();
+
+    // ---------------------------------------------------
+    // 🔥 5️⃣ DELETE FROM BOX
+    // ---------------------------------------------------
+    try {
+      deliveryUpdateBox.remove(lastUpdate.objectBoxId);
+      debugPrint('🗑️ Deleted deliveryUpdate from box');
+    } catch (e) {
+      debugPrint('⚠️ Failed to delete update from box: $e');
+    }
+
+    // ---------------------------------------------------
+    // 6️⃣ SAVE DELIVERY DATA (VERY IMPORTANT)
+    // ---------------------------------------------------
+    deliveryDataBox.put(deliveryData);
+
+    debugPrint(
+      '✅ Revert completed → remaining updates: ${deliveryData.deliveryUpdates.length}',
+    );
+
+    // ---------------------------------------------------
+    // 🔍 VERIFICATION (OPTIONAL BUT GOOD)
+    // ---------------------------------------------------
+    try {
+      final refreshed = deliveryDataBox.get(deliveryData.objectBoxId);
+
+      if (refreshed != null) {
+        debugPrint(
+          '🔍 Verification: refreshed updates count=${refreshed.deliveryUpdates.length}',
+        );
+
+        for (final rel in refreshed.deliveryUpdates) {
+          final full = deliveryUpdateBox.get(rel.objectBoxId);
+
+          debugPrint(
+            '   • remaining update OBX=${rel.objectBoxId} '
+            'title=${full?.title} time=${full?.time}',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Verification failed: $e');
+    }
+  } catch (e, st) {
+    debugPrint('❌ ERROR in revertUpdateCustomerStatus(): $e');
+    debugPrint('STACK TRACE: $st');
+    throw CacheException(message: e.toString());
+  }
+}
 }

@@ -13,6 +13,10 @@ abstract class DeliveryStatusChoicesRepo {
     String deliveryDataId,
     DeliveryStatusChoicesEntity status,
   );
+   ResultFuture<void> revertUpdateDeliveryStatus(
+    String deliveryDataId,
+    DeliveryStatusChoicesEntity status,
+  );
 
     ResultFuture<Map<String, List<DeliveryStatusChoicesEntity>>> getAllBulkDeliveryStatusChoices(List<String> customerIds);
  ResultFuture<void> bulkUpdateDeliveryStatus(

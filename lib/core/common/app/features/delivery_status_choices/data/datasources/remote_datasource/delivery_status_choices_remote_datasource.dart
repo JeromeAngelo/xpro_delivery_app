@@ -17,6 +17,11 @@ abstract class DeliveryStatusChoicesRemoteDataSource {
     DeliveryStatusChoicesModel status, // ✅ FULL MODEL
   );
 
+  Future<String> revertUpdateCustomerStatus(
+    String deliveryDataId, // DeliveryData PB ID
+    DeliveryStatusChoicesModel status, // ✅ FULL MODEL
+  );
+
   Future<Map<String, List<DeliveryStatusChoicesModel>>>
   getAllBulkDeliveryStatusChoices(List<String> customerIds);
   Future<void> bulkUpdateDeliveryStatus(
@@ -354,17 +359,13 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
           final allowedTitles = <String>[];
           switch (latestStatus) {
             case 'in transit':
-              allowedTitles.addAll(['arrived', ]);
+              allowedTitles.addAll(['arrived']);
               break;
             case 'waiting for customer':
-              allowedTitles.addAll([
-                'unloading',
-                
-                'invoices in queue',
-              ]);
+              allowedTitles.addAll(['unloading', 'invoices in queue']);
               break;
             case 'invoices in queue':
-              allowedTitles.addAll(['unloading', ]);
+              allowedTitles.addAll(['unloading']);
               break;
             case 'unloading':
               allowedTitles.addAll(['mark as received']);
@@ -532,234 +533,345 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       );
     }
   }
+
   @override
-Future<void> setEndDelivery(DeliveryDataEntity deliveryData) async {
-  try {
-    debugPrint(
-      '🔄 Processing delivery completion for delivery data: ${deliveryData.id}',
-    );
-
-    // ---------------------------------------------------
-    // 0️⃣ Validate Delivery ID
-    // ---------------------------------------------------
-    final deliveryDataId = deliveryData.id;
-    if (deliveryDataId == null || deliveryDataId.isEmpty) {
-      throw const ServerException(
-        message: 'Invalid delivery data ID',
-        statusCode: '400',
-      );
-    }
-
-    // ---------------------------------------------------
-    // 1️⃣ Resolve Trip ID (REQUIRED)
-    // ---------------------------------------------------
-    final tripId = deliveryData.trip.target?.id;
-    if (tripId == null || tripId.isEmpty) {
-      throw const ServerException(
-        message: 'Trip ID not found for delivery data',
-        statusCode: '404',
-      );
-    }
-
-    debugPrint('🚛 Found trip ID: $tripId');
-
-    // ---------------------------------------------------
-    // 2️⃣ Create "End Delivery" delivery update (REQUIRED)
-    // ---------------------------------------------------
-    debugPrint('📝 Adding "End Delivery" status');
-
-    final endDeliveryStatus = await _pocketBaseClient
-        .collection('deliveryStatusChoices')
-        .getFirstListItem('title = "End Delivery"');
-
-    final now = DateTime.now().toIso8601String();
-
-    final deliveryUpdateRecord = await _pocketBaseClient
-        .collection('deliveryUpdate')
-        .create(
-      body: {
-        'deliveryData': deliveryDataId,
-        'status': endDeliveryStatus.id,
-        'title': endDeliveryStatus.data['title'],
-        'subtitle': endDeliveryStatus.data['subtitle'],
-        'created': now,
-        'time': now,
-        'isAssigned': true,
-      },
-    );
-
-    debugPrint('✅ End Delivery update created → ${deliveryUpdateRecord.id}');
-
-    await _pocketBaseClient.collection('deliveryData').update(
-      deliveryDataId,
-      body: {
-        'invoiceStatus': 'delivered',
-        'deliveryUpdates+': [deliveryUpdateRecord.id],
-      },
-    );
-
-    // ---------------------------------------------------
-    // 3️⃣ Delivery Receipt (OPTIONAL — NON-BLOCKING)
-    // ---------------------------------------------------
-    String? deliveryReceiptId;
-
+  Future<void> setEndDelivery(DeliveryDataEntity deliveryData) async {
     try {
-      debugPrint('🔍 Looking for delivery receipt');
+      debugPrint(
+        '🔄 Processing delivery completion for delivery data: ${deliveryData.id}',
+      );
 
-      final receiptRecords = await _pocketBaseClient
-          .collection('deliveryReceipt')
-          .getList(filter: 'deliveryData = "$deliveryDataId"');
-
-      if (receiptRecords.items.isNotEmpty) {
-        deliveryReceiptId = receiptRecords.items.first.id;
-        debugPrint('🧾 Delivery receipt found → $deliveryReceiptId');
-      } else {
-        debugPrint('⚠️ No delivery receipt found (continuing)');
+      // ---------------------------------------------------
+      // 0️⃣ Validate Delivery ID
+      // ---------------------------------------------------
+      final deliveryDataId = deliveryData.id;
+      if (deliveryDataId == null || deliveryDataId.isEmpty) {
+        throw const ServerException(
+          message: 'Invalid delivery data ID',
+          statusCode: '400',
+        );
       }
-    } catch (e) {
-      debugPrint('⚠️ Delivery receipt lookup failed (ignored): $e');
-    }
 
-    // ---------------------------------------------------
-    // 4️⃣ Resolve Customer & Invoices (REQUIRED)
-    // ---------------------------------------------------
-    final customerId = deliveryData.customer.target?.id;
-    final invoiceIds =
-        deliveryData.invoices.map((invoice) => invoice.id).toList();
+      // ---------------------------------------------------
+      // 1️⃣ Resolve Trip ID (REQUIRED)
+      // ---------------------------------------------------
+      final tripId = deliveryData.trip.target?.id;
+      if (tripId == null || tripId.isEmpty) {
+        throw const ServerException(
+          message: 'Trip ID not found for delivery data',
+          statusCode: '404',
+        );
+      }
 
-    if (customerId == null || customerId.isEmpty) {
-      throw const ServerException(
-        message: 'Customer ID not found in delivery data',
-        statusCode: '404',
-      );
-    }
+      debugPrint('🚛 Found trip ID: $tripId');
 
-    if (invoiceIds.isEmpty) {
-      throw const ServerException(
-        message: 'No invoices found in delivery data',
-        statusCode: '404',
-      );
-    }
+      // ---------------------------------------------------
+      // 2️⃣ Create "End Delivery" delivery update (REQUIRED)
+      // ---------------------------------------------------
+      debugPrint('📝 Adding "End Delivery" status');
 
-    // ---------------------------------------------------
-    // 5️⃣ Create Delivery Collection (REQUIRED)
-    // ---------------------------------------------------
-    final deliveryCollectionRecord = await _pocketBaseClient
-        .collection('deliveryCollection')
-        .create(
-      body: {
-        'deliveryData': deliveryDataId,
-        'trip': tripId,
-        'deliveryReceipt': deliveryReceiptId, // ✅ can be null
-        'customer': customerId,
-        'invoice': invoiceIds.first,
-        'invoices': invoiceIds,
-        'invoiceStatus': 'completed',
-        'completedAt': DateTime.now().toUtc().toIso8601String(),
-        'status': 'completed',
-      },
-    );
+      final endDeliveryStatus = await _pocketBaseClient
+          .collection('deliveryStatusChoices')
+          .getFirstListItem('title = "End Delivery"');
 
-    debugPrint(
-      '✅ Delivery collection created → ${deliveryCollectionRecord.id}',
-    );
+      final now = DateTime.now().toIso8601String();
 
-    // ---------------------------------------------------
-    // 6️⃣ Update User Performance (OPTIONAL — NON-BLOCKING)
-    // ---------------------------------------------------
-    try {
-      debugPrint('📊 Updating user performance');
-
-      final tripTicket = await _pocketBaseClient
-          .collection('tripticket')
-          .getOne(tripId);
-
-      final userId = tripTicket.data['user'];
-
-      if (userId != null && userId.toString().isNotEmpty) {
-        final perfRecords = await _pocketBaseClient
-            .collection('userPerformance')
-            .getList(filter: 'user = "$userId"');
-
-        if (perfRecords.items.isNotEmpty) {
-          final perf = perfRecords.items.first;
-
-          final success =
-              int.tryParse(perf.data['successfulDeliveries']?.toString() ?? '0') ?? 0;
-          final total =
-              int.tryParse(perf.data['totalDeliveries']?.toString() ?? '0') ?? 0;
-
-          final newSuccess = success + 1;
-          final successRate =
-              total > 0 ? (newSuccess / total) * 100 : 0;
-
-          await _pocketBaseClient.collection('userPerformance').update(
-            perf.id,
+      final deliveryUpdateRecord = await _pocketBaseClient
+          .collection('deliveryUpdate')
+          .create(
             body: {
-              'successfulDeliveries': newSuccess.toString(),
-              'successRate': successRate.toStringAsFixed(2),
-              'updated': DateTime.now().toIso8601String(),
+              'deliveryData': deliveryDataId,
+              'status': endDeliveryStatus.id,
+              'title': endDeliveryStatus.data['title'],
+              'subtitle': endDeliveryStatus.data['subtitle'],
+              'created': now,
+              'time': now,
+              'isAssigned': true,
             },
           );
 
-          debugPrint('✅ User performance updated');
+      debugPrint('✅ End Delivery update created → ${deliveryUpdateRecord.id}');
+
+      await _pocketBaseClient
+          .collection('deliveryData')
+          .update(
+            deliveryDataId,
+            body: {
+              'invoiceStatus': 'delivered',
+              'deliveryUpdates+': [deliveryUpdateRecord.id],
+            },
+          );
+
+      // ---------------------------------------------------
+      // 3️⃣ Delivery Receipt (OPTIONAL — NON-BLOCKING)
+      // ---------------------------------------------------
+      String? deliveryReceiptId;
+
+      try {
+        debugPrint('🔍 Looking for delivery receipt');
+
+        final receiptRecords = await _pocketBaseClient
+            .collection('deliveryReceipt')
+            .getList(filter: 'deliveryData = "$deliveryDataId"');
+
+        if (receiptRecords.items.isNotEmpty) {
+          deliveryReceiptId = receiptRecords.items.first.id;
+          debugPrint('🧾 Delivery receipt found → $deliveryReceiptId');
         } else {
-          debugPrint('⚠️ No user performance record found');
+          debugPrint('⚠️ No delivery receipt found (continuing)');
         }
+      } catch (e) {
+        debugPrint('⚠️ Delivery receipt lookup failed (ignored): $e');
       }
+
+      // ---------------------------------------------------
+      // 4️⃣ Resolve Customer & Invoices (REQUIRED)
+      // ---------------------------------------------------
+      final customerId = deliveryData.customer.target?.id;
+      final invoiceIds =
+          deliveryData.invoices.map((invoice) => invoice.id).toList();
+
+      if (customerId == null || customerId.isEmpty) {
+        throw const ServerException(
+          message: 'Customer ID not found in delivery data',
+          statusCode: '404',
+        );
+      }
+
+      if (invoiceIds.isEmpty) {
+        throw const ServerException(
+          message: 'No invoices found in delivery data',
+          statusCode: '404',
+        );
+      }
+
+      // ---------------------------------------------------
+      // 5️⃣ Create Delivery Collection (REQUIRED)
+      // ---------------------------------------------------
+      final deliveryCollectionRecord = await _pocketBaseClient
+          .collection('deliveryCollection')
+          .create(
+            body: {
+              'deliveryData': deliveryDataId,
+              'trip': tripId,
+              'deliveryReceipt': deliveryReceiptId, // ✅ can be null
+              'customer': customerId,
+              'invoice': invoiceIds.first,
+              'invoices': invoiceIds,
+              'invoiceStatus': 'completed',
+              'completedAt': DateTime.now().toUtc().toIso8601String(),
+              'status': 'completed',
+            },
+          );
+
+      debugPrint(
+        '✅ Delivery collection created → ${deliveryCollectionRecord.id}',
+      );
+
+      // ---------------------------------------------------
+      // 6️⃣ Update User Performance (OPTIONAL — NON-BLOCKING)
+      // ---------------------------------------------------
+      try {
+        debugPrint('📊 Updating user performance');
+
+        final tripTicket = await _pocketBaseClient
+            .collection('tripticket')
+            .getOne(tripId);
+
+        final userId = tripTicket.data['user'];
+
+        if (userId != null && userId.toString().isNotEmpty) {
+          final perfRecords = await _pocketBaseClient
+              .collection('userPerformance')
+              .getList(filter: 'user = "$userId"');
+
+          if (perfRecords.items.isNotEmpty) {
+            final perf = perfRecords.items.first;
+
+            final success =
+                int.tryParse(
+                  perf.data['successfulDeliveries']?.toString() ?? '0',
+                ) ??
+                0;
+            final total =
+                int.tryParse(perf.data['totalDeliveries']?.toString() ?? '0') ??
+                0;
+
+            final newSuccess = success + 1;
+            final successRate = total > 0 ? (newSuccess / total) * 100 : 0;
+
+            await _pocketBaseClient
+                .collection('userPerformance')
+                .update(
+                  perf.id,
+                  body: {
+                    'successfulDeliveries': newSuccess.toString(),
+                    'successRate': successRate.toStringAsFixed(2),
+                    'updated': DateTime.now().toIso8601String(),
+                  },
+                );
+
+            debugPrint('✅ User performance updated');
+          } else {
+            debugPrint('⚠️ No user performance record found');
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ User performance update failed (ignored): $e');
+      }
+
+      // ---------------------------------------------------
+      // 7️⃣ Update Delivery Team (REQUIRED)
+      // ---------------------------------------------------
+      final teamRecords = await _pocketBaseClient
+          .collection('deliveryTeam')
+          .getList(filter: 'tripTicket = "$tripId"');
+
+      if (teamRecords.items.isEmpty) {
+        throw const ServerException(
+          message: 'Delivery team not found for this trip',
+          statusCode: '404',
+        );
+      }
+
+      final team = teamRecords.items.first;
+
+      final active =
+          int.tryParse(team.data['activeDeliveries']?.toString() ?? '0') ?? 0;
+      final total =
+          int.tryParse(team.data['totalDelivered']?.toString() ?? '0') ?? 0;
+
+      await _pocketBaseClient
+          .collection('deliveryTeam')
+          .update(
+            team.id,
+            body: {
+              'activeDeliveries': (active - 1).clamp(0, 999999).toString(),
+              'totalDelivered': (total + 1).toString(),
+              'updated': DateTime.now().toUtc().toIso8601String(),
+            },
+          );
+
+      // ---------------------------------------------------
+      // 8️⃣ Update Trip Ticket (REQUIRED)
+      // ---------------------------------------------------
+      await _pocketBaseClient
+          .collection('tripticket')
+          .update(
+            tripId,
+            body: {
+              'deliveryCollection+': [deliveryCollectionRecord.id],
+              'updated': DateTime.now().toUtc().toIso8601String(),
+            },
+          );
+
+      debugPrint('🎉 DELIVERY COMPLETED SUCCESSFULLY');
     } catch (e) {
-      debugPrint('⚠️ User performance update failed (ignored): $e');
+      debugPrint('❌ Failed to complete delivery: $e');
+      throw ServerException(
+        message: 'Failed to complete delivery: $e',
+        statusCode: '500',
+      );
     }
+  }
+  
+@override
+Future<String> revertUpdateCustomerStatus(
+  String deliveryDataId,
+  DeliveryStatusChoicesModel status,
+) async {
+  try {
+    debugPrint(
+      '🔄 REVERT: Removing latest status for DeliveryData: $deliveryDataId',
+    );
 
     // ---------------------------------------------------
-    // 7️⃣ Update Delivery Team (REQUIRED)
+    // 1️⃣ GET DELIVERY DATA WITH UPDATES
     // ---------------------------------------------------
-    final teamRecords = await _pocketBaseClient
-        .collection('deliveryTeam')
-        .getList(filter: 'tripTicket = "$tripId"');
+    final deliveryRecord = await _pocketBaseClient
+        .collection('deliveryData')
+        .getOne(
+          deliveryDataId,
+          expand: 'deliveryUpdates',
+        );
 
-    if (teamRecords.items.isEmpty) {
+    if (deliveryRecord.expand['deliveryUpdates'] == null ||
+        (deliveryRecord.expand['deliveryUpdates'] as List).isEmpty) {
+      debugPrint('⚠️ No delivery updates found to revert');
+
       throw const ServerException(
-        message: 'Delivery team not found for this trip',
+        message: 'No delivery updates to revert',
         statusCode: '404',
       );
     }
 
-    final team = teamRecords.items.first;
-
-    final active =
-        int.tryParse(team.data['activeDeliveries']?.toString() ?? '0') ?? 0;
-    final total =
-        int.tryParse(team.data['totalDelivered']?.toString() ?? '0') ?? 0;
-
-    await _pocketBaseClient.collection('deliveryTeam').update(
-      team.id,
-      body: {
-        'activeDeliveries': (active - 1).clamp(0, 999999).toString(),
-        'totalDelivered': (total + 1).toString(),
-        'updated': DateTime.now().toUtc().toIso8601String(),
-      },
-    );
+    final updates = deliveryRecord.expand['deliveryUpdates'] as List;
 
     // ---------------------------------------------------
-    // 8️⃣ Update Trip Ticket (REQUIRED)
+    // 2️⃣ GET LATEST UPDATE
     // ---------------------------------------------------
-    await _pocketBaseClient.collection('tripticket').update(
-      tripId,
-      body: {
-        'deliveryCollection+': [deliveryCollectionRecord.id],
-        'updated': DateTime.now().toUtc().toIso8601String(),
-      },
-    );
+    final lastUpdate = updates.last;
+    final lastUpdateId = lastUpdate.id;
 
-    debugPrint('🎉 DELIVERY COMPLETED SUCCESSFULLY');
+    debugPrint('🗑️ Reverting last update: $lastUpdateId');
+
+    // ---------------------------------------------------
+    // 3️⃣ REMOVE RELATION FROM DELIVERYDATA
+    // ---------------------------------------------------
+    await _pocketBaseClient
+        .collection('deliveryData')
+        .update(
+          deliveryDataId,
+          body: {
+            'deliveryUpdates-': [lastUpdateId], // 🔥 remove relation
+          },
+        );
+
+    debugPrint('✅ Removed relation from deliveryData');
+
+    // ---------------------------------------------------
+    // 4️⃣ DELETE DELIVERY UPDATE RECORD
+    // ---------------------------------------------------
+    await _pocketBaseClient
+        .collection('deliveryUpdate')
+        .delete(lastUpdateId);
+
+    debugPrint('🗑️ Deleted deliveryUpdate record');
+
+    // ---------------------------------------------------
+    // 5️⃣ OPTIONAL: DELETE RELATED NOTIFICATION
+    // ---------------------------------------------------
+    try {
+      final notifList = await _pocketBaseClient
+          .collection('notifications')
+          .getFullList(
+            filter: 'status = "$lastUpdateId"',
+          );
+
+      for (final notif in notifList) {
+        await _pocketBaseClient
+            .collection('notifications')
+            .delete(notif.id);
+
+        debugPrint('🗑️ Deleted notification: ${notif.id}');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to delete notification: $e');
+    }
+
+    // ---------------------------------------------------
+    // 6️⃣ RETURN REMOVED UPDATE ID
+    // ---------------------------------------------------
+    return lastUpdateId;
   } catch (e) {
-    debugPrint('❌ Failed to complete delivery: $e');
+    debugPrint('❌ REVERT FAILED: ${e.toString()}');
+
     throw ServerException(
-      message: 'Failed to complete delivery: $e',
-      statusCode: '500',
+      message: e is ServerException
+          ? e.message
+          : 'Failed to revert status: ${e.toString()}',
+      statusCode: e is ServerException ? e.statusCode : '500',
     );
   }
 }
-
 }

@@ -51,7 +51,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
       GetAllAssignedDeliveryStatusChoicesEvent(widget.deliveryDataId),
     );
 
-     // Load local delivery status choices
+    // Load local delivery status choices
     deliveryUpdateBloc.add(
       GetAllAssignedDeliveryStatusChoicesEvent(widget.deliveryDataId),
     );
@@ -275,7 +275,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
       Navigator.of(context).pop();
 
       final state = context.read<DeliveryDataBloc>().state;
-      if (state is DeliveryDataLoaded ) {
+      if (state is DeliveryDataLoaded) {
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
             context.push(

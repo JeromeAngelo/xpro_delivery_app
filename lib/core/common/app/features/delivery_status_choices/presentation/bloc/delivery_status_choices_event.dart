@@ -41,6 +41,20 @@ class UpdateCustomerStatusEvent extends DeliveryStatusChoicesEvent {
   List<Object?> get props => [deliveryDataId, status];
 }
 
+/// 📝 Update delivery status (choice selected)
+class RevertUpdateCustomerStatusEvent extends DeliveryStatusChoicesEvent {
+  final String deliveryDataId;
+  final DeliveryStatusChoicesEntity status;
+
+  const RevertUpdateCustomerStatusEvent({
+    required this.deliveryDataId,
+    required this.status,
+  });
+
+  @override
+  List<Object?> get props => [deliveryDataId, status];
+}
+
 /// 📦 Get bulk assigned/allowed status choices for multiple DeliveryData ids
 class GetAllBulkDeliveryStatusChoicesEvent extends DeliveryStatusChoicesEvent {
   final List<String> deliveryDataIds;

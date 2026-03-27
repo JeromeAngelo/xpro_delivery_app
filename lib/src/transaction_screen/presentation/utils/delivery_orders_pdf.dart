@@ -1,424 +1,314 @@
 // ignore_for_file: depend_on_referenced_packages, unused_local_variable
 
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-
 class DeliveryOrdersPDF {
   static Future<Uint8List> generatePDF({
     required DeliveryDataEntity deliveryData,
     required PdfColor themeColor,
   }) async {
-    debugPrint(
-      '🚀 Starting PDF generation process for delivery: ${deliveryData.id}',
-    );
     final pdf = pw.Document();
 
-    try {
-      debugPrint('📚 Loading fonts...');
-      final regularFont = await PdfGoogleFonts.nunitoRegular();
-      final boldFont = await PdfGoogleFonts.nunitoBold();
-      debugPrint('✅ Fonts loaded successfully');
+    final regularFont = await PdfGoogleFonts.nunitoRegular();
+    final boldFont = await PdfGoogleFonts.nunitoBold();
 
-      final headerStyle = pw.TextStyle(font: boldFont, fontSize: 18);
-      final subHeaderStyle = pw.TextStyle(font: regularFont, fontSize: 14);
-      final contentStyle = pw.TextStyle(font: regularFont, fontSize: 12);
-      final totalStyle = pw.TextStyle(font: boldFont, fontSize: 14);
+    final contentStyle = pw.TextStyle(font: regularFont, fontSize: 11);
+    final subHeaderStyle = pw.TextStyle(font: boldFont, fontSize: 13);
 
-      debugPrint('📄 Creating delivery receipt document');
+    final customer = deliveryData.customer.target;
+    final invoices = deliveryData.invoices;
+    final invoiceItems = deliveryData.invoiceItems;
 
-      // Get customer data
-      final customer = deliveryData.customer.target;
-      final invoices = deliveryData.invoices;
-      final invoiceItems = deliveryData.invoiceItems;
+    if (customer == null) throw Exception('Customer required');
+    if (invoices.isEmpty) throw Exception('Invoice required');
 
-      if (customer == null) {
-        throw Exception('Customer data is required for PDF generation');
-      }
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
 
-      if (invoices.isEmpty) {
-        throw Exception('At least one invoice is required for PDF generation');
-      }
-
-      debugPrint('📝 Processing delivery for customer: ${customer.name}');
-      debugPrint('📊 Number of invoices: ${invoices.length}');
-      debugPrint('📦 Total invoice items: ${invoiceItems.length}');
-
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(32),
-          header:
-              (context) => pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text('Delivery Receipt', style: headerStyle),
-              ),
-          build:
-              (context) => [
-                // Delivery Information
-                pw.Container(
-                  padding: const pw.EdgeInsets.all(16),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: themeColor),
-                    borderRadius: const pw.BorderRadius.all(
-                      pw.Radius.circular(8),
-                    ),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Delivery Information', style: subHeaderStyle),
-                      pw.SizedBox(height: 8),
-                      pw.Text(
-                        'Delivery Number: ${deliveryData.deliveryNumber ?? 'N/A'}',
-                        style: contentStyle,
-                      ),
-                      pw.Text(
-                        'Payment Mode: ${deliveryData.paymentMode ?? 'N/A'}',
-                        style: contentStyle,
-                      ),
-                      if (deliveryData.created != null)
-                        pw.Text(
-                          'Date Created: ${_formatDate(deliveryData.created!)}',
-                          style: contentStyle,
-                        ),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-
-                // Customer Information
-                pw.Container(
-                  padding: const pw.EdgeInsets.all(16),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: themeColor),
-                    borderRadius: const pw.BorderRadius.all(
-                      pw.Radius.circular(8),
-                    ),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Customer Details', style: subHeaderStyle),
-                      pw.SizedBox(height: 8),
-                      pw.Text(
-                        'Customer Name: ${customer.name ?? 'N/A'}',
-                        style: contentStyle,
-                      ),
-                      if (customer.province != null)
-                        pw.Text(
-                          'Address: ${customer.province ?? 'N/A'}',
-                          style: contentStyle,
-                        ),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-
-                // Invoices Summary
-                pw.Container(
-                  padding: const pw.EdgeInsets.all(16),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: themeColor),
-                    borderRadius: const pw.BorderRadius.all(
-                      pw.Radius.circular(8),
-                    ),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Invoices Information', style: subHeaderStyle),
-                      pw.SizedBox(height: 8),
-                      ...invoices.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final invoice = entry.value;
-                        return pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              'Invoice ${index + 1}: ${invoice.refId ?? invoice.name ?? 'N/A'}',
-                              style: contentStyle,
-                            ),
-                            if (invoice.totalAmount != null)
-                              pw.Text(
-                                '   Amount: ₱${invoice.totalAmount!.toStringAsFixed(2)}',
-                                style: contentStyle,
-                              ),
-                            if (invoice.documentDate != null)
-                              pw.Text(
-                                '   Date: ${_formatDate(invoice.documentDate!)}',
-                                style: contentStyle,
-                              ),
-                            if (index < invoices.length - 1)
-                              pw.SizedBox(height: 4),
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-
-                // Invoice Items
-                if (invoiceItems.isNotEmpty) ...[
-                  pw.Text('Invoice Items', style: subHeaderStyle),
-                  pw.SizedBox(height: 10),
-                  pw.TableHelper.fromTextArray(
-                    border: pw.TableBorder.all(color: themeColor),
-                    headerStyle: pw.TextStyle(
-                      font: boldFont,
-                      color: themeColor,
-                    ),
-                    headerDecoration: const pw.BoxDecoration(
-                      color: PdfColors.grey300,
-                    ),
-                    cellStyle: contentStyle,
-                    headers: [
-                      'Item Name',
-                      'Brand',
-                      'UOM',
-                      'Quantity',
-                      'Unit Price',
-                      'Total Amount',
-                    ],
-                    data:
-                        invoiceItems
-                            .map(
-                              (item) => [
-                                item.name ?? 'N/A',
-                                item.brand ?? 'N/A',
-                                item.uom ?? 'N/A',
-                                item.quantity?.toStringAsFixed(2) ?? '0.00',
-                                item.uomPrice != null
-                                    ? '₱${item.uomPrice!.toStringAsFixed(2)}'
-                                    : '₱0.00',
-                                item.totalAmount != null
-                                    ? '₱${item.totalAmount!.toStringAsFixed(2)}'
-                                    : '₱0.00',
-                              ],
-                            )
-                            .toList(),
-                  ),
-                  pw.SizedBox(height: 20),
-                ],
-
-                // Summary Section
-                pw.Container(
-                  padding: const pw.EdgeInsets.all(16),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: themeColor),
-                    borderRadius: const pw.BorderRadius.all(
-                      pw.Radius.circular(8),
-                    ),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Delivery Summary', style: subHeaderStyle),
-                      pw.SizedBox(height: 8),
-                      pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text('Total Invoices:', style: contentStyle),
-                          pw.Text('${invoices.length}', style: contentStyle),
-                        ],
-                      ),
-                      pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text('Total Items:', style: contentStyle),
-                          pw.Text(
-                            '${invoiceItems.length}',
-                            style: contentStyle,
-                          ),
-                        ],
-                      ),
-                      pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text('Total Amount:', style: totalStyle),
-                          pw.Text(
-                            '₱${invoiceItems.fold<double>(0.0, (sum, item) => sum + (item.totalAmount ?? 0.0)).toStringAsFixed(2)}',
-                            style: totalStyle,
-                          ),
-                        ],
-                      ),
-                      if (deliveryData.paymentSelection != null)
-                        pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                          children: [
-                            pw.Text('Payment Method:', style: contentStyle),
-                            pw.Text(
-                              deliveryData.paymentSelection
-                                  .toString()
-                                  .split('.')
-                                  .last,
-                              style: contentStyle,
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 40),
-
-                // Signatures Section
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        build: (context) => [
+          /// 🔷 HEADER
+          pw.Container(
+            padding: const pw.EdgeInsets.only(bottom: 16),
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(width: 1)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Container(
-                          width: 150,
-                          height: 60,
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border.all(color: PdfColors.grey),
-                          ),
-                        ),
-                        pw.SizedBox(height: 5),
-                        pw.Container(width: 150, child: pw.Divider()),
-                        pw.Text('Customer Signature', style: contentStyle),
-                        pw.Text('Date: _______________', style: contentStyle),
-                      ],
+                    pw.Text(
+                      'DELIVERY RECEIPT',
+                      style: pw.TextStyle(
+                        font: boldFont,
+                        fontSize: 20,
+                        color: themeColor,
+                      ),
                     ),
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Container(
-                          width: 150,
-                          height: 60,
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border.all(color: PdfColors.grey),
-                          ),
-                        ),
-                        pw.SizedBox(height: 5),
-                        pw.Container(width: 150, child: pw.Divider()),
-                        pw.Text(
-                          'Delivery Personnel Signature',
-                          style: contentStyle,
-                        ),
-                        pw.Text('Date: _______________', style: contentStyle),
-                      ],
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'X-Pro Delivery Admin',
+                      style: pw.TextStyle(font: regularFont, fontSize: 10),
                     ),
                   ],
                 ),
-                pw.SizedBox(height: 20),
-
-                // Footer
-                pw.Container(
-                  alignment: pw.Alignment.center,
-                  child: pw.Column(
-                    children: [
-                      pw.Divider(),
-                      pw.SizedBox(height: 10),
-                      pw.Text(
-                        'Thank you for your business!',
-                        style: pw.TextStyle(
-                          font: boldFont,
-                          fontSize: 14,
-                          color: themeColor,
-                        ),
-                      ),
-                      pw.Text(
-                        'Generated on: ${_formatDateTime(DateTime.now())}',
-                        style: pw.TextStyle(
-                          font: regularFont,
-                          fontSize: 10,
-                          color: PdfColors.grey600,
-                        ),
-                      ),
-                    ],
-                  ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text(
+                      'Date: ${_formatDate(DateTime.now())}',
+                      style: contentStyle,
+                    ),
+                    pw.Text(
+                      'Ref #: ${deliveryData.deliveryNumber ?? '-'}',
+                      style: contentStyle,
+                    ),
+                  ],
                 ),
               ],
-        ),
-      );
-
-      debugPrint('💾 Saving PDF document');
-      final bytes = await pdf.save();
-      debugPrint('✅ PDF generation completed successfully');
-      return bytes;
-    } catch (e) {
-      debugPrint('❌ Error generating PDF: $e');
-      rethrow;
-    }
-  }
-
-  /// Helper method to format date
-  static String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
-  /// Helper method to format date and time
-  static String _formatDateTime(DateTime dateTime) {
-    return '${_formatDate(dateTime)} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-  }
-
-  /// Generate PDF with custom theme color
-  static Future<Uint8List> generateDeliveryReceiptPDF({
-    required DeliveryDataEntity deliveryData,
-    PdfColor? customThemeColor,
-  }) async {
-    return generatePDF(
-      deliveryData: deliveryData,
-      themeColor: customThemeColor ?? PdfColors.blue,
-    );
-  }
-
-  /// Generate PDF for multiple deliveries (batch)
-  static Future<Uint8List> generateBatchDeliveryPDF({
-    required List<DeliveryDataEntity> deliveries,
-    required PdfColor themeColor,
-  }) async {
-    debugPrint(
-      '🚀 Starting batch PDF generation for ${deliveries.length} deliveries',
-    );
-    final pdf = pw.Document();
-
-    try {
-      final regularFont = await PdfGoogleFonts.nunitoRegular();
-      final boldFont = await PdfGoogleFonts.nunitoBold();
-
-      final headerStyle = pw.TextStyle(font: boldFont, fontSize: 18);
-      final subHeaderStyle = pw.TextStyle(font: regularFont, fontSize: 14);
-
-      for (int i = 0; i < deliveries.length; i++) {
-        final delivery = deliveries[i];
-        debugPrint(
-          '📝 Processing delivery ${i + 1}/${deliveries.length}: ${delivery.id}',
-        );
-
-        // Add page break between deliveries (except for the first one)
-        if (i > 0) {
-          pdf.addPage(
-            pw.Page(
-              pageFormat: PdfPageFormat.a4,
-              build: (context) => pw.Container(),
             ),
-          );
-        }
+          ),
 
-        // Generate individual delivery receipt
-        final deliveryBytes = await generatePDF(
-          deliveryData: delivery,
-          themeColor: themeColor,
-        );
+          pw.SizedBox(height: 20),
 
-        // This is a simplified approach - in practice, you'd want to
-        // merge the pages properly or generate all content in one document
-      }
+          /// 🔷 DELIVERY + CUSTOMER
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Expanded(
+                child: _infoBlock(
+                  'Delivery Info',
+                  [
+                    'Delivery #: ${deliveryData.deliveryNumber ?? 'N/A'}',
+                    'Payment: ${deliveryData.paymentMode ?? 'N/A'}',
+                    'Date: ${deliveryData.created != null ? _formatDate(deliveryData.created!) : 'N/A'}',
+                  ],
+                  regularFont,
+                  boldFont,
+                ),
+              ),
+              pw.SizedBox(width: 20),
+              pw.Expanded(
+                child: _infoBlock(
+                  'Customer',
+                  [
+                    'Name: ${customer.name ?? 'N/A'}',
+                    'Address: ${customer.province ?? 'N/A'}',
+                  ],
+                  regularFont,
+                  boldFont,
+                ),
+              ),
+            ],
+          ),
 
-      final bytes = await pdf.save();
-      debugPrint('✅ Batch PDF generation completed successfully');
-      return bytes;
-    } catch (e) {
-      debugPrint('❌ Error generating batch PDF: $e');
-      rethrow;
-    }
+          pw.SizedBox(height: 20),
+
+          /// 🔷 INVOICE LIST
+          pw.Text('Invoices', style: subHeaderStyle),
+          pw.SizedBox(height: 8),
+          ...invoices.map((invoice) {
+            return pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(invoice.refId ?? invoice.name ?? 'N/A',
+                    style: contentStyle),
+                pw.Text(
+                  invoice.totalAmount != null
+                      ? '₱${invoice.totalAmount!.toStringAsFixed(2)}'
+                      : '₱0.00',
+                  style: contentStyle,
+                ),
+              ],
+            );
+          }),
+
+          pw.SizedBox(height: 20),
+
+          /// 🔷 TABLE
+          if (invoiceItems.isNotEmpty) ...[
+            pw.Text('Invoice Items', style: subHeaderStyle),
+            pw.SizedBox(height: 10),
+
+            pw.TableHelper.fromTextArray(
+              headerDecoration: pw.BoxDecoration(color: themeColor),
+              headerStyle: pw.TextStyle(
+                font: boldFont,
+                color: PdfColors.white,
+              ),
+              cellStyle: contentStyle,
+              cellPadding: const pw.EdgeInsets.all(6),
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              headers: [
+                'Item',
+                'Brand',
+                'UOM',
+                'Qty',
+                'Price',
+                'Total',
+              ],
+              data: invoiceItems.map((item) {
+                return [
+                  item.name ?? 'N/A',
+                  item.brand ?? 'N/A',
+                  item.uom ?? 'N/A',
+                  item.quantity?.toStringAsFixed(2) ?? '0',
+                  item.uomPrice != null
+                      ? '₱${item.uomPrice!.toStringAsFixed(2)}'
+                      : '₱0.00',
+                  item.totalAmount != null
+                      ? '₱${item.totalAmount!.toStringAsFixed(2)}'
+                      : '₱0.00',
+                ];
+              }).toList(),
+            ),
+            pw.SizedBox(height: 20),
+          ],
+
+          /// 🔷 SUMMARY
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              border: pw.Border(
+                top: pw.BorderSide(width: 1.5, color: themeColor),
+              ),
+            ),
+            child: pw.Column(
+              children: [
+                _summaryRow(
+                  'Total Items',
+                  '${invoiceItems.length}',
+                  regularFont,
+                ),
+                _summaryRow(
+                  'Total Invoices',
+                  '${invoices.length}',
+                  regularFont,
+                ),
+                pw.Divider(),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'TOTAL',
+                      style: pw.TextStyle(font: boldFont, fontSize: 14),
+                    ),
+                    pw.Text(
+                      '₱${invoiceItems.fold<double>(0.0, (sum, item) => sum + (item.totalAmount ?? 0.0)).toStringAsFixed(2)}',
+                      style: pw.TextStyle(
+                        font: boldFont,
+                        fontSize: 16,
+                        color: themeColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          pw.SizedBox(height: 40),
+
+          /// 🔷 SIGNATURES
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              _signatureBlock('Customer'),
+              _signatureBlock('Delivery Personnel'),
+            ],
+          ),
+
+          pw.SizedBox(height: 20),
+
+          /// 🔷 FOOTER
+          pw.Center(
+            child: pw.Column(
+              children: [
+                pw.Divider(),
+                pw.SizedBox(height: 6),
+                pw.Text(
+                  'Thank you for your business!',
+                  style: pw.TextStyle(
+                    font: boldFont,
+                    fontSize: 12,
+                    color: themeColor,
+                  ),
+                ),
+                pw.Text(
+                  'Generated: ${_formatDateTime(DateTime.now())}',
+                  style: pw.TextStyle(fontSize: 9),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  /// 🔷 HELPERS
+
+  static pw.Widget _infoBlock(
+    String title,
+    List<String> lines,
+    pw.Font regular,
+    pw.Font bold,
+  ) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(title, style: pw.TextStyle(font: bold, fontSize: 12)),
+        pw.SizedBox(height: 6),
+        ...lines.map((e) => pw.Text(e, style: pw.TextStyle(font: regular))),
+      ],
+    );
+  }
+
+  static pw.Widget _summaryRow(
+    String label,
+    String value,
+    pw.Font font,
+  ) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(label),
+        pw.Text(value),
+      ],
+    );
+  }
+
+  static pw.Widget _signatureBlock(String label) {
+    return pw.Column(
+      children: [
+        pw.Container(
+          width: 150,
+          height: 50,
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey),
+          ),
+        ),
+        pw.SizedBox(height: 4),
+        pw.Container(width: 150, child: pw.Divider()),
+        pw.Text(label),
+      ],
+    );
+  }
+
+  static String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  static String _formatDateTime(DateTime dateTime) {
+    return '${_formatDate(dateTime)} ${dateTime.hour}:${dateTime.minute}';
   }
 }

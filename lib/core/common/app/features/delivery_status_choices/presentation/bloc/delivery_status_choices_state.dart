@@ -76,6 +76,15 @@ class DeliveryStatusUpdated extends DeliveryStatusChoicesState {
   List<Object?> get props => [];
 }
 
+/// ✅ Status updated successfully
+class RevertDeliveryStatusUpdated extends DeliveryStatusChoicesState {
+  const RevertDeliveryStatusUpdated();
+  
+  @override
+  // TODO: implement props
+  List<Object?> get props => [];
+}
+
 /// ✅ Bulk update completed
 class BulkDeliveryStatusUpdated extends DeliveryStatusChoicesState {
   const BulkDeliveryStatusUpdated();

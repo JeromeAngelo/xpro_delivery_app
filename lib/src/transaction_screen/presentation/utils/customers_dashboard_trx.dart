@@ -1,185 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 
-class CustomersDashboardTrx extends StatefulWidget {
+class CustomersDashboardTrx extends StatelessWidget {
   final DeliveryDataEntity deliveryData;
 
   const CustomersDashboardTrx({super.key, required this.deliveryData});
 
   @override
-  State<CustomersDashboardTrx> createState() => _CustomersDashboardTrxState();
-}
-
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
-  }
-}
-
-class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
-  @override
-  void initState() {
-    super.initState();
-    _loadDeliveryData();
-  }
-
-  void _loadDeliveryData() {
-    if (widget.deliveryData.id != null) {
-      debugPrint(
-        '🔄 Loading delivery data for transaction: ${widget.deliveryData.id}',
-      );
-
-      context.read<DeliveryDataBloc>().add(
-            GetDeliveryDataByIdEvent(widget.deliveryData.id!),
-          );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
-      builder: (context, state) {
-        DeliveryDataEntity effectiveDeliveryData;
+    final storeName = (deliveryData.storeName ?? '').trim();
+    final address = (deliveryData.municipality ?? '').trim();
+    final mop = (deliveryData.paymentMode ?? '').trim();
 
-        if (state is DeliveryDataLoaded) {
-          effectiveDeliveryData = state.deliveryData;
-          debugPrint('✅ Using loaded delivery data from bloc');
-        } else {
-          effectiveDeliveryData = widget.deliveryData;
-          debugPrint('📦 Using initial delivery data from widget');
-        }
+    final hasAnyCustomerInfo =
+        storeName.isNotEmpty || address.isNotEmpty || mop.isNotEmpty;
 
-        // ✅ Use DeliveryData fields directly (no customer.target)
-        final storeName = (effectiveDeliveryData.storeName ?? '').trim();
-        final address = (effectiveDeliveryData.municipality ?? '').trim();
-        final mop = (effectiveDeliveryData.paymentMode ?? '').trim();
+    if (!hasAnyCustomerInfo) {
+      return const SizedBox.shrink();
+    }
 
-        final hasAnyCustomerInfo =
-            storeName.isNotEmpty || address.isNotEmpty || mop.isNotEmpty;
+    return SizedBox(
+      height: 180,
+      width: double.infinity,
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// 🔷 TITLE
+              Text(
+                'Customer Overview',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
+              ),
 
-        if (hasAnyCustomerInfo) {
-          return SizedBox(
-            height: 180,
-            width: double.infinity,
-            child: Card(
-              elevation: 1,
-              child: Padding(
-                padding: const EdgeInsets.all(15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 16),
+
+              /// 🔷 CONTENT
+              Expanded(
+                child: Row(
                   children: [
-                    Text(
-                      'Customer Details',
-                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                    ),
-                    const SizedBox(height: 15),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildLeftColumn(
-                              context,
-                              effectiveDeliveryData,
-                            ),
-                          ),
-                          const SizedBox(width: 50),
-                          Expanded(
-                            child: _buildRightColumn(
-                              context,
-                              effectiveDeliveryData,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: _buildLeftColumn(context)),
+                    const SizedBox(width: 40),
+                    Expanded(child: _buildRightColumn(context)),
                   ],
                 ),
               ),
-            ),
-          );
-        }
-
-        // Enhanced loading state with card shape
-        return SizedBox(
-          height: 180,
-          width: double.infinity,
-          child: Card(
-            elevation: 1,
-            child: Padding(
-              padding: const EdgeInsets.all(15),
-              child: Stack(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Skeleton for title
-                      Container(
-                        height: 24,
-                        width: 150,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            // Left column skeleton
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildSkeletonRow(),
-                                  _buildSkeletonRow(),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 50),
-                            // Right column skeleton
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildSkeletonRow(),
-                                  _buildSkeletonRow(),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (state is DeliveryDataLoading)
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: SizedBox(
-                        height: 2,
-                        child: LinearProgressIndicator(),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildLeftColumn(BuildContext context, DeliveryDataEntity deliveryData) {
+  /// 🔷 LEFT COLUMN
+  Widget _buildLeftColumn(BuildContext context) {
     final storeName = (deliveryData.storeName ?? '').trim();
     final address = (deliveryData.municipality ?? '').trim();
 
@@ -203,10 +83,8 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
     );
   }
 
-  Widget _buildRightColumn(
-    BuildContext context,
-    DeliveryDataEntity deliveryData,
-  ) {
+  /// 🔷 RIGHT COLUMN
+  Widget _buildRightColumn(BuildContext context) {
     final mop = (deliveryData.paymentMode ?? '').trim();
 
     return Column(
@@ -223,37 +101,26 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
           context: context,
           icon: Icons.attach_money,
           title: "Total Amount",
-          value: _calculateTotalAmountFromInvoices(deliveryData),
+          value: _calculateTotalAmount(),
         ),
       ],
     );
   }
 
-  /// ✅ Sum ALL invoices totalAmount from deliveryData.invoices
-  /// Shows as "balance"
-  String _calculateTotalAmountFromInvoices(DeliveryDataEntity deliveryData) {
-    debugPrint('💰 [BALANCE] Calculating total from invoices for delivery=${deliveryData.id}');
-
+  /// 🔷 TOTAL CALCULATION (NO CHANGE)
+  String _calculateTotalAmount() {
     double total = 0.0;
 
     final invoices = deliveryData.invoices;
 
-    debugPrint('🧾 [BALANCE] invoices count=${invoices.length}');
-
     for (final inv in invoices) {
-      final amt = (inv.totalAmount ?? 0.0);
-      total += amt;
-
-      debugPrint(
-        '   • invoiceId=${inv.id} | totalAmount=${amt.toStringAsFixed(2)}',
-      );
+      total += (inv.totalAmount ?? 0.0);
     }
-
-    debugPrint('✅ [BALANCE] total sum=₱${total.toStringAsFixed(2)}');
 
     return '₱${NumberFormat('#,##0.00').format(total)}';
   }
 
+  /// 🔷 INFO ROW (IMPROVED STYLE)
   Widget _buildInfoRow({
     required BuildContext context,
     required IconData icon,
@@ -264,9 +131,17 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: colorScheme.primary),
+        ),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,62 +149,16 @@ class _CustomersDashboardTrxState extends State<CustomersDashboardTrx> {
               Text(
                 value,
                 style: textTheme.bodyMedium!.copyWith(
-                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 title,
-                overflow: TextOverflow.ellipsis,
                 style: textTheme.bodySmall!.copyWith(
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Helper method to build skeleton loading rows
-  Widget _buildSkeletonRow() {
-    return Row(
-      children: [
-        // Icon placeholder
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Value placeholder
-              Container(
-                height: 16,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(height: 4),
-              // Title placeholder
-              Container(
-                height: 12,
-                width: 80,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(4),
+                  color: colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ],
