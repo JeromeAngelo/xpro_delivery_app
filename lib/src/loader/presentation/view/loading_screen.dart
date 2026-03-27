@@ -314,37 +314,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
   }
 
-  
 
-  // Widget _buildLogoSection() {
-  //   return Column(
-  //     children: [
-  //       AnimatedBuilder(
-  //         animation: _pulseAnimation,
-  //         builder: (context, child) {
-  //           return Transform.scale(
-  //             scale: _pulseAnimation.value,
-  //             child: Icon(
-  //               Icons.local_shipping_rounded,
-  //               size: 80,
-  //               color: Theme.of(context).colorScheme.primary,
-  //             ),
-  //           );
-  //         },
-  //       ),
-        
-  //       const SizedBox(height: 32),
-        
-  //       Text(
-  //         'X Pro Delivery',
-  //         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-  //           color: Theme.of(context).colorScheme.primary,
-  //           fontWeight: FontWeight.bold,
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
 Widget _buildStatusSection() {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -404,34 +374,6 @@ Widget _buildStatusSection() {
 }
 
 
-  // Widget _buildLoadingIndicator() {
-  //   return AnimatedBuilder(
-  //     animation: _rotationAnimation,
-  //     builder: (context, child) {
-  //       return Transform.rotate(
-  //         angle: _rotationAnimation.value * 2 * 3.14159,
-  //         child: Container(
-  //           width: 40,
-  //           height: 40,
-  //           decoration: BoxDecoration(
-  //             shape: BoxShape.circle,
-  //             border: Border.all(
-  //               color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-  //               width: 3,
-  //             ),
-  //           ),
-  //           child: Container(
-  //             margin: const EdgeInsets.all(6),
-  //             decoration: BoxDecoration(
-  //               shape: BoxShape.circle,
-  //               color: Theme.of(context).colorScheme.primary,
-  //             ),
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
 
   Widget _buildContinueButton() {
     return TextButton(

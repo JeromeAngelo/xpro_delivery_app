@@ -5,11 +5,13 @@ import '../../../../../../core/common/app/features/trip_ticket/delivery_data/dom
 class InvoiceList extends StatelessWidget {
   final DeliveryDataEntity deliveryData;
   final VoidCallback? onTap;
+  final VoidCallback? onTapToCancel;
 
   const InvoiceList({
     super.key,
     required this.deliveryData,
     this.onTap,
+    this.onTapToCancel,
   });
 
   // ✅ Invoice label (ToMany invoices)
@@ -164,10 +166,9 @@ class InvoiceList extends StatelessWidget {
             ),
           ],
         ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          color: Theme.of(context).colorScheme.onSurface,
-          size: 18,
+        trailing: IconButton(
+          icon: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          onPressed: onTap,
         ),
       ),
     );

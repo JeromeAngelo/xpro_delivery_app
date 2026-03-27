@@ -35,8 +35,10 @@ import 'package:x_pro_delivery_app/src/summary_trip/presentation/view/summary_tr
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/view/get_trip_ticket_view.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/accepting_trip_loading_screen.dart';
 
+import '../../src/deliveries_and_timeline/presentation/screens/syncing_screen.dart';
 import '../../src/deliveries_and_timeline/presentation/widgets/add_trip_update_screen.dart';
 import '../../src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_remarks_screen.dart';
+import '../../src/delivery_and_invoice/presentation/screens/invoice_screen/utils/invoice_cancellation_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_collection_spec_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_undelivered_spec_screen.dart';
 import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
@@ -113,360 +115,407 @@ final router = GoRouter(
     return null;
   },
 
- routes: [
-  GoRoute(
-    path: '/',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const OnBoardingView(), state),
-  ),
+  routes: [
+    GoRoute(
+      path: '/',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const OnBoardingView(), state),
+    ),
 
-  GoRoute(
-    path: '/sign-in',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const AuthScreenView(), state),
-  ),
+    GoRoute(
+      path: '/sign-in',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const AuthScreenView(), state),
+    ),
 
-  GoRoute(
-    path: '/homepage',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const HomepageView(), state),
-  ),
+    GoRoute(
+      path: '/homepage',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const HomepageView(), state),
+    ),
 
-  GoRoute(
-    path: '/user-performance',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const UserPerformanceScreen(), state),
-  ),
+    GoRoute(
+      path: '/user-performance',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const UserPerformanceScreen(), state),
+    ),
 
-  GoRoute(
-    path: '/delivery-team',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const DeliveryTeamView(), state),
-  ),
+    GoRoute(
+      path: '/delivery-team',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const DeliveryTeamView(), state),
+    ),
 
-  GoRoute(
-    path: '/trip-ticket/:tripNumberId',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(
-          GetTripTickerView(
-            tripNumber: state.pathParameters['tripNumberId']!,
+    GoRoute(
+      path: '/trip-ticket/:tripNumberId',
+      pageBuilder:
+          (context, state) => AppTransitions.fadeSlide(
+            GetTripTickerView(
+              tripNumber: state.pathParameters['tripNumberId']!,
+            ),
+            state,
           ),
-          state,
-        ),
-  ),
+    ),
 
-  GoRoute(
-    path: '/accepting-trip/:tripId',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(
-          AcceptingTripLoadingScreen(
-            tripId: state.pathParameters['tripId']!,
+    GoRoute(
+      path: '/accepting-trip/:tripId',
+      pageBuilder:
+          (context, state) => AppTransitions.fadeSlide(
+            AcceptingTripLoadingScreen(tripId: state.pathParameters['tripId']!),
+            state,
           ),
+    ),
+
+    GoRoute(
+      path: '/checklist',
+      name: 'checklist',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const ChecklistAndDeliveryView(), state),
+    ),
+
+    GoRoute(
+      path: '/first-otp',
+      name: 'first-otp',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const FirstOtpScreenView(), state),
+    ),
+
+    GoRoute(
+      path: '/delivery-and-timeline',
+      name: 'delivery-and-timeline',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const DeliveryAndTimeline(), state),
+    ),
+
+    GoRoute(
+      path: '/add-trip-update/:tripId',
+      name: 'add-trip-update',
+      pageBuilder: (context, state) {
+        final tripId = state.pathParameters['tripId']!;
+        return AppTransitions.fadeSlide(
+          AddTripUpdateScreen(tripId: tripId),
           state,
-        ),
-  ),
+        );
+      },
+    ),
 
-  GoRoute(
-    path: '/checklist',
-    name: 'checklist',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const ChecklistAndDeliveryView(), state),
-  ),
+    GoRoute(
+      path: '/delivery-and-invoice/:customerId',
+      pageBuilder: (context, state) {
+        final customerId = state.pathParameters['customerId']!;
 
-  GoRoute(
-    path: '/first-otp',
-    name: 'first-otp',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const FirstOtpScreenView(), state),
-  ),
+        final customer = state.extra as DeliveryDataEntity?;
 
-  GoRoute(
-    path: '/delivery-and-timeline',
-    name: 'delivery-and-timeline',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const DeliveryAndTimeline(), state),
-  ),
+        context.read<DeliveryDataBloc>()
+          ..add(GetLocalDeliveryDataByIdEvent(customerId))
+          ..add(GetDeliveryDataByIdEvent(customerId));
 
-  GoRoute(
-    path: '/add-trip-update/:tripId',
-    name: 'add-trip-update',
-    pageBuilder: (context, state) {
-      final tripId = state.pathParameters['tripId']!;
-      return AppTransitions.fadeSlide(
-        AddTripUpdateScreen(tripId: tripId),
-        state,
-      );
-    },
-  ),
+        return AppTransitions.fadeSlide(
+          DeliveryAndInvoiceView(selectedCustomer: customer),
+          state,
+        );
+      },
+    ),
 
-  GoRoute(
-    path: '/delivery-and-invoice/:customerId',
-    pageBuilder: (context, state) {
-      final customerId = state.pathParameters['customerId']!;
+    GoRoute(
+      path: '/undelivered-customer-details/:cancelledInvoiceId',
+      name: 'undelivered-customer-details',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['cancelledInvoiceId']!;
+        return AppTransitions.fadeSlide(
+          SpecificUndeliveredCustomerScreen(cancelledInvoiceId: id),
+          state,
+        );
+      },
+    ),
 
-      final customer = state.extra as DeliveryDataEntity?;
+    GoRoute(
+      path: '/customer-undelivered-screen/:cancelledInvoiceId',
+      name: 'customer-undelivered-screen',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['cancelledInvoiceId']!;
+        return AppTransitions.fadeSlide(
+          CustomersUndeliveredScreen(cancelledInvoiceId: id),
+          state,
+        );
+      },
+    ),
 
-      context.read<DeliveryDataBloc>()
-        ..add(GetLocalDeliveryDataByIdEvent(customerId))
-        ..add(GetDeliveryDataByIdEvent(customerId));
+    GoRoute(
+      path: '/final-undelivered-screen/:cancelledInvoiceId',
+      name: 'final-undelivered-screen',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['cancelledInvoiceId']!;
+        return AppTransitions.fadeSlide(
+          FinalUndeliveredSpecScreen(cancelledInvoiceId: id),
+          state,
+        );
+      },
+    ),
 
-      return AppTransitions.fadeSlide(
-        DeliveryAndInvoiceView(selectedCustomer: customer),
-        state,
-      );
-    },
-  ),
+    GoRoute(
+      path: '/add-delivery-status',
+      name: 'add-delivery-status',
+      pageBuilder:
+          (context, state) => AppTransitions.fadeSlide(
+            AddDeliveryStatusScreen(
+              customer: state.extra as DeliveryDataEntity,
+            ),
+            state,
+          ),
+    ),
 
-  GoRoute(
-    path: '/undelivered-customer-details/:cancelledInvoiceId',
-    name: 'undelivered-customer-details',
-    pageBuilder: (context, state) {
-      final id = state.pathParameters['cancelledInvoiceId']!;
-      return AppTransitions.fadeSlide(
-        SpecificUndeliveredCustomerScreen(cancelledInvoiceId: id),
-        state,
-      );
-    },
-  ),
+    GoRoute(
+      path: '/undeliverable/:customerId',
+      name: 'undeliverable',
+      pageBuilder: (context, state) {
+        final extra = state.extra;
 
-  GoRoute(
-    path: '/customer-undelivered-screen/:cancelledInvoiceId',
-    name: 'customer-undelivered-screen',
-    pageBuilder: (context, state) {
-      final id = state.pathParameters['cancelledInvoiceId']!;
-      return AppTransitions.fadeSlide(
-        CustomersUndeliveredScreen(cancelledInvoiceId: id),
-        state,
-      );
-    },
-  ),
+        if (extra == null || extra is! Map<String, dynamic>) {
+          return AppTransitions.fadeSlide(
+            const Scaffold(
+              body: Center(child: Text('Invalid navigation data')),
+            ),
+            state,
+          );
+        }
 
-  GoRoute(
-    path: '/final-undelivered-screen/:cancelledInvoiceId',
-    name: 'final-undelivered-screen',
-    pageBuilder: (context, state) {
-      final id = state.pathParameters['cancelledInvoiceId']!;
-      return AppTransitions.fadeSlide(
-        FinalUndeliveredSpecScreen(cancelledInvoiceId: id),
-        state,
-      );
-    },
-  ),
+        final customer = extra['customerId'];
+        final statusId = extra['statusId'];
 
-  GoRoute(
-    path: '/add-delivery-status',
-    name: 'add-delivery-status',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(
-          AddDeliveryStatusScreen(
+        if (customer is! DeliveryDataEntity ||
+            statusId is! DeliveryStatusChoicesEntity) {
+          return AppTransitions.fadeSlide(
+            const Scaffold(body: Center(child: Text('Missing required data'))),
+            state,
+          );
+        }
+
+        return AppTransitions.fadeSlide(
+          UndeliverableScreen(customer: customer, statusId: statusId),
+          state,
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/update-remark/:statusId',
+      name: 'updateRemark',
+      pageBuilder:
+          (context, state) => AppTransitions.fadeSlide(
+            UpdateRemarkScreen(statusId: state.pathParameters['statusId']!),
+            state,
+          ),
+    ),
+
+    GoRoute(
+      path: '/loading',
+      name: 'loading',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const LoadingScreen(), state),
+    ),
+
+    GoRoute(
+      path: '/product-list/:invoiceId/:invoiceNumber',
+      name: 'product-list',
+      pageBuilder: (context, state) {
+        context.read<InvoiceItemsBloc>().add(
+          GetInvoiceItemsByInvoiceDataIdEvent(
+            state.pathParameters['invoiceId']!,
+          ),
+        );
+
+        return AppTransitions.fadeSlide(
+          ProductListScreen(
+            invoiceId: state.pathParameters['invoiceId']!,
+            invoiceNumber: state.pathParameters['invoiceNumber']!,
             customer: state.extra as DeliveryDataEntity,
           ),
           state,
-        ),
-  ),
-
-  GoRoute(
-    path: '/undeliverable/:customerId',
-    name: 'undeliverable',
-    pageBuilder: (context, state) {
-      final extra = state.extra;
-
-      if (extra == null || extra is! Map<String, dynamic>) {
-        return AppTransitions.fadeSlide(
-          const Scaffold(body: Center(child: Text('Invalid navigation data'))),
-          state,
         );
-      }
+      },
+    ),
 
-      final customer = extra['customerId'];
-      final statusId = extra['statusId'];
+    GoRoute(
+      path: '/transaction',
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
 
-      if (customer is! DeliveryDataEntity ||
-          statusId is! DeliveryStatusChoicesEntity) {
         return AppTransitions.fadeSlide(
-          const Scaffold(body: Center(child: Text('Missing required data'))),
-          state,
-        );
-      }
-
-      return AppTransitions.fadeSlide(
-        UndeliverableScreen(customer: customer, statusId: statusId),
-        state,
-      );
-    },
-  ),
-
-  GoRoute(
-    path: '/update-remark/:statusId',
-    name: 'updateRemark',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(
-          UpdateRemarkScreen(
-            statusId: state.pathParameters['statusId']!,
+          TransactionView(
+            deliveryData: extra['deliveryData'],
+            generatedPdf: extra['generatedPdf'],
           ),
           state,
-        ),
-  ),
+        );
+      },
+    ),
 
-  GoRoute(
-    path: '/loading',
-    name: 'loading',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const LoadingScreen(), state),
-  ),
+    GoRoute(
+      path: '/confirm-order/:invoiceId/:deliveryDataId',
+      name: 'confirm-order',
+      pageBuilder: (context, state) {
+        final invoiceId = state.pathParameters['invoiceId']!;
+        final deliveryDataId = state.pathParameters['deliveryDataId']!;
+        final extra = state.extra as Map<String, dynamic>?;
 
-  GoRoute(
-    path: '/product-list/:invoiceId/:invoiceNumber',
-    name: 'product-list',
-    pageBuilder: (context, state) {
-      context.read<InvoiceItemsBloc>().add(
-            GetInvoiceItemsByInvoiceDataIdEvent(
-              state.pathParameters['invoiceId']!,
+        context.read<InvoiceItemsBloc>().add(
+          GetInvoiceItemsByInvoiceDataIdEvent(invoiceId),
+        );
+
+        return AppTransitions.fadeSlide(
+          ConfirmOrderProductScreen(
+            invoiceId: invoiceId,
+            invoiceNumber: extra?['invoiceNumber'] ?? 'Unknown',
+            deliveryDataId: deliveryDataId,
+          ),
+          state,
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/finalize-deliveries',
+      name: 'finalize-deliveries',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const FinalizeDeliveriesView(), state),
+    ),
+
+    GoRoute(
+      path: '/collection-screen',
+      name: 'collection-screen',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const CollectionScreen(), state),
+    ),
+
+    GoRoute(
+      path: '/collection-details/:customerId',
+      name: 'collection-details',
+      pageBuilder:
+          (context, state) => AppTransitions.fadeSlide(
+            CompletedCustomerDetailsScreen(
+              collectionId: state.pathParameters['customerId']!,
             ),
+            state,
+          ),
+    ),
+
+    GoRoute(
+      path: '/summary-collection/:customerId',
+      pageBuilder:
+          (context, state) => AppTransitions.fadeSlide(
+            CustomersCollectionScreen(
+              collectionId: state.pathParameters['customerId']!,
+            ),
+            state,
+          ),
+    ),
+
+    GoRoute(
+      path: '/final-spec-collection/:customerId',
+      pageBuilder:
+          (context, state) => AppTransitions.fadeSlide(
+            FinalCollectionSpecScreen(
+              collectionId: state.pathParameters['customerId']!,
+            ),
+            state,
+          ),
+    ),
+
+    GoRoute(
+      path: '/view-uc',
+      name: '/view-uc',
+      pageBuilder:
+          (context, state) => AppTransitions.fadeSlide(
+            const UndeliveredCustomersScreen(),
+            state,
+          ),
+    ),
+
+    GoRoute(
+      path: '/end-trip-otp',
+      name: '/end-trip-otp',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const EndTripOtpScreen(), state),
+    ),
+
+    GoRoute(
+      path: '/greeting-page',
+      name: '/greeting-page',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const GreetingView(), state),
+    ),
+
+    GoRoute(
+      path: '/summary-trip',
+      name: '/summary-trip',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const SummaryTripView(), state),
+    ),
+
+    GoRoute(
+      path: '/final-screen',
+      name: '/final-screen',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const FinalScreenView(), state),
+    ),
+
+    GoRoute(
+      path: '/app-logs',
+      name: '/app-logs',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const AppLogsScreenView(), state),
+    ),
+
+    GoRoute(
+      path: '/cancel-invoice/:deliveryDataId/:invoiceId',
+      name: 'cancel-invoice',
+      pageBuilder: (context, state) {
+        final deliveryDataId = state.pathParameters['deliveryDataId'];
+        final invoiceId = state.pathParameters['invoiceId'];
+
+        if (deliveryDataId == null || invoiceId == null) {
+          return AppTransitions.fadeSlide(
+            const Scaffold(
+              body: Center(child: Text('Missing required parameters')),
+            ),
+            state,
           );
+        }
 
-      return AppTransitions.fadeSlide(
-        ProductListScreen(
-          invoiceId: state.pathParameters['invoiceId']!,
-          invoiceNumber: state.pathParameters['invoiceNumber']!,
-          customer: state.extra as DeliveryDataEntity,
-        ),
-        state,
-      );
-    },
-  ),
-
-  GoRoute(
-    path: '/transaction',
-    pageBuilder: (context, state) {
-      final extra = state.extra as Map<String, dynamic>;
-
-      return AppTransitions.fadeSlide(
-        TransactionView(
-          deliveryData: extra['deliveryData'],
-          generatedPdf: extra['generatedPdf'],
-        ),
-        state,
-      );
-    },
-  ),
-
-  GoRoute(
-    path: '/confirm-order/:invoiceId/:deliveryDataId',
-    name: 'confirm-order',
-    pageBuilder: (context, state) {
-      final invoiceId = state.pathParameters['invoiceId']!;
-      final deliveryDataId = state.pathParameters['deliveryDataId']!;
-      final extra = state.extra as Map<String, dynamic>?;
-
-      context.read<InvoiceItemsBloc>().add(
-            GetInvoiceItemsByInvoiceDataIdEvent(invoiceId),
-          );
-
-      return AppTransitions.fadeSlide(
-        ConfirmOrderProductScreen(
-          invoiceId: invoiceId,
-          invoiceNumber: extra?['invoiceNumber'] ?? 'Unknown',
-          deliveryDataId: deliveryDataId,
-        ),
-        state,
-      );
-    },
-  ),
-
-  GoRoute(
-    path: '/finalize-deliveries',
-    name: 'finalize-deliveries',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const FinalizeDeliveriesView(), state),
-  ),
-
-  GoRoute(
-    path: '/collection-screen',
-    name: 'collection-screen',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const CollectionScreen(), state),
-  ),
-
-  GoRoute(
-    path: '/collection-details/:customerId',
-    name: 'collection-details',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(
-          CompletedCustomerDetailsScreen(
-            collectionId: state.pathParameters['customerId']!,
+        return AppTransitions.fadeSlide(
+          InvoiceCancellationScreen(
+            deliveryDataId: deliveryDataId,
+            invoiceId: invoiceId,
           ),
           state,
-        ),
-  ),
-
-  GoRoute(
-    path: '/summary-collection/:customerId',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(
-          CustomersCollectionScreen(
-            collectionId: state.pathParameters['customerId']!,
-          ),
-          state,
-        ),
-  ),
-
-  GoRoute(
-    path: '/final-spec-collection/:customerId',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(
-          FinalCollectionSpecScreen(
-            collectionId: state.pathParameters['customerId']!,
-          ),
-          state,
-        ),
-  ),
-
-  GoRoute(
-    path: '/view-uc',
-    name: '/view-uc',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(
-          const UndeliveredCustomersScreen(),
-          state,
-        ),
-  ),
-
-  GoRoute(
-    path: '/end-trip-otp',
-    name: '/end-trip-otp',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const EndTripOtpScreen(), state),
-  ),
-
-  GoRoute(
-    path: '/greeting-page',
-    name: '/greeting-page',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const GreetingView(), state),
-  ),
-
-  GoRoute(
-    path: '/summary-trip',
-    name: '/summary-trip',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const SummaryTripView(), state),
-  ),
-
-  GoRoute(
-    path: '/final-screen',
-    name: '/final-screen',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const FinalScreenView(), state),
-  ),
-
-  GoRoute(
-    path: '/app-logs',
-    name: '/app-logs',
-    pageBuilder: (context, state) =>
-        AppTransitions.fadeSlide(const AppLogsScreenView(), state),
-  ),
-],
+        );
+      },
+    ),
+    GoRoute(
+      path: '/sync-loading',
+      name: 'sync-loading',
+      pageBuilder:
+          (context, state) =>
+              AppTransitions.fadeSlide(const SyncScreen(), state),
+    ),
+  ],
 );
 
 class AppTransitions {

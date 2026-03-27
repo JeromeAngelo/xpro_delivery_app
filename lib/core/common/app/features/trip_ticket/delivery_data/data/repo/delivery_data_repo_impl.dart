@@ -60,7 +60,8 @@ class DeliveryDataRepoImpl implements DeliveryDataRepo {
     // ---------------------------------------------------
     try {
       debugPrint('📦 Checking local delivery data for trip: $tripId');
-      final localData = await _localDataSource.forceReloadDeliveryUpdatesByTripId(tripId);
+      final localData = await _localDataSource
+          .forceReloadDeliveryUpdatesByTripId(tripId);
 
       if (localData.isNotEmpty) {
         debugPrint('✅ Local delivery data found: ${localData.length} records');
@@ -259,52 +260,52 @@ class DeliveryDataRepoImpl implements DeliveryDataRepo {
       return Left(CacheFailure(message: e.toString(), statusCode: 404));
     }
   }
-@override
-ResultFuture<int> calculateDeliveryTimeByDeliveryId(String deliveryId) async {
-  final id = deliveryId.trim();
-  if (id.isEmpty) {
-    return Left(
-      CacheFailure(message: 'Delivery ID is required', statusCode: 400),
-    );
+
+  @override
+  ResultFuture<int> calculateDeliveryTimeByDeliveryId(String deliveryId) async {
+    final id = deliveryId.trim();
+    if (id.isEmpty) {
+      return Left(
+        CacheFailure(message: 'Delivery ID is required', statusCode: 400),
+      );
+    }
+
+    debugPrint('⏱️ REPO: Calculating delivery time for deliveryId=$id');
+
+    // ---------------------------------------------------
+    // 1️⃣ OFFLINE FIRST (LOCAL)
+    // ---------------------------------------------------
+    try {
+      debugPrint('📱 REPO: Trying local delivery time calculation...');
+      final localTime = await _localDataSource
+          .calculateDeliveryTimeByDeliveryId(id);
+
+      debugPrint('✅ REPO: Local calculation successful: $localTime minutes');
+      return Right(localTime);
+    } on CacheException catch (e) {
+      debugPrint('⚠️ REPO: Local calculation failed: ${e.message}');
+    } catch (e) {
+      debugPrint('⚠️ REPO: Local unexpected error: $e');
+    }
+
+    // ---------------------------------------------------
+    // 2️⃣ REMOTE FALLBACK
+    // ---------------------------------------------------
+    try {
+      debugPrint('🌐 REPO: Falling back to remote calculation...');
+      final remoteTime = await _remoteDataSource
+          .calculateDeliveryTimeByDeliveryId(id);
+
+      debugPrint('✅ REPO: Remote calculation successful: $remoteTime minutes');
+      return Right(remoteTime);
+    } on ServerException catch (e) {
+      debugPrint('❌ REPO: Remote calculation failed: ${e.message}');
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      debugPrint('❌ REPO: Remote unexpected error: ${e.toString()}');
+      return Left(ServerFailure(message: e.toString(), statusCode: '500'));
+    }
   }
-
-  debugPrint('⏱️ REPO: Calculating delivery time for deliveryId=$id');
-
-  // ---------------------------------------------------
-  // 1️⃣ OFFLINE FIRST (LOCAL)
-  // ---------------------------------------------------
-  try {
-    debugPrint('📱 REPO: Trying local delivery time calculation...');
-    final localTime =
-        await _localDataSource.calculateDeliveryTimeByDeliveryId(id);
-
-    debugPrint('✅ REPO: Local calculation successful: $localTime minutes');
-    return Right(localTime);
-  } on CacheException catch (e) {
-    debugPrint('⚠️ REPO: Local calculation failed: ${e.message}');
-  } catch (e) {
-    debugPrint('⚠️ REPO: Local unexpected error: $e');
-  }
-
-  // ---------------------------------------------------
-  // 2️⃣ REMOTE FALLBACK
-  // ---------------------------------------------------
-  try {
-    debugPrint('🌐 REPO: Falling back to remote calculation...');
-    final remoteTime =
-        await _remoteDataSource.calculateDeliveryTimeByDeliveryId(id);
-
-    debugPrint('✅ REPO: Remote calculation successful: $remoteTime minutes');
-    return Right(remoteTime);
-  } on ServerException catch (e) {
-    debugPrint('❌ REPO: Remote calculation failed: ${e.message}');
-    return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
-  } catch (e) {
-    debugPrint('❌ REPO: Remote unexpected error: ${e.toString()}');
-    return Left(ServerFailure(message: e.toString(), statusCode: '500'));
-  }
-}
-
 
   @override
   ResultFuture<List<DeliveryDataEntity>> syncDeliveryDataByTripId(
@@ -379,127 +380,135 @@ ResultFuture<int> calculateDeliveryTimeByDeliveryId(String deliveryId) async {
   ResultFuture<DeliveryDataEntity> setInvoiceIntoUnloading(
     String deliveryDataId,
   ) async {
-  try {
-    debugPrint(
-      '🔄 [REPO] Offline-first setInvoiceIntoUnloading for deliveryDataId=$deliveryDataId',
-    );
-
-    // -------------------------------------------------------
-    // 1️⃣ OFFLINE FIRST (local)
-    // -------------------------------------------------------
-    DeliveryDataEntity? localResult;
     try {
-      final local = await _localDataSource.setInvoiceIntoUnloading(deliveryDataId);
-      localResult = local;
-      debugPrint('✅ [REPO] Local setInvoiceIntoUnloading SUCCESS (fast UI)');
-    } catch (e) {
-      debugPrint('⚠️ [REPO] Local setInvoiceIntoUnloading FAILED: $e');
-      // Continue to remote even if local fails
-    }
-
-    // -------------------------------------------------------
-    // 2️⃣ REMOTE (source of truth)
-    // -------------------------------------------------------
-    try {
-      final remoteResult =
-          await _remoteDataSource.setInvoiceIntoUnloading(deliveryDataId);
-
-      debugPrint('✅ [REPO] Remote setInvoiceIntoUnloading SUCCESS');
+      debugPrint(
+        '🔄 [REPO] Offline-first setInvoiceIntoUnloading for deliveryDataId=$deliveryDataId',
+      );
 
       // -------------------------------------------------------
-      // 3️⃣ Update local again using remote success
-      //    (ensures local matches server)
+      // 1️⃣ OFFLINE FIRST (local)
+      // -------------------------------------------------------
+      DeliveryDataEntity? localResult;
+      try {
+        final local = await _localDataSource.setInvoiceIntoUnloading(
+          deliveryDataId,
+        );
+        localResult = local;
+        debugPrint('✅ [REPO] Local setInvoiceIntoUnloading SUCCESS (fast UI)');
+      } catch (e) {
+        debugPrint('⚠️ [REPO] Local setInvoiceIntoUnloading FAILED: $e');
+        // Continue to remote even if local fails
+      }
+
+      // -------------------------------------------------------
+      // 2️⃣ REMOTE (source of truth)
       // -------------------------------------------------------
       try {
-        await _localDataSource.setInvoiceIntoUnloading(deliveryDataId);
-        debugPrint('💾 [REPO] Local updated after remote success');
-      } catch (e) {
-        debugPrint('⚠️ [REPO] Failed local update after remote success: $e');
-      }
-
-      return Right(remoteResult);
-    } on ServerException catch (e) {
-      debugPrint('❌ [REPO] Remote FAILED: ${e.message}');
-
-      // If local already succeeded, return local as "success" to avoid UI error
-      if (localResult != null) {
-        debugPrint(
-          '✅ [REPO] Returning LOCAL success result despite remote failure (offline-first behavior)',
+        final remoteResult = await _remoteDataSource.setInvoiceIntoUnloading(
+          deliveryDataId,
         );
-        return Right(localResult);
+
+        debugPrint('✅ [REPO] Remote setInvoiceIntoUnloading SUCCESS');
+
+        // -------------------------------------------------------
+        // 3️⃣ Update local again using remote success
+        //    (ensures local matches server)
+        // -------------------------------------------------------
+        try {
+          await _localDataSource.setInvoiceIntoUnloading(deliveryDataId);
+          debugPrint('💾 [REPO] Local updated after remote success');
+        } catch (e) {
+          debugPrint('⚠️ [REPO] Failed local update after remote success: $e');
+        }
+
+        return Right(remoteResult);
+      } on ServerException catch (e) {
+        debugPrint('❌ [REPO] Remote FAILED: ${e.message}');
+
+        // If local already succeeded, return local as "success" to avoid UI error
+        if (localResult != null) {
+          debugPrint(
+            '✅ [REPO] Returning LOCAL success result despite remote failure (offline-first behavior)',
+          );
+          return Right(localResult);
+        }
+
+        return Left(
+          ServerFailure(message: e.message, statusCode: e.statusCode),
+        );
       }
-
-      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
-    }
-
-  } catch (e) {
-    debugPrint('❌ [REPO] Unexpected error: ${e.toString()}');
-    return Left(ServerFailure(message: e.toString(), statusCode: '500'));
-  }
-}
-@override
-ResultFuture<DeliveryDataEntity> setInvoiceIntoUnloaded(
-  String deliveryDataId,
-) async {
-  try {
-    debugPrint(
-      '🔄 [REPO] Offline-first setInvoiceIntoUnloaded for deliveryDataId=$deliveryDataId',
-    );
-
-    // -------------------------------------------------------
-    // 1️⃣ OFFLINE FIRST (local)
-    // -------------------------------------------------------
-    DeliveryDataEntity? localResult;
-    try {
-      final local = await _localDataSource.setInvoiceIntoUnloaded(deliveryDataId);
-      localResult = local;
-      debugPrint('✅ [REPO] Local setInvoiceIntoUnloaded SUCCESS (fast UI)');
     } catch (e) {
-      debugPrint('⚠️ [REPO] Local setInvoiceIntoUnloaded FAILED: $e');
-      // Continue to remote even if local fails
+      debugPrint('❌ [REPO] Unexpected error: ${e.toString()}');
+      return Left(ServerFailure(message: e.toString(), statusCode: '500'));
     }
+  }
 
-    // -------------------------------------------------------
-    // 2️⃣ REMOTE (source of truth)
-    // -------------------------------------------------------
+  @override
+  ResultFuture<DeliveryDataEntity> setInvoiceIntoUnloaded(
+    String deliveryDataId,
+  ) async {
     try {
-      final remoteResult =
-          await _remoteDataSource.setInvoiceIntoUnloaded(deliveryDataId);
-
-      debugPrint('✅ [REPO] Remote setInvoiceIntoUnloaded SUCCESS');
+      debugPrint(
+        '🔄 [REPO] Offline-first setInvoiceIntoUnloaded for deliveryDataId=$deliveryDataId',
+      );
 
       // -------------------------------------------------------
-      // 3️⃣ Update local again using remote success
-      //    (ensures local matches server)
+      // 1️⃣ OFFLINE FIRST (local)
+      // -------------------------------------------------------
+      DeliveryDataEntity? localResult;
+      try {
+        final local = await _localDataSource.setInvoiceIntoUnloaded(
+          deliveryDataId,
+        );
+        localResult = local;
+        debugPrint('✅ [REPO] Local setInvoiceIntoUnloaded SUCCESS (fast UI)');
+      } catch (e) {
+        debugPrint('⚠️ [REPO] Local setInvoiceIntoUnloaded FAILED: $e');
+        // Continue to remote even if local fails
+      }
+
+      // -------------------------------------------------------
+      // 2️⃣ REMOTE (source of truth)
       // -------------------------------------------------------
       try {
-        await _localDataSource.setInvoiceIntoUnloaded(deliveryDataId);
-        debugPrint('💾 [REPO] Local updated after remote success');
-      } catch (e) {
-        debugPrint('⚠️ [REPO] Failed local update after remote success: $e');
-      }
-
-      return Right(remoteResult);
-    } on ServerException catch (e) {
-      debugPrint('❌ [REPO] Remote FAILED: ${e.message}');
-
-      // If local already succeeded, return local as "success" to avoid UI error
-      if (localResult != null) {
-        debugPrint(
-          '✅ [REPO] Returning LOCAL success result despite remote failure (offline-first behavior)',
+        final remoteResult = await _remoteDataSource.setInvoiceIntoUnloaded(
+          deliveryDataId,
         );
-        return Right(localResult);
+
+        debugPrint('✅ [REPO] Remote setInvoiceIntoUnloaded SUCCESS');
+
+        // -------------------------------------------------------
+        // 3️⃣ Update local again using remote success
+        //    (ensures local matches server)
+        // -------------------------------------------------------
+        try {
+          await _localDataSource.setInvoiceIntoUnloaded(deliveryDataId);
+          debugPrint('💾 [REPO] Local updated after remote success');
+        } catch (e) {
+          debugPrint('⚠️ [REPO] Failed local update after remote success: $e');
+        }
+
+        return Right(remoteResult);
+      } on ServerException catch (e) {
+        debugPrint('❌ [REPO] Remote FAILED: ${e.message}');
+
+        // If local already succeeded, return local as "success" to avoid UI error
+        if (localResult != null) {
+          debugPrint(
+            '✅ [REPO] Returning LOCAL success result despite remote failure (offline-first behavior)',
+          );
+          return Right(localResult);
+        }
+
+        return Left(
+          ServerFailure(message: e.message, statusCode: e.statusCode),
+        );
       }
-
-      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      debugPrint('❌ [REPO] Unexpected error: ${e.toString()}');
+      return Left(ServerFailure(message: e.toString(), statusCode: '500'));
     }
-
-  } catch (e) {
-    debugPrint('❌ [REPO] Unexpected error: ${e.toString()}');
-    return Left(ServerFailure(message: e.toString(), statusCode: '500'));
   }
-}
-
 
   @override
   ResultFuture<DeliveryDataEntity> updateDeliveryLocation(
@@ -666,32 +675,114 @@ ResultFuture<DeliveryDataEntity> setInvoiceIntoUnloaded(
       debugPrint('⚠️ Failed to start ID watcher: $e');
     }
   }
-  
-@override
-ResultStream<List<DeliveryDataEntity>> watchAllLocalDeliveryData() {
-  try {
-    debugPrint('👀 OFFLINE-FIRST: Watching all local delivery data');
 
-    // Step 1️⃣: Get live updates from the local datasource (ObjectBox watch stream)
-    final stream = _localDataSource.watchAllDeliveryData().asyncMap((models) async {
-      debugPrint('📦 LOCAL STREAM: Received ${models.length} records from local storage');
+  @override
+  ResultStream<List<DeliveryDataEntity>> watchAllLocalDeliveryData() {
+    try {
+      debugPrint('👀 OFFLINE-FIRST: Watching all local delivery data');
 
-      // Step 2️⃣: Convert models to domain entities
-      final entities = models.map((model) => model.copyWith()).toList();
+      // Step 1️⃣: Get live updates from the local datasource (ObjectBox watch stream)
+      final stream = _localDataSource.watchAllDeliveryData().asyncMap((
+        models,
+      ) async {
+        debugPrint(
+          '📦 LOCAL STREAM: Received ${models.length} records from local storage',
+        );
 
-      debugPrint('✅ Converted ${entities.length} models to domain entities');
-      return entities;
-    });
+        // Step 2️⃣: Convert models to domain entities
+        final entities = models.map((model) => model.copyWith()).toList();
 
-    return stream;
-  } on CacheException catch (e) {
-    debugPrint('⚠️ LOCAL STREAM ERROR: ${e.message}');
-    // Return a stream that emits an empty list when cache fails (avoids breaking the stream)
-    return Stream.value([]);
-  } catch (e) {
-    debugPrint('❌ Unexpected error in watchAllLocalDeliveryData: $e');
-    return Stream.value([]);
+        debugPrint('✅ Converted ${entities.length} models to domain entities');
+        return entities;
+      });
+
+      return stream;
+    } on CacheException catch (e) {
+      debugPrint('⚠️ LOCAL STREAM ERROR: ${e.message}');
+      // Return a stream that emits an empty list when cache fails (avoids breaking the stream)
+      return Stream.value([]);
+    } catch (e) {
+      debugPrint('❌ Unexpected error in watchAllLocalDeliveryData: $e');
+      return Stream.value([]);
+    }
   }
-}
 
+  @override
+  ResultFuture<DeliveryDataEntity> setInvoiceIntoCancelled(
+    String deliveryDataId,
+    String invoiceId,
+  ) async {
+    {
+      try {
+        debugPrint(
+          '🔄 [REPO] Offline-first setInvoiceIntoUnloaded for deliveryDataId=$deliveryDataId',
+        );
+
+        // -------------------------------------------------------
+        // 1️⃣ OFFLINE FIRST (local)
+        // -------------------------------------------------------
+        DeliveryDataEntity? localResult;
+        try {
+          final local = await _localDataSource.setInvoiceIntoCancelled(
+            deliveryDataId,
+            invoiceId,
+          );
+          localResult = local;
+          debugPrint(
+            '✅ [REPO] Local setInvoiceIntoCancelled SUCCESS (fast UI)',
+          );
+        } catch (e) {
+          debugPrint('⚠️ [REPO] Local setInvoiceIntoCancelled FAILED: $e');
+          // Continue to remote even if local fails
+        }
+
+        // -------------------------------------------------------
+        // 2️⃣ REMOTE (source of truth)
+        // -------------------------------------------------------
+        try {
+          final remoteResult = await _remoteDataSource.setInvoiceIntoCancelled(
+            deliveryDataId,
+            invoiceId,
+          );
+
+          debugPrint('✅ [REPO] Remote setInvoiceIntoCancelled SUCCESS');
+
+          // -------------------------------------------------------
+          // 3️⃣ Update local again using remote success
+          //    (ensures local matches server)
+          // -------------------------------------------------------
+          try {
+            await _localDataSource.setInvoiceIntoCancelled(
+              deliveryDataId,
+              invoiceId,
+            );
+            debugPrint('💾 [REPO] Local updated after remote success');
+          } catch (e) {
+            debugPrint(
+              '⚠️ [REPO] Failed local update after remote success: $e',
+            );
+          }
+
+          return Right(remoteResult);
+        } on ServerException catch (e) {
+          debugPrint('❌ [REPO] Remote FAILED: ${e.message}');
+
+          // If local already succeeded, return local as "success" to avoid UI error
+          if (localResult != null) {
+            debugPrint(
+              '✅ [REPO] Returning LOCAL success result despite remote failure (offline-first behavior)',
+            );
+            return Right(localResult);
+          }
+
+          return Left(
+            ServerFailure(message: e.message, statusCode: e.statusCode),
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ [REPO] Unexpected error: ${e.toString()}');
+        return Left(ServerFailure(message: e.toString(), statusCode: '500'));
+      }
+    }
+  }
 }

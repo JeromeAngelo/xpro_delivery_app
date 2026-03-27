@@ -13,6 +13,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 
 import '../../domain/entity/delivery_data_entity.dart';
+import '../../domain/usecases/set_invoice_into_cancelled.dart';
 import '../../domain/usecases/set_invoice_into_unloaded.dart';
 import '../../domain/usecases/set_invoice_into_unloading.dart';
 import '../../domain/usecases/sync_delivery_data_by_trip_id.dart';
@@ -35,9 +36,9 @@ class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState>
   final ConnectivityProvider _connectivity;
   final SetInvoiceIntoCompleted _setInvoiceIntoCompleted;
   final WatchLocalDeliveryDataByTripId _watchLocalDeliveryDataByTripId;
-    final WatchLocalDeliveryDataById _watchLocalDeliveryDataById;
-    final WatchAllLocalDeliveryData _watchAllLocalDeliveryData;
-
+  final SetInvoiceIntoCancelled _setInvoiceIntoCancelled;
+  final WatchLocalDeliveryDataById _watchLocalDeliveryDataById;
+  final WatchAllLocalDeliveryData _watchAllLocalDeliveryData;
 
   DeliveryDataState? _cachedState;
 
@@ -45,7 +46,8 @@ class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState>
     required GetAllDeliveryData getAllDeliveryData,
     required SyncDeliveryDataByTripId syncDeliveryDataByTripId,
     required GetDeliveryDataByTripId getDeliveryDataByTripId,
-        required WatchLocalDeliveryDataByTripId watchLocalDeliveryDataByTripId,
+    required WatchLocalDeliveryDataByTripId watchLocalDeliveryDataByTripId,
+    required SetInvoiceIntoCancelled setInvoiceIntoCancelled,
     required WatchLocalDeliveryDataById watchLocalDeliveryDataById,
     required GetDeliveryDataById getDeliveryDataById,
     required SetInvoiceIntoUnloaded setInvoiceIntoUnloaded,
@@ -67,6 +69,7 @@ class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState>
        _setInvoiceIntoCompleted = setInvoiceIntoCompleted,
        _setInvoiceIntoUnloading = setInvoiceIntoUnloading,
        _setInvoiceIntoUnloaded = setInvoiceIntoUnloaded,
+       _setInvoiceIntoCancelled = setInvoiceIntoCancelled,
        _updateDeliveryLocation = updateDeliveryLocation,
        _watchAllLocalDeliveryData = watchAllLocalDeliveryData,
        _connectivity = connectivity,
@@ -83,127 +86,173 @@ class DeliveryDataBloc extends Bloc<DeliveryDataEvent, DeliveryDataState>
     on<SetInvoiceIntoUnloadingEvent>(_onSetInvoiceIntoUnloading);
     on<SetInvoiceIntoUnloadedEvent>(_onSetInvoiceIntoUnloaded);
     on<UpdateDeliveryLocationEvent>(_onUpdateDeliveryLocation);
+    on<SetInvoiceIntoCancelledEvent>(_onSetInvoiceIntoCancelled);
     on<SetInvoiceIntoCompletedEvent>(_onSetInvoiceIntoCompleted);
     on<WatchLocalDeliveryDataByTripIdEvent>(_onWatchLocalDeliveryDataByTripId);
-        on<WatchLocalDeliveryDataByIdEvent>(_onWatchLocalDeliveryDataById);
-
+    on<WatchLocalDeliveryDataByIdEvent>(_onWatchLocalDeliveryDataById);
   }
-Future<void> _onWatchAllDeliveryData(
-  WatchAllDeliveryDataEvent event,
+
+Future<void> _onSetInvoiceIntoCancelled(
+  SetInvoiceIntoCancelledEvent event,
   Emitter<DeliveryDataState> emit,
 ) async {
-  debugPrint('👀 BLOC: Watching all local delivery data');
-  emit(const DeliveryDataLoading());
+  debugPrint(
+    '🔄 BLOC: Cancelling invoice ${event.invoiceId} for delivery data: ${event.deliveryDataId}',
+  );
 
-  try {
-    // Call the usecase / repo function for watching all local delivery data
-    final stream = _watchAllLocalDeliveryData.call();
-
-    await emit.forEach<List<DeliveryDataEntity>>(
-      stream,
-      onData: (deliveryDataList) {
-        debugPrint(
-            '📦 BLOC: Received ${deliveryDataList.length} delivery data items from watchAllLocalDeliveryData');
-        return AllDeliveryDataWatched(
-          deliveryData: deliveryDataList,
-        );
-      },
-      onError: (error, _) {
-        debugPrint('❌ BLOC: Watch stream error: $error');
-        return DeliveryDataError(
-          message: 'Watch error: $error',
-          statusCode: '500',
-        );
-      },
-    );
-  } catch (e) {
-    debugPrint('❌ BLOC: Exception while watching all delivery data: $e');
-    emit(
-      DeliveryDataError(
-        message: e.toString(),
-        statusCode: '500',
-      ),
-    );
+  /// 🔹 Show loading only if no cached state
+  if (_cachedState == null) {
+    emit(const DeliveryDataLoading());
   }
+
+  final result = await _setInvoiceIntoCancelled(
+    SetInvoiceIntoCancelledParams(
+      deliveryDataId: event.deliveryDataId,
+      invoiceId: event.invoiceId,
+    ),
+  );
+
+  await result.fold(
+    (failure) async {
+      debugPrint(
+        '❌ BLOC: Failed to cancel invoice ${event.invoiceId}: ${failure.message}',
+      );
+
+      if (_cachedState == null) {
+        emit(
+          DeliveryDataError(
+            message: 'Failed to cancel invoice: ${failure.message}',
+            statusCode: failure.statusCode.toString(),
+          ),
+        );
+      }
+    },
+    (updatedDeliveryData) async {
+      debugPrint(
+        '✅ BLOC: Successfully cancelled invoice ${event.invoiceId}',
+      );
+
+      final newState = InvoiceSetToCancelled(
+        deliveryData: updatedDeliveryData,
+        deliveryDataId: event.deliveryDataId,
+        invoiceId: event.invoiceId,
+      );
+
+      /// 🔥 Update cache
+      _cachedState = newState;
+
+      emit(newState);
+    },
+  );
 }
+
+
+  Future<void> _onWatchAllDeliveryData(
+    WatchAllDeliveryDataEvent event,
+    Emitter<DeliveryDataState> emit,
+  ) async {
+    debugPrint('👀 BLOC: Watching all local delivery data');
+    emit(const DeliveryDataLoading());
+
+    try {
+      // Call the usecase / repo function for watching all local delivery data
+      final stream = _watchAllLocalDeliveryData.call();
+
+      await emit.forEach<List<DeliveryDataEntity>>(
+        stream,
+        onData: (deliveryDataList) {
+          debugPrint(
+            '📦 BLOC: Received ${deliveryDataList.length} delivery data items from watchAllLocalDeliveryData',
+          );
+          return AllDeliveryDataWatched(deliveryData: deliveryDataList);
+        },
+        onError: (error, _) {
+          debugPrint('❌ BLOC: Watch stream error: $error');
+          return DeliveryDataError(
+            message: 'Watch error: $error',
+            statusCode: '500',
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ BLOC: Exception while watching all delivery data: $e');
+      emit(DeliveryDataError(message: e.toString(), statusCode: '500'));
+    }
+  }
 
   Future<void> _onWatchLocalDeliveryDataByTripId(
-  WatchLocalDeliveryDataByTripIdEvent event,
-  Emitter<DeliveryDataState> emit,
-) async {
-  debugPrint('👀 BLOC: Watching local delivery data for trip ID: ${event.tripId}');
-  emit(const DeliveryDataLoading());
-
-  try {
-    final stream = _watchLocalDeliveryDataByTripId.call(event.tripId);
-
-    await emit.forEach<List<DeliveryDataEntity>>(
-  stream,
-  onData: (deliveryDataList) {
-    debugPrint('📦 BLOC: Received ${deliveryDataList.length} delivery data items from local watch');
-    return DeliveryDataByTripWatched(
-      deliveryData: deliveryDataList,
-      tripId: event.tripId,
+    WatchLocalDeliveryDataByTripIdEvent event,
+    Emitter<DeliveryDataState> emit,
+  ) async {
+    debugPrint(
+      '👀 BLOC: Watching local delivery data for trip ID: ${event.tripId}',
     );
-  },
-  onError: (error, _) {
-    debugPrint('❌ BLOC: Watch stream error: $error');
-    return DeliveryDataError(
-      message: 'Watch error: $error',
-      statusCode: '500',
-    );
-  },
-);
+    emit(const DeliveryDataLoading());
 
-  } catch (e) {
-    debugPrint('❌ BLOC: Exception while watching local delivery data: $e');
-    emit(
-      DeliveryDataError(
-        message: e.toString(),
-        statusCode: '500',
-      ),
-    );
+    try {
+      final stream = _watchLocalDeliveryDataByTripId.call(event.tripId);
+
+      await emit.forEach<List<DeliveryDataEntity>>(
+        stream,
+        onData: (deliveryDataList) {
+          debugPrint(
+            '📦 BLOC: Received ${deliveryDataList.length} delivery data items from local watch',
+          );
+          return DeliveryDataByTripWatched(
+            deliveryData: deliveryDataList,
+            tripId: event.tripId,
+          );
+        },
+        onError: (error, _) {
+          debugPrint('❌ BLOC: Watch stream error: $error');
+          return DeliveryDataError(
+            message: 'Watch error: $error',
+            statusCode: '500',
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ BLOC: Exception while watching local delivery data: $e');
+      emit(DeliveryDataError(message: e.toString(), statusCode: '500'));
+    }
   }
-}
 
-Future<void> _onWatchLocalDeliveryDataById(
-  WatchLocalDeliveryDataByIdEvent event,
-  Emitter<DeliveryDataState> emit,
-) async {
-  debugPrint('👀 BLOC: Watching local delivery data for ID: ${event.deliveryId}');
-  emit(const DeliveryDataLoading());
-
-  try {
-    final stream = _watchLocalDeliveryDataById.call(event.deliveryId);
-
-    await emit.forEach<DeliveryDataEntity?>(
-      stream,
-      onData: (deliveryData) {
-        debugPrint('📦 BLOC: Received update for delivery ID: ${event.deliveryId}');
-        return DeliveryDataByIdWatched(
-          deliveryData: deliveryData,
-          deliveryId: event.deliveryId,
-        );
-      },
-      onError: (error, _) {
-        debugPrint('❌ BLOC: Watch stream error (by ID): $error');
-        return DeliveryDataError(
-          message: 'Watch error: $error',
-          statusCode: '500',
-        );
-      },
+  Future<void> _onWatchLocalDeliveryDataById(
+    WatchLocalDeliveryDataByIdEvent event,
+    Emitter<DeliveryDataState> emit,
+  ) async {
+    debugPrint(
+      '👀 BLOC: Watching local delivery data for ID: ${event.deliveryId}',
     );
-  } catch (e) {
-    debugPrint('❌ BLOC: Exception while watching delivery data by ID: $e');
-    emit(
-      DeliveryDataError(
-        message: e.toString(),
-        statusCode: '500',
-      ),
-    );
+    emit(const DeliveryDataLoading());
+
+    try {
+      final stream = _watchLocalDeliveryDataById.call(event.deliveryId);
+
+      await emit.forEach<DeliveryDataEntity?>(
+        stream,
+        onData: (deliveryData) {
+          debugPrint(
+            '📦 BLOC: Received update for delivery ID: ${event.deliveryId}',
+          );
+          return DeliveryDataByIdWatched(
+            deliveryData: deliveryData,
+            deliveryId: event.deliveryId,
+          );
+        },
+        onError: (error, _) {
+          debugPrint('❌ BLOC: Watch stream error (by ID): $error');
+          return DeliveryDataError(
+            message: 'Watch error: $error',
+            statusCode: '500',
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ BLOC: Exception while watching delivery data by ID: $e');
+      emit(DeliveryDataError(message: e.toString(), statusCode: '500'));
+    }
   }
-}
-
 
   // Add this event handler
   Future<void> _onSyncDeliveryDataByTripId(
@@ -338,32 +387,39 @@ Future<void> _onWatchLocalDeliveryDataById(
       },
     );
   }
-Future<void> _onGetDeliveryDataByTripId(
-  GetDeliveryDataByTripIdEvent event,
-  Emitter<DeliveryDataState> emit,
-) async {
-  debugPrint('🌐 Getting delivery data for trip ID: ${event.tripId}');
-  emit(const DeliveryDataLoading());
 
-  final result = await _getDeliveryDataByTripId(event.tripId);
+  Future<void> _onGetDeliveryDataByTripId(
+    GetDeliveryDataByTripIdEvent event,
+    Emitter<DeliveryDataState> emit,
+  ) async {
+    debugPrint('🌐 Getting delivery data for trip ID: ${event.tripId}');
+    emit(const DeliveryDataLoading());
 
-  result.fold(
-    (failure) {
-      debugPrint('❌ Delivery Data by trip fetch failed: ${failure.message}');
-      emit(DeliveryDataError(
-        message: failure.message,
-        statusCode: failure.statusCode ?? '500',
-      ));
-    },
-    (deliveryData) {
-      debugPrint('BLOC: ✅ Delivery data loaded: ${deliveryData.length} items');
-      emit(DeliveryDataByTripLoaded(
-        deliveryData: deliveryData,
-        tripId: event.tripId,
-      ));
-    },
-  );
-}
+    final result = await _getDeliveryDataByTripId(event.tripId);
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ Delivery Data by trip fetch failed: ${failure.message}');
+        emit(
+          DeliveryDataError(
+            message: failure.message,
+            statusCode: failure.statusCode ?? '500',
+          ),
+        );
+      },
+      (deliveryData) {
+        debugPrint(
+          'BLOC: ✅ Delivery data loaded: ${deliveryData.length} items',
+        );
+        emit(
+          DeliveryDataByTripLoaded(
+            deliveryData: deliveryData,
+            tripId: event.tripId,
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _onGetDeliveryDataById(
     GetDeliveryDataByIdEvent event,

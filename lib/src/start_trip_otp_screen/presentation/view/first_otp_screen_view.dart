@@ -150,7 +150,7 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                   '${state.otpType} OTP verified successfully',
                 );
                 if (tripId != null) {
-                  context.push('/delivery-and-timeline');
+                  context.push('/sync-loading');
                 }
               } else if (state is OtpError) {
                 CoreUtils.showSnackBar(context, state.message);

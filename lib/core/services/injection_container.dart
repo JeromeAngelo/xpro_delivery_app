@@ -221,6 +221,7 @@ import '../common/app/features/trip_ticket/delivery_collection/domain/usecases/d
     show DeleteCollection;
 import '../common/app/features/trip_ticket/delivery_collection/domain/usecases/get_collection_by_id.dart';
 import '../common/app/features/trip_ticket/delivery_collection/domain/usecases/get_collection_by_trip_id.dart';
+import '../common/app/features/trip_ticket/delivery_data/domain/usecases/set_invoice_into_cancelled.dart';
 import '../common/app/features/trip_ticket/delivery_data/domain/usecases/set_invoice_into_completed.dart';
 import '../common/app/features/trip_ticket/delivery_data/domain/usecases/set_invoice_into_unloaded.dart';
 import '../common/app/features/trip_ticket/delivery_data/domain/usecases/set_invoice_into_unloading.dart';
@@ -825,6 +826,7 @@ Future<void> initDeliveryData() async {
       setInvoiceIntoUnloaded: sl(),
       setInvoiceIntoCompleted: sl(),
       connectivity: sl(),
+      setInvoiceIntoCancelled: sl(),
       watchLocalDeliveryDataByTripId: sl(),
       watchLocalDeliveryDataById: sl(),
       watchAllLocalDeliveryData: sl()
@@ -844,6 +846,8 @@ Future<void> initDeliveryData() async {
   sl.registerLazySingleton(() => CalculateDeliveryTimeByDeliveryId(sl()));
   sl.registerLazySingleton(() => SyncDeliveryDataByTripId(sl()));
   sl.registerLazySingleton(() => SetInvoiceIntoUnloading(sl()));
+    sl.registerLazySingleton(() => SetInvoiceIntoCancelled(sl()));
+
   sl.registerLazySingleton(() => UpdateDeliveryLocation(sl()));
   sl.registerLazySingleton(() => SetInvoiceIntoUnloaded(sl()));
 

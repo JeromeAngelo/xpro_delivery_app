@@ -45,6 +45,10 @@ abstract class DeliveryDataRepo {
     String deliveryDataId,
   );
 
+   ResultFuture<DeliveryDataEntity> setInvoiceIntoCancelled(
+    String deliveryDataId, String invoiceId,
+  );
+
   /// Update delivery location by ID
   ///
   /// Takes a delivery data ID, latitude and longitude and updates the location

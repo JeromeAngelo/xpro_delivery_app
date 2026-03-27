@@ -112,6 +112,17 @@ class SetInvoiceIntoCompletedEvent extends DeliveryDataEvent {
   List<Object?> get props => [deliveryDataId];
 }
 
+/// Event to set invoice into unloading status
+class SetInvoiceIntoCancelledEvent extends DeliveryDataEvent {
+  final String deliveryDataId;
+  final String invoiceId; 
+
+  const SetInvoiceIntoCancelledEvent(this.deliveryDataId, this.invoiceId);
+
+  @override
+  List<Object?> get props => [deliveryDataId, invoiceId];
+}
+
 /// Event to update delivery location
 class UpdateDeliveryLocationEvent extends DeliveryDataEvent {
   final String id;

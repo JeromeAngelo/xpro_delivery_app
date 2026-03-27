@@ -148,6 +148,22 @@ class InvoiceSetToUnloaded extends DeliveryDataState {
   List<Object?> get props => [deliveryData, deliveryDataId];
 }
 
+/// State when invoice is successfully set to cancelled
+class InvoiceSetToCancelled extends DeliveryDataState {
+  final DeliveryDataEntity deliveryData;
+  final String deliveryDataId;
+  final String invoiceId;
+
+  const InvoiceSetToCancelled({
+    required this.deliveryData,
+    required this.deliveryDataId,
+    required this.invoiceId,
+  });
+
+  @override
+  List<Object?> get props => [deliveryData, deliveryDataId, invoiceId];
+}
+
 /// State when invoice is successfully set to unloading
 class InvoiceSetToCompleted extends DeliveryDataState {
   final DeliveryDataEntity deliveryData;
