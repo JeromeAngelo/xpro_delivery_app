@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 
 class GreetingView extends StatelessWidget {
   const GreetingView({super.key});
@@ -17,10 +18,11 @@ class GreetingView extends StatelessWidget {
                 width: 200,
                 height: 200,
 
-                child: Image.asset(
-                  'assets/images/onboarding_image.gif',
-                  fit: BoxFit.contain,
-                ),
+                child: Lottie.asset(
+                  'assets/animations/greetings.json',
+                  width: 180,
+                  repeat: true,
+                )
               ),
               const SizedBox(height: 16),
 
