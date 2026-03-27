@@ -265,7 +265,7 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                             deliveryData: deliveryData,
                             onTapToCancel: () {
                               debugPrint('➡️ InvoiceScreen: open cancellation for invoiceId=$invoiceId');
-                             context.go('/cancel-invoice/${deliveryData.id}/$invoiceId');
+                             context.push('/cancel-invoice/${deliveryData.id}/$invoiceId');
                             },
                             onTap: () {
                               final route =

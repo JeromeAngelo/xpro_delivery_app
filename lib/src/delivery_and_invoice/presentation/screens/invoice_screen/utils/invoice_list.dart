@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import '../../../../../../core/common/widgets/list_tiles.dart';
 
 class InvoiceList extends StatelessWidget {
   final DeliveryDataEntity deliveryData;
@@ -103,74 +104,43 @@ class InvoiceList extends StatelessWidget {
 
     debugPrint('🧾 InvoiceList (clean)');
     debugPrint('   📦 DeliveryData: ${deliveryData.id}');
-    debugPrint('   🧾 Invoices: ${(() { try { return deliveryData.invoices.length; } catch (_) { return 0; } })()}');
+    debugPrint(
+      '   🧾 Invoices: ${(() {
+        try {
+          return deliveryData.invoices.length;
+        } catch (_) {
+          return 0;
+        }
+      })()}',
+    );
     debugPrint('   📦 Products(invoiceItems): $productCount');
     debugPrint('   🔄 isUnloading: ${deliveryData.isUnloading}');
     debugPrint('   ✅ isUnloaded: ${deliveryData.isUnloaded}');
     debugPrint('   🏷️ UI Status: ${status.text}');
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: status.bg,
-          child: Icon(status.icon, color: status.color),
-        ),
-        title: Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text('$productCount Products'),
-                if (invoiceCountText.isNotEmpty) ...[
-                  const SizedBox(width: 10),
-                  Text(
-                    '• $invoiceCountText',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: status.bg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: status.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(status.icon, size: 14, color: status.color),
-                  const SizedBox(width: 6),
-                  Text(
-                    status.text,
-                    style: TextStyle(
-                      color: status.color,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        trailing: IconButton(
-          icon: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          onPressed: onTap,
+    return CommonListTiles(
+      title: title,
+      subtitle:
+          '$productCount Products | ${status.text}${invoiceCountText.isNotEmpty ? ' | $invoiceCountText' : ''}',
+      leading: CircleAvatar(
+        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        child: Icon(
+          Icons.receipt_long,
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
+      trailing: IconButton(
+        onPressed: onTapToCancel,
+        icon: Icon(
+          Icons.cancel_outlined,
+          color: Theme.of(context).colorScheme.error,
+        ),
+      ),
+      onTap: onTap,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      backgroundColor: Theme.of(context).colorScheme.surface,
     );
   }
 }
