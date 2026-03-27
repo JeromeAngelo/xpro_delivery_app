@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_bloc.dart';
@@ -319,11 +320,11 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      'assets/images/onboarding_image.gif',
-                      width: 150,
-                      height: 150,
-                    ),
+                    Lottie.asset(
+                  'assets/animations/onboarding_anim.json',
+                  width: 180,
+                  repeat: true,
+                ),
                     const SizedBox(height: 30),
                     if (state is CheckingIfUserIsFirstTimer ||
                         state is CachingFirstTimer)

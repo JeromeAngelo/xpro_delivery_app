@@ -156,7 +156,10 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
   Widget _buildReasonDropdown() {
     return DropdownButtonFormField<UndeliverableReason>(
       value: _selectedReason,
-      decoration: const InputDecoration(labelText: 'Reason'),
+      decoration: InputDecoration(
+        labelText: 'Reason',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       items:
           UndeliverableReason.values.map((reason) {
             return DropdownMenuItem(

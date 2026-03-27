@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/features/sync_data/cubit/sync_cubit.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/sync_data/cubit/sync_state.dart';
 import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
 
-import '../../../../core/common/widgets/sync_loading_indicator.dart';
 
 
 class LoadingScreen extends StatefulWidget {
@@ -295,10 +295,13 @@ class _LoadingScreenState extends State<LoadingScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // // Logo Section
-              // _buildLogoSection(),
+              Lottie.asset(
+                  'assets/animations/cloud_sync_anim.json',
+                  width: 180,
+                  repeat: true,
+                ),
               
-              // const SizedBox(height: 48),
+               const SizedBox(height: 24),
               
               // Status Section
               _buildStatusSection(),
@@ -320,17 +323,17 @@ Widget _buildStatusSection() {
     padding: const EdgeInsets.symmetric(horizontal: 32),
     child: Column(
       children: [
-        // NEW: Syncing Pulse Loader
-        if (_isLoading)
-          const SyncLoadingIndicator(),
+        // // NEW: Syncing Pulse Loader
+        // if (_isLoading)
+        //   const SyncLoadingIndicator(),
 
-        // const SizedBox(height: 24),
+        // // const SizedBox(height: 24),
 
-        // // Your existing rotating loading indicator
-        // if (_isLoading) 
-        //   _buildLoadingIndicator(),
+        // // // Your existing rotating loading indicator
+        // // if (_isLoading) 
+        // //   _buildLoadingIndicator(),
         
-        const SizedBox(height: 20),
+        // const SizedBox(height: 20),
 
         // Progress Bar
         ClipRRect(

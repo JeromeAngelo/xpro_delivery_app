@@ -150,7 +150,7 @@ class _SyncScreenState extends State<SyncScreen> {
               children: [
                 /// 🔥 LOTTIE ANIMATION
                 Lottie.asset(
-                  'assets/images/map_anim.json',
+                  'assets/animations/map_anim.json',
                   width: 180,
                   repeat: true,
                 ),

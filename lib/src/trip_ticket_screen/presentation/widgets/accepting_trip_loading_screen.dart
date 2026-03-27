@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_event.dart';
@@ -170,11 +171,11 @@ class _AcceptingTripLoadingScreenState extends State<AcceptingTripLoadingScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
-                'assets/images/trip_accepting.gif',
-                width: 200,
-                height: 200,
-              ),
+              Lottie.asset(
+                  'assets/animations/truck_loading_anim.json',
+                  width: 180,
+                  repeat: true,
+                ),
               const SizedBox(height: 20),
               BlocBuilder<TripBloc, TripState>(
                 builder: (context, state) {

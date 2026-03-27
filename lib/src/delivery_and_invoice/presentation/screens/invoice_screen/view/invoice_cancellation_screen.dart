@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import '../../../../../../core/enums/invoice_cancellation_enums.dart';
 
 class InvoiceCancellationScreen extends StatefulWidget {
   final String deliveryDataId;
@@ -21,12 +22,9 @@ class InvoiceCancellationScreen extends StatefulWidget {
       _InvoiceCancellationScreenState();
 }
 
-class _InvoiceCancellationScreenState
-    extends State<InvoiceCancellationScreen> {
+class _InvoiceCancellationScreenState extends State<InvoiceCancellationScreen> {
   final TextEditingController _remarkController = TextEditingController();
-
-  /// 🔥 HARD CODED REASON (for now)
-  String _selectedReason = 'Customer Cancelled';
+  InvoiceCancellationReason _selectedReason = InvoiceCancellationReason.none;
 
   final List<String> _reasons = [
     'Customer Cancelled',
@@ -36,7 +34,7 @@ class _InvoiceCancellationScreenState
   ];
 
   void _submitCancellation() {
-    if (_selectedReason.isEmpty) {
+    if (_selectedReason == InvoiceCancellationReason.none) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a reason'),
@@ -47,11 +45,8 @@ class _InvoiceCancellationScreenState
     }
 
     context.read<DeliveryDataBloc>().add(
-          SetInvoiceIntoCancelledEvent(
-            widget.deliveryDataId,
-            widget.invoiceId,
-          ),
-        );
+      SetInvoiceIntoCancelledEvent(widget.deliveryDataId, widget.invoiceId),
+    );
   }
 
   @override
@@ -77,10 +72,7 @@ class _InvoiceCancellationScreenState
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Cancel Invoice'),
-          centerTitle: true,
-        ),
+        appBar: AppBar(title: const Text('Cancel Invoice'), centerTitle: true),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -94,29 +86,7 @@ class _InvoiceCancellationScreenState
 
               const SizedBox(height: 16),
 
-              /// 🔹 REASON DROPDOWN
-              DropdownButtonFormField<String>(
-                value: _selectedReason,
-                decoration: InputDecoration(
-                  labelText: 'Reason',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                items: _reasons
-                    .map(
-                      (reason) => DropdownMenuItem(
-                        value: reason,
-                        child: Text(reason),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedReason = value);
-                  }
-                },
-              ),
+              _buildReasonDropdown(),
 
               const SizedBox(height: 16),
 
@@ -148,26 +118,27 @@ class _InvoiceCancellationScreenState
                       final isLoading = state is DeliveryDataLoading;
 
                       return ElevatedButton(
-                        onPressed:
-                            isLoading ? null : _submitCancellation,
+                        onPressed: isLoading ? null : _submitCancellation,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isLoading
-                              ? Colors.grey
-                              : Colors.red, // 🔥 cancel action color
+                          backgroundColor:
+                              isLoading
+                                  ? Colors.grey
+                                  : Colors.red, // 🔥 cancel action color
                         ),
-                        child: isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                        child:
+                            isLoading
+                                ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Text(
+                                  'Cancel Invoice',
+                                  style: TextStyle(color: Colors.white),
                                 ),
-                              )
-                            : const Text(
-                                'Cancel Invoice',
-                                style: TextStyle(color: Colors.white),
-                              ),
                       );
                     },
                   ),
@@ -177,6 +148,44 @@ class _InvoiceCancellationScreenState
           ),
         ),
       ),
+    );
+  }
+
+  /// Map enum to friendly display names
+  String _getReasonDisplayName(InvoiceCancellationReason reason) {
+    switch (reason) {
+      case InvoiceCancellationReason.none:
+        return 'Unspecified Reason';
+      case InvoiceCancellationReason.customerRequest:
+        return 'Customer Request';
+      case InvoiceCancellationReason.duplicateInvoice:
+        return 'Duplicate Invoice';
+      case InvoiceCancellationReason.incorrectInvoice:
+        return 'Incorrect Invoice';
+      case InvoiceCancellationReason.other:
+        return 'Other';
+    }
+  }
+
+  Widget _buildReasonDropdown() {
+    return DropdownButtonFormField<InvoiceCancellationReason>(
+      value: _selectedReason,
+      decoration: InputDecoration(
+        labelText: 'Reason',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      items:
+          InvoiceCancellationReason.values.map((reason) {
+            return DropdownMenuItem(
+              value: reason,
+              child: Text(_getReasonDisplayName(reason)),
+            );
+          }).toList(),
+      onChanged: (value) {
+        if (value != null) {
+          setState(() => _selectedReason = value);
+        }
+      },
     );
   }
 }

@@ -38,7 +38,7 @@ import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/a
 import '../../src/deliveries_and_timeline/presentation/screens/syncing_screen.dart';
 import '../../src/deliveries_and_timeline/presentation/widgets/add_trip_update_screen.dart';
 import '../../src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_remarks_screen.dart';
-import '../../src/delivery_and_invoice/presentation/screens/invoice_screen/utils/invoice_cancellation_screen.dart';
+import '../../src/delivery_and_invoice/presentation/screens/invoice_screen/view/invoice_cancellation_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_collection_spec_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_undelivered_spec_screen.dart';
 import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
