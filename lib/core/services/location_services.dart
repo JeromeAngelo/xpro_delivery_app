@@ -14,15 +14,15 @@ class LocationService {
   static const int _updateIntervalMinutes =
       2; // Time-based updates every 2 minutes (more frequent)
   static const int _distanceFilterMeters =
-      2; // Distance-based updates every 2 meters of movement (more frequent)
+      5; // Distance-based updates every 2 meters of movement (more frequent)
   static const double _accuracyThreshold =
       50.0; // Accept readings within 50 meters (relaxed for real-world GPS)
   static const double _minMovementThreshold =
-      2; // Update for any movement ≥ 2 meters (more sensitive)
+      8; // or even 10 // Update for any movement ≥ 8 meters (more sensitive)
   static const double _maxRealisticSpeedKmh =
       200.0; // Higher threshold to allow for all types of movement
   static const int _smoothingBufferSize =
-      3; // Smaller buffer for more responsive tracking
+      5; // Smaller buffer for more responsive tracking
 
   static Future<bool> enableLocationService() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -100,13 +100,10 @@ class LocationService {
     debugPrint('   🎯 Accuracy: ${position.accuracy} meters');
     debugPrint('   ⏰ Timestamp: ${position.timestamp}');
 
-    // 1. Accept most accuracy levels - only reject extremely poor readings
-    if (position.accuracy > _accuracyThreshold) {
-      debugPrint(
-        'ℹ️ LOCATION: Lower accuracy (${position.accuracy}m > ${_accuracyThreshold}m) but still acceptable for distance tracking',
-      );
-      // Continue processing instead of rejecting
-    }
+  if (position.accuracy > 20) {
+  debugPrint('❌ Poor accuracy - REJECTED');
+  return false;
+}
 
     // 2. Check if position is realistic (not null island coordinates)
     if (position.latitude == 0.0 && position.longitude == 0.0) {
@@ -122,6 +119,16 @@ class LocationService {
         position.latitude,
         position.longitude,
       );
+
+        final timeDiff = position.timestamp
+      .difference(_lastUpdateTime ?? position.timestamp)
+      .inSeconds;
+
+  // If movement is small AND time is short → ignore (GPS drift)
+  if (distanceInMeters < 10 && timeDiff < 60) {
+    debugPrint('❌ Likely GPS drift - REJECTED');
+    return false;
+  }
 
       debugPrint(
         '   📏 Distance from last: ${distanceInMeters.toStringAsFixed(2)}m',
@@ -200,6 +207,8 @@ class LocationService {
       debugPrint(
         '   ⏰ Update frequency: Every ${_updateIntervalMinutes}min OR ${_distanceFilterMeters}m movement',
       );
+
+      
     }
 
     _lastPosition = smoothedPosition ?? position;

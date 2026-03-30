@@ -6,15 +6,14 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 
-import '../../../../../../core/common/app/features/delivery_data/delivery_update/domain/entity/delivery_update_entity.dart';
 
 class DeliveryTimeline extends StatefulWidget {
   final String customerId;
-  final Function(DeliveryUpdateEntity status)? onLongPress;
+ 
   const DeliveryTimeline({
     super.key,
     required this.customerId,
-    this.onLongPress,
+   
   });
 
   @override
@@ -94,71 +93,60 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                     itemCount: statusUpdates.length,
                     contentsBuilder: (_, index) {
                       final status = statusUpdates[index];
-                      return GestureDetector(
-                        onLongPress: () {
-                          debugPrint(
-                            '🖐️ Long pressed status: ${status.title}',
-                          );
-
-                          if (widget.onLongPress != null) {
-                            widget.onLongPress!(status);
-                          }
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.all(5.0),
-                          child: Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: ListTile(
-                              leading: Column(
-                                //    mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    StatusIcons.getStatusIcon(
-                                      status.title ?? '',
-                                    ),
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                      return Padding(
+                        padding: EdgeInsets.all(5.0),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ListTile(
+                            leading: Column(
+                              //    mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  StatusIcons.getStatusIcon(
+                                    status.title ?? '',
                                   ),
-                                ],
-                              ),
-                              title: Text(
-                                status.title ?? '',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    status.subtitle ?? '',
-                                    style:
-                                        Theme.of(context).textTheme.bodyMedium,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    _formatDateTime(
-                                      status.time ?? DateTime.now(),
-                                    ),
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                              trailing: GestureDetector(
-                                onTap: () {
-                                  if (status.id != null) {
-                                    context.push(
-                                      '/update-remark/${status.id ?? ''}',
-                                      extra: status,
-                                    );
-                                  }
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [Icon(Icons.arrow_forward_ios)],
+                                  color:
+                                      Theme.of(context).colorScheme.primary,
                                 ),
+                              ],
+                            ),
+                            title: Text(
+                              status.title ?? '',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  status.subtitle ?? '',
+                                  style:
+                                      Theme.of(context).textTheme.bodyMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  _formatDateTime(
+                                    status.time ?? DateTime.now(),
+                                  ),
+                                  style:
+                                      Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                            trailing: GestureDetector(
+                              onTap: () {
+                                if (status.id != null) {
+                                  context.push(
+                                    '/update-remark/${status.id ?? ''}',
+                                    extra: status,
+                                  );
+                                }
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [Icon(Icons.arrow_forward_ios)],
                               ),
                             ),
                           ),

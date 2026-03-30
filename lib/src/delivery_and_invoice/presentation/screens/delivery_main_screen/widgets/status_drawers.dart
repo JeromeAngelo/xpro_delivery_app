@@ -9,12 +9,14 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/customer_summary_dialog.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/customer_summary_dialog.dart';
 
+import '../../../../../../core/common/app/features/delivery_data/delivery_update/domain/entity/delivery_update_entity.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_event.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_state.dart';
+import '../../../../../../core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 
 class UpdateStatusDrawer extends StatefulWidget {
   final String deliveryDataId;
@@ -61,6 +63,25 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
   void dispose() {
     _subscription?.cancel();
     super.dispose();
+  }
+
+  bool _isRevertStatusLocked(DeliveryDataEntity deliveryData) {
+    if (deliveryData.deliveryUpdates.isEmpty) return false;
+
+    final sortedUpdates = List<DeliveryUpdateEntity>.from(
+      deliveryData.deliveryUpdates,
+    );
+
+    sortedUpdates.sort((a, b) {
+      final timeA = a.time ?? a.created ?? DateTime(0);
+      final timeB = b.time ?? b.created ?? DateTime(0);
+      return timeB.compareTo(timeA);
+    });
+
+    final latestTitle = sortedUpdates.first.title?.trim().toLowerCase() ?? '';
+    return latestTitle == 'in transit' ||
+        latestTitle == 'end delivery' ||
+        latestTitle == 'mark as undelivered';
   }
 
   @override
@@ -132,39 +153,96 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    ElevatedButton.icon(
-                                      // In status_drawers.dart, update the ElevatedButton.icon onPressed:
-                                      onPressed: () async {
-                                        Navigator.pop(
-                                          context,
-                                        ); // Close the modal bottom sheet first
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceAround,
+                                      children: [
+                                        ElevatedButton.icon(
+                                          // In status_drawers.dart, update the ElevatedButton.icon onPressed:
+                                          onPressed: () async {
+                                            Navigator.pop(
+                                              context,
+                                            ); // Close the modal bottom sheet first
 
-                                        final customerState =
-                                            context
-                                                .read<DeliveryDataBloc>()
-                                                .state;
-                                        if (customerState
-                                            is DeliveryDataLoaded) {
-                                          final result = await context.push(
-                                            '/add-delivery-status',
-                                            extra: customerState.deliveryData,
-                                          );
-                                          if (result == true) {
-                                            context
-                                                .read<
-                                                  DeliveryStatusChoicesBloc
-                                                >()
-                                                .add(
-                                                  GetAllAssignedDeliveryStatusChoicesEvent(
-                                                    widget.deliveryDataId,
-                                                  ),
+                                            final customerState =
+                                                context
+                                                    .read<DeliveryDataBloc>()
+                                                    .state;
+                                            if (customerState
+                                                is DeliveryDataLoaded) {
+                                              final result = await context.push(
+                                                '/add-delivery-status',
+                                                extra:
+                                                    customerState.deliveryData,
+                                              );
+                                              if (result == true) {
+                                                context
+                                                    .read<
+                                                      DeliveryStatusChoicesBloc
+                                                    >()
+                                                    .add(
+                                                      GetAllAssignedDeliveryStatusChoicesEvent(
+                                                        widget.deliveryDataId,
+                                                      ),
+                                                    );
+                                              }
+                                            }
+                                          },
+
+                                          label: const Text(
+                                            "Add Delivery Status",
+                                          ),
+                                          icon: const Icon(Icons.add),
+                                        ),
+                                        BlocBuilder<
+                                          DeliveryDataBloc,
+                                          DeliveryDataState
+                                        >(
+                                          builder: (context, customerState) {
+                                            final isLocked =
+                                                customerState
+                                                    is DeliveryDataLoaded &&
+                                                _isRevertStatusLocked(
+                                                  customerState.deliveryData,
                                                 );
-                                          }
-                                        }
-                                      },
 
-                                      label: const Text("Add Delivery Status"),
-                                      icon: const Icon(Icons.add),
+                                            return ElevatedButton.icon(
+                                              icon: const Icon(Icons.repeat),
+                                              label: const Text(
+                                                "Revert Status",
+                                              ),
+                                              onPressed:
+                                                  isLocked
+                                                      ? null
+                                                      : () {
+                                                        if (customerState
+                                                            is DeliveryDataLoaded) {
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pop();
+                                                          Future.delayed(
+                                                            const Duration(
+                                                              milliseconds: 100,
+                                                            ),
+                                                            () {
+                                                              if (!mounted)
+                                                                return;
+                                                              context.push(
+                                                                '/revert-delivery/${widget.deliveryDataId}',
+                                                                extra: {
+                                                                  'deliveryData':
+                                                                      customerState
+                                                                          .deliveryData,
+                                                                },
+                                                              );
+                                                            },
+                                                          );
+                                                        }
+                                                      },
+                                            );
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),

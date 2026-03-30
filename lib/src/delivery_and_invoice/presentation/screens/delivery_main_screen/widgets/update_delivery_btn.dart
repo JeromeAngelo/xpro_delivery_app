@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/status_drawers.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/status_drawers.dart';
 
 class UpdateDeliveryBtn extends StatelessWidget {
   final String currentStatus;

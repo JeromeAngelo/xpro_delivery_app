@@ -12,8 +12,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/mode
 import 'package:x_pro_delivery_app/src/auth/view/auth_screen_view.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/view/checklist_and_delivery_view.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/view/delivery_and_timeline_view.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/add_delivery_status_dialog.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/undeliverable_screen.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/sub_screens/revert_delivery_status_screen.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/add_delivery_status_dialog.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/sub_screens/undeliverable_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/confirm_order_product_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/product_list_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/view/delivery_and_invoice_view.dart';
@@ -37,7 +38,7 @@ import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/a
 
 import '../../src/deliveries_and_timeline/presentation/screens/syncing_screen.dart';
 import '../../src/deliveries_and_timeline/presentation/widgets/add_trip_update_screen.dart';
-import '../../src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_remarks_screen.dart';
+import '../../src/delivery_and_invoice/presentation/screens/delivery_main_screen/sub_screens/update_remarks_screen.dart';
 import '../../src/delivery_and_invoice/presentation/screens/invoice_screen/view/invoice_cancellation_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_collection_spec_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_undelivered_spec_screen.dart';
@@ -514,6 +515,37 @@ final router = GoRouter(
       pageBuilder:
           (context, state) =>
               AppTransitions.fadeSlide(const SyncScreen(), state),
+    ),
+    GoRoute(
+      path: '/revert-delivery/:deliveryDataId',
+      pageBuilder: (context, state) {
+        final extra = state.extra;
+        DeliveryDataEntity? deliveryData;
+        DeliveryStatusChoicesEntity? deliveryStatus;
+
+        if (extra is Map<String, dynamic>) {
+          deliveryData = extra['deliveryData'] as DeliveryDataEntity?;
+          deliveryStatus =
+              extra['deliveryStatus'] as DeliveryStatusChoicesEntity?;
+        }
+
+        if (deliveryData == null) {
+          return AppTransitions.fadeSlide(
+            const Scaffold(
+              body: Center(child: Text('Missing required delivery data')),
+            ),
+            state,
+          );
+        }
+
+        return AppTransitions.fadeSlide(
+          RevertDeliveryStatusScreen(
+            deliveryData: deliveryData,
+            deliveryStatus: deliveryStatus,
+          ),
+          state,
+        );
+      },
     ),
   ],
 );

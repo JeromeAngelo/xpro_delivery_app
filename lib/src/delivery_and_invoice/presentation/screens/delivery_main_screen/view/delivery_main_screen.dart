@@ -7,10 +7,10 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_event.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/customer_details_dashboard.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/maps.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/delivery_timeline.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/utils/update_delivery_btn.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/customer_details_dashboard.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/maps.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/delivery_timeline.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/update_delivery_btn.dart';
 
 // CLEANED DeliveryMainScreen — No Cached State, No Redundant Fetching,
 // FULL OFFLINE MODE (ObjectBox as single source of truth)
@@ -121,7 +121,7 @@ class _DeliveryMainScreenState extends State<DeliveryMainScreen>
                     ),
                   ),
 
-                  DeliveryTimeline(customerId: '${deliveryData.id}'),
+                  DeliveryTimeline(customerId: '${deliveryData.id}', ),
 
                   const SizedBox(height: 80),
                 ],

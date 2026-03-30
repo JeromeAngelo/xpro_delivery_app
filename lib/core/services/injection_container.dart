@@ -192,6 +192,7 @@ import '../common/app/features/delivery_status_choices/data/repo/delivery_status
 import '../common/app/features/delivery_status_choices/domain/usecase/bulk_update_delivery_status_usecase.dart';
 import '../common/app/features/delivery_status_choices/domain/usecase/get_all_bulk_delivery_status_choices.dart';
 import '../common/app/features/delivery_status_choices/domain/usecase/get_assigned_delivery_status_choices.dart';
+import '../common/app/features/delivery_status_choices/domain/usecase/revert_update_delivery_status.dart';
 import '../common/app/features/delivery_status_choices/domain/usecase/sync_all_delivery_status_choices.dart';
 import '../common/app/features/delivery_status_choices/domain/usecase/update_customer_status.dart';
 import '../common/app/features/trip_ticket/cancelled_invoices/data/datasources/local_datasource/cancelled_invoice_local_datasource.dart'
@@ -658,6 +659,7 @@ Future<void> initDeliveryStatusChoices() async {
   sl.registerLazySingleton(() => UpdateCustomerStatus(sl()));
   sl.registerLazySingleton(() => GetAllBulkDeliveryStatusChoices(sl()));
   sl.registerLazySingleton(() => BulkUpdateDeliveryStatusUsecase(sl()));
+  sl.registerLazySingleton(() => RevertUpdateDeliveryStatus(sl()));
   sl.registerLazySingleton(() => SetEndDelivery(sl()));
   // 5️⃣ Register remote datasource
   sl.registerLazySingleton<DeliveryStatusChoicesRemoteDataSource>(
