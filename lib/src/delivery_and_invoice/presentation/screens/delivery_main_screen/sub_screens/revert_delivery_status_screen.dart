@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
 
 import '../../../../../../core/common/app/features/delivery_data/delivery_update/domain/entity/delivery_update_entity.dart';
@@ -85,6 +86,26 @@ class _RevertDeliveryStatusScreenState
         : [];
   }
 
+  String _getLatestUpdateTimestamp(DeliveryDataEntity deliveryData) {
+    if (deliveryData.deliveryUpdates.isEmpty) return 'N/A';
+
+    final sortedUpdates = List<DeliveryUpdateEntity>.from(
+      deliveryData.deliveryUpdates,
+    );
+
+    sortedUpdates.sort((a, b) {
+      final timeA = a.time ?? a.created ?? DateTime(0);
+      final timeB = b.time ?? b.created ?? DateTime(0);
+      return timeB.compareTo(timeA);
+    });
+
+    final latest = sortedUpdates.first;
+    final latestDate = latest.time ?? latest.created;
+    if (latestDate == null) return 'N/A';
+
+    return DateFormat.yMMMMd().add_jm().format(latestDate);
+  }
+
   void _loadAssignedStatuses() {
     if (_hasRequestedStatuses) return;
     if (widget.deliveryData.id == null) return;
@@ -117,12 +138,54 @@ class _RevertDeliveryStatusScreenState
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _infoRow(Icons.tag, 'Picklist ID', tripName),
-                  const SizedBox(height: 10),
-                  _infoRow(Icons.description, 'Picklist Name', customerName),
-                  const SizedBox(height: 10),
-                  _infoRow(Icons.info, 'Current Status', currentStatus),
+                  Text(
+                    'Customer Overview',
+                    style: theme.textTheme.titleLarge!.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildInfoRow(Icons.route, 'Route Name', tripName),
+                            const SizedBox(height: 14),
+                            _buildInfoRow(
+                              Icons.store,
+                              'Store Name',
+                              customerName,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 40),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildInfoRow(
+                              Icons.info,
+                              'Current Status',
+                              currentStatus,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildInfoRow(
+                              Icons.update,
+                              'Latest Update',
+                              _getLatestUpdateTimestamp(widget.deliveryData),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -234,24 +297,42 @@ class _RevertDeliveryStatusScreenState
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData icon, String title, String value) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: theme.colorScheme.primary),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: colorScheme.primary),
+        ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: '$label: ',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: theme.textTheme.bodyMedium!.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                TextSpan(text: value),
-              ],
-            ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                title,
+                style: theme.textTheme.bodySmall!.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
           ),
         ),
       ],
