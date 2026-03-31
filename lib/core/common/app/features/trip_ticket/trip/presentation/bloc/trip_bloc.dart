@@ -590,11 +590,6 @@ Future<void> _onAcceptTrip(
         return;
       }
 
-      // ✅ ALSO START WORKMANAGER (backup tracking)
-      // await Workmanager().initialize(callbackDispatcher);
-      // await BackgroundLocationTracker.startTracking(tripId: event.tripId);
-      // debugPrint('🚀 BLOC: WorkManager backup tracking started');
-
       // Store the trip ID being tracked
       _trackedTripId = event.tripId;
 

@@ -28,6 +28,10 @@ class EndTripOtpModel extends EndTripOtpEntity {
   @Property()
   bool isVerified;
 
+ @override
+  @Property()
+  bool? isOdometerWorking = true;
+
   @override
   @Property(type: PropertyType.date)
   DateTime createdAt;
@@ -63,6 +67,7 @@ class EndTripOtpModel extends EndTripOtpEntity {
     super.endTripOdometer,
     super.generatedCode,
     bool? isVerified,
+    bool? isOdometerWorking,
     DateTime? createdAt,
     DateTime? expiresAt,
     OtpType? otpType,
@@ -72,6 +77,7 @@ class EndTripOtpModel extends EndTripOtpEntity {
        otpCode = otpCode ?? '',
        generatedCode = generatedCode,
        isVerified = isVerified ?? false,
+       isOdometerWorking = isOdometerWorking ?? true,
        createdAt = createdAt ?? DateTime.now(),
        expiresAt = expiresAt ?? DateTime.now().add(const Duration(minutes: 5)),
        _otpTypeString = (otpType ?? OtpType.endDelivery).toString(),
@@ -80,6 +86,7 @@ class EndTripOtpModel extends EndTripOtpEntity {
           id: id ?? '',
           otpCode: otpCode ?? '',
           isVerified: isVerified ?? false,
+          isOdometerWorking: isOdometerWorking ?? true,
           createdAt: createdAt ?? DateTime.now(),
           expiresAt: expiresAt ?? DateTime.now().add(const Duration(minutes: 5)),
           otpType: otpType ?? OtpType.endDelivery,
@@ -107,6 +114,7 @@ factory EndTripOtpModel.fromJson(Map<String, dynamic> json) {
     endTripOdometer: json['endTripOdometer']?.toString(),
     generatedCode: json['generatedCode']?.toString(),
     isVerified: json['isVerified'] as bool?,
+    isOdometerWorking: json['isOdometerWorking'] as bool?,
     createdAt: tryParseDate(json['createdAt']),
     expiresAt: tryParseDate(json['expiresAt']),
     otpType: OtpType.values.firstWhere(
@@ -125,6 +133,7 @@ factory EndTripOtpModel.fromJson(Map<String, dynamic> json) {
       'endTripOdometer': endTripOdometer,
       'generatedCode': generatedCode,
       'isVerified': isVerified,
+      'isOdometerWorking': isOdometerWorking,
       'createdAt': createdAt.toIso8601String(),
       'expiresAt': expiresAt.toIso8601String(),
       'otpType': _otpTypeString,
@@ -139,6 +148,7 @@ factory EndTripOtpModel.fromJson(Map<String, dynamic> json) {
     String? endTripOdometer,
     String? generatedCode,
     bool? isVerified,
+    bool? isOdometerWorking,
     DateTime? createdAt,
     DateTime? expiresAt,
     OtpType? otpType,
@@ -150,6 +160,7 @@ factory EndTripOtpModel.fromJson(Map<String, dynamic> json) {
       otpCode: otpCode ?? this.otpCode,
       endTripOdometer: endTripOdometer ?? this.endTripOdometer,
       generatedCode: generatedCode ?? this.generatedCode,
+      isOdometerWorking: isOdometerWorking ?? this.isOdometerWorking,
       isVerified: isVerified ?? this.isVerified,
       createdAt: createdAt ?? this.createdAt,
       expiresAt: expiresAt ?? this.expiresAt,

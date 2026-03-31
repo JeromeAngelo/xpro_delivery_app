@@ -13,12 +13,13 @@ class OtpEntity extends Equatable {
   String? generatedCode;
   String? intransitOdometer;
   bool isVerified;
+  bool? isOdometerWorking;
   DateTime createdAt;
   DateTime expiresAt;
   @Property()
   OtpType otpType;
   DateTime? verifiedAt;
-  
+
   // Add trip relationship
   final ToOne<TripModel> trip = ToOne<TripModel>();
 
@@ -27,6 +28,7 @@ class OtpEntity extends Equatable {
     required this.otpCode,
     this.generatedCode,
     this.intransitOdometer,
+this.isOdometerWorking,
     required this.isVerified,
     required this.createdAt,
     required this.expiresAt,
@@ -39,15 +41,16 @@ class OtpEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        otpCode,
-        generatedCode,
-        intransitOdometer,
-        isVerified,
-        createdAt,
-        expiresAt,
-        otpType,
-        verifiedAt,
-        trip,
-      ];
+    id,
+    otpCode,
+    generatedCode,
+    intransitOdometer,
+    isVerified,
+    isOdometerWorking,
+    createdAt,
+    expiresAt,
+    otpType,
+    verifiedAt,
+    trip,
+  ];
 }

@@ -7,9 +7,8 @@ abstract class OtpRepo {
 
   ResultFuture<OtpEntity> loadOtpByTripId(String tripId);
 
-    ResultFuture<OtpEntity> loadOtpById(String otpId);
+  ResultFuture<OtpEntity> loadOtpById(String otpId);
 
-  
   ResultFuture<bool> verifyInTransitOtp({
     required String enteredOtp,
     required String generatedOtp,
