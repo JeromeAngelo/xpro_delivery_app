@@ -86,6 +86,19 @@ class _RevertDeliveryStatusScreenState
         : [];
   }
 
+  DeliveryStatusChoicesEntity? _findStatusChoiceByTitle(
+    String title,
+    List<DeliveryStatusChoicesEntity> choices,
+  ) {
+    final normalizedTitle = title.trim().toLowerCase();
+    for (final choice in choices) {
+      if (choice.title?.trim().toLowerCase() == normalizedTitle) {
+        return choice;
+      }
+    }
+    return null;
+  }
+
   String _getLatestUpdateTimestamp(DeliveryDataEntity deliveryData) {
     if (deliveryData.deliveryUpdates.isEmpty) return 'N/A';
 
@@ -267,16 +280,51 @@ class _RevertDeliveryStatusScreenState
                 child: const Text('Cancel'),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () {
-                  debugPrint(
-                    'Revert → $_selectedStatus | reason: ${_reasonController.text}',
-                  );
+              BlocBuilder<
+                DeliveryStatusChoicesBloc,
+                DeliveryStatusChoicesState
+              >(
+                builder: (context, state) {
+                  final statusChoices =
+                      state is AssignedDeliveryStatusChoicesLoaded
+                          ? state.updates
+                          : <DeliveryStatusChoicesEntity>[];
+                  final canRevert =
+                      _selectedStatus != null && statusChoices.isNotEmpty;
 
-                  // TODO: call bloc here
+                  return ElevatedButton.icon(
+                    onPressed:
+                        canRevert
+                            ? () {
+                              final selectedTitle = _selectedStatus!.trim();
+                              final statusEntity = _findStatusChoiceByTitle(
+                                selectedTitle,
+                                statusChoices,
+                              );
+
+                              if (statusEntity == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Unable to find the selected status to revert.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              context.read<DeliveryStatusChoicesBloc>().add(
+                                RevertUpdateCustomerStatusEvent(
+                                  deliveryDataId: widget.deliveryData.id ?? '',
+                                  status: statusEntity,
+                                ),
+                              );
+                            }
+                            : null,
+                    icon: const Icon(Icons.history),
+                    label: const Text('Revert Status'),
+                  );
                 },
-                icon: const Icon(Icons.history),
-                label: const Text('Revert Status'),
               ),
             ],
           ),
@@ -284,8 +332,20 @@ class _RevertDeliveryStatusScreenState
       ),
     );
 
+    final body =
+        BlocListener<DeliveryStatusChoicesBloc, DeliveryStatusChoicesState>(
+          listener: (context, state) {
+            if (state is RevertDeliveryStatusUpdated) {
+              if (mounted) {
+                context.pop();
+              }
+            }
+          },
+          child: content,
+        );
+
     if (widget.embedInParent) {
-      return content;
+      return body;
     }
 
     return Scaffold(
@@ -293,7 +353,7 @@ class _RevertDeliveryStatusScreenState
         title: const Text('Revert Delivery Status'),
         centerTitle: true,
       ),
-      body: content,
+      body: body,
     );
   }
 

@@ -147,31 +147,6 @@ DeliveryTeamModel _processDeliveryTeamRecord(RecordModel record) {
         .toList();
   }
 
-  // // Process vehicle data
-  // List<VehicleModel> vehicleList = [];
-  // if (record.expand['vehicle'] != null) {
-  //   final vehicleData = record.expand['vehicle'];
-  //   if (vehicleData is List) {
-  //     vehicleList = vehicleData!.map((vehicle) {
-  //       final vehicleRecord = vehicle;
-  //       debugPrint('🚛 Processing vehicle: ${vehicleRecord.id}');
-        
-  //       return VehicleModel.fromJson({
-  //         'id': vehicleRecord.id,
-  //         'collectionId': vehicleRecord.collectionId,
-  //         'collectionName': vehicleRecord.collectionName,
-  //         'plateNumber': vehicleRecord.data['plateNumber'],
-  //         'type': vehicleRecord.data['type'],
-  //         'created': vehicleRecord.created,
-  //         'updated': vehicleRecord.updated
-  //       });
-  //     }).toList();
-  //   }
-  // } else if (record.data['vehicle'] != null) {
-  //   vehicleList = (record.data['vehicle'] as List)
-  //       .map((id) => VehicleModel(id: id.toString()))
-  //       .toList();
-  // }
 
   // FIXED: Process delivery vehicle data with proper null handling
   DeliveryVehicleModel? deliveryVehicleModel;

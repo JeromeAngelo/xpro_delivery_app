@@ -1,10 +1,16 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
 class ConnectivityProvider extends ChangeNotifier {
   bool _isOnline = true;
   bool get isOnline => _isOnline;
+  int _latency = 0;
+int get latency => _latency;
+
+String _connectionType = 'unknown';
+String get connectionType => _connectionType;
   
   StreamSubscription? _subscription;
   final _connectivity = Connectivity();
@@ -23,24 +29,38 @@ class ConnectivityProvider extends ChangeNotifier {
 
   ConnectivityProvider() {
     _checkInitialConnection();
-    _subscription = _connectivity.onConnectivityChanged.listen((results) {
-      final wasOnline = _isOnline;
-      _isOnline = results.contains(ConnectivityResult.wifi) || 
-                  results.contains(ConnectivityResult.mobile);
-      
-      debugPrint('🌐 Connection Status: $results');
-      debugPrint(_isOnline ? '✅ Device is online' : '❌ Device is offline');
-      
-      // If we just came back online, trigger sync
-      if (!wasOnline && _isOnline) {
-        debugPrint('🔄 Connection restored - triggering sync');
-        _triggerAutoSync();
-      }
-      
-      if (!disposed) {
-        notifyListeners();
-      }
-    });
+   _subscription = _connectivity.onConnectivityChanged.listen((results) async {
+  final wasOnline = _isOnline;
+
+  final hasInternet = await InternetConnection().hasInternetAccess;
+
+  // measure latency
+  final start = DateTime.now();
+  await InternetConnection().hasInternetAccess;
+  _latency = DateTime.now().difference(start).inMilliseconds;
+
+  _isOnline = hasInternet;
+
+  if (results.contains(ConnectivityResult.wifi)) {
+    _connectionType = 'wifi';
+  } else if (results.contains(ConnectivityResult.mobile)) {
+    _connectionType = 'mobile';
+  } else {
+    _connectionType = 'none';
+  }
+
+  debugPrint('🌐 Connection: $_connectionType');
+  debugPrint('📡 Online: $_isOnline');
+  debugPrint('⏱ Latency: ${_latency}ms');
+
+  if (!wasOnline && _isOnline) {
+    _triggerAutoSync();
+  }
+
+  if (!disposed) {
+    notifyListeners();
+  }
+});
   }
 
   Future<void> _checkInitialConnection() async {

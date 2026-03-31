@@ -613,35 +613,32 @@ Future<void> _onAcceptTrip(
         ),
       );
 
-      // Start tracking distance using LocationService (for in-app updates)
-      _locationSubscription = LocationService.trackDistance().listen((
-        distance,
-      ) async {
-        try {
-          debugPrint(
-            '📍 BLOC: Distance update triggered (${distance.toStringAsFixed(2)} km)',
-          );
+      _locationSubscription = LocationService.trackDistance().listen((data) {
+  try {
+    final position = data["position"];
+    final distance = data["distance"];
 
-          final position = await LocationService.getCurrentLocation();
+    debugPrint(
+      '📍 BLOC: Distance update (${distance.toStringAsFixed(2)} km)',
+    );
 
-          if (_trackedTripId == event.tripId) {
-            debugPrint('🔄 BLOC: Updating trip location with current position');
-            add(
-              UpdateTripLocationEvent(
-                tripId: event.tripId,
-                latitude: position.latitude,
-                longitude: position.longitude,
-                accuracy: position.accuracy,
-                source: 'GPS_Tracking_Validated',
-              ),
-            );
+    if (_trackedTripId == event.tripId) {
+      add(
+        UpdateTripLocationEvent(
+          tripId: event.tripId,
+          latitude: position.latitude,
+          longitude: position.longitude,
+          accuracy: position.accuracy,
+          source: 'GPS_Tracking_Stream',
+        ),
+      );
 
-            debugPrint('📍 BLOC: Location updated successfully');
-          }
-        } catch (e) {
-          debugPrint('❌ BLOC: Error getting current location: $e');
-        }
-      });
+      debugPrint('📍 BLOC: Location updated from stream');
+    }
+  } catch (e) {
+    debugPrint('❌ BLOC: Stream processing error: $e');
+  }
+}) as StreamSubscription<double>?;
 
       emit(
         LocationTrackingStarted(

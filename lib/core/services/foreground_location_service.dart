@@ -321,7 +321,7 @@ class LocationTaskHandler extends TaskHandler {
       final accuracy = position.accuracy;
       final nowIso = DateTime.now().toUtc().toIso8601String();
 
-      debugPrint('📍 Location obtained:');
+      debugPrint('📍 Location obtained via foreground service:');
       debugPrint('   Lat: $lat, Lng: $lng');
       debugPrint('   Accuracy: ${accuracy.toStringAsFixed(2)}m');
       debugPrint('   Time: ${position.timestamp}');

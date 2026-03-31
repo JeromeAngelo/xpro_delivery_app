@@ -7,7 +7,6 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:provider/provider.dart';
-import 'package:workmanager/workmanager.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_status/presentation/bloc/invoice_status_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/return_items/presentation/bloc/return_items_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/app_logs/presentation/bloc/logs_bloc.dart';
@@ -40,7 +39,6 @@ import 'package:x_pro_delivery_app/core/common/widgets/sync_status_indicator.dar
 import 'core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
 import 'core/common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
 import 'core/common/app/features/sync_data/cubit/sync_cubit.dart';
-import 'core/services/background_service.dart';
 import 'core/services/foreground_location_service.dart';
 import 'core/services/offline_sync_service.dart';
 
@@ -48,10 +46,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize WorkManager with callback dispatcher for background tasks
-  await Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: false, // Set to true for debugging background tasks
-  );
+  // await Workmanager().initialize(
+  //   callbackDispatcher,
+  //   isInDebugMode: false, // Set to true for debugging background tasks
+  // );
 
   final store = await ObjectBoxStore.create();
   await Geolocator.isLocationServiceEnabled();

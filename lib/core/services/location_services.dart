@@ -62,36 +62,43 @@ class LocationService {
     return true;
   }
 
-  static Stream<double> trackDistance() {
-    _locationController = StreamController<Position>.broadcast();
+  static Stream<Map<String, dynamic>> trackDistance() {
+  _locationController = StreamController<Position>.broadcast();
 
-    // Set up periodic timer for time-based updates
-    _locationTimer = Timer.periodic(
-      const Duration(minutes: _updateIntervalMinutes),
-      (_) => _updateLocation(),
-    );
+  _locationTimer = Timer.periodic(
+    const Duration(minutes: _updateIntervalMinutes),
+    (_) => _updateLocation(),
+  );
 
-    // Set up distance-based updates with relaxed settings
-    Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy:
-            LocationAccuracy
-                .high, // Use high instead of best for better compatibility
-        distanceFilter: _distanceFilterMeters,
-        // Remove timeLimit to prevent timeout exceptions
-      ),
-    ).listen(
-      _handleNewPosition,
-      onError: (error) {
-        debugPrint('⚠️ LOCATION: Position stream error: $error');
-        // Don't stop tracking on errors, just log them
-      },
-    );
+  Geolocator.getPositionStream(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: _distanceFilterMeters,
+    ),
+  ).listen(
+    _handleNewPosition,
+    onError: (error) {
+      debugPrint('⚠️ LOCATION: Position stream error: $error');
+    },
+  );
 
-    return _locationController!.stream
-        .where((pos) => _isValidPosition(pos))
-        .map((pos) => _processPosition(pos));
-  }
+  return _locationController!.stream
+      .where((pos) => _isValidPosition(pos))
+      .map((pos) {
+        final distance = _processPosition(pos);
+
+        return {
+          "position": pos,
+          "distance": distance,
+          "latitude": pos.latitude,
+          "longitude": pos.longitude,
+          "accuracy": pos.accuracy,
+          "speed": pos.speed,
+          "heading": pos.heading,
+          "timestamp": pos.timestamp.toIso8601String(),
+        };
+      });
+}
 
   // Simple position validation for any movement
   static bool _isValidPosition(Position position) {
