@@ -1,31 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/end_otp_verify.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/get_end_trip_generated.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/load_end_trip_otp_by_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/load_end_trip_otp_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/verify_odo_status_end_trip_otp.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_state.dart';
 
-import '../../domain/usecases/get_end_trip_generated.dart';
 class EndTripOtpBloc extends Bloc<EndTripOtpEvent, EndTripOtpState> {
   final EndOTPVerify _verifyEndTripOtp;
+  final VerifyOdoStatusEndTripOtp _verifyOdoStatus;
   final GetEndTripGeneratedOtp _getGeneratedEndTripOtp;
   final LoadEndTripOtpById _loadEndTripOtpById;
   final LoadEndTripOtpByTripId _loadEndTripOtpByTripId;
 
   EndTripOtpBloc({
     required EndOTPVerify verifyEndTripOtp,
+    required VerifyOdoStatusEndTripOtp verifyOdoStatusEndTripOtp,
     required GetEndTripGeneratedOtp getGeneratedEndTripOtp,
     required LoadEndTripOtpById loadEndTripOtpById,
     required LoadEndTripOtpByTripId loadEndTripOtpByTripId,
-  })  : _verifyEndTripOtp = verifyEndTripOtp,
-        _getGeneratedEndTripOtp = getGeneratedEndTripOtp,
-        _loadEndTripOtpById = loadEndTripOtpById,
-        _loadEndTripOtpByTripId = loadEndTripOtpByTripId,
-        super(EndTripOtpInitial()) {
+  }) : _verifyEndTripOtp = verifyEndTripOtp,
+       _verifyOdoStatus = verifyOdoStatusEndTripOtp,
+       _getGeneratedEndTripOtp = getGeneratedEndTripOtp,
+       _loadEndTripOtpById = loadEndTripOtpById,
+       _loadEndTripOtpByTripId = loadEndTripOtpByTripId,
+       super(EndTripOtpInitial()) {
     on<LoadEndTripOtpByIdEvent>(_onLoadEndTripOtpById);
     on<LoadEndTripOtpByTripIdEvent>(_onLoadEndTripOtpByTripId);
     on<VerifyEndTripOtpEvent>(_onVerifyEndTripOtp);
+    on<VerifyEndTripOdoStatusEvent>(_onVerifyEndTripOdoStatus);
     on<GetEndGeneratedOtpEvent>(_onGetEndGeneratedOtp);
   }
 
@@ -75,7 +80,7 @@ class EndTripOtpBloc extends Bloc<EndTripOtpEvent, EndTripOtpState> {
   ) async {
     debugPrint('🔄 Getting generated End Trip OTP');
     emit(EndTripOtpLoading());
-    
+
     final result = await _getGeneratedEndTripOtp();
     result.fold(
       (failure) {
@@ -95,7 +100,7 @@ class EndTripOtpBloc extends Bloc<EndTripOtpEvent, EndTripOtpState> {
   ) async {
     debugPrint('🔄 Verifying End Trip OTP');
     emit(EndTripOtpLoading());
-    
+
     final result = await _verifyEndTripOtp(
       EndOTPVerifyParams(
         enteredOtp: event.enteredOtp,
@@ -103,6 +108,7 @@ class EndTripOtpBloc extends Bloc<EndTripOtpEvent, EndTripOtpState> {
         tripId: event.tripId,
         otpId: event.otpId,
         odometerReading: event.odometerReading,
+        noOdometer: event.noOdometer,
       ),
     );
 
@@ -113,11 +119,46 @@ class EndTripOtpBloc extends Bloc<EndTripOtpEvent, EndTripOtpState> {
       },
       (isVerified) {
         debugPrint('✅ End Trip OTP verification complete: $isVerified');
-        emit(EndTripOtpVerified(
-          isVerified: isVerified,
-          otpType: 'endTrip',
-          odometerReading: event.odometerReading,
-        ));
+        emit(
+          EndTripOtpVerified(
+            isVerified: isVerified,
+            otpType: 'endTrip',
+            odometerReading: event.odometerReading,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _onVerifyEndTripOdoStatus(
+    VerifyEndTripOdoStatusEvent event,
+    Emitter<EndTripOtpState> emit,
+  ) async {
+    debugPrint('🔄 Verifying End Trip OTP no-odometer status');
+    emit(EndTripOtpLoading());
+
+    final result = await _verifyOdoStatus(
+      VerifyOdoStatusEndTripOtpParams(
+        id: event.id,
+        noOdometer: event.noOdometer,
+      ),
+    );
+
+    result.fold(
+      (failure) {
+        debugPrint(
+          '❌ End Trip OTP no-odometer status failed: ${failure.message}',
+        );
+        emit(EndTripOtpError(message: failure.message));
+      },
+      (updated) {
+        debugPrint('✅ End Trip OTP no-odometer status updated: $updated');
+        emit(
+          EndTripOtpOdoStatusUpdated(
+            id: event.id,
+            noOdometer: event.noOdometer,
+          ),
+        );
       },
     );
   }

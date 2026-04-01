@@ -96,6 +96,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/dom
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/get_end_trip_generated.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/load_end_trip_otp_by_id.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/load_end_trip_otp_by_trip_id.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/domain/usecases/verify_odo_status_end_trip_otp.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_bloc.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/domain/usecases/load_cancelled_invoice_by_id.dart';
@@ -269,6 +270,7 @@ import '../common/app/features/otp/intransit_otp/domain/usecases/get_generated_o
 import '../common/app/features/otp/intransit_otp/domain/usecases/load_otp_by_id.dart';
 import '../common/app/features/otp/intransit_otp/domain/usecases/load_otp_by_trip_id.dart';
 import '../common/app/features/otp/intransit_otp/domain/usecases/verify_in_transit.dart';
+import '../common/app/features/otp/intransit_otp/domain/usecases/verify_odo_status.dart';
 import '../common/app/features/otp/intransit_otp/domain/usecases/veryfy_in_end_delivery.dart';
 import '../common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
 import '../common/app/features/sync_data/cubit/sync_cubit.dart';
@@ -649,7 +651,7 @@ Future<void> initDeliveryStatusChoices() async {
       getAllBulkDeliveryStatusChoices: sl(),
       bulkUpdateDeliveryStatus: sl(),
       completeDelivery: sl(),
-      revertUpdateDeliveryStatus: sl()
+      revertUpdateDeliveryStatus: sl(),
     ),
   );
 
@@ -697,6 +699,7 @@ Future<void> initOtp() async {
       getGeneratedOtp: sl(),
       verifyEndDelivery: sl(),
       verifyInTransit: sl(),
+      verifyOdoStatus: sl(),
       loadOtpByTripId: sl(),
       loadOtpById: sl(),
     ),
@@ -706,6 +709,7 @@ Future<void> initOtp() async {
   sl.registerLazySingleton(() => GetGeneratedOtp(sl()));
   sl.registerLazySingleton(() => VerifyInTransit(sl()));
   sl.registerLazySingleton(() => VerifyInEndDelivery(sl()));
+  sl.registerLazySingleton(() => VerifyOdoStatus(sl()));
   sl.registerLazySingleton<OtpRepo>(() => OtpRepoImpl(sl(), sl()));
 
   sl.registerLazySingleton<OtpRemoteDataSource>(
@@ -724,6 +728,7 @@ Future<void> initEndTripOtp() async {
   sl.registerFactory(
     () => EndTripOtpBloc(
       verifyEndTripOtp: sl(),
+      verifyOdoStatusEndTripOtp: sl(),
       getGeneratedEndTripOtp: sl(),
       loadEndTripOtpById: sl(),
       loadEndTripOtpByTripId: sl(),
@@ -732,6 +737,7 @@ Future<void> initEndTripOtp() async {
 
   // Usecases
   sl.registerLazySingleton(() => EndOTPVerify(sl()));
+  sl.registerLazySingleton(() => VerifyOdoStatusEndTripOtp(sl()));
   sl.registerLazySingleton(() => GetEndTripGeneratedOtp(sl()));
   sl.registerLazySingleton(() => LoadEndTripOtpByTripId(sl()));
   sl.registerLazySingleton(() => LoadEndTripOtpById(sl()));

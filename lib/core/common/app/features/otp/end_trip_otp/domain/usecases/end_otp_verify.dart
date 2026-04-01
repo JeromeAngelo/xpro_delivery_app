@@ -8,26 +8,29 @@ class EndOTPVerify implements UsecaseWithParams<bool, EndOTPVerifyParams> {
   final EndTripOtpRepo _repo;
   @override
   ResultFuture<bool> call(params) => _repo.verifyEndTripOtp(
-       enteredOtp: params.enteredOtp,
-        generatedOtp: params.generatedOtp,
-        tripId: params.tripId,
-        otpId: params.otpId,
-        odometerReading: params.odometerReading,
-      );
+    enteredOtp: params.enteredOtp,
+    generatedOtp: params.generatedOtp,
+    tripId: params.tripId,
+    otpId: params.otpId,
+    odometerReading: params.odometerReading,
+    noOdometer: params.noOdometer,
+  );
 }
 
 class EndOTPVerifyParams {
- final String enteredOtp;
+  final String enteredOtp;
   final String generatedOtp;
   final String tripId;
   final String otpId;
   final String odometerReading;
+  final bool noOdometer;
 
   const EndOTPVerifyParams({
-   required this.enteredOtp,
+    required this.enteredOtp,
     required this.generatedOtp,
     required this.tripId,
     required this.otpId,
     required this.odometerReading,
+    this.noOdometer = false,
   });
 }

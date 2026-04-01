@@ -23,6 +23,7 @@ import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_tri
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_otp_instructions.dart';
 
 import '../../../start_trip_otp_screen/presentation/widgets/trip_details_dialog.dart';
+
 class EndTripOtpScreen extends StatefulWidget {
   const EndTripOtpScreen({super.key});
 
@@ -34,6 +35,7 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
   late final AuthBloc _authBloc;
   late final EndTripOtpBloc _endTripOtpBloc;
   bool _isInitialized = false;
+  bool _skipOdometer = false;
   String enteredOtp = '';
   String? generatedOtp;
   String? otpId;
@@ -58,7 +60,7 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
   void _setupSubscriptions() {
     _authSubscription = _authBloc.stream.listen((state) {
       if (!mounted) return;
-      
+
       if (state is UserTripLoaded && state.trip.id != null) {
         setState(() => _cachedAuthState = state);
         debugPrint('🎫 Loading OTP for trip: ${state.trip.id}');
@@ -76,6 +78,14 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
           generatedOtp = state.otp.generatedCode;
         });
         debugPrint('✅ OTP Data loaded - ID: $otpId, Code: $generatedOtp');
+      } else if (state is EndTripOtpOdoStatusUpdated) {
+        setState(() {
+          _skipOdometer = state.noOdometer;
+          if (state.noOdometer) {
+            endTripOdometerReading = '';
+          }
+        });
+        CoreUtils.showSnackBar(context, 'Odometer skipped successfully');
       }
     });
   }
@@ -85,11 +95,11 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
 
     final prefs = await SharedPreferences.getInstance();
     final storedData = prefs.getString('user_data');
-    
+
     if (mounted && storedData != null) {
       final userData = jsonDecode(storedData);
       final userId = userData['id'];
-      
+
       if (userId != null) {
         debugPrint('👤 Loading user data for ID: $userId');
         _authBloc.add(GetUserTripEvent(userId));
@@ -110,23 +120,33 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
           BlocListener<EndTripOtpBloc, EndTripOtpState>(
             listener: (context, state) {
               if (state is EndTripOtpVerified && state.isVerified) {
-                CoreUtils.showSnackBar(context, 'End Trip OTP verified successfully');
+                CoreUtils.showSnackBar(
+                  context,
+                  'End Trip OTP verified successfully',
+                );
                 context.go('/greeting-page');
+              } else if (state is EndTripOtpVerified && !state.isVerified) {
+                CoreUtils.showSnackBar(
+                  context,
+                  'End Trip OTP verification failed. Please check your OTP and try again.',
+                );
               } else if (state is EndTripOtpError) {
                 CoreUtils.showSnackBar(context, state.message);
               }
             },
           ),
-           BlocListener<TripBloc, TripState>(
-      listener: (context, state) {
-        if (state is TripDistanceCalculated) {
-          debugPrint('✅ Trip distance calculated: ${state.totalDistance}');
-          context.go('/final-screen');
-        } else if (state is TripError) {
-          CoreUtils.showSnackBar(context, state.message);
-        }
-      },
-    ),
+          BlocListener<TripBloc, TripState>(
+            listener: (context, state) {
+              if (state is TripDistanceCalculated) {
+                debugPrint(
+                  '✅ Trip distance calculated: ${state.totalDistance}',
+                );
+                context.go('/final-screen');
+              } else if (state is TripError) {
+                CoreUtils.showSnackBar(context, state.message);
+              }
+            },
+          ),
         ],
         child: Scaffold(
           appBar: AppBar(
@@ -185,11 +205,57 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        EndTripOdoInput(
-                          onOdometerChanged: (odometer) {
-                            if (mounted) setState(() => endTripOdometerReading = odometer);
-                          },
-                        ),
+                        if (!_skipOdometer) ...[
+                          EndTripOdoInput(
+                            onOdometerChanged: (odometer) {
+                              if (mounted)
+                                setState(
+                                  () => endTripOdometerReading = odometer,
+                                );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 0),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              onPressed: () {
+                                if (otpId != null) {
+                                  _endTripOtpBloc.add(
+                                    VerifyEndTripOdoStatusEvent(
+                                      id: otpId!,
+                                      noOdometer: true,
+                                    ),
+                                  );
+                                } else {
+                                  CoreUtils.showSnackBar(
+                                    context,
+                                    'OTP ID not loaded yet. Please wait.',
+                                  );
+                                }
+                              },
+                              child: Text(
+                                'Odometer not working? Click me to skip odometer',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Odometer skipped. You can continue with OTP verification.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -197,19 +263,23 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
                 BlocBuilder<AuthBloc, AuthState>(
                   builder: (context, state) {
                     debugPrint('🔄 Auth State: $state');
-                    final effectiveState = (state is UserTripLoaded) ? state : _cachedAuthState;
-                    
-                    if (effectiveState is UserTripLoaded && 
-                        effectiveState.trip.id != null && 
+                    final effectiveState =
+                        (state is UserTripLoaded) ? state : _cachedAuthState;
+
+                    if (effectiveState is UserTripLoaded &&
+                        effectiveState.trip.id != null &&
                         generatedOtp != null) {
-                      debugPrint('🎯 Rendering button with Trip ID: ${effectiveState.trip.id}');
-                      
+                      debugPrint(
+                        '🎯 Rendering button with Trip ID: ${effectiveState.trip.id}',
+                      );
+
                       return EndTripConfirmButton(
                         enteredOtp: enteredOtp,
                         generatedOtp: generatedOtp!,
                         tripId: effectiveState.trip.id!,
                         otpId: otpId ?? '',
                         odometerReading: endTripOdometerReading ?? '',
+                        noOdometer: _skipOdometer,
                       );
                     }
                     return const SizedBox.shrink();

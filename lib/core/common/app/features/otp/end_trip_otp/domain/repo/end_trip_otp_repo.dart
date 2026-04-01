@@ -2,20 +2,22 @@ import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/dom
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 
 abstract class EndTripOtpRepo {
-
   ResultFuture<String> getEndGeneratedOtp();
 
-   ResultFuture<EndTripOtpEntity> loadEndTripOtpByTripId(String tripId);
+  ResultFuture<EndTripOtpEntity> loadEndTripOtpByTripId(String tripId);
 
-    ResultFuture<EndTripOtpEntity> loadEndTripOtpById(String otpId);
+  ResultFuture<EndTripOtpEntity> loadEndTripOtpById(String otpId);
   ResultFuture<bool> verifyEndTripOtp({
-   required String enteredOtp,
+    required String enteredOtp,
     required String generatedOtp,
     required String tripId,
     required String otpId,
     required String odometerReading,
+    bool noOdometer = false,
   });
 
-
-
+  ResultFuture<bool> verifyOdoStatus({
+    required String id,
+    required bool noOdometer,
+  });
 }

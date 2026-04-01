@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
 
-
 import '../../../../core/common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
 import '../../../../core/common/app/features/otp/intransit_otp/presentation/bloc/otp_event.dart';
+
 class ConfirmButtonOtp extends StatelessWidget {
   final String enteredOtp;
   final String generatedOtp;
   final String odometerReading;
   final String tripId;
   final String otpId;
+  final bool noOdometer;
+  final bool isLoading;
 
   const ConfirmButtonOtp({
     super.key,
@@ -19,6 +21,8 @@ class ConfirmButtonOtp extends StatelessWidget {
     required this.odometerReading,
     required this.tripId,
     required this.otpId,
+    this.noOdometer = false,
+    this.isLoading = false,
   });
 
   @override
@@ -27,8 +31,10 @@ class ConfirmButtonOtp extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
       child: RoundedButton(
         label: 'Confirm',
+        isLoading: isLoading,
         onPressed: () {
-          if (odometerReading.isNotEmpty) {
+          if (enteredOtp.isNotEmpty &&
+              (noOdometer || odometerReading.isNotEmpty)) {
             context.read<OtpBloc>().add(
               VerifyInTransitOtpEvent(
                 enteredOtp: enteredOtp,
@@ -36,6 +42,7 @@ class ConfirmButtonOtp extends StatelessWidget {
                 tripId: tripId,
                 otpId: otpId,
                 odometerReading: odometerReading,
+                noOdometer: noOdometer,
               ),
             );
           }

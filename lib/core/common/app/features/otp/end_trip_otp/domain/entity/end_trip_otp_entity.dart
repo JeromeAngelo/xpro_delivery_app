@@ -15,7 +15,7 @@ class EndTripOtpEntity extends Equatable {
   bool isVerified;
   DateTime createdAt;
   DateTime expiresAt;
-   bool? isOdometerWorking;
+   bool? noOdometer;
   @Property()
   OtpType otpType;
   DateTime? verifiedAt;
@@ -29,7 +29,7 @@ class EndTripOtpEntity extends Equatable {
     this.generatedCode,
     required this.isVerified,
     required this.createdAt,
-    this.isOdometerWorking,
+    this.noOdometer,
     required this.expiresAt,
     this.otpType = OtpType.endDelivery,
     this.verifiedAt,
@@ -45,7 +45,7 @@ class EndTripOtpEntity extends Equatable {
         generatedCode,
         endTripOdometer,
         isVerified,
-        isOdometerWorking,
+        noOdometer,
         createdAt,
         expiresAt,
         otpType,

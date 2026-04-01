@@ -10,7 +10,7 @@ class LoadOtpByIdEvent extends OtpEvent {
 
   LoadOtpByIdEvent(this.otpId);
 
-   @override
+  @override
   List<Object?> get props => [otpId];
 }
 
@@ -31,6 +31,7 @@ class VerifyInTransitOtpEvent extends OtpEvent {
   final String tripId;
   final String otpId;
   final String odometerReading;
+  final bool noOdometer;
 
   VerifyInTransitOtpEvent({
     required this.enteredOtp,
@@ -38,11 +39,18 @@ class VerifyInTransitOtpEvent extends OtpEvent {
     required this.tripId,
     required this.otpId,
     required this.odometerReading,
+    this.noOdometer = false,
   });
 
   @override
-  List<Object?> get props =>
-      [enteredOtp, generatedOtp, tripId, otpId, odometerReading];
+  List<Object?> get props => [
+    enteredOtp,
+    generatedOtp,
+    tripId,
+    otpId,
+    odometerReading,
+    noOdometer,
+  ];
 }
 
 class VerifyEndDeliveryOtpEvent extends OtpEvent {
@@ -56,4 +64,14 @@ class VerifyEndDeliveryOtpEvent extends OtpEvent {
 
   @override
   List<Object?> get props => [enteredOtp, generatedOtp];
+}
+
+class VerifyOdoStatusEvent extends OtpEvent {
+  final String id;
+  final bool noOdometer;
+
+  VerifyOdoStatusEvent({required this.id, required this.noOdometer});
+
+  @override
+  List<Object?> get props => [id, noOdometer];
 }

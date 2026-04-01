@@ -31,7 +31,7 @@ class OtpModel extends OtpEntity {
 
  @override
   @Property()
-  bool? isOdometerWorking = true;
+  bool? noOdometer;
 
   @override
   @Property(type: PropertyType.date)
@@ -70,7 +70,7 @@ class OtpModel extends OtpEntity {
     String? intransitOdometer,
     super.generatedCode,
     bool? isVerified,
-    bool? isOdometerWorking,
+    bool? noOdometer,
     DateTime? createdAt,
     DateTime? expiresAt,
     OtpType? otpType,
@@ -80,7 +80,7 @@ class OtpModel extends OtpEntity {
         otpCode = otpCode ?? '',
         generatedCode = generatedCode,
         isVerified = isVerified ?? false,
-        isOdometerWorking = isOdometerWorking ?? true,
+        noOdometer = noOdometer ?? false,
         createdAt = createdAt ?? DateTime.now(),
         expiresAt = expiresAt ?? DateTime.now().add(const Duration(minutes: 5)),
         _otpTypeString = (otpType ?? OtpType.inTransit).toString(),
@@ -88,7 +88,7 @@ class OtpModel extends OtpEntity {
         super(
           id: id ?? '',
           otpCode: otpCode ?? '',
-          isOdometerWorking: isOdometerWorking ?? true,
+          noOdometer: noOdometer ?? false,
           isVerified: isVerified ?? false,
           createdAt: createdAt ?? DateTime.now(),
           expiresAt:
@@ -113,7 +113,7 @@ class OtpModel extends OtpEntity {
       otpCode: json['otpCode']?.toString(),
       generatedCode: json['generatedCode']?.toString(),
       isVerified: json['isVerified'] as bool?,
-      isOdometerWorking: json['isOdometerWorking'] as bool?,
+      noOdometer: json['noOdometer'] as bool?,
       createdAt: parseDate(json['createdAt']) ?? DateTime.now().toUtc(),
       expiresAt: parseDate(json['expiresAt']) ??
           DateTime.now().add(const Duration(minutes: 5)).toUtc(),
@@ -132,7 +132,7 @@ class OtpModel extends OtpEntity {
       'generatedCode': generatedCode,
       'intransitOdometer': intransitOdometer,
       'isVerified': isVerified,
-      'isOdometerWorking': isOdometerWorking,
+      'noOdometer': noOdometer,
       'createdAt': createdAt.toIso8601String(),
       'expiresAt': expiresAt.toIso8601String(),
       'otpType': _otpTypeString,
@@ -146,7 +146,7 @@ class OtpModel extends OtpEntity {
     String? otpCode,
     String? generatedCode,
     bool? isVerified,
-    bool? isOdometerWorking,
+    bool? noOdometer,
     DateTime? createdAt,
     String? intransitOdometer,
     DateTime? expiresAt,
@@ -159,7 +159,7 @@ class OtpModel extends OtpEntity {
       otpCode: otpCode ?? this.otpCode,
       generatedCode: generatedCode ?? this.generatedCode,
       isVerified: isVerified ?? this.isVerified,
-      isOdometerWorking: isOdometerWorking ?? this.isOdometerWorking,
+      noOdometer: noOdometer ?? this.noOdometer,
       intransitOdometer: intransitOdometer ?? this.intransitOdometer,
       createdAt: createdAt ?? this.createdAt,
       expiresAt: expiresAt ?? this.expiresAt,

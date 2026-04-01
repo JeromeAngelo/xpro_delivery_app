@@ -138,7 +138,7 @@ class _AcceptingTripLoadingScreenState extends State<AcceptingTripLoadingScreen>
           //   distanceFilter: 5.0, // Distance-based: every 5 meters of movement
           // ));
           
-          context.go('/checklist');
+          context.go('/sync-loading');
         }
         
         if (state is TripError) {

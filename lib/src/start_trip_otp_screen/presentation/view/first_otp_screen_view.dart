@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
@@ -34,6 +33,7 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
   late final AuthBloc _authBloc;
   late final OtpBloc _otpBloc;
   bool _isInitialized = false;
+  bool _skipOdometer = false;
   String enteredOtp = '';
   String enteredOdometer = '';
   String? generatedOtp;
@@ -93,7 +93,14 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
         );
         setState(() {
           generatedOtp = state.otp.generatedCode;
+          _cachedOtpState = state;
         });
+      } else if (state is OtpOdoStatusUpdated) {
+        debugPrint('✅ Odometer skip confirmed for id: ${state.id}');
+        setState(() {
+          _skipOdometer = state.noOdometer;
+        });
+        CoreUtils.showSnackBar(context, 'Odometer skipped successfully');
       }
     });
   }
@@ -150,7 +157,7 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                   '${state.otpType} OTP verified successfully',
                 );
                 if (tripId != null) {
-                  context.push('/sync-loading');
+                  context.push('/delivery-and-timeline');
                 }
               } else if (state is OtpError) {
                 CoreUtils.showSnackBar(context, state.message);
@@ -218,13 +225,56 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        OdometerInput(
-                          onOdometerChanged: (odometer) {
-                            if (mounted) {
-                              setState(() => enteredOdometer = odometer);
-                            }
-                          },
-                        ),
+                        if (!_skipOdometer) ...[
+                          OdometerInput(
+                            onOdometerChanged: (odometer) {
+                              if (mounted) {
+                                setState(() => enteredOdometer = odometer);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 0),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              onPressed: () {
+                                if (otpId != null) {
+                                  _otpBloc.add(
+                                    VerifyOdoStatusEvent(
+                                      id: otpId!,
+                                      noOdometer: true,
+                                    ),
+                                  );
+                                } else {
+                                  CoreUtils.showSnackBar(
+                                    context,
+                                    'OTP ID not loaded yet. Please wait.',
+                                  );
+                                }
+                              },
+                              child: Text(
+                                'Odometer not working? Click here to skip odometer',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Odometer skipped. You can continue with OTP verification.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -236,7 +286,12 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                     debugPrint('🔑 Current OTP ID: $otpId');
 
                     final effectiveState =
-                        (state is OtpByIdLoaded) ? state : _cachedOtpState;
+                        (state is OtpByIdLoaded)
+                            ? state
+                            : (_cachedOtpState is OtpByIdLoaded
+                                ? _cachedOtpState as OtpByIdLoaded
+                                : null);
+                    final isLoading = state is OtpLoading;
 
                     if (effectiveState is OtpByIdLoaded &&
                         tripId != null &&
@@ -247,6 +302,8 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                         odometerReading: enteredOdometer,
                         tripId: tripId!,
                         otpId: otpId!,
+                        noOdometer: _skipOdometer,
+                        isLoading: isLoading,
                       );
                     }
 

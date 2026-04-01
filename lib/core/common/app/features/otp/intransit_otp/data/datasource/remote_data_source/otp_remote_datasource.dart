@@ -16,6 +16,7 @@ abstract class OtpRemoteDataSource {
     required String tripId,
     required String otpId,
     required String odometerReading,
+    bool noOdometer = false,
   });
 
   Future<bool> verifyEndDeliveryOtp({
@@ -28,13 +29,16 @@ abstract class OtpRemoteDataSource {
   Future<OtpModel> loadOtpByTripId(String tripId);
 
   Future<OtpModel> loadOtpById(String otpId);
+
+  Future<bool> verifyOdoStatus({required String id, required bool noOdometer});
 }
 
 class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
   const OtpRemoteDataSourceImpl({required PocketBase pocketBaseClient})
-      : _pocketBaseClient = pocketBaseClient;
+    : _pocketBaseClient = pocketBaseClient;
 
   final PocketBase _pocketBaseClient;
+
   @override
   Future<bool> verifyInTransitOtp({
     required String enteredOtp,
@@ -42,29 +46,35 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
     required String tripId,
     required String otpId,
     required String odometerReading,
+    bool noOdometer = false,
   }) async {
     try {
       debugPrint('🔍 Verifying In-Transit OTP...');
       debugPrint('Trip ID: $tripId');
       debugPrint('OTP ID: $otpId');
       debugPrint('Odometer Reading: $odometerReading');
+      debugPrint('No Odometer flag: $noOdometer');
 
       final otpRecord = await _pocketBaseClient.collection('otp').getOne(otpId);
       final backendGeneratedCode = otpRecord.data['generatedCode'] as String;
       debugPrint('Backend Generated Code: $backendGeneratedCode');
 
       if (enteredOtp == backendGeneratedCode) {
-        await _pocketBaseClient.collection('otp').update(
-          otpId,
-          body: {
-            'otpCode': enteredOtp,
-            'isVerified': true,
-            'verifiedAt': DateTime.now().toIso8601String(),
-            'otpType': 'inTransit',
-            'trip': tripId,
-            'intransitOdometer': odometerReading,
-          },
-        );
+        await _pocketBaseClient
+            .collection('otp')
+            .update(
+              otpId,
+              body: {
+                'otpCode': enteredOtp,
+                'isVerified': true,
+                'verifiedAt': DateTime.now().toIso8601String(),
+                'otpType': 'inTransit',
+                'trip': tripId,
+                if (noOdometer) 'intransitOdometer': null,
+                if (!noOdometer) 'intransitOdometer': odometerReading,
+                if (noOdometer) 'noOdometer': true,
+              },
+            );
 
         debugPrint('✅ OTP verified and odometer reading saved successfully');
         return true;
@@ -89,10 +99,9 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
       // Add delay between requests
       await Future.delayed(const Duration(milliseconds: 500));
 
-      final record = await _pocketBaseClient.collection('otp').getOne(
-            otpId,
-            expand: 'trip',
-          );
+      final record = await _pocketBaseClient
+          .collection('otp')
+          .getOne(otpId, expand: 'trip');
 
       debugPrint('✅ Found OTP record: ${record.id}');
       debugPrint('📄 Full OTP Data: ${record.data}');
@@ -105,13 +114,14 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
         verifiedAt: DateTime.now().toUtc(),
         createdAt: DateTime.now().toUtc(),
         expiresAt: DateTime.now().add(const Duration(minutes: 5)).toUtc(),
-        otpType: record.data['otpType']?.toString().isNotEmpty == true
-            ? OtpType.values.firstWhere(
-                (type) =>
-                    type.toString() == 'OtpType.${record.data['otpType']}',
-                orElse: () => OtpType.inTransit,
-              )
-            : OtpType.inTransit,
+        otpType:
+            record.data['otpType']?.toString().isNotEmpty == true
+                ? OtpType.values.firstWhere(
+                  (type) =>
+                      type.toString() == 'OtpType.${record.data['otpType']}',
+                  orElse: () => OtpType.inTransit,
+                )
+                : OtpType.inTransit,
         trip: TripModel(id: record.data['trip']),
         intransitOdometer: record.data['intransitOdometer'],
       );
@@ -147,12 +157,9 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
         final backendGeneratedCode = record.data['generatedCode'] as String;
 
         if (enteredOtp == backendGeneratedCode) {
-          await _pocketBaseClient.collection('otp').update(
-            record.id,
-            body: {
-              'otpCode': enteredOtp,
-            },
-          );
+          await _pocketBaseClient
+              .collection('otp')
+              .update(record.id, body: {'otpCode': enteredOtp});
           debugPrint('✅ End-Delivery OTP verification successful!');
           return true;
         }
@@ -217,10 +224,9 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
 
       // Direct query using provided trip ID
       debugPrint('🎯 Using direct trip ID on OTP: $tripId');
-      final otpRecords = await _pocketBaseClient.collection('otp').getFullList(
-            expand: 'trip',
-            filter: 'trip = "$tripId"',
-          );
+      final otpRecords = await _pocketBaseClient
+          .collection('otp')
+          .getFullList(expand: 'trip', filter: 'trip = "$tripId"');
 
       if (otpRecords.isEmpty) {
         debugPrint('⚠️ No OTP records found');
@@ -241,13 +247,14 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
         isVerified: record.data['isVerified'] ?? false,
         verifiedAt: DateTime.now().toUtc(),
         createdAt: DateTime.now().toUtc(),
-        otpType: record.data['otpType']?.toString().isNotEmpty == true
-            ? OtpType.values.firstWhere(
-                (type) =>
-                    type.toString() == 'OtpType.${record.data['otpType']}',
-                orElse: () => OtpType.inTransit,
-              )
-            : OtpType.inTransit,
+        otpType:
+            record.data['otpType']?.toString().isNotEmpty == true
+                ? OtpType.values.firstWhere(
+                  (type) =>
+                      type.toString() == 'OtpType.${record.data['otpType']}',
+                  orElse: () => OtpType.inTransit,
+                )
+                : OtpType.inTransit,
         trip: TripModel(id: tripId),
         intransitOdometer: record.data['intransitOdometer'],
       );
@@ -255,6 +262,27 @@ class OtpRemoteDataSourceImpl implements OtpRemoteDataSource {
       debugPrint('❌ Error in loadOtpByTripId: $e');
       throw ServerException(
         message: 'Failed to load OTP by trip id: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
+
+  @override
+  Future<bool> verifyOdoStatus({
+    required String id,
+    required bool noOdometer,
+  }) async {
+    try {
+      debugPrint('🔍 Verifying Odometer status for OTP: $id');
+      await _pocketBaseClient
+          .collection('otp')
+          .update(id, body: {'noOdometer': noOdometer});
+      debugPrint('✅ Updated noOdometer=$noOdometer for OTP: $id');
+      return true;
+    } catch (e) {
+      debugPrint('❌ verifyOdoStatus error: ${e.toString()}');
+      throw ServerException(
+        message: 'Failed to update noOdometer status: ${e.toString()}',
         statusCode: '500',
       );
     }

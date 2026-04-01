@@ -13,7 +13,7 @@ class OtpEntity extends Equatable {
   String? generatedCode;
   String? intransitOdometer;
   bool isVerified;
-  bool? isOdometerWorking;
+  bool? noOdometer;
   DateTime createdAt;
   DateTime expiresAt;
   @Property()
@@ -28,7 +28,7 @@ class OtpEntity extends Equatable {
     required this.otpCode,
     this.generatedCode,
     this.intransitOdometer,
-this.isOdometerWorking,
+this.noOdometer,
     required this.isVerified,
     required this.createdAt,
     required this.expiresAt,
@@ -46,7 +46,7 @@ this.isOdometerWorking,
     generatedCode,
     intransitOdometer,
     isVerified,
-    isOdometerWorking,
+    noOdometer,
     createdAt,
     expiresAt,
     otpType,

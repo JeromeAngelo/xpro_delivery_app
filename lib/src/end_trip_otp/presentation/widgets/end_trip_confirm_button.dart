@@ -7,12 +7,14 @@ import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/pre
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
+
 class EndTripConfirmButton extends StatelessWidget {
   final String enteredOtp;
   final String generatedOtp;
   final String tripId;
   final String otpId;
   final String odometerReading;
+  final bool noOdometer;
 
   const EndTripConfirmButton({
     super.key,
@@ -21,6 +23,7 @@ class EndTripConfirmButton extends StatelessWidget {
     required this.tripId,
     required this.otpId,
     required this.odometerReading,
+    this.noOdometer = false,
   });
 
   @override
@@ -28,23 +31,24 @@ class EndTripConfirmButton extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         debugPrint('🔄 Auth State: $state');
-        
+
         if (state is UserTripLoaded) {
           debugPrint('🎫 Trip ID for calculation: ${state.trip.id}');
-          
+
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
             child: RoundedButton(
               label: 'Confirm',
               onPressed: () {
-                if (odometerReading.isNotEmpty) {
+                if (odometerReading.isNotEmpty || noOdometer) {
                   context.read<EndTripOtpBloc>().add(
                     VerifyEndTripOtpEvent(
                       enteredOtp: enteredOtp,
                       generatedOtp: generatedOtp,
                       tripId: state.trip.id!,
                       otpId: otpId,
-                      odometerReading: odometerReading,
+                      odometerReading: noOdometer ? '' : odometerReading,
+                      noOdometer: noOdometer,
                     ),
                   );
 
@@ -56,7 +60,7 @@ class EndTripConfirmButton extends StatelessWidget {
             ),
           );
         }
-        
+
         debugPrint('⏳ Waiting for trip data...');
         return const SizedBox.shrink();
       },

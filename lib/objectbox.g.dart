@@ -221,7 +221,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(161, 290551297226992283),
+        indexId: const obx_int.IdUid(179, 5033802552037527165),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -229,7 +229,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'customerId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(162, 892616174718175137),
+        indexId: const obx_int.IdUid(180, 7362422939521207895),
         relationTarget: 'CustomerDataModel',
       ),
       obx_int.ModelProperty(
@@ -237,7 +237,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'invoiceId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(163, 8603402881715769764),
+        indexId: const obx_int.IdUid(181, 5208835920461479980),
         relationTarget: 'InvoiceDataModel',
       ),
       obx_int.ModelProperty(
@@ -245,7 +245,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(160, 1032217851444863792),
+        indexId: const obx_int.IdUid(178, 3142114258845099767),
         relationTarget: 'DeliveryDataModel',
       ),
       obx_int.ModelProperty(
@@ -425,7 +425,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(164, 6206216390042101677),
+        indexId: const obx_int.IdUid(182, 5493142598820952145),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -593,7 +593,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(166, 5290849453091784361),
+        indexId: const obx_int.IdUid(184, 6576703973607302564),
         relationTarget: 'DeliveryDataModel',
       ),
       obx_int.ModelProperty(
@@ -601,7 +601,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(167, 7647167992884353325),
+        indexId: const obx_int.IdUid(185, 2955677174666152607),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -609,7 +609,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'customerId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(165, 4100762106200419034),
+        indexId: const obx_int.IdUid(183, 7456207380218241237),
         relationTarget: 'CustomerDataModel',
       ),
       obx_int.ModelProperty(
@@ -1131,7 +1131,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(168, 5956427913015546387),
+        indexId: const obx_int.IdUid(186, 8064635523693150727),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -1887,7 +1887,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(169, 6512982298604856308),
+        indexId: const obx_int.IdUid(187, 7509445992248207894),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -1990,7 +1990,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(170, 4342139025116380273),
+        indexId: const obx_int.IdUid(188, 7480505259579371053),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2501,7 +2501,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(171, 1010126223882534127),
+        indexId: const obx_int.IdUid(189, 6690677750909004076),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2571,7 +2571,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(25, 3774608363243592871),
     name: 'EndTripOtpEntity',
-    lastPropertyId: const obx_int.IdUid(11, 7578410533054026482),
+    lastPropertyId: const obx_int.IdUid(12, 1467904328050070380),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -2637,8 +2637,8 @@ final _entities = <obx_int.ModelEntity>[
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(11, 7578410533054026482),
-        name: 'isOdometerWorking',
+        id: const obx_int.IdUid(12, 1467904328050070380),
+        name: 'noOdometer',
         type: 1,
         flags: 0,
       ),
@@ -2649,7 +2649,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(26, 4494351386241539610),
     name: 'EndTripOtpModel',
-    lastPropertyId: const obx_int.IdUid(10, 379036804742385871),
+    lastPropertyId: const obx_int.IdUid(11, 5067773653873857825),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -2669,7 +2669,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(172, 1033591268947714632),
+        indexId: const obx_int.IdUid(190, 6363874363606107629),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2709,8 +2709,8 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(10, 379036804742385871),
-        name: 'isOdometerWorking',
+        id: const obx_int.IdUid(11, 5067773653873857825),
+        name: 'noOdometer',
         type: 1,
         flags: 0,
       ),
@@ -3095,7 +3095,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'invoiceDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(173, 2947855852684467642),
+        indexId: const obx_int.IdUid(191, 1632450279446122258),
         relationTarget: 'InvoiceDataEntity',
       ),
       obx_int.ModelProperty(
@@ -3335,7 +3335,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(174, 6697320161814232331),
+        indexId: const obx_int.IdUid(192, 4300833630969723463),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3343,7 +3343,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryTeamId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(175, 5017090606696530040),
+        indexId: const obx_int.IdUid(193, 7251968020130281253),
         relationTarget: 'DeliveryTeamModel',
       ),
       obx_int.ModelProperty(
@@ -3393,7 +3393,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(36, 6152253761963295918),
     name: 'OtpEntity',
-    lastPropertyId: const obx_int.IdUid(11, 6748631455661368918),
+    lastPropertyId: const obx_int.IdUid(12, 1611834448561235293),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -3459,8 +3459,8 @@ final _entities = <obx_int.ModelEntity>[
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(11, 6748631455661368918),
-        name: 'isOdometerWorking',
+        id: const obx_int.IdUid(12, 1611834448561235293),
+        name: 'noOdometer',
         type: 1,
         flags: 0,
       ),
@@ -3471,7 +3471,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(37, 827436586700502350),
     name: 'OtpModel',
-    lastPropertyId: const obx_int.IdUid(10, 916427213062447893),
+    lastPropertyId: const obx_int.IdUid(11, 5972843747154464282),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -3491,7 +3491,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(176, 5486158760546725758),
+        indexId: const obx_int.IdUid(194, 549909823496217877),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3531,8 +3531,8 @@ final _entities = <obx_int.ModelEntity>[
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(10, 916427213062447893),
-        name: 'isOdometerWorking',
+        id: const obx_int.IdUid(11, 5972843747154464282),
+        name: 'noOdometer',
         type: 1,
         flags: 0,
       ),
@@ -4297,7 +4297,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(177, 4957496416367018442),
+        indexId: const obx_int.IdUid(195, 2014116898372691123),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -4685,7 +4685,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
     lastEntityId: const obx_int.IdUid(48, 4350876074771390893),
-    lastIndexId: const obx_int.IdUid(177, 4957496416367018442),
+    lastIndexId: const obx_int.IdUid(195, 2014116898372691123),
     lastRelationId: const obx_int.IdUid(29, 6984763155418216047),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -4798,8 +4798,31 @@ obx_int.ModelDefinition getObjectBoxModel() {
       7044846486832933051,
       2211333728042819557,
       6359760606742529418,
+      290551297226992283,
+      892616174718175137,
+      8603402881715769764,
+      1032217851444863792,
+      6206216390042101677,
+      5290849453091784361,
+      7647167992884353325,
+      4100762106200419034,
+      5956427913015546387,
+      6512982298604856308,
+      4342139025116380273,
+      1010126223882534127,
+      1033591268947714632,
+      2947855852684467642,
+      6697320161814232331,
+      5017090606696530040,
+      5486158760546725758,
+      4957496416367018442,
     ],
-    retiredPropertyUids: const [],
+    retiredPropertyUids: const [
+      7578410533054026482,
+      379036804742385871,
+      6748631455661368918,
+      916427213062447893,
+    ],
     retiredRelationUids: const [],
     modelVersion: 5,
     modelVersionParserMinimum: 5,
@@ -8231,7 +8254,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final endTripOdometerOffset = object.endTripOdometer == null
             ? null
             : fbb.writeString(object.endTripOdometer!);
-        fbb.startTable(12);
+        fbb.startTable(13);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, otpCodeOffset);
@@ -8242,7 +8265,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(7, object.expiresAt.millisecondsSinceEpoch);
         fbb.addInt64(8, object.verifiedAt?.millisecondsSinceEpoch);
         fbb.addInt64(9, object.trip.targetId);
-        fbb.addBool(10, object.isOdometerWorking);
+        fbb.addBool(11, object.noOdometer);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -8275,10 +8298,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0),
         );
-        final isOdometerWorkingParam = const fb.BoolReader().vTableGetNullable(
+        final noOdometerParam = const fb.BoolReader().vTableGetNullable(
           buffer,
           rootOffset,
-          24,
+          26,
         );
         final expiresAtParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
@@ -8293,7 +8316,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           generatedCode: generatedCodeParam,
           isVerified: isVerifiedParam,
           createdAt: createdAtParam,
-          isOdometerWorking: isOdometerWorkingParam,
+          noOdometer: noOdometerParam,
           expiresAt: expiresAtParam,
           verifiedAt: verifiedAtParam,
         )..dbId = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
@@ -8321,7 +8344,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final generatedCodeOffset = object.generatedCode == null
             ? null
             : fbb.writeString(object.generatedCode!);
-        fbb.startTable(11);
+        fbb.startTable(12);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addInt64(2, object.trip.targetId);
@@ -8331,7 +8354,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(6, object.createdAt.millisecondsSinceEpoch);
         fbb.addInt64(7, object.expiresAt.millisecondsSinceEpoch);
         fbb.addInt64(8, object.verifiedAt?.millisecondsSinceEpoch);
-        fbb.addBool(9, object.isOdometerWorking);
+        fbb.addBool(10, object.noOdometer);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -8358,10 +8381,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
           14,
           false,
         );
-        final isOdometerWorkingParam = const fb.BoolReader().vTableGetNullable(
+        final noOdometerParam = const fb.BoolReader().vTableGetNullable(
           buffer,
           rootOffset,
-          22,
+          24,
         );
         final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0),
@@ -8377,7 +8400,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           otpCode: otpCodeParam,
           generatedCode: generatedCodeParam,
           isVerified: isVerifiedParam,
-          isOdometerWorking: isOdometerWorkingParam,
+          noOdometer: noOdometerParam,
           createdAt: createdAtParam,
           expiresAt: expiresAtParam,
           verifiedAt: verifiedAtParam,
@@ -9323,7 +9346,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final intransitOdometerOffset = object.intransitOdometer == null
             ? null
             : fbb.writeString(object.intransitOdometer!);
-        fbb.startTable(12);
+        fbb.startTable(13);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, otpCodeOffset);
@@ -9334,7 +9357,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(7, object.expiresAt.millisecondsSinceEpoch);
         fbb.addInt64(8, object.verifiedAt?.millisecondsSinceEpoch);
         fbb.addInt64(9, object.trip.targetId);
-        fbb.addBool(10, object.isOdometerWorking);
+        fbb.addBool(11, object.noOdometer);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -9358,10 +9381,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final intransitOdometerParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 12);
-        final isOdometerWorkingParam = const fb.BoolReader().vTableGetNullable(
+        final noOdometerParam = const fb.BoolReader().vTableGetNullable(
           buffer,
           rootOffset,
-          24,
+          26,
         );
         final isVerifiedParam = const fb.BoolReader().vTableGet(
           buffer,
@@ -9383,7 +9406,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           otpCode: otpCodeParam,
           generatedCode: generatedCodeParam,
           intransitOdometer: intransitOdometerParam,
-          isOdometerWorking: isOdometerWorkingParam,
+          noOdometer: noOdometerParam,
           isVerified: isVerifiedParam,
           createdAt: createdAtParam,
           expiresAt: expiresAtParam,
@@ -9413,7 +9436,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final generatedCodeOffset = object.generatedCode == null
             ? null
             : fbb.writeString(object.generatedCode!);
-        fbb.startTable(11);
+        fbb.startTable(12);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addInt64(2, object.trip.targetId);
@@ -9423,7 +9446,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(6, object.createdAt.millisecondsSinceEpoch);
         fbb.addInt64(7, object.expiresAt.millisecondsSinceEpoch);
         fbb.addInt64(8, object.verifiedAt?.millisecondsSinceEpoch);
-        fbb.addBool(9, object.isOdometerWorking);
+        fbb.addBool(10, object.noOdometer);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -9450,10 +9473,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
           14,
           false,
         );
-        final isOdometerWorkingParam = const fb.BoolReader().vTableGetNullable(
+        final noOdometerParam = const fb.BoolReader().vTableGetNullable(
           buffer,
           rootOffset,
-          22,
+          24,
         );
         final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0),
@@ -9469,7 +9492,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           otpCode: otpCodeParam,
           generatedCode: generatedCodeParam,
           isVerified: isVerifiedParam,
-          isOdometerWorking: isOdometerWorkingParam,
+          noOdometer: noOdometerParam,
           createdAt: createdAtParam,
           expiresAt: expiresAtParam,
           verifiedAt: verifiedAtParam,
@@ -12955,8 +12978,8 @@ class EndTripOtpEntity_ {
     _entities[24].properties[9],
   );
 
-  /// See [EndTripOtpEntity.isOdometerWorking].
-  static final isOdometerWorking = obx.QueryBooleanProperty<EndTripOtpEntity>(
+  /// See [EndTripOtpEntity.noOdometer].
+  static final noOdometer = obx.QueryBooleanProperty<EndTripOtpEntity>(
     _entities[24].properties[10],
   );
 }
@@ -13008,8 +13031,8 @@ class EndTripOtpModel_ {
     _entities[25].properties[8],
   );
 
-  /// See [EndTripOtpModel.isOdometerWorking].
-  static final isOdometerWorking = obx.QueryBooleanProperty<EndTripOtpModel>(
+  /// See [EndTripOtpModel.noOdometer].
+  static final noOdometer = obx.QueryBooleanProperty<EndTripOtpModel>(
     _entities[25].properties[9],
   );
 }
@@ -13570,8 +13593,8 @@ class OtpEntity_ {
     _entities[35].properties[9],
   );
 
-  /// See [OtpEntity.isOdometerWorking].
-  static final isOdometerWorking = obx.QueryBooleanProperty<OtpEntity>(
+  /// See [OtpEntity.noOdometer].
+  static final noOdometer = obx.QueryBooleanProperty<OtpEntity>(
     _entities[35].properties[10],
   );
 }
@@ -13623,8 +13646,8 @@ class OtpModel_ {
     _entities[36].properties[8],
   );
 
-  /// See [OtpModel.isOdometerWorking].
-  static final isOdometerWorking = obx.QueryBooleanProperty<OtpModel>(
+  /// See [OtpModel.noOdometer].
+  static final noOdometer = obx.QueryBooleanProperty<OtpModel>(
     _entities[36].properties[9],
   );
 }

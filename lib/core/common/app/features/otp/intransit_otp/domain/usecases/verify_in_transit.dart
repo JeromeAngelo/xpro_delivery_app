@@ -9,6 +9,7 @@ class VerifyInTransitParams {
   final String tripId;
   final String otpId;
   final String odometerReading;
+  final bool noOdometer;
 
   const VerifyInTransitParams({
     required this.enteredOtp,
@@ -16,21 +17,24 @@ class VerifyInTransitParams {
     required this.tripId,
     required this.otpId,
     required this.odometerReading,
+    this.noOdometer = false,
   });
 }
 
-class VerifyInTransit implements UsecaseWithParams<bool, VerifyInTransitParams> {
+class VerifyInTransit
+    implements UsecaseWithParams<bool, VerifyInTransitParams> {
   const VerifyInTransit(this._otpRepo);
 
   final OtpRepo _otpRepo;
 
   @override
-  ResultFuture<bool> call(VerifyInTransitParams params) => _otpRepo.verifyInTransitOtp(
+  ResultFuture<bool> call(VerifyInTransitParams params) =>
+      _otpRepo.verifyInTransitOtp(
         enteredOtp: params.enteredOtp,
         generatedOtp: params.generatedOtp,
         tripId: params.tripId,
         otpId: params.otpId,
         odometerReading: params.odometerReading,
+        noOdometer: params.noOdometer,
       );
 }
-

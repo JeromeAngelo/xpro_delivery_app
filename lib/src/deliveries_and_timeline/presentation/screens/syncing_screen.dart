@@ -112,7 +112,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
   void _handleSyncCompleted() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) context.go('/delivery-and-timeline');
+    if (mounted) context.go('/checklist');
   }
 
   void _showErrorDialog(String message) {

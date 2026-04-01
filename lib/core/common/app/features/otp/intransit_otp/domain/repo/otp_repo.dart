@@ -9,12 +9,18 @@ abstract class OtpRepo {
 
   ResultFuture<OtpEntity> loadOtpById(String otpId);
 
+  ResultFuture<bool> verifyOdoStatus({
+    required String id,
+    required bool noOdometer,
+  });
+
   ResultFuture<bool> verifyInTransitOtp({
     required String enteredOtp,
     required String generatedOtp,
     required String tripId,
     required String otpId,
     required String odometerReading,
+    bool noOdometer = false,
   });
 
   ResultFuture<bool> verifyEndDeliveryOtp({
@@ -22,4 +28,3 @@ abstract class OtpRepo {
     required String generatedOtp,
   });
 }
-
