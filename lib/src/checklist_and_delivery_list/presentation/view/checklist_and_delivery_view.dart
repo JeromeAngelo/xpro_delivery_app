@@ -10,15 +10,16 @@ import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/refractors/checklist_tile.dart';
-import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/refractors/confirm_button.dart';
-import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/refractors/delivery_list.dart';
+import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/widgets/checklist_tile.dart';
+import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/widgets/delivery_list.dart';
 
 import '../../../../core/common/app/features/checklists/intransit_checklist/domain/entity/checklist_entity.dart';
 import '../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import '../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import '../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import '../../../../core/utils/route_utils.dart';
+import '../widgets/confirm_button.dart';
+
 class ChecklistAndDeliveryView extends StatefulWidget {
   const ChecklistAndDeliveryView({super.key});
 
@@ -168,7 +169,10 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView>
                 child: _buildBody(context),
               ),
             ),
-            const Padding(padding: EdgeInsets.all(16), child: ConfirmButton()),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildConfirmButton(),
+            ),
           ],
         ),
       ),
@@ -225,9 +229,9 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView>
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
+          color: Theme.of(context).colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -284,9 +288,10 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView>
             final id = (item.id ?? '').toString().trim();
 
             final serverChecked = item.isChecked ?? false;
-            final checked = id.isEmpty
-                ? serverChecked
-                : (_optimisticChecked[id] ?? serverChecked);
+            final checked =
+                id.isEmpty
+                    ? serverChecked
+                    : (_optimisticChecked[id] ?? serverChecked);
 
             return ChecklistTile(
               key: ValueKey('checklist_$id'),
@@ -376,6 +381,31 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView>
     );
   }
 
+  Widget _buildConfirmButton() {
+    return BlocBuilder<ChecklistBloc, ChecklistState>(
+      builder: (context, state) {
+        final items =
+            (state is ChecklistLoaded) ? state.checklist : _lastChecklist;
+        final hasItems = items.isNotEmpty;
+
+        final allChecked =
+            hasItems &&
+            items.every((item) {
+              final id = (item.id ?? '').toString().trim();
+              final serverChecked = item.isChecked ?? false;
+              return id.isEmpty
+                  ? serverChecked
+                  : (_optimisticChecked[id] ?? serverChecked);
+            });
+
+        return ConfirmButton(
+          checklists: items,
+          enabled: allChecked,
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _clearRouteIfCompleted();
@@ -385,8 +415,9 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView>
   Future<void> _clearRouteIfCompleted() async {
     final current = _checklistBloc.state;
     if (current is ChecklistLoaded) {
-      final allCompleted =
-          current.checklist.every((item) => item.isChecked ?? false);
+      final allCompleted = current.checklist.every(
+        (item) => item.isChecked ?? false,
+      );
 
       if (allCompleted) {
         debugPrint('✅ Checklist completed, clearing saved route');

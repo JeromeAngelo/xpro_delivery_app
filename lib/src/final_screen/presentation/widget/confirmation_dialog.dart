@@ -5,6 +5,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/pre
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
+import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
 
 import '../../../../core/utils/core_utils.dart';
 class ConfirmationDialog extends StatelessWidget {
@@ -22,7 +23,7 @@ class ConfirmationDialog extends StatelessWidget {
         if (state is TripEnded) {
           // Refresh auth to clear trip
           context.read<AuthBloc>().add(const RefreshUserEvent());
-
+          RouteUtils.clearSavedRoute(); // Clear saved route on trip end
           Navigator.of(context).pop();
           context.go('/');
         }

@@ -208,10 +208,11 @@ class _EndTripOtpScreenState extends State<EndTripOtpScreen> {
                         if (!_skipOdometer) ...[
                           EndTripOdoInput(
                             onOdometerChanged: (odometer) {
-                              if (mounted)
+                              if (mounted) {
                                 setState(
                                   () => endTripOdometerReading = odometer,
                                 );
+                              }
                             },
                           ),
                           const SizedBox(height: 8),
