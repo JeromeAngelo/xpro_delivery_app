@@ -250,7 +250,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
         for (final update in existingUpdates) {
           final updateStatusId = update.data?['statusChoicePbId']?.toString();
           final updateSyncStatus = update.data?['syncStatus']?.toString() ?? '';
-          final updateTitle = update.data?['title']?.toString() ?? '';
+         // final updateTitle = update.data?['title']?.toString() ?? '';
 
           if (updateStatusId == status.id &&
               (updateSyncStatus == SyncStatus.pending.name ||
