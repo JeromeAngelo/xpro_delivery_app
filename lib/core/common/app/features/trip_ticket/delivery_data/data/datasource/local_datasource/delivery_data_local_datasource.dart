@@ -382,12 +382,12 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
   }
 
   /// ⚡ OPTIMIZED - Safely compare two ID sets efficiently
-  bool _setEquals(List<int> a, List<int> b) {
-    if (a.length != b.length) return false;
-    final setA = a.toSet();
-    final setB = b.toSet();
-    return setA.difference(setB).isEmpty;
-  }
+  // bool _setEquals(List<int> a, List<int> b) {
+  //   if (a.length != b.length) return false;
+  //   final setA = a.toSet();
+  //   final setB = b.toSet();
+  //   return setA.difference(setB).isEmpty;
+  // }
 
   /// 🆕 DEDUPLICATION HELPER: Removes duplicate delivery updates by title
   /// Keeps the best version (synced > pending > failed) or most recent
