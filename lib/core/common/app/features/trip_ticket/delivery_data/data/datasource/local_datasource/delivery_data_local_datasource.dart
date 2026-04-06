@@ -49,8 +49,9 @@ abstract class DeliveryDataLocalDataSource {
 
   Future<DeliveryDataModel> setInvoiceIntoUnloading(String deliveryDataId);
 
-   Future<DeliveryDataModel> setInvoiceIntoCancelled(
-    String deliveryDataId, String invoiceId,
+  Future<DeliveryDataModel> setInvoiceIntoCancelled(
+    String deliveryDataId,
+    String invoiceId,
   );
 
   Stream<List<DeliveryDataModel>> watchDeliveryDataByTripId(String tripId);
@@ -72,7 +73,7 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
       objectBoxStore.deliveryUpdateBox;
   final ObjectBoxStore objectBoxStore;
   DeliveryDataLocalDataSourceImpl(this.objectBoxStore);
-  
+
   @override
   Stream<List<DeliveryDataModel>> watchDeliveryDataByTripId(String tripId) {
     debugPrint(
@@ -157,9 +158,13 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
             final fullUpdate = deliveryUpdateBox.get(u.objectBoxId);
             if (fullUpdate != null) updatesList.add(fullUpdate);
           }
+
+          // 🆕 DEDUPLICATION: Remove duplicate delivery updates
+          final dedupUpdates = _deduplicateDeliveryUpdates(updatesList);
+
           data.deliveryUpdates
             ..clear()
-            ..addAll(updatesList);
+            ..addAll(dedupUpdates);
 
           output.add(data);
         }
@@ -305,11 +310,17 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
             return ta.compareTo(tb);
           });
 
+          // ---------------------------------------------------
+          // 🆕 DEDUPLICATION: Remove duplicate delivery updates
+          // ---------------------------------------------------
+          final dedupFound = _deduplicateDeliveryUpdates(found);
+
           // ✅ Avoid rewriting relation if nothing changed (saves lag)
           final currentIds =
               delivery.deliveryUpdates.map((e) => e.objectBoxId).toList()
                 ..sort();
-          final foundIds = found.map((e) => e.objectBoxId).toList()..sort();
+          final foundIds =
+              dedupFound.map((e) => e.objectBoxId).toList()..sort();
 
           final same =
               currentIds.length == foundIds.length &&
@@ -318,17 +329,17 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
           if (!same) {
             delivery.deliveryUpdates
               ..clear()
-              ..addAll(found);
+              ..addAll(dedupFound);
 
             // Persist parent so watchers receive updated relation
             deliveryDataBox.put(delivery);
 
             debugPrint(
-              '🔁 LOCAL: Delivery $deliveryPbId refreshed with ${found.length} updates',
+              '🔁 LOCAL: Delivery $deliveryPbId refreshed with ${dedupFound.length} updates (${found.length} before dedup)',
             );
           } else {
             debugPrint(
-              'ℹ️ LOCAL: Delivery $deliveryPbId updates already up-to-date (${found.length})',
+              'ℹ️ LOCAL: Delivery $deliveryPbId updates already up-to-date (${dedupFound.length})',
             );
           }
         } catch (e) {
@@ -355,6 +366,77 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
       if (a[i] != b[i]) return false;
     }
     return true;
+  }
+
+  /// 🆕 DEDUPLICATION HELPER: Removes duplicate delivery updates by title
+  /// Keeps the best version (synced > pending > failed) or most recent
+  List<DeliveryUpdateModel> _deduplicateDeliveryUpdates(
+    List<DeliveryUpdateModel> updates,
+  ) {
+    if (updates.length <= 1) return updates;
+
+    final Map<String, DeliveryUpdateModel> bestByTitle = {};
+    int originalCount = updates.length;
+
+    for (final update in updates) {
+      if (update.title == null || update.title!.isEmpty) continue;
+
+      final titleKey = update.title!.toLowerCase().trim();
+
+      // Priority: synced > pending > failed
+      int getPriority(DeliveryUpdateModel upd) {
+        if (upd.syncStatus == 'synced') return 3;
+        if (upd.syncStatus == 'pending') return 2;
+        return 1; // failed or other
+      }
+
+      if (!bestByTitle.containsKey(titleKey)) {
+        bestByTitle[titleKey] = update;
+      } else {
+        final existing = bestByTitle[titleKey]!;
+        final existingPriority = getPriority(existing);
+        final currentPriority = getPriority(update);
+
+        bool shouldReplace = false;
+        if (currentPriority > existingPriority) {
+          shouldReplace = true;
+        } else if (currentPriority == existingPriority) {
+          final existingTime =
+              existing.time ??
+              existing.updated ??
+              DateTime.fromMicrosecondsSinceEpoch(0);
+          final currentTime =
+              update.time ??
+              update.updated ??
+              DateTime.fromMicrosecondsSinceEpoch(0);
+          if (currentTime.isAfter(existingTime)) {
+            shouldReplace = true;
+          }
+        }
+
+        if (shouldReplace) {
+          bestByTitle[titleKey] = update;
+        }
+      }
+    }
+
+    // Maintain chronological order
+    final dedupList = bestByTitle.values.toList();
+    dedupList.sort((a, b) {
+      final timeA =
+          a.time ?? a.updated ?? DateTime.fromMicrosecondsSinceEpoch(0);
+      final timeB =
+          b.time ?? b.updated ?? DateTime.fromMicrosecondsSinceEpoch(0);
+      return timeA.compareTo(timeB);
+    });
+
+    if (dedupList.length < originalCount) {
+      debugPrint(
+        '🧹 DEDUP: Removed ${originalCount - dedupList.length} duplicate update(s), kept ${dedupList.length}',
+      );
+    }
+
+    return dedupList;
   }
 
   @override
@@ -621,6 +703,112 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
         }
       } else {
         debugPrint('⚠️ No delivery updates for this delivery data');
+      }
+
+      // ---------------------------------------------------
+      // 🆕 5️⃣ DEDUPLICATION: Remove duplicate delivery updates
+      // ---------------------------------------------------
+      if (updates.isNotEmpty) {
+        try {
+          debugPrint('🔍 Checking for duplicate delivery updates...');
+
+          // Map to track best version of each status (by title + time)
+          final Map<String, DeliveryUpdateModel> bestByTitle = {};
+          int originalCount = updates.length;
+
+          for (final update in updates) {
+            if (update.title == null || update.title!.isEmpty) continue;
+
+            final titleKey = update.title!.toLowerCase().trim();
+
+            // Determine priority: synced > pending > failed
+            int getPriority(DeliveryUpdateModel upd) {
+              if (upd.syncStatus == 'synced') return 3;
+              if (upd.syncStatus == 'pending') return 2;
+              return 1; // failed or other
+            }
+
+            if (!bestByTitle.containsKey(titleKey)) {
+              bestByTitle[titleKey] = update;
+              debugPrint(
+                '   📋 First occurrence of "$titleKey" → OBX=${update.objectBoxId}',
+              );
+            } else {
+              final existing = bestByTitle[titleKey]!;
+              final existingPriority = getPriority(existing);
+              final currentPriority = getPriority(update);
+
+              // Keep the one with better sync status, or if same, keep the newer one
+              bool shouldReplace = false;
+              if (currentPriority > existingPriority) {
+                shouldReplace = true;
+                debugPrint(
+                  '   🔄 Better sync status found for "$titleKey": ${update.syncStatus} vs ${existing.syncStatus}',
+                );
+              } else if (currentPriority == existingPriority) {
+                final existingTime =
+                    existing.time ??
+                    existing.updated ??
+                    DateTime.fromMicrosecondsSinceEpoch(0);
+                final currentTime =
+                    update.time ??
+                    update.updated ??
+                    DateTime.fromMicrosecondsSinceEpoch(0);
+                if (currentTime.isAfter(existingTime)) {
+                  shouldReplace = true;
+                  debugPrint(
+                    '   🕐 Newer timestamp found for "$titleKey": ${currentTime.toIso8601String()}',
+                  );
+                }
+              }
+
+              if (shouldReplace) {
+                bestByTitle[titleKey] = update;
+                debugPrint(
+                  '   ✅ Replaced with better version → OBX=${update.objectBoxId}',
+                );
+              } else {
+                debugPrint(
+                  '   ⚠️ Duplicate found and rejected for "$titleKey" → OBX=${update.objectBoxId}',
+                );
+              }
+            }
+          }
+
+          // If duplicates were found, rebuild the relation with deduplicated list
+          if (bestByTitle.length < originalCount) {
+            debugPrint(
+              '🧹 DEDUP: Found ${originalCount - bestByTitle.length} duplicate(s), keeping ${bestByTitle.length}',
+            );
+
+            // Clear and rebuild with deduplicated updates (maintain time order)
+            final dedupList = bestByTitle.values.toList();
+            dedupList.sort((a, b) {
+              final timeA =
+                  a.time ?? a.updated ?? DateTime.fromMicrosecondsSinceEpoch(0);
+              final timeB =
+                  b.time ?? b.updated ?? DateTime.fromMicrosecondsSinceEpoch(0);
+              return timeA.compareTo(timeB);
+            });
+
+            deliveryData.deliveryUpdates
+              ..clear()
+              ..addAll(dedupList);
+
+            // Persist the cleaned relation
+            deliveryDataBox.put(deliveryData);
+
+            debugPrint('✅ Delivery updates deduplicated and persisted');
+            debugPrint(
+              '   📊 Before: $originalCount | After: ${bestByTitle.length}',
+            );
+          } else {
+            debugPrint('✅ No duplicates found in delivery updates');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Deduplication failed (non-blocking): $e');
+          // Continue anyway - deduplication is a best-effort optimization
+        }
       }
 
       debugPrint('✅ DeliveryData fully loaded with expected relations');
@@ -1100,9 +1288,11 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
       throw CacheException(message: e.toString());
     }
   }
-  
+
   @override
-  Future<DeliveryDataModel> setInvoiceIntoUnloading(String deliveryDataId) async {
+  Future<DeliveryDataModel> setInvoiceIntoUnloading(
+    String deliveryDataId,
+  ) async {
     try {
       final id = deliveryDataId.trim();
       debugPrint(
@@ -1143,8 +1333,7 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
       // 2️⃣ Update field
       // -------------------------------------------------------------
       delivery.isUnloading = true;
-            delivery.invoiceStatus = InvoiceStatus.unloading;
-
+      delivery.invoiceStatus = InvoiceStatus.unloading;
 
       // OPTIONAL (only if your model has updated field)
       try {
@@ -1205,9 +1394,12 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
       throw CacheException(message: e.toString());
     }
   }
-  
+
   @override
-  Future<DeliveryDataModel> setInvoiceIntoCancelled(String deliveryDataId, String invoiceId) async {
+  Future<DeliveryDataModel> setInvoiceIntoCancelled(
+    String deliveryDataId,
+    String invoiceId,
+  ) async {
     try {
       final id = deliveryDataId.trim();
       debugPrint(
@@ -1248,8 +1440,7 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
       // 2️⃣ Update field
       // -------------------------------------------------------------
       delivery.isUnloaded = true;
-            delivery.invoiceStatus = InvoiceStatus.cancelled;
-
+      delivery.invoiceStatus = InvoiceStatus.cancelled;
 
       // OPTIONAL (only if your model has updated field)
       try {

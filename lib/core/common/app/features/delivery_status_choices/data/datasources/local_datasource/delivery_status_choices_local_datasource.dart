@@ -91,6 +91,43 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       }
 
       // ---------------------------------------------------
+      // 🆕 0️⃣-A DEDUPLICATION: Check for existing pending/syncing updates
+      // ---------------------------------------------------
+      try {
+        final duplicateQuery =
+            deliveryUpdateBox
+                .query(
+                  DeliveryUpdateModel_.deliveryDataPbId.equals(
+                    deliveryDataPbId,
+                  ),
+                )
+                .build();
+        final existingUpdates = duplicateQuery.find();
+        duplicateQuery.close();
+
+        // Check if an update with the SAME status is already pending or syncing
+        for (final existing in existingUpdates) {
+          if (existing.statusChoicePbId == statusChoice.id &&
+              (existing.syncStatus == SyncStatus.pending.name ||
+                  existing.syncStatus == SyncStatus.syncing.name)) {
+            debugPrint(
+              '⚠️ DUPLICATE DETECTED: Status "${statusChoice.title}" is already pending/syncing for delivery $deliveryDataPbId',
+            );
+            debugPrint('   📋 Existing update OBX ID: ${existing.objectBoxId}');
+            debugPrint('   🔄 Sync status: ${existing.syncStatus}');
+            debugPrint(
+              '   ✅ Skipping duplicate update request to prevent duplicate uploads',
+            );
+            return; // ✅ Exit early - prevent duplicate
+          }
+        }
+        debugPrint('✅ No duplicate pending updates found - proceeding');
+      } catch (e) {
+        debugPrint('⚠️ Duplicate check failed (non-blocking): $e');
+        // Continue anyway if check fails
+      }
+
+      // ---------------------------------------------------
       // 1️⃣ Resolve DeliveryData locally
       // ---------------------------------------------------
       final deliveryData =
@@ -536,22 +573,18 @@ class DeliveryStatusChoicesLocalDatasourceImpl
             case 'arrived':
               allowedTitles.addAll([
                 'unloading',
-                
+
                 'waiting for customer',
                 'invoices in queue',
               ]);
               break;
 
             case 'waiting for customer':
-              allowedTitles.addAll([
-                'unloading',
-               
-                'invoices in queue',
-              ]);
+              allowedTitles.addAll(['unloading', 'invoices in queue']);
               break;
 
             case 'invoices in queue':
-              allowedTitles.addAll(['unloading', ]);
+              allowedTitles.addAll(['unloading']);
               break;
 
             case 'unloading':
@@ -647,7 +680,51 @@ class DeliveryStatusChoicesLocalDatasourceImpl
         return;
       }
 
+      // ---------------------------------------------------
+      // 🆕 DEDUPLICATION: Filter out customers with existing pending updates
+      // ---------------------------------------------------
+      final customersToUpdate = <String>[];
+      final skippedCustomers = <String>[];
+
       for (final customerId in customerIds) {
+        try {
+          final checkQuery =
+              deliveryUpdateBox
+                  .query(
+                    DeliveryUpdateModel_.deliveryDataPbId.equals(customerId),
+                  )
+                  .build();
+          final existingUpdates = checkQuery.find();
+          checkQuery.close();
+
+          // Check if this status is already pending/syncing
+          final hasDuplicate = existingUpdates.any(
+            (u) =>
+                u.statusChoicePbId == statusChoice.id &&
+                (u.syncStatus == SyncStatus.pending.name ||
+                    u.syncStatus == SyncStatus.syncing.name),
+          );
+
+          if (hasDuplicate) {
+            skippedCustomers.add(customerId);
+            debugPrint(
+              'LOCAL ⚠️ Skipping $customerId - duplicate pending "${statusChoice.title}" already exists',
+            );
+          } else {
+            customersToUpdate.add(customerId);
+          }
+        } catch (e) {
+          debugPrint('LOCAL ⚠️ Error checking duplicates for $customerId: $e');
+          customersToUpdate.add(customerId); // Try anyway
+        }
+      }
+
+      debugPrint(
+        'LOCAL 📊 Processing ${customersToUpdate.length} customers (${skippedCustomers.length} duplicates skipped)',
+      );
+
+      // Process only non-duplicate customers
+      for (final customerId in customersToUpdate) {
         try {
           await updateCustomerStatus(customerId, statusChoice);
           debugPrint('LOCAL ✅ Queued update for $customerId');
@@ -660,7 +737,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       }
 
       debugPrint(
-        'LOCAL 🎉 Bulk enqueue completed for ${customerIds.length} customers',
+        'LOCAL 🎉 Bulk enqueue completed for ${customersToUpdate.length} customers (${skippedCustomers.length} skipped)',
       );
     } catch (e, st) {
       debugPrint('LOCAL ❌ Bulk enqueue failed: $e\n$st');
@@ -1150,101 +1227,106 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       throw CacheException(message: e.toString());
     }
   }
-  
- @override
-Future<void> revertUpdateCustomerStatus(
-  String deliveryDataPbId,
-  DeliveryStatusChoicesModel statusChoice,
-) async {
-  try {
-    debugPrint('🔄 START: revertUpdateCustomerStatus()');
-    debugPrint('   📌 DeliveryData PB ID: $deliveryDataPbId');
 
-    // ---------------------------------------------------
-    // 1️⃣ RESOLVE DELIVERY DATA
-    // ---------------------------------------------------
-    final deliveryData = deliveryDataBox
-        .query(DeliveryDataModel_.pocketbaseId.equals(deliveryDataPbId))
-        .build()
-        .findFirst();
-
-    if (deliveryData == null) {
-      debugPrint('❌ DeliveryData not found locally');
-      return;
-    }
-
-    debugPrint('✅ DeliveryData resolved → OBX ID: ${deliveryData.objectBoxId}');
-    debugPrint('📊 Current updates count: ${deliveryData.deliveryUpdates.length}');
-
-    // ---------------------------------------------------
-    // 2️⃣ CHECK IF THERE IS A STATUS TO REVERT
-    // ---------------------------------------------------
-    if (deliveryData.deliveryUpdates.isEmpty) {
-      debugPrint('⚠️ No delivery updates to revert');
-      return;
-    }
-
-    // ---------------------------------------------------
-    // 🔥 3️⃣ GET LAST UPDATE (LATEST)
-    // ---------------------------------------------------
-    final lastUpdate = deliveryData.deliveryUpdates.last;
-
-    debugPrint(
-      '🗑️ Reverting LAST update → OBX=${lastUpdate.objectBoxId}, '
-      'title=${lastUpdate.title}',
-    );
-
-    // ---------------------------------------------------
-    // 🔥 4️⃣ REMOVE FROM RELATION FIRST
-    // ---------------------------------------------------
-    deliveryData.deliveryUpdates.removeLast();
-
-    // ---------------------------------------------------
-    // 🔥 5️⃣ DELETE FROM BOX
-    // ---------------------------------------------------
+  @override
+  Future<void> revertUpdateCustomerStatus(
+    String deliveryDataPbId,
+    DeliveryStatusChoicesModel statusChoice,
+  ) async {
     try {
-      deliveryUpdateBox.remove(lastUpdate.objectBoxId);
-      debugPrint('🗑️ Deleted deliveryUpdate from box');
-    } catch (e) {
-      debugPrint('⚠️ Failed to delete update from box: $e');
-    }
+      debugPrint('🔄 START: revertUpdateCustomerStatus()');
+      debugPrint('   📌 DeliveryData PB ID: $deliveryDataPbId');
 
-    // ---------------------------------------------------
-    // 6️⃣ SAVE DELIVERY DATA (VERY IMPORTANT)
-    // ---------------------------------------------------
-    deliveryDataBox.put(deliveryData);
+      // ---------------------------------------------------
+      // 1️⃣ RESOLVE DELIVERY DATA
+      // ---------------------------------------------------
+      final deliveryData =
+          deliveryDataBox
+              .query(DeliveryDataModel_.pocketbaseId.equals(deliveryDataPbId))
+              .build()
+              .findFirst();
 
-    debugPrint(
-      '✅ Revert completed → remaining updates: ${deliveryData.deliveryUpdates.length}',
-    );
-
-    // ---------------------------------------------------
-    // 🔍 VERIFICATION (OPTIONAL BUT GOOD)
-    // ---------------------------------------------------
-    try {
-      final refreshed = deliveryDataBox.get(deliveryData.objectBoxId);
-
-      if (refreshed != null) {
-        debugPrint(
-          '🔍 Verification: refreshed updates count=${refreshed.deliveryUpdates.length}',
-        );
-
-        for (final rel in refreshed.deliveryUpdates) {
-          final full = deliveryUpdateBox.get(rel.objectBoxId);
-
-          debugPrint(
-            '   • remaining update OBX=${rel.objectBoxId} '
-            'title=${full?.title} time=${full?.time}',
-          );
-        }
+      if (deliveryData == null) {
+        debugPrint('❌ DeliveryData not found locally');
+        return;
       }
-    } catch (e) {
-      debugPrint('⚠️ Verification failed: $e');
+
+      debugPrint(
+        '✅ DeliveryData resolved → OBX ID: ${deliveryData.objectBoxId}',
+      );
+      debugPrint(
+        '📊 Current updates count: ${deliveryData.deliveryUpdates.length}',
+      );
+
+      // ---------------------------------------------------
+      // 2️⃣ CHECK IF THERE IS A STATUS TO REVERT
+      // ---------------------------------------------------
+      if (deliveryData.deliveryUpdates.isEmpty) {
+        debugPrint('⚠️ No delivery updates to revert');
+        return;
+      }
+
+      // ---------------------------------------------------
+      // 🔥 3️⃣ GET LAST UPDATE (LATEST)
+      // ---------------------------------------------------
+      final lastUpdate = deliveryData.deliveryUpdates.last;
+
+      debugPrint(
+        '🗑️ Reverting LAST update → OBX=${lastUpdate.objectBoxId}, '
+        'title=${lastUpdate.title}',
+      );
+
+      // ---------------------------------------------------
+      // 🔥 4️⃣ REMOVE FROM RELATION FIRST
+      // ---------------------------------------------------
+      deliveryData.deliveryUpdates.removeLast();
+
+      // ---------------------------------------------------
+      // 🔥 5️⃣ DELETE FROM BOX
+      // ---------------------------------------------------
+      try {
+        deliveryUpdateBox.remove(lastUpdate.objectBoxId);
+        debugPrint('🗑️ Deleted deliveryUpdate from box');
+      } catch (e) {
+        debugPrint('⚠️ Failed to delete update from box: $e');
+      }
+
+      // ---------------------------------------------------
+      // 6️⃣ SAVE DELIVERY DATA (VERY IMPORTANT)
+      // ---------------------------------------------------
+      deliveryDataBox.put(deliveryData);
+
+      debugPrint(
+        '✅ Revert completed → remaining updates: ${deliveryData.deliveryUpdates.length}',
+      );
+
+      // ---------------------------------------------------
+      // 🔍 VERIFICATION (OPTIONAL BUT GOOD)
+      // ---------------------------------------------------
+      try {
+        final refreshed = deliveryDataBox.get(deliveryData.objectBoxId);
+
+        if (refreshed != null) {
+          debugPrint(
+            '🔍 Verification: refreshed updates count=${refreshed.deliveryUpdates.length}',
+          );
+
+          for (final rel in refreshed.deliveryUpdates) {
+            final full = deliveryUpdateBox.get(rel.objectBoxId);
+
+            debugPrint(
+              '   • remaining update OBX=${rel.objectBoxId} '
+              'title=${full?.title} time=${full?.time}',
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Verification failed: $e');
+      }
+    } catch (e, st) {
+      debugPrint('❌ ERROR in revertUpdateCustomerStatus(): $e');
+      debugPrint('STACK TRACE: $st');
+      throw CacheException(message: e.toString());
     }
-  } catch (e, st) {
-    debugPrint('❌ ERROR in revertUpdateCustomerStatus(): $e');
-    debugPrint('STACK TRACE: $st');
-    throw CacheException(message: e.toString());
   }
-}
 }

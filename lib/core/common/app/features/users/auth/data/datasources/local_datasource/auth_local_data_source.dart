@@ -59,8 +59,8 @@ class AuthLocalDataSrcImpl implements AuthLocalDataSrc {
   Box<CustomerDataModel> get customerBox => objectBoxStore.customerBox;
   Box<InvoiceDataModel> get invoiceBox => objectBoxStore.invoiceBox;
 
-    Box<InvoiceItemsModel> get invoiceItemsBox => objectBoxStore.invoiceItemsBox;
-  
+  Box<InvoiceItemsModel> get invoiceItemsBox => objectBoxStore.invoiceItemsBox;
+
   Box<DeliveryUpdateModel> get deliveryUpdateBox =>
       objectBoxStore.deliveryUpdateBox;
   Box<EndTripChecklistModel> get endTripChecklistBox =>
@@ -187,93 +187,102 @@ class AuthLocalDataSrcImpl implements AuthLocalDataSrc {
   }
 
   @override
-Future<LocalUsersModel> forceReloadLocalUserById(String userId) async {
-  try {
-    final safeUserId = userId.trim();
-    debugPrint('🔁 LOCAL: Force reloading user by ID="$safeUserId"');
-
-    if (safeUserId.isEmpty) {
-      debugPrint('⚠️ LOCAL: userId is empty. Cannot query ObjectBox safely.');
-      throw const CacheException(message: 'Invalid userId (empty)');
-    }
-
-    // -----------------------------------------------------
-    // 1️⃣ Reload User from ObjectBox (fresh query)
-    // -----------------------------------------------------
-    final userQuery =
-        _box.query(LocalUsersModel_.pocketbaseId.equals(safeUserId)).build();
-    final user = userQuery.findFirst();
-    userQuery.close();
-
-    if (user == null) {
-      // ❌ User itself must exist (this is the only hard fail)
-      throw const CacheException(message: 'User not found in local DB');
-    }
-
-    debugPrint('👤 User reloaded → ${user.name} (OBX: ${user.objectBoxId})');
-
-    // -----------------------------------------------------
-    // 2️⃣ Reload Trip relation (NULL-SAFE + BROKEN-RELATION SAFE)
-    // -----------------------------------------------------
+  Future<LocalUsersModel> forceReloadLocalUserById(String userId) async {
     try {
-      // Prefer targetId because it’s the real ObjectBox relation id
-      final tripObxId = user.trip.targetId;
+      final safeUserId = userId.trim();
+      debugPrint('🔁 LOCAL: Force reloading user by ID="$safeUserId"');
 
-      // ✅ If no trip is set or invalid → clear it safely and continue
-      if (tripObxId == 0) {
-        debugPrint('ℹ️ User has no active trip (targetId=0). Clearing & bypassing.');
-        user.trip
-          ..target = null
-          ..targetId = 0;
-      } else {
-        final fullTrip = tripBox.get(tripObxId);
+      if (safeUserId.isEmpty) {
+        debugPrint('⚠️ LOCAL: userId is empty. Cannot query ObjectBox safely.');
+        throw const CacheException(message: 'Invalid userId (empty)');
+      }
 
-        if (fullTrip != null) {
-          user.trip
-            ..target = fullTrip
-            ..targetId = fullTrip.objectBoxId;
+      // -----------------------------------------------------
+      // 1️⃣ Reload User from ObjectBox (fresh query)
+      // -----------------------------------------------------
+      final userQuery =
+          _box.query(LocalUsersModel_.pocketbaseId.equals(safeUserId)).build();
+      final user = userQuery.findFirst();
+      userQuery.close();
 
-          debugPrint('📦 Trip relation reloaded → ${fullTrip.name} (OBX: ${fullTrip.objectBoxId})');
-        } else {
-          // ✅ Relation points to missing Trip record → clear safely
-          debugPrint('⚠️ Trip targetId=$tripObxId but trip record missing. Clearing relation.');
+      if (user == null) {
+        // ❌ User itself must exist (this is the only hard fail)
+        throw const CacheException(message: 'User not found in local DB');
+      }
+
+      debugPrint('👤 User reloaded → ${user.name} (OBX: ${user.objectBoxId})');
+
+      // -----------------------------------------------------
+      // 2️⃣ Reload Trip relation (NULL-SAFE + BROKEN-RELATION SAFE)
+      // -----------------------------------------------------
+      try {
+        // Prefer targetId because it’s the real ObjectBox relation id
+        final tripObxId = user.trip.targetId;
+
+        // ✅ If no trip is set or invalid → clear it safely and continue
+        if (tripObxId == 0) {
+          debugPrint(
+            'ℹ️ User has no active trip (targetId=0). Clearing & bypassing.',
+          );
           user.trip
             ..target = null
             ..targetId = 0;
+        } else {
+          final fullTrip = tripBox.get(tripObxId);
+
+          if (fullTrip != null) {
+            user.trip
+              ..target = fullTrip
+              ..targetId = fullTrip.objectBoxId;
+
+            debugPrint(
+              '📦 Trip relation reloaded → ${fullTrip.name} (OBX: ${fullTrip.objectBoxId})',
+            );
+          } else {
+            // ✅ Relation points to missing Trip record → clear safely
+            debugPrint(
+              '⚠️ Trip targetId=$tripObxId but trip record missing. Clearing relation.',
+            );
+            user.trip
+              ..target = null
+              ..targetId = 0;
+          }
         }
+      } catch (e) {
+        // ✅ Trip MUST NEVER break the flow
+        debugPrint('⚠️ Trip reload failed (ignored): $e');
+        user.trip
+          ..target = null
+          ..targetId = 0;
       }
-    } catch (e) {
-      // ✅ Trip MUST NEVER break the flow
-      debugPrint('⚠️ Trip reload failed (ignored): $e');
-      user.trip
-        ..target = null
-        ..targetId = 0;
+
+      // -----------------------------------------------------
+      // 3️⃣ Persist User so listeners/UI refresh
+      // -----------------------------------------------------
+      _box.put(user);
+
+      // -----------------------------------------------------
+      // 4️⃣ Debug logs
+      // -----------------------------------------------------
+      debugPrint('✅ LOCAL: User force reload COMPLETE');
+      debugPrint('   👤 Name: ${user.name}');
+      debugPrint('   📧 Email: ${user.email}');
+      debugPrint('   🎫 Trip Number ID: ${user.tripNumberId}');
+      debugPrint('   🆔 Pocketbase ID: ${user.pocketbaseId}');
+      debugPrint('   ObjectBox ID: ${user.objectBoxId}');
+      debugPrint(
+        '   🏷️ Trip OBX ID: ${user.trip.targetId == 0 ? 'NO ACTIVE TRIP' : user.trip.targetId}',
+      );
+      debugPrint(
+        '   🏷️ Trip PB ID: ${user.trip.target?.id ?? 'NO ACTIVE TRIP'}',
+      );
+
+      return user;
+    } catch (e, st) {
+      debugPrint('❌ forceReloadLocalUserById ERROR: $e\n$st');
+      throw CacheException(message: e.toString());
     }
-
-    // -----------------------------------------------------
-    // 3️⃣ Persist User so listeners/UI refresh
-    // -----------------------------------------------------
-    _box.put(user);
-
-    // -----------------------------------------------------
-    // 4️⃣ Debug logs
-    // -----------------------------------------------------
-    debugPrint('✅ LOCAL: User force reload COMPLETE');
-    debugPrint('   👤 Name: ${user.name}');
-    debugPrint('   📧 Email: ${user.email}');
-    debugPrint('   🎫 Trip Number ID: ${user.tripNumberId}');
-    debugPrint('   🆔 Pocketbase ID: ${user.pocketbaseId}');
-    debugPrint('   ObjectBox ID: ${user.objectBoxId}');
-    debugPrint('   🏷️ Trip OBX ID: ${user.trip.targetId == 0 ? 'NO ACTIVE TRIP' : user.trip.targetId}');
-    debugPrint('   🏷️ Trip PB ID: ${user.trip.target?.id ?? 'NO ACTIVE TRIP'}');
-
-    return user;
-  } catch (e, st) {
-    debugPrint('❌ forceReloadLocalUserById ERROR: $e\n$st');
-    throw CacheException(message: e.toString());
   }
-}
-
 
   @override
   Future<void> saveUser(LocalUsersModel user) async {
@@ -306,7 +315,6 @@ Future<LocalUsersModel> forceReloadLocalUserById(String userId) async {
 
         // Update related fields
         updatedUser.trip.target = user.trip.target;
-        
 
         _box.put(updatedUser);
       } else {
@@ -514,216 +522,227 @@ Future<LocalUsersModel> forceReloadLocalUserById(String userId) async {
       throw CacheException(message: e.toString());
     }
   }
-@override
-Future<TripModel> forceReloadLocalUserTrip(String userId) async {
-  try {
-    debugPrint('🔁 LOCAL: Force reloading FULL trip for user=$userId');
 
-    final userQuery =
-        _box.query(LocalUsersModel_.pocketbaseId.equals(userId)).build();
-    final user = userQuery.findFirst();
-    userQuery.close();
+  @override
+  Future<TripModel> forceReloadLocalUserTrip(String userId) async {
+    try {
+      debugPrint('🔁 LOCAL: Force reloading FULL trip for user=$userId');
 
-    if (user == null) {
-      throw const CacheException(message: 'User not found in local DB');
+      final userQuery =
+          _box.query(LocalUsersModel_.pocketbaseId.equals(userId)).build();
+      final user = userQuery.findFirst();
+      userQuery.close();
+
+      if (user == null) {
+        throw const CacheException(message: 'User not found in local DB');
+      }
+
+      final tripRef = user.trip.target;
+      if (tripRef == null) {
+        throw const CacheException(message: 'No trip assigned to this user');
+      }
+
+      final tripObxId = tripRef.objectBoxId;
+      if (tripObxId <= 0) {
+        debugPrint('⚠️ Trip target exists but has invalid OBX id=$tripObxId');
+        throw const CacheException(
+          message: 'Trip has invalid local ObjectBox ID',
+        );
+      }
+
+      final trip = tripBox.get(tripObxId);
+      if (trip == null) {
+        throw const CacheException(message: 'Trip record missing in DB');
+      }
+
+      debugPrint('📦 Trip reloaded → ${trip.name} (OBX: ${trip.objectBoxId})');
+
+      // -----------------------------------------------------
+      // 2️⃣ Reload Delivery Team
+      // -----------------------------------------------------
+      final dtRef = trip.deliveryTeam.target;
+      if (dtRef != null && dtRef.objectBoxId > 0) {
+        final fullDT = deliveryTeamBox.get(dtRef.objectBoxId);
+        if (fullDT != null) {
+          trip.deliveryTeam
+            ..target = fullDT
+            ..targetId = fullDT.objectBoxId;
+          debugPrint('👥 DeliveryTeam reloaded → ${fullDT.id}');
+        }
+      }
+
+      // -----------------------------------------------------
+      // 3️⃣ Reload In-Transit OTP
+      // -----------------------------------------------------
+      final otpRef = trip.otp.target;
+      final otpObxId = otpRef?.dbId ?? 0;
+      if (otpRef != null && otpObxId > 0) {
+        final fullOtp = otpBox.get(otpObxId);
+        if (fullOtp != null) {
+          trip.otp
+            ..target = fullOtp
+            ..targetId = fullOtp.dbId;
+          debugPrint('🔐 In-transit OTP reloaded → ${fullOtp.id}');
+        }
+      } else if (otpRef != null) {
+        debugPrint('⚠️ OTP target exists but has invalid dbId=$otpObxId');
+      }
+
+      // -----------------------------------------------------
+      // 4️⃣ Reload End Trip OTP
+      // -----------------------------------------------------
+      final endOtpRef = trip.endTripOtp.target;
+      final endOtpObxId = endOtpRef?.dbId ?? 0;
+      if (endOtpRef != null && endOtpObxId > 0) {
+        final fullOtp = endTripOtpBox.get(endOtpObxId);
+        if (fullOtp != null) {
+          trip.endTripOtp
+            ..target = fullOtp
+            ..targetId = fullOtp.dbId;
+          debugPrint('🔐 EndTrip OTP reloaded → ${fullOtp.id}');
+        }
+      } else if (endOtpRef != null) {
+        debugPrint(
+          '⚠️ EndTripOtp target exists but has invalid dbId=$endOtpObxId',
+        );
+      }
+
+      // -----------------------------------------------------
+      // 5️⃣ Reload Delivery Data
+      // -----------------------------------------------------
+      final deliveryList = trip.deliveryData.toList();
+      final refreshedDeliveries = <DeliveryDataModel>[];
+
+      for (final d in deliveryList) {
+        final id = d.objectBoxId;
+        if (id <= 0) {
+          debugPrint('⚠️ DeliveryData has invalid OBX id=$id (pbId=${d.id})');
+          continue;
+        }
+        final fullDD = deliveryDataBox.get(id);
+        if (fullDD != null) {
+          refreshedDeliveries.add(fullDD);
+          debugPrint('📦 DeliveryData reloaded → ${fullDD.ownerName}');
+        }
+      }
+
+      trip.deliveryData
+        ..clear()
+        ..addAll(refreshedDeliveries);
+
+      // -----------------------------------------------------
+      // 6️⃣ Reload End Trip Checklist
+      // -----------------------------------------------------
+      final checklistList = trip.endTripChecklist.toList();
+      final refreshedChecklist = <EndTripChecklistModel>[];
+
+      for (final c in checklistList) {
+        final id = c.dbId;
+        if (id <= 0) {
+          debugPrint('⚠️ EndTripChecklist has invalid dbId=$id (pbId=${c.id})');
+          continue;
+        }
+        final full = endTripChecklistBox.get(id);
+        if (full != null) {
+          refreshedChecklist.add(full);
+          debugPrint('📋 Checklist reloaded → ${full.objectName}');
+        }
+      }
+
+      trip.endTripChecklist
+        ..clear()
+        ..addAll(refreshedChecklist);
+
+      // -----------------------------------------------------
+      // 7️⃣ Reload Trip Updates  ✅ FIXED
+      // -----------------------------------------------------
+      final updatesList = trip.tripUpdates.toList();
+      final refreshedUpdates = <TripUpdateModel>[];
+
+      debugPrint('🧾 TripUpdates: linkedCount=${updatesList.length}');
+      for (final u in updatesList) {
+        final id =
+            u.dbId; // or u.objectBoxId (use whichever is your OBX id field)
+        if (id <= 0) {
+          debugPrint(
+            '⚠️ TripUpdate has invalid dbId=$id (pbId=${u.id}) — skipping get()',
+          );
+          continue;
+        }
+
+        final full = tripUpdateBox.get(id);
+        if (full != null) {
+          refreshedUpdates.add(full);
+          debugPrint('📋 TripUpdate reloaded → ${full.description}');
+        } else {
+          debugPrint(
+            '⚠️ TripUpdate missing in box for dbId=$id (pbId=${u.id})',
+          );
+        }
+      }
+
+      trip.tripUpdates
+        ..clear()
+        ..addAll(refreshedUpdates);
+
+      // -----------------------------------------------------
+      // 8️⃣ Reload Cancelled Invoices
+      // -----------------------------------------------------
+      final cancelledList = trip.cancelledInvoices.toList();
+      final refreshedInvoices = <CancelledInvoiceModel>[];
+
+      for (final i in cancelledList) {
+        final id = i.objectBoxId;
+        if (id <= 0) {
+          debugPrint(
+            '⚠️ CancelledInvoice has invalid OBX id=$id (pbId=${i.id})',
+          );
+          continue;
+        }
+        final full = cancelledInvoiceBox.get(id);
+        if (full != null) {
+          refreshedInvoices.add(full);
+          debugPrint('📋 CancelledInvoice reloaded → ${full.id}');
+        }
+      }
+
+      trip.cancelledInvoices
+        ..clear()
+        ..addAll(refreshedInvoices);
+
+      // -----------------------------------------------------
+      // 9️⃣ Reload Delivery Collection
+      // -----------------------------------------------------
+      final collectionList = trip.deliveryCollection.toList();
+      final refreshedCollection = <CollectionModel>[];
+
+      for (final c in collectionList) {
+        final id = c.objectBoxId;
+        if (id <= 0) {
+          debugPrint('⚠️ Collection has invalid OBX id=$id (pbId=${c.id})');
+          continue;
+        }
+        final full = deliveryCollectonBox.get(id);
+        if (full != null) {
+          refreshedCollection.add(full);
+          debugPrint('📋 Collection reloaded → ${full.id}');
+        }
+      }
+
+      trip.deliveryCollection
+        ..clear()
+        ..addAll(refreshedCollection);
+
+      tripBox.put(trip);
+
+      debugPrint('✅ LOCAL: Force reload trip COMPLETE');
+      debugPrint('   ✅ tripUpdatesReloaded=${refreshedUpdates.length}');
+      return trip;
+    } catch (e, st) {
+      debugPrint('❌ forceReloadLocalUserTrip ERROR: $e\n$st');
+      throw CacheException(message: e.toString());
     }
-
-    final tripRef = user.trip.target;
-    if (tripRef == null) {
-      throw const CacheException(message: 'No trip assigned to this user');
-    }
-
-    final tripObxId = tripRef.objectBoxId;
-    if (tripObxId <= 0) {
-      debugPrint('⚠️ Trip target exists but has invalid OBX id=$tripObxId');
-      throw const CacheException(message: 'Trip has invalid local ObjectBox ID');
-    }
-
-    final trip = tripBox.get(tripObxId);
-    if (trip == null) {
-      throw const CacheException(message: 'Trip record missing in DB');
-    }
-
-    debugPrint('📦 Trip reloaded → ${trip.name} (OBX: ${trip.objectBoxId})');
-
-    // -----------------------------------------------------
-    // 2️⃣ Reload Delivery Team
-    // -----------------------------------------------------
-    final dtRef = trip.deliveryTeam.target;
-    if (dtRef != null && dtRef.objectBoxId > 0) {
-      final fullDT = deliveryTeamBox.get(dtRef.objectBoxId);
-      if (fullDT != null) {
-        trip.deliveryTeam
-          ..target = fullDT
-          ..targetId = fullDT.objectBoxId;
-        debugPrint('👥 DeliveryTeam reloaded → ${fullDT.id}');
-      }
-    }
-
-    // -----------------------------------------------------
-    // 3️⃣ Reload In-Transit OTP
-    // -----------------------------------------------------
-    final otpRef = trip.otp.target;
-    final otpObxId = otpRef?.dbId ?? 0;
-    if (otpRef != null && otpObxId > 0) {
-      final fullOtp = otpBox.get(otpObxId);
-      if (fullOtp != null) {
-        trip.otp
-          ..target = fullOtp
-          ..targetId = fullOtp.dbId;
-        debugPrint('🔐 In-transit OTP reloaded → ${fullOtp.id}');
-      }
-    } else if (otpRef != null) {
-      debugPrint('⚠️ OTP target exists but has invalid dbId=$otpObxId');
-    }
-
-    // -----------------------------------------------------
-    // 4️⃣ Reload End Trip OTP
-    // -----------------------------------------------------
-    final endOtpRef = trip.endTripOtp.target;
-    final endOtpObxId = endOtpRef?.dbId ?? 0;
-    if (endOtpRef != null && endOtpObxId > 0) {
-      final fullOtp = endTripOtpBox.get(endOtpObxId);
-      if (fullOtp != null) {
-        trip.endTripOtp
-          ..target = fullOtp
-          ..targetId = fullOtp.dbId;
-        debugPrint('🔐 EndTrip OTP reloaded → ${fullOtp.id}');
-      }
-    } else if (endOtpRef != null) {
-      debugPrint('⚠️ EndTripOtp target exists but has invalid dbId=$endOtpObxId');
-    }
-
-    // -----------------------------------------------------
-    // 5️⃣ Reload Delivery Data
-    // -----------------------------------------------------
-    final deliveryList = trip.deliveryData.toList();
-    final refreshedDeliveries = <DeliveryDataModel>[];
-
-    for (final d in deliveryList) {
-      final id = d.objectBoxId;
-      if (id <= 0) {
-        debugPrint('⚠️ DeliveryData has invalid OBX id=$id (pbId=${d.id})');
-        continue;
-      }
-      final fullDD = deliveryDataBox.get(id);
-      if (fullDD != null) {
-        refreshedDeliveries.add(fullDD);
-        debugPrint('📦 DeliveryData reloaded → ${fullDD.ownerName}');
-      }
-    }
-
-    trip.deliveryData
-      ..clear()
-      ..addAll(refreshedDeliveries);
-
-    // -----------------------------------------------------
-    // 6️⃣ Reload End Trip Checklist
-    // -----------------------------------------------------
-    final checklistList = trip.endTripChecklist.toList();
-    final refreshedChecklist = <EndTripChecklistModel>[];
-
-    for (final c in checklistList) {
-      final id = c.dbId;
-      if (id <= 0) {
-        debugPrint('⚠️ EndTripChecklist has invalid dbId=$id (pbId=${c.id})');
-        continue;
-      }
-      final full = endTripChecklistBox.get(id);
-      if (full != null) {
-        refreshedChecklist.add(full);
-        debugPrint('📋 Checklist reloaded → ${full.objectName}');
-      }
-    }
-
-    trip.endTripChecklist
-      ..clear()
-      ..addAll(refreshedChecklist);
-
-    // -----------------------------------------------------
-    // 7️⃣ Reload Trip Updates  ✅ FIXED
-    // -----------------------------------------------------
-    final updatesList = trip.tripUpdates.toList();
-    final refreshedUpdates = <TripUpdateModel>[];
-
-    debugPrint('🧾 TripUpdates: linkedCount=${updatesList.length}');
-    for (final u in updatesList) {
-      final id = u.dbId; // or u.objectBoxId (use whichever is your OBX id field)
-      if (id <= 0) {
-        debugPrint('⚠️ TripUpdate has invalid dbId=$id (pbId=${u.id}) — skipping get()');
-        continue;
-      }
-
-      final full = tripUpdateBox.get(id);
-      if (full != null) {
-        refreshedUpdates.add(full);
-        debugPrint('📋 TripUpdate reloaded → ${full.description}');
-      } else {
-        debugPrint('⚠️ TripUpdate missing in box for dbId=$id (pbId=${u.id})');
-      }
-    }
-
-    trip.tripUpdates
-      ..clear()
-      ..addAll(refreshedUpdates);
-
-    // -----------------------------------------------------
-    // 8️⃣ Reload Cancelled Invoices
-    // -----------------------------------------------------
-    final cancelledList = trip.cancelledInvoices.toList();
-    final refreshedInvoices = <CancelledInvoiceModel>[];
-
-    for (final i in cancelledList) {
-      final id = i.objectBoxId;
-      if (id <= 0) {
-        debugPrint('⚠️ CancelledInvoice has invalid OBX id=$id (pbId=${i.id})');
-        continue;
-      }
-      final full = cancelledInvoiceBox.get(id);
-      if (full != null) {
-        refreshedInvoices.add(full);
-        debugPrint('📋 CancelledInvoice reloaded → ${full.id}');
-      }
-    }
-
-    trip.cancelledInvoices
-      ..clear()
-      ..addAll(refreshedInvoices);
-
-    // -----------------------------------------------------
-    // 9️⃣ Reload Delivery Collection
-    // -----------------------------------------------------
-    final collectionList = trip.deliveryCollection.toList();
-    final refreshedCollection = <CollectionModel>[];
-
-    for (final c in collectionList) {
-      final id = c.objectBoxId;
-      if (id <= 0) {
-        debugPrint('⚠️ Collection has invalid OBX id=$id (pbId=${c.id})');
-        continue;
-      }
-      final full = deliveryCollectonBox.get(id);
-      if (full != null) {
-        refreshedCollection.add(full);
-        debugPrint('📋 Collection reloaded → ${full.id}');
-      }
-    }
-
-    trip.deliveryCollection
-      ..clear()
-      ..addAll(refreshedCollection);
-
-    tripBox.put(trip);
-
-    debugPrint('✅ LOCAL: Force reload trip COMPLETE');
-    debugPrint('   ✅ tripUpdatesReloaded=${refreshedUpdates.length}');
-    return trip;
-  } catch (e, st) {
-    debugPrint('❌ forceReloadLocalUserTrip ERROR: $e\n$st');
-    throw CacheException(message: e.toString());
   }
-}
-
 
   @override
   Future<void> cacheUserData(LocalUsersModel user) async {
@@ -1099,10 +1118,10 @@ Future<TripModel> forceReloadLocalUserTrip(String userId) async {
       if (fullVehicle != null) {
         // ✅ Update the name (and any other fields you want to sync)
         fullVehicle.name = vehicle.name;
-                fullVehicle.type = vehicle.type;
-                fullVehicle.make = vehicle.make;
-                fullVehicle.volumeCapacity = vehicle.volumeCapacity;
-                fullVehicle.weightCapacity = vehicle.weightCapacity;
+        fullVehicle.type = vehicle.type;
+        fullVehicle.make = vehicle.make;
+        fullVehicle.volumeCapacity = vehicle.volumeCapacity;
+        fullVehicle.weightCapacity = vehicle.weightCapacity;
 
         // Add more fields if needed, e.g., type, plateNumber
         vehicleBox.put(fullVehicle);
@@ -1549,455 +1568,542 @@ Future<TripModel> forceReloadLocalUserTrip(String userId) async {
     );
   }
 
+  Future<void> _syncDeliveryDataForTrip(TripModel trip) async {
+    // ✅ Snapshot first to avoid concurrent modification on ToMany
+    final incomingDeliveries = trip.deliveryData.toList();
 
-Future<void> _syncDeliveryDataForTrip(TripModel trip) async {
-  // ✅ Snapshot first to avoid concurrent modification on ToMany
-  final incomingDeliveries = trip.deliveryData.toList();
-
-  // ✅ Ensure trip has OBX id before linking relations
-  if (trip.objectBoxId == 0) {
-    trip.objectBoxId = tripBox.put(trip);
-  }
-
-  final Map<String, DeliveryDataModel> uniqueDeliveries = {};
-
-  for (final d in incomingDeliveries) {
-    final deliveryPbId = (d.pocketbaseId).trim();
-    if (deliveryPbId.isEmpty) {
-      debugPrint('⚠️ Skipping delivery: missing pocketbaseId/id');
-      continue;
+    // ✅ Ensure trip has OBX id before linking relations
+    if (trip.objectBoxId == 0) {
+      trip.objectBoxId = tripBox.put(trip);
     }
 
-    debugPrint('📦 Syncing deliveryData → ${d.ownerName} PB: $deliveryPbId');
+    final Map<String, DeliveryDataModel> uniqueDeliveries = {};
+    int skippedDuplicates = 0;
 
-    // -------------------------------------------------------------
-    // 1️⃣ Load existing or create new DeliveryData
-    // -------------------------------------------------------------
-    final existing =
-        deliveryDataBox
-            .query(DeliveryDataModel_.pocketbaseId.equals(deliveryPbId))
-            .build()
-            .findFirst();
+    for (final d in incomingDeliveries) {
+      final deliveryPbId = (d.pocketbaseId).trim();
+      if (deliveryPbId.isEmpty) {
+        debugPrint('⚠️ Skipping delivery: missing pocketbaseId/id');
+        continue;
+      }
 
-    final fresh = existing != null
-        ? deliveryDataBox.get(existing.objectBoxId)!
-        : DeliveryDataModel();
+      debugPrint('📦 Syncing deliveryData → ${d.ownerName} PB: $deliveryPbId');
 
-    // Copy base fields
-    fresh
-      ..id = d.id
-      ..pocketbaseId = deliveryPbId
-      ..ownerName = d.ownerName
-      ..deliveryNumber = d.deliveryNumber
-      ..province = d.province
-      ..municipality = d.municipality
-      ..barangay = d.barangay
-      ..paymentMode = d.paymentMode
-      ..storeName = d.storeName
-      ..updated = d.updated
-      ..isUnloaded = d.isUnloaded
-      ..isUnloading = d.isUnloading
-      ..created = d.created
-      ..totalDeliveryTime = d.totalDeliveryTime
-      ..tripId = trip.id;
+      // ---------------------------------------------------
+      // 🆕 DEDUPLICATION CHECK: Skip if already synced
+      // ---------------------------------------------------
+      if (uniqueDeliveries.containsKey(deliveryPbId)) {
+        debugPrint(
+          '⚠️ DUPLICATE DETECTED: Delivery $deliveryPbId already in sync list',
+        );
+        skippedDuplicates++;
+        continue; // Skip redundant sync
+      }
 
-    // ✅ Always link to the current trip instance (avoid extra Trip creation)
-    fresh.trip.target = trip;
+      // ---------------------------------------------------
+      // 1️⃣ Load existing or create new DeliveryData
+      // ---------------------------------------------------
+      final existing =
+          deliveryDataBox
+              .query(DeliveryDataModel_.pocketbaseId.equals(deliveryPbId))
+              .build()
+              .findFirst();
 
-    // -------------------------------------------------------------
-    // 2️⃣ Sync Customer (ToOne)
-    // -------------------------------------------------------------
-    final cust = d.customer.target;
-    if (cust != null) {
-      final custPbId = (cust.pocketbaseId ).trim();
+      final fresh =
+          existing != null
+              ? deliveryDataBox.get(existing.objectBoxId)!
+              : DeliveryDataModel();
 
-      if (custPbId.isNotEmpty) {
-        final existingCust =
-            customerBox
-                .query(CustomerDataModel_.pocketbaseId.equals(custPbId))
-                .build()
-                .findFirst();
+      // Copy base fields
+      fresh
+        ..id = d.id
+        ..pocketbaseId = deliveryPbId
+        ..ownerName = d.ownerName
+        ..deliveryNumber = d.deliveryNumber
+        ..province = d.province
+        ..municipality = d.municipality
+        ..barangay = d.barangay
+        ..paymentMode = d.paymentMode
+        ..storeName = d.storeName
+        ..updated = d.updated
+        ..isUnloaded = d.isUnloaded
+        ..isUnloading = d.isUnloading
+        ..created = d.created
+        ..totalDeliveryTime = d.totalDeliveryTime
+        ..tripId = trip.id;
 
-        if (existingCust == null) {
-          final newCust =
-              CustomerDataModel()
-                ..id = cust.id
-                ..pocketbaseId = custPbId
-                ..name = cust.name
-                ..province = cust.province
-                ..municipality = cust.municipality
-                ..barangay = cust.barangay;
+      // ✅ Always link to the current trip instance (avoid extra Trip creation)
+      fresh.trip.target = trip;
 
-          final newId = customerBox.put(newCust);
-          fresh.customer.target = customerBox.get(newId);
+      // -------------------------------------------------------------
+      // 2️⃣ Sync Customer (ToOne)
+      // -------------------------------------------------------------
+      final cust = d.customer.target;
+      if (cust != null) {
+        final custPbId = (cust.pocketbaseId).trim();
+
+        if (custPbId.isNotEmpty) {
+          final existingCust =
+              customerBox
+                  .query(CustomerDataModel_.pocketbaseId.equals(custPbId))
+                  .build()
+                  .findFirst();
+
+          if (existingCust == null) {
+            final newCust =
+                CustomerDataModel()
+                  ..id = cust.id
+                  ..pocketbaseId = custPbId
+                  ..name = cust.name
+                  ..province = cust.province
+                  ..municipality = cust.municipality
+                  ..barangay = cust.barangay;
+
+            final newId = customerBox.put(newCust);
+            fresh.customer.target = customerBox.get(newId);
+          } else {
+            fresh.customer.target = customerBox.get(existingCust.objectBoxId);
+          }
         } else {
-          fresh.customer.target = customerBox.get(existingCust.objectBoxId);
+          fresh.customer.target = null;
         }
       } else {
         fresh.customer.target = null;
       }
-    } else {
-      fresh.customer.target = null;
-    }
-
-    // -------------------------------------------------------------
-    // 3️⃣ Sync Invoices (ToMany) — snapshot first
-    // -------------------------------------------------------------
-    final invoiceList = <InvoiceDataModel>[];
-    final incomingInvoices = d.invoices.toList();
-
-    for (final inv in incomingInvoices) {
-      final invPbId = (inv.pocketbaseId ).trim();
-      if (invPbId.isEmpty) continue;
-
-      final existingInv =
-          invoiceBox
-              .query(InvoiceDataModel_.pocketbaseId.equals(invPbId))
-              .build()
-              .findFirst();
-
-      if (existingInv == null) {
-        final newInv =
-            InvoiceDataModel()
-              ..id = inv.id
-              ..pocketbaseId = invPbId
-              ..name = inv.name
-              ..refId = inv.refId
-              ..documentDate = inv.documentDate
-              ..volume = inv.volume
-              ..weight = inv.weight
-            
-              ..totalAmount = inv.totalAmount;
-
-        final newId = invoiceBox.put(newInv);
-        invoiceList.add(invoiceBox.get(newId)!);
-      } else {
-        invoiceList.add(invoiceBox.get(existingInv.objectBoxId)!);
-      }
-    }
-
-    fresh.invoices
-      ..clear()
-      ..addAll(invoiceList);
 
       // -------------------------------------------------------------
-// 3️⃣ Sync InvoiceItems (ToMany) — snapshot first + link invoiceData ToOne
-// -------------------------------------------------------------
-final List<InvoiceItemsModel> syncedInvoiceItems = <InvoiceItemsModel>[];
+      // 3️⃣ Sync Invoices (ToMany) — snapshot first + DEDUP
+      // -------------------------------------------------------------
+      final invoiceList = <InvoiceDataModel>[];
+      final incomingInvoices = d.invoices.toList();
+      final seenInvoiceIds = <String>{}; // Track to avoid duplicates in batch
 
-// If d.invoiceItems is dynamic, make it explicit:
-final List<InvoiceItemsModel> incomingInvoiceItems =
-    d.invoiceItems.toList().cast<InvoiceItemsModel>();
+      for (final inv in incomingInvoices) {
+        final invPbId = (inv.pocketbaseId).trim();
+        if (invPbId.isEmpty) continue;
 
-// -------------------------------------------------------------
-// ✅ Build invoice lookup from already-synced fresh.invoices
-// -------------------------------------------------------------
-final Map<String, InvoiceDataModel> invoiceByPbId = {};
-final Map<String, InvoiceDataModel> invoiceById = {};
+        // ---------------------------------------------------
+        // 🆕 DEDUPLICATION: Skip if already in batch
+        // ---------------------------------------------------
+        if (seenInvoiceIds.contains(invPbId)) {
+          debugPrint(
+            '⚠️ [DEDUP] Duplicate Invoice in batch: PB=$invPbId (${inv.name})',
+          );
+          skippedDuplicates++;
+          continue;
+        }
+        seenInvoiceIds.add(invPbId);
 
-try {
-  final invs = fresh.invoices.toList();
-  for (final inv in invs) {
-    final pb = (inv.pocketbaseId).trim();
-    final id = (inv.id ?? '').toString().trim();
-    if (pb.isNotEmpty) invoiceByPbId[pb] = inv;
-    if (id.isNotEmpty) invoiceById[id] = inv;
-  }
-} catch (_) {}
+        final existingInv =
+            invoiceBox
+                .query(InvoiceDataModel_.pocketbaseId.equals(invPbId))
+                .build()
+                .findFirst();
 
-debugPrint(
-  '🧾 [INVOICE ITEMS] Incoming invoice items for delivery '
-  'PB=$deliveryPbId → count=${incomingInvoiceItems.length}',
-);
-debugPrint(
-  '🧾 [INVOICE ITEMS] Invoice lookup: '
-  'byPbId=${invoiceByPbId.length}, byId=${invoiceById.length}',
-);
+        if (existingInv == null) {
+          final newInv =
+              InvoiceDataModel()
+                ..id = inv.id
+                ..pocketbaseId = invPbId
+                ..name = inv.name
+                ..refId = inv.refId
+                ..documentDate = inv.documentDate
+                ..volume = inv.volume
+                ..weight = inv.weight
+                ..totalAmount = inv.totalAmount;
 
-for (final InvoiceItemsModel inv in incomingInvoiceItems) {
-  final invPbId = (inv.pocketbaseId).trim();
-
-  if (invPbId.isEmpty) {
-    debugPrint('⚠️ [INVOICE ITEMS] Skipped item with EMPTY pocketbaseId');
-    continue;
-  }
-
-  // -------------------------------------------------------------
-  // ✅ Find the invoice ID from incoming item
-  // Priority:
-  // 1) inv.invoiceData.target?.pocketbaseId (if expanded)
-  // 2) inv.invoiceDataId (raw string)
-  // 3) inv.invoiceData.target?.id
-  // -------------------------------------------------------------
-  String incomingInvoicePbId = '';
-  String incomingInvoiceId = '';
-
-  try {
-    incomingInvoicePbId = (inv.invoiceData.target?.id ?? '').trim();
-  } catch (_) {}
-
-  try {
-    incomingInvoiceId = (inv.invoiceDataId ?? '').toString().trim();
-  } catch (_) {}
-
-  if (incomingInvoiceId.isEmpty) {
-    try {
-      incomingInvoiceId = (inv.invoiceData.target?.id ?? '').toString().trim();
-    } catch (_) {}
-  }
-
-  debugPrint(
-    '🔍 [INVOICE ITEMS] Processing item PB=$invPbId | name=${inv.name} '
-    '| invPb=$incomingInvoicePbId | invId=$incomingInvoiceId',
-  );
-
-  // -------------------------------------------------------------
-  // ✅ Resolve invoice locally using the maps
-  // -------------------------------------------------------------
-  InvoiceDataModel? resolvedInvoice;
-  if (incomingInvoicePbId.isNotEmpty) {
-    resolvedInvoice = invoiceByPbId[incomingInvoicePbId];
-  }
-  resolvedInvoice ??= invoiceById[incomingInvoiceId];
-
-  if (resolvedInvoice == null &&
-      (incomingInvoicePbId.isNotEmpty || incomingInvoiceId.isNotEmpty)) {
-    debugPrint(
-      '⚠️ [INVOICE ITEMS] No matching invoice found locally for item PB=$invPbId '
-      '(invPb=$incomingInvoicePbId, invId=$incomingInvoiceId)',
-    );
-  }
-
-  // -------------------------------------------------------------
-  // ✅ Find existing local InvoiceItem by pocketbaseId
-  // -------------------------------------------------------------
-  final q = invoiceItemsBox
-      .query(InvoiceItemsModel_.pocketbaseId.equals(invPbId))
-      .build();
-  final existingInv = q.findFirst();
-  q.close();
-
-  InvoiceItemsModel localItem;
-
-  if (existingInv == null) {
-    debugPrint('🆕 [INVOICE ITEMS] Creating new item → PB=$invPbId');
-
-    final newInv = InvoiceItemsModel()
-      ..id = inv.id
-      ..pocketbaseId = invPbId
-      ..name = inv.name
-      ..brand = inv.brand
-      ..refId = inv.refId
-      ..uom = inv.uom
-      ..quantity = inv.quantity
-      ..uomPrice = inv.uomPrice
-      ..totalAmount = inv.totalAmount
-      ..totalBaseQuantity = inv.totalBaseQuantity
-      ..created = inv.created
-      ..updated = inv.updated;
-
-    // ✅ LINK invoiceData ToOne + raw field
-    if (resolvedInvoice != null) {
-      newInv.invoiceData.target = resolvedInvoice;
-      newInv.invoiceDataId = (resolvedInvoice.id ?? '').toString();
-      debugPrint(
-        '🔗 [INVOICE ITEMS] Linked NEW item → invoiceData '
-        'pb=${resolvedInvoice.pocketbaseId} id=${resolvedInvoice.id}',
-      );
-    } else {
-      // still store the raw invoiceDataId if present, for future re-link
-      if (incomingInvoiceId.isNotEmpty) {
-        newInv.invoiceDataId = incomingInvoiceId;
-        debugPrint(
-          '🧷 [INVOICE ITEMS] NEW item saved with raw invoiceDataId=$incomingInvoiceId (no ToOne link yet)',
-        );
+          final newId = invoiceBox.put(newInv);
+          invoiceList.add(invoiceBox.get(newId)!);
+        } else {
+          invoiceList.add(invoiceBox.get(existingInv.objectBoxId)!);
+        }
       }
-    }
 
-    final newObxId = invoiceItemsBox.put(newInv);
-    localItem = invoiceItemsBox.get(newObxId)!;
-    syncedInvoiceItems.add(localItem);
+      fresh.invoices
+        ..clear()
+        ..addAll(invoiceList);
 
-    debugPrint('✅ [INVOICE ITEMS] Saved new item PB=$invPbId → OBX=$newObxId');
-  } else {
-    debugPrint(
-      '♻️ [INVOICE ITEMS] Existing item found PB=$invPbId → OBX=${existingInv.objectBoxId}',
-    );
+      // -------------------------------------------------------------
+      // 3️⃣ Sync InvoiceItems (ToMany) — snapshot first + DEDUP
+      // -------------------------------------------------------------
+      final List<InvoiceItemsModel> syncedInvoiceItems = <InvoiceItemsModel>[];
+      final seenInvoiceItemIds = <String>{}; // Track to avoid duplicates
 
-    // ✅ Load the persisted instance and update fields
-    localItem = invoiceItemsBox.get(existingInv.objectBoxId)!;
+      // If d.invoiceItems is dynamic, make it explicit:
+      final List<InvoiceItemsModel> incomingInvoiceItems =
+          d.invoiceItems.toList().cast<InvoiceItemsModel>();
 
-    localItem
-      ..id = inv.id
-      ..name = inv.name
-      ..brand = inv.brand
-      ..refId = inv.refId
-      ..uom = inv.uom
-      ..quantity = inv.quantity
-      ..uomPrice = inv.uomPrice
-      ..totalAmount = inv.totalAmount
-      ..totalBaseQuantity = inv.totalBaseQuantity
-      ..created = inv.created
-      ..updated = inv.updated;
+      // -------------------------------------------------------------
+      // ✅ Build invoice lookup from already-synced fresh.invoices
+      // -------------------------------------------------------------
+      final Map<String, InvoiceDataModel> invoiceByPbId = {};
+      final Map<String, InvoiceDataModel> invoiceById = {};
 
-    // ✅ Ensure invoice relation is linked
-    if (resolvedInvoice != null) {
-      localItem.invoiceData.target = resolvedInvoice;
-      localItem.invoiceDataId = (resolvedInvoice.id ?? '').toString();
+      try {
+        final invs = fresh.invoices.toList();
+        for (final inv in invs) {
+          final pb = (inv.pocketbaseId).trim();
+          final id = (inv.id ?? '').toString().trim();
+          if (pb.isNotEmpty) invoiceByPbId[pb] = inv;
+          if (id.isNotEmpty) invoiceById[id] = inv;
+        }
+      } catch (_) {}
 
       debugPrint(
-        '🔗 [INVOICE ITEMS] Linked EXISTING item → invoiceData '
-        'pb=${resolvedInvoice.pocketbaseId} id=${resolvedInvoice.id}',
+        '🧾 [INVOICE ITEMS] Incoming invoice items for delivery '
+        'PB=$deliveryPbId → count=${incomingInvoiceItems.length}',
       );
-    } else {
-      // keep raw if we have it
-      if ((localItem.invoiceDataId ?? '').trim().isEmpty &&
-          incomingInvoiceId.isNotEmpty) {
-        localItem.invoiceDataId = incomingInvoiceId;
-        debugPrint(
-          '🧷 [INVOICE ITEMS] EXISTING item stored raw invoiceDataId=$incomingInvoiceId (no ToOne link yet)',
-        );
-      }
-    }
+      debugPrint(
+        '🧾 [INVOICE ITEMS] Invoice lookup: '
+        'byPbId=${invoiceByPbId.length}, byId=${invoiceById.length}',
+      );
 
-    // ✅ Persist changes
-    invoiceItemsBox.put(localItem);
-    syncedInvoiceItems.add(localItem);
-  }
-}
+      for (final InvoiceItemsModel inv in incomingInvoiceItems) {
+        final invPbId = (inv.pocketbaseId).trim();
 
-// BEFORE attach
-debugPrint(
-  '📦 [INVOICE ITEMS] Attaching ${syncedInvoiceItems.length} items '
-  'to DeliveryData PB=$deliveryPbId (previous=${fresh.invoiceItems.length})',
-);
+        if (invPbId.isEmpty) {
+          debugPrint('⚠️ [INVOICE ITEMS] Skipped item with EMPTY pocketbaseId');
+          continue;
+        }
 
-// Attach to delivery
-fresh.invoiceItems
-  ..clear()
-  ..addAll(syncedInvoiceItems);
+        // ---------------------------------------------------
+        // 🆕 DEDUPLICATION: Skip if already in batch
+        // ---------------------------------------------------
+        if (seenInvoiceItemIds.contains(invPbId)) {
+          debugPrint(
+            '⚠️ [DEDUP] Duplicate InvoiceItem in batch: PB=$invPbId (${inv.name})',
+          );
+          skippedDuplicates++;
+          continue;
+        }
+        seenInvoiceItemIds.add(invPbId);
 
-// IMPORTANT: persist parent (depending on your overall flow)
-deliveryDataBox.put(fresh);
+        // ---------------------------------------------------
+        // ✅ Find the invoice ID from incoming item
+        // Priority:
+        // 1) inv.invoiceData.target?.pocketbaseId (if expanded)
+        // 2) inv.invoiceDataId (raw string)
+        // 3) inv.invoiceData.target?.id
+        // ---------------------------------------------------
+        String incomingInvoicePbId = '';
+        String incomingInvoiceId = '';
 
-// AFTER attach
-debugPrint(
-  '✅ [INVOICE ITEMS] DeliveryData PB=$deliveryPbId now has '
-  '${fresh.invoiceItems.length} invoice items',
-);
+        try {
+          incomingInvoicePbId = (inv.invoiceData.target?.id ?? '').trim();
+        } catch (_) {}
 
-// -------------------------------------------------------------
-// ✅ Debug: verify invoice links on first few items
-// -------------------------------------------------------------
-for (int i = 0; i < fresh.invoiceItems.length && i < 5; i++) {
-  final it = fresh.invoiceItems[i];
-  debugPrint(
-    '🧾 [VERIFY] Item ${i + 1}: ${it.name} '
-    '| itemPB=${it.pocketbaseId} '
-    '| invTarget=${it.invoiceData.target?.id} '
-    '| invPB=${it.invoiceData.target?.id} '
-    '| invRaw=${it.invoiceDataId}',
-  );
-}
+        try {
+          incomingInvoiceId = (inv.invoiceDataId ?? '').toString().trim();
+        } catch (_) {}
 
-
-    // -------------------------------------------------------------
-    // 4️⃣ Sync DeliveryUpdates (ToMany) — snapshot first
-    // -------------------------------------------------------------
-    final updatesList = <DeliveryUpdateModel>[];
-    final incomingUpdates = d.deliveryUpdates.toList();
-
-    // ✅ Cleanup by deliveryDataPbId (this is what forceReload uses)
-    try {
-      final cleanupQuery =
-          deliveryUpdateBox
-              .query(DeliveryUpdateModel_.deliveryDataPbId.equals(deliveryPbId))
-              .build();
-
-      final existingForDelivery = cleanupQuery.find();
-      cleanupQuery.close();
-
-      if (existingForDelivery.isNotEmpty) {
-        deliveryUpdateBox.removeMany(
-          existingForDelivery.map((e) => e.objectBoxId).toList(),
-        );
+        if (incomingInvoiceId.isEmpty) {
+          try {
+            incomingInvoiceId =
+                (inv.invoiceData.target?.id ?? '').toString().trim();
+          } catch (_) {}
+        }
 
         debugPrint(
-          '🧹 Removed ${existingForDelivery.length} existing DeliveryUpdates for delivery PB:$deliveryPbId',
+          '🔍 [INVOICE ITEMS] Processing item PB=$invPbId | name=${inv.name} '
+          '| invPb=$incomingInvoicePbId | invId=$incomingInvoiceId',
+        );
+
+        // ---------------------------------------------------
+        // ✅ Resolve invoice locally using the maps
+        // ---------------------------------------------------
+        InvoiceDataModel? resolvedInvoice;
+        if (incomingInvoicePbId.isNotEmpty) {
+          resolvedInvoice = invoiceByPbId[incomingInvoicePbId];
+        }
+        resolvedInvoice ??= invoiceById[incomingInvoiceId];
+
+        if (resolvedInvoice == null &&
+            (incomingInvoicePbId.isNotEmpty || incomingInvoiceId.isNotEmpty)) {
+          debugPrint(
+            '⚠️ [INVOICE ITEMS] No matching invoice found locally for item PB=$invPbId '
+            '(invPb=$incomingInvoicePbId, invId=$incomingInvoiceId)',
+          );
+        }
+
+        // ---------------------------------------------------
+        // ✅ Find existing local InvoiceItem by pocketbaseId
+        // ---------------------------------------------------
+        final q =
+            invoiceItemsBox
+                .query(InvoiceItemsModel_.pocketbaseId.equals(invPbId))
+                .build();
+        final existingInv = q.findFirst();
+        q.close();
+
+        InvoiceItemsModel localItem;
+
+        if (existingInv == null) {
+          debugPrint('🆕 [INVOICE ITEMS] Creating new item → PB=$invPbId');
+
+          final newInv =
+              InvoiceItemsModel()
+                ..id = inv.id
+                ..pocketbaseId = invPbId
+                ..name = inv.name
+                ..brand = inv.brand
+                ..refId = inv.refId
+                ..uom = inv.uom
+                ..quantity = inv.quantity
+                ..uomPrice = inv.uomPrice
+                ..totalAmount = inv.totalAmount
+                ..totalBaseQuantity = inv.totalBaseQuantity
+                ..created = inv.created
+                ..updated = inv.updated;
+
+          // ✅ LINK invoiceData ToOne + raw field
+          if (resolvedInvoice != null) {
+            newInv.invoiceData.target = resolvedInvoice;
+            newInv.invoiceDataId = (resolvedInvoice.id ?? '').toString();
+            debugPrint(
+              '🔗 [INVOICE ITEMS] Linked NEW item → invoiceData '
+              'pb=${resolvedInvoice.pocketbaseId} id=${resolvedInvoice.id}',
+            );
+          } else {
+            // still store the raw invoiceDataId if present, for future re-link
+            if (incomingInvoiceId.isNotEmpty) {
+              newInv.invoiceDataId = incomingInvoiceId;
+              debugPrint(
+                '🧷 [INVOICE ITEMS] NEW item saved with raw invoiceDataId=$incomingInvoiceId (no ToOne link yet)',
+              );
+            }
+          }
+
+          final newObxId = invoiceItemsBox.put(newInv);
+          localItem = invoiceItemsBox.get(newObxId)!;
+          syncedInvoiceItems.add(localItem);
+
+          debugPrint(
+            '✅ [INVOICE ITEMS] Saved new item PB=$invPbId → OBX=$newObxId',
+          );
+        } else {
+          debugPrint(
+            '♻️ [INVOICE ITEMS] Existing item found PB=$invPbId → OBX=${existingInv.objectBoxId}',
+          );
+
+          // ✅ Load the persisted instance and update fields
+          localItem = invoiceItemsBox.get(existingInv.objectBoxId)!;
+
+          localItem
+            ..id = inv.id
+            ..name = inv.name
+            ..brand = inv.brand
+            ..refId = inv.refId
+            ..uom = inv.uom
+            ..quantity = inv.quantity
+            ..uomPrice = inv.uomPrice
+            ..totalAmount = inv.totalAmount
+            ..totalBaseQuantity = inv.totalBaseQuantity
+            ..created = inv.created
+            ..updated = inv.updated;
+
+          // ✅ Ensure invoice relation is linked
+          if (resolvedInvoice != null) {
+            localItem.invoiceData.target = resolvedInvoice;
+            localItem.invoiceDataId = (resolvedInvoice.id ?? '').toString();
+
+            debugPrint(
+              '🔗 [INVOICE ITEMS] Linked EXISTING item → invoiceData '
+              'pb=${resolvedInvoice.pocketbaseId} id=${resolvedInvoice.id}',
+            );
+          } else {
+            // keep raw if we have it
+            if ((localItem.invoiceDataId ?? '').trim().isEmpty &&
+                incomingInvoiceId.isNotEmpty) {
+              localItem.invoiceDataId = incomingInvoiceId;
+              debugPrint(
+                '🧷 [INVOICE ITEMS] EXISTING item stored raw invoiceDataId=$incomingInvoiceId (no ToOne link yet)',
+              );
+            }
+          }
+
+          // ✅ Persist changes
+          invoiceItemsBox.put(localItem);
+          syncedInvoiceItems.add(localItem);
+        }
+      }
+
+      // BEFORE attach
+      debugPrint(
+        '📦 [INVOICE ITEMS] Attaching ${syncedInvoiceItems.length} items '
+        'to DeliveryData PB=$deliveryPbId (previous=${fresh.invoiceItems.length})',
+      );
+
+      // Attach to delivery
+      fresh.invoiceItems
+        ..clear()
+        ..addAll(syncedInvoiceItems);
+
+      // IMPORTANT: persist parent (depending on your overall flow)
+      deliveryDataBox.put(fresh);
+
+      // AFTER attach
+      debugPrint(
+        '✅ [INVOICE ITEMS] DeliveryData PB=$deliveryPbId now has '
+        '${fresh.invoiceItems.length} invoice items',
+      );
+
+      // -------------------------------------------------------------
+      // ✅ Debug: verify invoice links on first few items
+      // -------------------------------------------------------------
+      for (int i = 0; i < fresh.invoiceItems.length && i < 5; i++) {
+        final it = fresh.invoiceItems[i];
+        debugPrint(
+          '🧾 [VERIFY] Item ${i + 1}: ${it.name} '
+          '| itemPB=${it.pocketbaseId} '
+          '| invTarget=${it.invoiceData.target?.id} '
+          '| invPB=${it.invoiceData.target?.id} '
+          '| invRaw=${it.invoiceDataId}',
         );
       }
-    } catch (e) {
-      debugPrint('⚠️ Failed to cleanup DeliveryUpdates for $deliveryPbId: $e');
-    }
 
-    for (final up in incomingUpdates) {
-      final upId = (up.id ?? '').trim();
-      if (upId.isEmpty) {
-        debugPrint('⚠️ Skipping DeliveryUpdate: missing update id');
-        continue;
+      // -------------------------------------------------------------
+      // 4️⃣ Sync DeliveryUpdates (ToMany) — snapshot first + DEDUP
+      // -------------------------------------------------------------
+      final updatesList = <DeliveryUpdateModel>[];
+      final incomingUpdates = d.deliveryUpdates.toList();
+      final seenUpdateIds = <String>{}; // Track to avoid duplicates in batch
+
+      // ✅ Cleanup by deliveryDataPbId (this is what forceReload uses)
+      try {
+        final cleanupQuery =
+            deliveryUpdateBox
+                .query(
+                  DeliveryUpdateModel_.deliveryDataPbId.equals(deliveryPbId),
+                )
+                .build();
+
+        final existingForDelivery = cleanupQuery.find();
+        cleanupQuery.close();
+
+        if (existingForDelivery.isNotEmpty) {
+          debugPrint(
+            '🧹 Found ${existingForDelivery.length} existing DeliveryUpdates for PB:$deliveryPbId',
+          );
+
+          // ---------------------------------------------------
+          // 🆕 SMART CLEANUP: Keep synced ones, remove failed/pending
+          // ---------------------------------------------------
+          final toRemove = <int>[];
+          for (final existing in existingForDelivery) {
+            // Only remove non-synced updates (failed, pending, etc.)
+            if (existing.syncStatus != 'synced') {
+              toRemove.add(existing.objectBoxId);
+            } else {
+              debugPrint(
+                '   ✅ Keeping synced update: ${existing.title} (${existing.id})',
+              );
+            }
+          }
+
+          if (toRemove.isNotEmpty) {
+            deliveryUpdateBox.removeMany(toRemove);
+            debugPrint('   🗑️ Removed ${toRemove.length} non-synced updates');
+          }
+        }
+      } catch (e) {
+        debugPrint(
+          '⚠️ Failed to cleanup DeliveryUpdates for $deliveryPbId: $e',
+        );
       }
 
+      for (final up in incomingUpdates) {
+        final upId = (up.id ?? '').trim();
+        if (upId.isEmpty) {
+          debugPrint('⚠️ Skipping DeliveryUpdate: missing update id');
+          continue;
+        }
+
+        // ---------------------------------------------------
+        // 🆕 DEDUPLICATION: Skip if already in batch
+        // ---------------------------------------------------
+        if (seenUpdateIds.contains(upId)) {
+          debugPrint(
+            '⚠️ [DEDUP] Duplicate DeliveryUpdate in batch: $upId (${up.title})',
+          );
+          skippedDuplicates++;
+          continue;
+        }
+        seenUpdateIds.add(upId);
+
+        debugPrint(
+          "🕒 PB update → id=$upId, title=${up.title}, time=${up.time}, created=${up.created}",
+        );
+
+        final existingUp =
+            deliveryUpdateBox
+                .query(DeliveryUpdateModel_.id.equals(upId))
+                .build()
+                .findFirst();
+
+        final model =
+            existingUp != null
+                ? deliveryUpdateBox.get(existingUp.objectBoxId)!
+                : (DeliveryUpdateModel()..id = upId);
+
+        // ✅ CRITICAL for forceReloadDeliveryUpdatesByTripId queries
+        model.deliveryDataPbId = deliveryPbId;
+
+        model
+          ..title = up.title
+          ..subtitle = up.subtitle
+          ..time = up.time
+          ..created = up.created
+          ..updated = up.updated
+          ..lastLocalUpdatedAt = up.lastLocalUpdatedAt;
+
+        final savedObxId = deliveryUpdateBox.put(model);
+        updatesList.add(deliveryUpdateBox.get(savedObxId)!);
+
+        debugPrint(
+          "✅ Saved DeliveryUpdate → id=$upId, deliveryPB=$deliveryPbId, obx=$savedObxId",
+        );
+      }
+
+      fresh.deliveryUpdates
+        ..clear()
+        ..addAll(updatesList);
+
+      // -------------------------------------------------------------
+      // 5️⃣ Save DeliveryData
+      // -------------------------------------------------------------
+      final obxId = deliveryDataBox.put(fresh);
+      uniqueDeliveries[deliveryPbId] = deliveryDataBox.get(obxId)!;
+
       debugPrint(
-        "🕒 PB update → id=$upId, title=${up.title}, time=${up.time}, created=${up.created}",
-      );
-
-      final existingUp =
-          deliveryUpdateBox
-              .query(DeliveryUpdateModel_.id.equals(upId))
-              .build()
-              .findFirst();
-
-      final model = existingUp != null
-          ? deliveryUpdateBox.get(existingUp.objectBoxId)!
-          : (DeliveryUpdateModel()..id = upId);
-
-      // ✅ CRITICAL for forceReloadDeliveryUpdatesByTripId queries
-      model.deliveryDataPbId = deliveryPbId;
-
-      model
-        ..title = up.title
-        ..subtitle = up.subtitle
-        ..time = up.time
-        ..created = up.created
-        ..updated = up.updated
-        ..lastLocalUpdatedAt = up.lastLocalUpdatedAt;
-
-      final savedObxId = deliveryUpdateBox.put(model);
-      updatesList.add(deliveryUpdateBox.get(savedObxId)!);
-
-      debugPrint(
-        "✅ Saved DeliveryUpdate → id=$upId, deliveryPB=$deliveryPbId, obx=$savedObxId",
+        '🔁 DeliveryData synced → ${fresh.ownerName} OBX: $obxId '
+        'Invoices: ${fresh.invoices.length}, Updates: ${fresh.deliveryUpdates.length}',
       );
     }
 
-    fresh.deliveryUpdates
+    // ✅ IMPORTANT: Update Trip relation ONLY AFTER LOOP (prevents concurrent modification)
+    trip.deliveryData
       ..clear()
-      ..addAll(updatesList);
+      ..addAll(uniqueDeliveries.values);
 
-    // -------------------------------------------------------------
-    // 5️⃣ Save DeliveryData
-    // -------------------------------------------------------------
-    final obxId = deliveryDataBox.put(fresh);
-    uniqueDeliveries[deliveryPbId] = deliveryDataBox.get(obxId)!;
+    tripBox.put(trip);
 
     debugPrint(
-      '🔁 DeliveryData synced → ${fresh.ownerName} OBX: $obxId '
-      'Invoices: ${fresh.invoices.length}, Updates: ${fresh.deliveryUpdates.length}',
+      '🟦 Trip saved → ${trip.name} with ${trip.deliveryData.length} delivery items',
     );
+
+    // ---------------------------------------------------
+    // 📊 SUMMARY OF SYNC OPERATION
+    // ---------------------------------------------------
+    if (skippedDuplicates > 0) {
+      debugPrint(
+        '✅ SYNC COMPLETE: Processed ${uniqueDeliveries.length} deliveries, skipped $skippedDuplicates duplicate entries',
+      );
+    } else {
+      debugPrint(
+        '✅ SYNC COMPLETE: Processed ${uniqueDeliveries.length} deliveries, no duplicates found',
+      );
+    }
   }
-
-  // ✅ IMPORTANT: Update Trip relation ONLY AFTER LOOP (prevents concurrent modification)
-  trip.deliveryData
-    ..clear()
-    ..addAll(uniqueDeliveries.values);
-
-  tripBox.put(trip);
-
-  debugPrint(
-    '🟦 Trip saved → ${trip.name} with ${trip.deliveryData.length} delivery items',
-  );
-}
-
 
   Future<void> _syncEndTripChecklistForTrip(TripModel trip) async {
     final Map<String, EndTripChecklistModel> uniqueChecklist = {};

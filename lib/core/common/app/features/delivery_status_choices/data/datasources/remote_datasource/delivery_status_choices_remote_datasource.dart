@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/data/model/delivery_status_choices_model.dart';
+import 'package:x_pro_delivery_app/core/enums/sync_status_enums.dart';
 
 import '../../../../../../../errors/exceptions.dart';
 import '../../../../trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
@@ -235,6 +236,46 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       }
 
       // ---------------------------------------------------
+      // 🆕 0️⃣-A IDEMPOTENCY CHECK: Prevent duplicate remote creation
+      // ---------------------------------------------------
+      try {
+        final deliveryRecord = await _pocketBaseClient
+            .collection('deliveryData')
+            .getOne(deliveryDataId, expand: 'deliveryUpdates');
+
+        final existingUpdates =
+            deliveryRecord.expand['deliveryUpdates'] as List? ?? [];
+
+        // Check if this exact status already exists and is not failed
+        for (final update in existingUpdates) {
+          final updateStatusId = update.data?['statusChoicePbId']?.toString();
+          final updateSyncStatus = update.data?['syncStatus']?.toString() ?? '';
+          final updateTitle = update.data?['title']?.toString() ?? '';
+
+          if (updateStatusId == status.id &&
+              (updateSyncStatus == SyncStatus.pending.name ||
+                  updateSyncStatus == SyncStatus.syncing.name)) {
+            debugPrint(
+              '⚠️ IDEMPOTENCY: Status "${status.title}" already exists in remote (not failed)',
+            );
+            debugPrint('   📋 Existing update ID: ${update.id}');
+            debugPrint('   🔄 Sync status: $updateSyncStatus');
+            debugPrint(
+              '   ✅ Returning existing ID instead of creating duplicate',
+            );
+            return update.id; // ✅ Return existing instead of creating new
+          }
+        }
+
+        debugPrint(
+          '✅ Idempotency check passed - no pending/syncing duplicate found',
+        );
+      } catch (e) {
+        debugPrint('⚠️ Idempotency check failed (will attempt creation): $e');
+        // Continue with creation if idempotency check fails
+      }
+
+      // ---------------------------------------------------
       // 1️⃣ CREATE DeliveryUpdate (COPY DATA)
       // ---------------------------------------------------
       final currentTime = DateTime.now().toIso8601String();
@@ -459,9 +500,57 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
         );
       }
 
-      final currentTime = DateTime.now().toIso8601String();
+      // ---------------------------------------------------
+      // 🆕 BULK DEDUPLICATION: Filter out customers with existing pending status
+      // ---------------------------------------------------
+      final customersToUpdate = <String>[];
+      final skippedCustomers = <String>[];
 
       for (final customerId in customerIds) {
+        try {
+          final deliveryRecord = await _pocketBaseClient
+              .collection('deliveryData')
+              .getOne(customerId, expand: 'deliveryUpdates');
+
+          final existingUpdates =
+              deliveryRecord.expand['deliveryUpdates'] as List? ?? [];
+
+          // Check if this status is already pending/syncing
+          final hasDuplicate = existingUpdates.any((update) {
+            final updateStatusId = update.data?['statusChoicePbId']?.toString();
+            final updateSyncStatus =
+                update.data?['syncStatus']?.toString() ?? '';
+            return updateStatusId == status.id &&
+                (updateSyncStatus == SyncStatus.pending.name ||
+                    updateSyncStatus == SyncStatus.syncing.name);
+          });
+
+          if (hasDuplicate) {
+            skippedCustomers.add(customerId);
+            debugPrint(
+              '   ⚠️ Skipping $customerId - duplicate pending "${status.title}" exists',
+            );
+          } else {
+            customersToUpdate.add(customerId);
+          }
+        } catch (e) {
+          debugPrint('   ⚠️ Could not check duplicates for $customerId: $e');
+          customersToUpdate.add(customerId); // Try anyway
+        }
+      }
+
+      debugPrint(
+        '📊 Processing ${customersToUpdate.length} customers (${skippedCustomers.length} duplicates skipped)',
+      );
+
+      if (customersToUpdate.isEmpty) {
+        debugPrint('✅ All customers have duplicate pending updates - skipping');
+        return;
+      }
+
+      final currentTime = DateTime.now().toIso8601String();
+
+      for (final customerId in customersToUpdate) {
         try {
           debugPrint('➡️ Updating customer: $customerId');
 
@@ -520,7 +609,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       }
 
       debugPrint(
-        '🎉 Bulk update completed for ${customerIds.length} customers',
+        '🎉 Bulk update completed for ${customersToUpdate.length} customers (${skippedCustomers.length} skipped)',
       );
     } catch (e) {
       debugPrint('❌ Bulk operation failed: ${e.toString()}');
@@ -774,104 +863,96 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       );
     }
   }
-  
-@override
-Future<String> revertUpdateCustomerStatus(
-  String deliveryDataId,
-  DeliveryStatusChoicesModel status,
-) async {
-  try {
-    debugPrint(
-      '🔄 REVERT: Removing latest status for DeliveryData: $deliveryDataId',
-    );
 
-    // ---------------------------------------------------
-    // 1️⃣ GET DELIVERY DATA WITH UPDATES
-    // ---------------------------------------------------
-    final deliveryRecord = await _pocketBaseClient
-        .collection('deliveryData')
-        .getOne(
-          deliveryDataId,
-          expand: 'deliveryUpdates',
-        );
-
-    if (deliveryRecord.expand['deliveryUpdates'] == null ||
-        (deliveryRecord.expand['deliveryUpdates'] as List).isEmpty) {
-      debugPrint('⚠️ No delivery updates found to revert');
-
-      throw const ServerException(
-        message: 'No delivery updates to revert',
-        statusCode: '404',
-      );
-    }
-
-    final updates = deliveryRecord.expand['deliveryUpdates'] as List;
-
-    // ---------------------------------------------------
-    // 2️⃣ GET LATEST UPDATE
-    // ---------------------------------------------------
-    final lastUpdate = updates.last;
-    final lastUpdateId = lastUpdate.id;
-
-    debugPrint('🗑️ Reverting last update: $lastUpdateId');
-
-    // ---------------------------------------------------
-    // 3️⃣ REMOVE RELATION FROM DELIVERYDATA
-    // ---------------------------------------------------
-    await _pocketBaseClient
-        .collection('deliveryData')
-        .update(
-          deliveryDataId,
-          body: {
-            'deliveryUpdates-': [lastUpdateId], // 🔥 remove relation
-          },
-        );
-
-    debugPrint('✅ Removed relation from deliveryData');
-
-    // ---------------------------------------------------
-    // 4️⃣ DELETE DELIVERY UPDATE RECORD
-    // ---------------------------------------------------
-    await _pocketBaseClient
-        .collection('deliveryUpdate')
-        .delete(lastUpdateId);
-
-    debugPrint('🗑️ Deleted deliveryUpdate record');
-
-    // ---------------------------------------------------
-    // 5️⃣ OPTIONAL: DELETE RELATED NOTIFICATION
-    // ---------------------------------------------------
+  @override
+  Future<String> revertUpdateCustomerStatus(
+    String deliveryDataId,
+    DeliveryStatusChoicesModel status,
+  ) async {
     try {
-      final notifList = await _pocketBaseClient
-          .collection('notifications')
-          .getFullList(
-            filter: 'status = "$lastUpdateId"',
+      debugPrint(
+        '🔄 REVERT: Removing latest status for DeliveryData: $deliveryDataId',
+      );
+
+      // ---------------------------------------------------
+      // 1️⃣ GET DELIVERY DATA WITH UPDATES
+      // ---------------------------------------------------
+      final deliveryRecord = await _pocketBaseClient
+          .collection('deliveryData')
+          .getOne(deliveryDataId, expand: 'deliveryUpdates');
+
+      if (deliveryRecord.expand['deliveryUpdates'] == null ||
+          (deliveryRecord.expand['deliveryUpdates'] as List).isEmpty) {
+        debugPrint('⚠️ No delivery updates found to revert');
+
+        throw const ServerException(
+          message: 'No delivery updates to revert',
+          statusCode: '404',
+        );
+      }
+
+      final updates = deliveryRecord.expand['deliveryUpdates'] as List;
+
+      // ---------------------------------------------------
+      // 2️⃣ GET LATEST UPDATE
+      // ---------------------------------------------------
+      final lastUpdate = updates.last;
+      final lastUpdateId = lastUpdate.id;
+
+      debugPrint('🗑️ Reverting last update: $lastUpdateId');
+
+      // ---------------------------------------------------
+      // 3️⃣ REMOVE RELATION FROM DELIVERYDATA
+      // ---------------------------------------------------
+      await _pocketBaseClient
+          .collection('deliveryData')
+          .update(
+            deliveryDataId,
+            body: {
+              'deliveryUpdates-': [lastUpdateId], // 🔥 remove relation
+            },
           );
 
-      for (final notif in notifList) {
-        await _pocketBaseClient
+      debugPrint('✅ Removed relation from deliveryData');
+
+      // ---------------------------------------------------
+      // 4️⃣ DELETE DELIVERY UPDATE RECORD
+      // ---------------------------------------------------
+      await _pocketBaseClient.collection('deliveryUpdate').delete(lastUpdateId);
+
+      debugPrint('🗑️ Deleted deliveryUpdate record');
+
+      // ---------------------------------------------------
+      // 5️⃣ OPTIONAL: DELETE RELATED NOTIFICATION
+      // ---------------------------------------------------
+      try {
+        final notifList = await _pocketBaseClient
             .collection('notifications')
-            .delete(notif.id);
+            .getFullList(filter: 'status = "$lastUpdateId"');
 
-        debugPrint('🗑️ Deleted notification: ${notif.id}');
+        for (final notif in notifList) {
+          await _pocketBaseClient.collection('notifications').delete(notif.id);
+
+          debugPrint('🗑️ Deleted notification: ${notif.id}');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Failed to delete notification: $e');
       }
+
+      // ---------------------------------------------------
+      // 6️⃣ RETURN REMOVED UPDATE ID
+      // ---------------------------------------------------
+      return lastUpdateId;
     } catch (e) {
-      debugPrint('⚠️ Failed to delete notification: $e');
+      debugPrint('❌ REVERT FAILED: ${e.toString()}');
+
+      throw ServerException(
+        message:
+            e is ServerException
+                ? e.message
+                : 'Failed to revert status: ${e.toString()}',
+        statusCode: e is ServerException ? e.statusCode : '500',
+      );
     }
-
-    // ---------------------------------------------------
-    // 6️⃣ RETURN REMOVED UPDATE ID
-    // ---------------------------------------------------
-    return lastUpdateId;
-  } catch (e) {
-    debugPrint('❌ REVERT FAILED: ${e.toString()}');
-
-    throw ServerException(
-      message: e is ServerException
-          ? e.message
-          : 'Failed to revert status: ${e.toString()}',
-      statusCode: e is ServerException ? e.statusCode : '500',
-    );
   }
-}
 }
