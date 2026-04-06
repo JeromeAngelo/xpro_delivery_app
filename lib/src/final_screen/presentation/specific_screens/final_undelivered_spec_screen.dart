@@ -7,6 +7,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelle
 import 'package:x_pro_delivery_app/core/enums/undeliverable_reason.dart';
 
 import '../../../../core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_state.dart';
+
 class FinalUndeliveredSpecScreen extends StatefulWidget {
   final String cancelledInvoiceId;
 
@@ -43,7 +44,7 @@ class _FinalUndeliveredSpecScreenState
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-           context.go('/final-screen');
+            context.go('/final-screen');
           },
         ),
         actions: [
@@ -106,17 +107,19 @@ class _FinalUndeliveredSpecScreenState
     final customer = cancelledInvoice.customer.target;
     final invoices = cancelledInvoice.invoices;
     final deliveryData = cancelledInvoice.deliveryData.target;
-   // final trip = cancelledInvoice.trip.target;
+    // final trip = cancelledInvoice.trip.target;
 
     debugPrint('🎯 Cancelled Invoice Details:');
     debugPrint('   📦 Cancelled Invoice ID: ${cancelledInvoice.id}');
     debugPrint('   👤 Customer: ${customer?.name ?? 'Unknown'}');
     debugPrint('   📄 Number of invoices: ${invoices.length}');
-    
+
     // Log individual invoice details
     for (int i = 0; i < invoices.length; i++) {
       final invoice = invoices[i];
-      debugPrint('   📋 Invoice ${i + 1}: ${invoice.refId ?? invoice.name} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}');
+      debugPrint(
+        '   📋 Invoice ${i + 1}: ${invoice.refId ?? invoice.name} - ₱${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
+      );
     }
 
     return RefreshIndicator(
@@ -221,7 +224,6 @@ class _FinalUndeliveredSpecScreenState
     );
   }
 
-
   Widget _buildCustomerInfoCard(BuildContext context, customer) {
     return Card(
       elevation: 2,
@@ -299,7 +301,7 @@ class _FinalUndeliveredSpecScreenState
               'Number of Invoices',
               '${invoices.length} ${invoices.length == 1 ? 'Invoice' : 'Invoices'}',
             ),
-            
+
             // Show individual invoice details
             ...invoices.asMap().entries.map((entry) {
               final index = entry.key;
@@ -313,7 +315,7 @@ class _FinalUndeliveredSpecScreenState
                 ],
               );
             }),
-            
+
             _buildInfoRow(
               'Total Invoices Amount',
               '₱${totalInvoicesAmount.toStringAsFixed(2)}',
@@ -354,12 +356,9 @@ class _FinalUndeliveredSpecScreenState
               'Delivery Number',
               deliveryData.deliveryNumber ?? 'Unknown',
             ),
-            
+
             if (deliveryData.created != null)
-              _buildInfoRow(
-                'Delivery Date',
-                _formatDate(deliveryData.created),
-              ),
+              _buildInfoRow('Delivery Date', _formatDate(deliveryData.created)),
           ],
         ),
       ),
@@ -592,21 +591,23 @@ class _FinalUndeliveredSpecScreenState
     );
   }
 
-  String _getReasonDisplayName(UndeliverableReason? reason) {
-    if (reason == null) return 'No reason specified';
-
+  String _getReasonDisplayName(UndeliverableReason reason) {
     switch (reason) {
+      case UndeliverableReason.storeClosed:
+        return 'Store Closed';
+
       case UndeliverableReason.customerNotAvailable:
         return 'Customer Not Available';
-
       case UndeliverableReason.environmentalIssues:
-        return 'Refused Delivery';
-      case UndeliverableReason.storeClosed:
-        return 'Business Closed';
+        return 'Environmental Issues';
+      case UndeliverableReason.noCashAvailable:
+        return 'No Cash Available';
+      case UndeliverableReason.other:
+        return 'Other';
       case UndeliverableReason.wrongInvoice:
-        return 'No Payment';
+        return 'Wrong Invoice';
       case UndeliverableReason.none:
-        return 'Damaged Goods';
+        return 'Unspecified Reason';
     }
   }
 

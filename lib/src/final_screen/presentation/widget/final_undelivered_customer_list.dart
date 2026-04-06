@@ -212,14 +212,19 @@ class FinalUndeliveredCustomerList extends StatelessWidget {
     return '$formattedReason - $dateStr';
   }
 
-  String _getReasonDisplayName(UndeliverableReason reason) {
+ String _getReasonDisplayName(UndeliverableReason reason) {
     switch (reason) {
       case UndeliverableReason.storeClosed:
         return 'Store Closed';
+
       case UndeliverableReason.customerNotAvailable:
         return 'Customer Not Available';
       case UndeliverableReason.environmentalIssues:
         return 'Environmental Issues';
+      case UndeliverableReason.noCashAvailable:
+        return 'No Cash Available';
+      case UndeliverableReason.other:
+        return 'Other';
       case UndeliverableReason.wrongInvoice:
         return 'Wrong Invoice';
       case UndeliverableReason.none:

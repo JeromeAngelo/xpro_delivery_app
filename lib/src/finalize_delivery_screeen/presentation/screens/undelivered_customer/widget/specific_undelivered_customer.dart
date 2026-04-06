@@ -593,21 +593,23 @@ class _SpecificUndeliveredCustomerScreenState
     );
   }
 
-  String _getReasonDisplayName(UndeliverableReason? reason) {
-    if (reason == null) return 'No reason specified';
-
+   String _getReasonDisplayName(UndeliverableReason reason) {
     switch (reason) {
+      case UndeliverableReason.storeClosed:
+        return 'Store Closed';
+
       case UndeliverableReason.customerNotAvailable:
         return 'Customer Not Available';
-
       case UndeliverableReason.environmentalIssues:
-        return 'Refused Delivery';
-      case UndeliverableReason.storeClosed:
-        return 'Business Closed';
+        return 'Environmental Issues';
+      case UndeliverableReason.noCashAvailable:
+        return 'No Cash Available';
+      case UndeliverableReason.other:
+        return 'Other';
       case UndeliverableReason.wrongInvoice:
-        return 'No Payment';
+        return 'Wrong Invoice';
       case UndeliverableReason.none:
-        return 'Damaged Goods';
+        return 'Unspecified Reason';
     }
   }
 

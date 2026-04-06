@@ -4,4 +4,6 @@ enum UndeliverableReason {
   customerNotAvailable,
   environmentalIssues,
   wrongInvoice,
+  noCashAvailable,
+  other,
 }

@@ -681,63 +681,89 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       }
 
       // ---------------------------------------------------
-      // 🆕 DEDUPLICATION: Filter out customers with existing pending updates
+      // 🚀 OPTIMIZED BATCH CHECK: Get all updates in ONE query
+      // ---------------------------------------------------
+      final q =
+          deliveryUpdateBox
+              .query(DeliveryUpdateModel_.deliveryDataPbId.oneOf(customerIds))
+              .build();
+      final allUpdates = q.find();
+      q.close();
+
+      // Group by delivery ID for O(1) lookup
+      final Map<String, List<DeliveryUpdateModel>> updatesByDelivery = {};
+      for (final update in allUpdates) {
+        final key = update.deliveryDataPbId ?? '';
+        updatesByDelivery.putIfAbsent(key, () => []).add(update);
+      }
+
+      // ---------------------------------------------------
+      // 🆕 DEDUPLICATION: Filter out customers with existing status (any state)
+      // Also prevents duplicates in PocketBase
       // ---------------------------------------------------
       final customersToUpdate = <String>[];
       final skippedCustomers = <String>[];
+      int skippedByStatus = 0;
+      int skippedByPending = 0;
 
       for (final customerId in customerIds) {
-        try {
-          final checkQuery =
-              deliveryUpdateBox
-                  .query(
-                    DeliveryUpdateModel_.deliveryDataPbId.equals(customerId),
-                  )
-                  .build();
-          final existingUpdates = checkQuery.find();
-          checkQuery.close();
+        final existingUpdates = updatesByDelivery[customerId] ?? [];
 
-          // Check if this status is already pending/syncing
-          final hasDuplicate = existingUpdates.any(
+        // ✅ Block if any record exists with this status (prevents PB duplicates)
+        final hasDuplicate = existingUpdates.any(
+          (u) => u.statusChoicePbId == statusChoice.id,
+        );
+
+        if (hasDuplicate) {
+          // ⚡ Check if it's already synced (vs just pending/syncing)
+          final isSynced = existingUpdates.any(
             (u) =>
                 u.statusChoicePbId == statusChoice.id &&
-                (u.syncStatus == SyncStatus.pending.name ||
-                    u.syncStatus == SyncStatus.syncing.name),
+                u.syncStatus == SyncStatus.synced.name,
           );
 
-          if (hasDuplicate) {
-            skippedCustomers.add(customerId);
+          if (isSynced) {
+            skippedByStatus++;
             debugPrint(
-              'LOCAL ⚠️ Skipping $customerId - duplicate pending "${statusChoice.title}" already exists',
+              '❌ [DEDUP] Blocking $customerId - Status "${statusChoice.title}" already synced to PocketBase',
             );
           } else {
-            customersToUpdate.add(customerId);
+            skippedByPending++;
+            debugPrint(
+              '⚠️ [DEDUP] Skipping $customerId - Status "${statusChoice.title}" already pending/syncing',
+            );
           }
-        } catch (e) {
-          debugPrint('LOCAL ⚠️ Error checking duplicates for $customerId: $e');
-          customersToUpdate.add(customerId); // Try anyway
+          skippedCustomers.add(customerId);
+        } else {
+          customersToUpdate.add(customerId);
         }
       }
 
       debugPrint(
-        'LOCAL 📊 Processing ${customersToUpdate.length} customers (${skippedCustomers.length} duplicates skipped)',
+        'LOCAL 📊 Batch summary: ${customersToUpdate.length} to process | $skippedByStatus already synced | $skippedByPending pending/syncing',
       );
 
-      // Process only non-duplicate customers
+      // ✨ BATCH PROCESS: Update only new customers
+      final stopwatch = Stopwatch()..start();
+      int processedCount = 0;
+      int failedCount = 0;
+
       for (final customerId in customersToUpdate) {
         try {
           await updateCustomerStatus(customerId, statusChoice);
-          debugPrint('LOCAL ✅ Queued update for $customerId');
+          processedCount++;
         } catch (e, st) {
+          failedCount++;
           debugPrint(
             'LOCAL ⚠️ Failed to queue update for $customerId: $e\n$st',
           );
-          // continue with next customer
         }
       }
 
+      stopwatch.stop();
+
       debugPrint(
-        'LOCAL 🎉 Bulk enqueue completed for ${customersToUpdate.length} customers (${skippedCustomers.length} skipped)',
+        '✅ Bulk completed in ${stopwatch.elapsedMilliseconds}ms: $processedCount queued, $failedCount failed, ${skippedCustomers.length} skipped (prevented $skippedByStatus PB duplicates)',
       );
     } catch (e, st) {
       debugPrint('LOCAL ❌ Bulk enqueue failed: $e\n$st');

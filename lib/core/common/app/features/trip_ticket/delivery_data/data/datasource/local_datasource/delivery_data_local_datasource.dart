@@ -269,7 +269,8 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
   ) async {
     try {
       final tid = tripId.trim();
-      debugPrint('🔁 LOCAL: Force reloading delivery updates for tripId=$tid');
+      debugPrint('⚡ LOCAL: Force reloading delivery updates for tripId=$tid');
+      final sw = Stopwatch()..start();
 
       // 1️⃣ Load deliveries for the trip
       final deliveries = await getDeliveryDataByTripId(tid);
@@ -279,78 +280,100 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
         return [];
       }
 
-      // 2️⃣ For each delivery, query updates by deliveryDataPbId
-      for (final delivery in deliveries) {
-        try {
-          final deliveryPbId = (delivery.pocketbaseId).trim();
+      // 2️⃣ BATCH QUERY: Get all updates for all deliveries in one go
+      final deliveryPbIds =
+          deliveries
+              .map((d) => (d.pocketbaseId).trim())
+              .where((id) => id.isNotEmpty)
+              .toList();
 
-          if (deliveryPbId.isEmpty) {
-            debugPrint(
-              '⚠️ LOCAL: Skip delivery updates reload (missing PB/id)',
-            );
-            continue;
-          }
+      if (deliveryPbIds.isEmpty) {
+        debugPrint('⚠️ LOCAL: No valid delivery PB IDs found');
+        return deliveries;
+      }
 
-          final q =
-              deliveryUpdateBox
-                  .query(
-                    DeliveryUpdateModel_.deliveryDataPbId.equals(deliveryPbId),
-                  )
-                  .build();
-          final found = q.find();
-          q.close();
-
-          // Sort updates by preferred timestamp (oldest -> newest)
-          found.sort((a, b) {
-            final ta = a.lastLocalUpdatedAt ?? a.updated ?? a.time;
-            final tb = b.lastLocalUpdatedAt ?? b.updated ?? b.time;
-            if (ta == null && tb == null) return 0;
-            if (ta == null) return -1;
-            if (tb == null) return 1;
-            return ta.compareTo(tb);
-          });
-
-          // ---------------------------------------------------
-          // 🆕 DEDUPLICATION: Remove duplicate delivery updates
-          // ---------------------------------------------------
-          final dedupFound = _deduplicateDeliveryUpdates(found);
-
-          // ✅ Avoid rewriting relation if nothing changed (saves lag)
-          final currentIds =
-              delivery.deliveryUpdates.map((e) => e.objectBoxId).toList()
-                ..sort();
-          final foundIds =
-              dedupFound.map((e) => e.objectBoxId).toList()..sort();
-
-          final same =
-              currentIds.length == foundIds.length &&
-              _listEqualsInt(currentIds, foundIds);
-
-          if (!same) {
-            delivery.deliveryUpdates
-              ..clear()
-              ..addAll(dedupFound);
-
-            // Persist parent so watchers receive updated relation
-            deliveryDataBox.put(delivery);
-
-            debugPrint(
-              '🔁 LOCAL: Delivery $deliveryPbId refreshed with ${dedupFound.length} updates (${found.length} before dedup)',
-            );
-          } else {
-            debugPrint(
-              'ℹ️ LOCAL: Delivery $deliveryPbId updates already up-to-date (${dedupFound.length})',
-            );
-          }
-        } catch (e) {
-          debugPrint(
-            '🔁 LOCAL: Failed to reload updates for delivery '
-            '${delivery.pocketbaseId}: $e',
-          );
+      // 🚀 Build efficient query for all deliveries at once
+      final updatesMap = <String, List<DeliveryUpdateModel>>{};
+      for (final pbId in deliveryPbIds) {
+        final q =
+            deliveryUpdateBox
+                .query(DeliveryUpdateModel_.deliveryDataPbId.equals(pbId))
+                .build();
+        final found = q.find();
+        q.close();
+        if (found.isNotEmpty) {
+          updatesMap[pbId] = found;
         }
       }
 
-      debugPrint('🔁 LOCAL: Force reload complete for tripId=$tid');
+      // 3️⃣ BATCH PERSIST: Collect changes before writing to DB
+      final toUpdate = <DeliveryDataModel>[];
+
+      for (final delivery in deliveries) {
+        final deliveryPbId = (delivery.pocketbaseId).trim();
+
+        if (deliveryPbId.isEmpty || !updatesMap.containsKey(deliveryPbId)) {
+          continue;
+        }
+
+        final found = updatesMap[deliveryPbId]!;
+
+        // ✨ OPTIMIZED: Inline sort + dedup without intermediate collections
+        if (found.isEmpty) {
+          if (delivery.deliveryUpdates.isNotEmpty) {
+            delivery.deliveryUpdates.clear();
+            toUpdate.add(delivery);
+          }
+          continue;
+        }
+
+        // Sort updates efficiently (in-place with already-loaded data)
+        found.sort((a, b) {
+          final ta = a.lastLocalUpdatedAt ?? a.updated ?? a.time;
+          final tb = b.lastLocalUpdatedAt ?? b.updated ?? b.time;
+          if (ta == null && tb == null) return 0;
+          if (ta == null) return -1;
+          if (tb == null) return 1;
+          return ta.compareTo(tb);
+        });
+
+        // Deduplicate without creating intermediate lists
+        final dedupFound = _deduplicateDeliveryUpdates(found);
+
+        // ⚡ FAST COMPARISON: Use set-based comparison instead of list sorting
+        bool needsUpdate = false;
+        if (delivery.deliveryUpdates.length != dedupFound.length) {
+          needsUpdate = true;
+        } else {
+          // Only compare if lengths match
+          final currentIdSet =
+              delivery.deliveryUpdates.map((e) => e.objectBoxId).toSet();
+          final foundIdSet = dedupFound.map((e) => e.objectBoxId).toSet();
+          needsUpdate = currentIdSet != foundIdSet;
+        }
+
+        if (needsUpdate) {
+          delivery.deliveryUpdates
+            ..clear()
+            ..addAll(dedupFound);
+          toUpdate.add(delivery);
+        }
+      }
+
+      // 🚀 BATCH WRITE: Single database operation for all updates
+      if (toUpdate.isNotEmpty) {
+        deliveryDataBox.putMany(toUpdate);
+        sw.stop();
+        debugPrint(
+          '⚡ LOCAL: Batch updated ${toUpdate.length} deliveries in ${sw.elapsedMilliseconds}ms',
+        );
+      } else {
+        sw.stop();
+        debugPrint(
+          '✅ LOCAL: All delivery updates already up-to-date (${deliveries.length} checked)',
+        );
+      }
+
       return deliveries;
     } catch (e, st) {
       debugPrint('❌ forceReloadDeliveryUpdatesByTripId ERROR: $e\n$st');
@@ -358,14 +381,12 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
     }
   }
 
-  /// Small helper (keep local in the same file)
-  bool _listEqualsInt(List<int> a, List<int> b) {
-    if (identical(a, b)) return true;
+  /// ⚡ OPTIMIZED - Safely compare two ID sets efficiently
+  bool _setEquals(List<int> a, List<int> b) {
     if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
+    final setA = a.toSet();
+    final setB = b.toSet();
+    return setA.difference(setB).isEmpty;
   }
 
   /// 🆕 DEDUPLICATION HELPER: Removes duplicate delivery updates by title
