@@ -13,6 +13,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/digital_clock.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/odometer_input.dart';
+import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/otp_info_card.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/otp_instructions.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/otp_input.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/confirm_button.dart';
@@ -66,12 +67,10 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
         setState(() => _cachedAuthState = state);
         debugPrint('🎫 Loading OTP for trip: ${state.trip.id}');
 
-        // Set the trip ID from the auth state
         setState(() {
           tripId = state.trip.id;
         });
 
-        // Load OTP for this trip
         _otpBloc.add(LoadOtpByTripIdEvent(state.trip.id!));
       }
     });
@@ -119,20 +118,16 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
       if (userId != null) {
         debugPrint('👤 Loading user data for ID: $userId');
 
-        // First load local user data
         _authBloc.add(LoadLocalUserByIdEvent(userId));
 
-        // Then load the user's trip from local storage
         if (tripData != null && tripData['id'] != null) {
           debugPrint('🚚 Loading trip data for ID: ${tripData['id']}');
           _authBloc.add(LoadLocalUserTripEvent(userId));
 
-          // Also set the trip ID directly from stored data
           setState(() {
             tripId = tripData['id'];
           });
 
-          // Load OTP for this trip
           _otpBloc.add(LoadOtpByTripIdEvent(tripData['id']));
         }
       }
@@ -142,6 +137,8 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _authBloc),
@@ -166,10 +163,20 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
           ),
         ],
         child: Scaffold(
+          backgroundColor: colorScheme.surface,
           appBar: AppBar(
-            title: const Text('OTP Verification'),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            title: Text(
+              'OTP Verification',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             centerTitle: true,
-            backgroundColor: Theme.of(context).colorScheme.primary,
             elevation: 0,
           ),
           body: SafeArea(
@@ -177,54 +184,53 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 25),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 40),
-                        const Text(
-                          "Start Trip Verification",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         const OTPInstructions(),
-
-                        // Trip Details Button
-                        Align(
-                          alignment: Alignment.center,
-                          child: TextButton.icon(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => const TripDetailsDialog(),
-                              );
-                            },
-                            icon: Icon(
-                              Icons.info_outline,
-                              size: 16,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            label: Text(
-                              'View Trip Details',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w500,
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => const TripDetailsDialog(),
+                            );
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: colorScheme.primary,
                               ),
-                            ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'View Trip Details',
+                                style: TextStyle(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 10),
-
+                        const SizedBox(height: 24),
+                        const OtpInfoCard(),
+                        const SizedBox(height: 32),
                         const DigitalClocks(),
-                        OTPInput(
-                          onOtpChanged: (otp) {
-                            if (mounted) setState(() => enteredOtp = otp);
-                          },
+                        const SizedBox(height: 32),
+                        Center(
+                          child: OTPInput(
+                            onOtpChanged: (otp) {
+                              if (mounted) setState(() => enteredOtp = otp);
+                            },
+                          ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 32),
                         if (!_skipOdometer) ...[
                           OdometerInput(
                             onOdometerChanged: (odometer) {
@@ -234,8 +240,7 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                             },
                           ),
                           const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
+                          Center(
                             child: TextButton(
                               style: TextButton.styleFrom(
                                 padding: EdgeInsets.zero,
@@ -261,162 +266,160 @@ class _FirstOtpScreenViewState extends State<FirstOtpScreenView> {
                                 'Odometer not working? Click here to skip odometer',
                                 style: Theme.of(
                                   context,
-                                ).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
+                                ).textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.primary,
                                   decoration: TextDecoration.underline,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
                           ),
+                          const SizedBox(height: 16),
                         ] else ...[
                           const SizedBox(height: 12),
-                          Text(
-                            'Odometer skipped. You can continue with OTP verification.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                BlocBuilder<OtpBloc, OtpState>(
-                  builder: (context, state) {
-                    debugPrint('🔄 OTP State: $state');
-                    debugPrint('📍 Current Trip ID: $tripId');
-                    debugPrint('🔑 Current OTP ID: $otpId');
-
-                    final effectiveState =
-                        (state is OtpByIdLoaded)
-                            ? state
-                            : (_cachedOtpState is OtpByIdLoaded
-                                ? _cachedOtpState as OtpByIdLoaded
-                                : null);
-                    final isLoading = state is OtpLoading;
-
-                    if (effectiveState is OtpByIdLoaded &&
-                        tripId != null &&
-                        otpId != null) {
-                      return ConfirmButtonOtp(
-                        enteredOtp: enteredOtp,
-                        generatedOtp: effectiveState.otp.generatedCode ?? '',
-                        odometerReading: enteredOdometer,
-                        tripId: tripId!,
-                        otpId: otpId!,
-                        noOdometer: _skipOdometer,
-                        isLoading: isLoading,
-                      );
-                    }
-
-                    // Show trip loading indicator
-                    return BlocBuilder<AuthBloc, AuthState>(
-                      builder: (context, state) {
-                        if (state is UserTripLoading) {
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  const CircularProgressIndicator(),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "Loading trip data...",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer.withAlpha(30),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          );
-                        }
-
-                        if (state is UserTripLoaded) {
-                          // Trip is loaded, but OTP might still be loading
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  const CircularProgressIndicator(),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "Loading OTP data...",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        if (state is AuthError) {
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.error_outline,
-                                    color: Theme.of(context).colorScheme.error,
-                                    size: 48,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "Error loading trip: ${state.message}",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(context).colorScheme.error,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Retry loading user trip
-                                      _loadInitialData();
-                                    },
-                                    child: const Text("Retry"),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        return Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Center(
-                            child: Column(
+                            child: Row(
                               children: [
-                                const CircularProgressIndicator(),
-                                const SizedBox(height: 16),
-                                Text(
-                                  "Loading trip data...",
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
+                                Icon(
+                                  Icons.info_outline,
+                                  color: colorScheme.primary,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Odometer skipped. You can continue with OTP verification.',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.onSurface,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(height: 24),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  child: BlocBuilder<OtpBloc, OtpState>(
+                    builder: (context, state) {
+                      debugPrint('🔄 OTP State: $state');
+                      debugPrint('📍 Current Trip ID: $tripId');
+                      debugPrint('🔑 Current OTP ID: $otpId');
+
+                      final effectiveState =
+                          (state is OtpByIdLoaded)
+                              ? state
+                              : (_cachedOtpState is OtpByIdLoaded
+                                  ? _cachedOtpState as OtpByIdLoaded
+                                  : null);
+                      final isLoading = state is OtpLoading;
+
+                      if (effectiveState is OtpByIdLoaded &&
+                          tripId != null &&
+                          otpId != null) {
+                        return ConfirmButtonOtp(
+                          enteredOtp: enteredOtp,
+                          generatedOtp: effectiveState.otp.generatedCode ?? '',
+                          odometerReading: enteredOdometer,
+                          tripId: tripId!,
+                          otpId: otpId!,
+                          noOdometer: _skipOdometer,
+                          isLoading: isLoading,
                         );
-                      },
-                    );
-                  },
+                      }
+
+                      return BlocBuilder<AuthBloc, AuthState>(
+                        builder: (context, state) {
+                          if (state is UserTripLoading) {
+                            return _buildLoadingIndicator(
+                              context,
+                              'Loading trip data...',
+                            );
+                          }
+
+                          if (state is UserTripLoaded) {
+                            return _buildLoadingIndicator(
+                              context,
+                              'Loading OTP data...',
+                            );
+                          }
+
+                          if (state is AuthError) {
+                            return _buildErrorIndicator(context);
+                          }
+
+                          return _buildLoadingIndicator(
+                            context,
+                            'Loading trip data...',
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator(BuildContext context, String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: colorScheme.primary),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(color: colorScheme.secondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorIndicator(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: colorScheme.error,
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error loading trip',
+            style: TextStyle(color: colorScheme.error),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => _loadInitialData(),
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }

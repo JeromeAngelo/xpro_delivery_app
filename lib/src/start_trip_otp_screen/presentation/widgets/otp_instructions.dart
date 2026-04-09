@@ -6,23 +6,21 @@ class OTPInstructions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          " Input current vehicle odometer reading.",
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
+          'Start Trip Verification',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 20,
           ),
-          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 8),
         Text(
-          "Hand the device to the guard so they can enter the OTP code.",
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 20,
+          'Input current vehicle odometer reading.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
