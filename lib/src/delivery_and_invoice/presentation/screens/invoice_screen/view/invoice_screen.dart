@@ -217,9 +217,7 @@ class _InvoiceScreenState extends State<InvoiceScreen>
       ],
       child: Column(
         children: [
-          // ✅ Top summary / status banner (pro-looking)
-
-          // ✅ Invoice list
+          
           Expanded(
             child:
                 invoices.isEmpty
@@ -263,6 +261,7 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                           padding: const EdgeInsets.only(bottom: 6),
                           child: InvoiceList(
                             deliveryData: deliveryData,
+                            invoiceData: inv,
                             onTapToCancel: () {
                               debugPrint('➡️ InvoiceScreen: open cancellation for invoiceId=$invoiceId');
                              context.push('/cancel-invoice/${deliveryData.id}/$invoiceId');

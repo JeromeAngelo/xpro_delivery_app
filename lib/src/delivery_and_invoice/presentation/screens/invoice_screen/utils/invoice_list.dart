@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-
+import '../../../../../../core/common/app/features/delivery_data/invoice_data/domain/entity/invoice_data_entity.dart';
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import '../../../../../../core/common/widgets/list_tiles.dart';
 
 class InvoiceList extends StatelessWidget {
   final DeliveryDataEntity deliveryData;
+  final InvoiceDataEntity? invoiceData;
   final VoidCallback? onTap;
   final VoidCallback? onTapToCancel;
 
@@ -12,24 +13,23 @@ class InvoiceList extends StatelessWidget {
     super.key,
     required this.deliveryData,
     this.onTap,
+    this.invoiceData,
     this.onTapToCancel,
   });
 
   // ✅ Invoice label (ToMany invoices)
   String _invoiceLabel() {
     try {
-      final invoices = deliveryData.invoices;
-      if (invoices.isEmpty) return 'Invoice';
+      final invoices = invoiceData;
 
-      // show first invoice refId if available, else name, else id
-      final first = invoices.first;
-      final ref = (first.refId ?? '').trim();
-      if (ref.isNotEmpty) return 'Invoice #$ref';
+      if (invoices == null) return 'Invoice';
 
-      final name = (first.name ?? '').trim();
+      
+
+      final name = (invoices.name ?? '').trim();
       if (name.isNotEmpty) return 'Invoice #$name';
 
-      final id = (first.id ?? '').trim();
+      final id = (invoices.id ?? '').trim();
       if (id.isNotEmpty) return 'Invoice #$id';
 
       return 'Invoice';
@@ -38,25 +38,25 @@ class InvoiceList extends StatelessWidget {
     }
   }
 
-  // ✅ Optional “(x invoices)” display
-  String _invoiceCountText() {
-    try {
-      final count = deliveryData.invoices.length;
-      if (count <= 1) return '';
-      return '$count invoices';
-    } catch (_) {
-      return '';
-    }
-  }
+  // // ✅ Optional “(x invoices)” display
+  // String _invoiceCountText() {
+  //   try {
+  //     final count = deliveryData.invoices.length;
+  //     if (count <= 1) return '';
+  //     return '$count invoices';
+  //   } catch (_) {
+  //     return '';
+  //   }
+  // }  
 
-  // ✅ Product count from DeliveryData.invoiceItems
-  int _productCount() {
-    try {
-      return deliveryData.invoiceItems.length;
-    } catch (_) {
-      return 0;
-    }
-  }
+  // // ✅ Product count from DeliveryData.invoiceItems
+  // int _productCount() {
+  //   try {
+  //     return deliveryData.invoiceItems.length;
+  //   } catch (_) {
+  //     return 0;
+  //   }
+  // }
 
   // ✅ Status message rules:
   // - if isUnloading == false -> “The delivery is ready”
@@ -98,8 +98,8 @@ class InvoiceList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = _invoiceLabel();
-    final invoiceCountText = _invoiceCountText();
-    final productCount = _productCount();
+    //final invoiceCountText = _invoiceCountText();
+    //final productCount = _productCount();
     final status = _statusUI(context);
 
     debugPrint('🧾 InvoiceList (clean)');
@@ -113,15 +113,14 @@ class InvoiceList extends StatelessWidget {
         }
       })()}',
     );
-    debugPrint('   📦 Products(invoiceItems): $productCount');
+    // debugPrint('   📦 Products(invoiceItems): $productCount');
     debugPrint('   🔄 isUnloading: ${deliveryData.isUnloading}');
     debugPrint('   ✅ isUnloaded: ${deliveryData.isUnloaded}');
     debugPrint('   🏷️ UI Status: ${status.text}');
 
     return CommonListTiles(
       title: title,
-      subtitle:
-          '$productCount Products | ${status.text}${invoiceCountText.isNotEmpty ? ' | $invoiceCountText' : ''}',
+      subtitle: status.text,
       leading: CircleAvatar(
         backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         child: Icon(
