@@ -21,16 +21,16 @@ import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/view/de
 import 'package:x_pro_delivery_app/src/delivery_team/presentation/view/delivery_team_view.dart';
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/view/end_trip_otp_screen.dart';
 import 'package:x_pro_delivery_app/src/final_screen/presentation/view/final_screen_view.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/specific_completed_customer_screen.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/collection_screen/widgets/specific_completed_customer_screen.dart';
 import 'package:x_pro_delivery_app/src/greetings/presentation/view/greeting_view.dart';
 import 'package:x_pro_delivery_app/src/homepage/presentation/view/homepage_view.dart';
 import 'package:x_pro_delivery_app/src/loader/presentation/view/loading_screen.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/view/onboarding_view.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/view/first_otp_screen_view.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/view/collection_screen.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/undelivered_customer/view/undelivered_customers_screen.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/collection_screen/view/collection_screen.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/undelivered_customer/view/undelivered_customers_screen.dart';
 
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/view/finalize_deliveries_view.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/view/finalize_deliveries_view.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/specific_screens/customers_collection_screen.dart';
 import 'package:x_pro_delivery_app/src/summary_trip/presentation/view/summary_trip_view.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/view/get_trip_ticket_view.dart';
@@ -42,7 +42,7 @@ import '../../src/delivery_and_invoice/presentation/screens/delivery_main_screen
 import '../../src/delivery_and_invoice/presentation/screens/invoice_screen/view/invoice_cancellation_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_collection_spec_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_undelivered_spec_screen.dart';
-import '../../src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
+import '../../src/finalize_delivery_screen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
 import '../../src/summary_trip/presentation/specific_screens/customers_undelivered_screen.dart';
 import '../../src/transaction_screen/presentation/view/transaction_view.dart';
 import '../../src/user_performance/view/user_performance_screen.dart';

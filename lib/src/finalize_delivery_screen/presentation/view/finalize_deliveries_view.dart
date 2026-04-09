@@ -11,11 +11,11 @@ import 'package:x_pro_delivery_app/core/common/app/features/checklists/end_trip_
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/trip_list_tiles/end_trip_summary_button.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/trip_list_tiles/view_collections.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/trip_list_tiles/view_returns.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/trip_list_tiles/view_undelivered_customers.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/widgets/end_trip_checklist_tiles.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/trip_list_tiles/end_trip_summary_button.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/trip_list_tiles/view_collections.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/trip_list_tiles/view_returns.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/trip_list_tiles/view_undelivered_customers.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/widgets/end_trip_checklist_tiles.dart';
 
 class FinalizeDeliveriesView extends StatefulWidget {
   const FinalizeDeliveriesView({super.key});
@@ -195,7 +195,7 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
                       centerTitle: true,
                       floating: true,
                       snap: true,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
+
                       leading: IconButton(
                         icon: const Icon(Icons.arrow_back),
                         onPressed: () {

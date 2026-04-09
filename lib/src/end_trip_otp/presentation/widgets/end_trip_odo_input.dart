@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:x_pro_delivery_app/core/common/widgets/ifields.dart';
 
 class EndTripOdoInput extends StatefulWidget {
   final Function(String) onOdometerChanged;
@@ -17,19 +16,8 @@ class _EndTripOdoInputState extends State<EndTripOdoInput> {
   @override
   void initState() {
     super.initState();
-    // Set up listener to call the callback when text changes
     _controller.addListener(() {
       widget.onOdometerChanged(_controller.text);
-    });
-
-    // Auto-focus the field by setting focus after the frame is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(FocusNode());
-      // Small delay to ensure the widget is fully built
-      Future.delayed(const Duration(milliseconds: 100), () {
-        FocusScope.of(context).unfocus();
-        FocusScope.of(context).requestFocus(FocusNode());
-      });
     });
   }
 
@@ -41,45 +29,70 @@ class _EndTripOdoInputState extends State<EndTripOdoInput> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Enter the vehicle odometer reading',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurface,
+          ),
         ),
-        const SizedBox(height: 16),
-        IField(
+        const SizedBox(height: 12),
+        TextField(
           controller: _controller,
           keyboardType: TextInputType.number,
-          hintText: 'Enter final odometer reading (e.g., 123456)',
-          filled: true,
-          fillColour: Theme.of(context).colorScheme.surfaceContainerHighest,
-          overrideValidator: true,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Odometer reading is required';
-            }
-            if (value.length < 6) {
-              return 'Please enter a complete odometer reading';
-            }
-            return null;
-          },
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              _controller.clear();
-            },
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
+          decoration: InputDecoration(
+            hintText: 'Enter odometer reading (e.g., 123456)',
+            hintStyle: TextStyle(
+              color: colorScheme.onSurfaceVariant.withAlpha(150),
+            ),
+            filled: true,
+            fillColor: colorScheme.surfaceContainerHighest.withAlpha(50),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withAlpha(50),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withAlpha(50),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            suffixIcon: _controller.text.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.clear,
+                      color: colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _controller.clear();
+                      setState(() {});
+                    },
+                  )
+                : null,
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Please enter the final odometer reading ',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          onChanged: (_) => setState(() {}),
         ),
       ],
     );

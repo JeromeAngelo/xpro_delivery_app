@@ -86,18 +86,6 @@ class _RevertDeliveryStatusScreenState
         : [];
   }
 
-  DeliveryStatusChoicesEntity? _findStatusChoiceByTitle(
-    String title,
-    List<DeliveryStatusChoicesEntity> choices,
-  ) {
-    final normalizedTitle = title.trim().toLowerCase();
-    for (final choice in choices) {
-      if (choice.title?.trim().toLowerCase() == normalizedTitle) {
-        return choice;
-      }
-    }
-    return null;
-  }
 
   String _getLatestUpdateTimestamp(DeliveryDataEntity deliveryData) {
     if (deliveryData.deliveryUpdates.isEmpty) return 'N/A';
@@ -294,28 +282,42 @@ class _RevertDeliveryStatusScreenState
 
                   return ElevatedButton.icon(
                     onPressed:
-                        canRevert
+                        canRevert && _selectedStatus != null
                             ? () {
-                              final selectedTitle = _selectedStatus!.trim();
-                              final statusEntity = _findStatusChoiceByTitle(
-                                selectedTitle,
-                                statusChoices,
-                              );
+                              // Get subtitle from second-to-last update to preserve it
+                              final sortedUpdatesForSubtitle =
+                                  List<DeliveryUpdateEntity>.from(
+                                    widget.deliveryData.deliveryUpdates,
+                                  );
 
-                              if (statusEntity == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Unable to find the selected status to revert.',
-                                    ),
-                                  ),
+                              sortedUpdatesForSubtitle.sort((a, b) {
+                                final timeA = a.time ?? a.created ?? DateTime(
+                                  0,
                                 );
-                                return;
+                                final timeB = b.time ?? b.created ?? DateTime(
+                                  0,
+                                );
+                                return timeB.compareTo(timeA);
+                              });
+
+                              String? subtitle;
+                              if (sortedUpdatesForSubtitle.length >= 2) {
+                                subtitle =
+                                    sortedUpdatesForSubtitle[1].subtitle;
                               }
+
+                              // Create entity directly — revert targets are NOT
+                              // in statusChoices (which only has forward transitions)
+                              final statusEntity =
+                                  DeliveryStatusChoicesEntity(
+                                    title: _selectedStatus!.trim(),
+                                    subtitle: subtitle,
+                                  );
 
                               context.read<DeliveryStatusChoicesBloc>().add(
                                 RevertUpdateCustomerStatusEvent(
-                                  deliveryDataId: widget.deliveryData.id ?? '',
+                                  deliveryDataId:
+                                      widget.deliveryData.id ?? '',
                                   status: statusEntity,
                                 ),
                               );

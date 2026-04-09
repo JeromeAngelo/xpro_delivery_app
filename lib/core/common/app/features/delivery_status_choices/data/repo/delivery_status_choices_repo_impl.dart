@@ -308,36 +308,36 @@ class DeliveryStatusChoicesRepoImpl implements DeliveryStatusChoicesRepo {
   @override
   ResultFuture<void> revertUpdateDeliveryStatus(String deliveryDataId, DeliveryStatusChoicesEntity status) async {
     try {
-      final statusModel = status as DeliveryStatusChoicesModel;
+      // Note: status is not used for the actual revert - it just identifies the target.
+      // We create a minimal model for reference purposes only.
+      final syncModel = DeliveryStatusChoicesModel(
+        id: status.id,
+        title: status.title,
+        subtitle: status.subtitle,
+        syncStatus: SyncStatus.pending.name,
+        lastLocalUpdatedAt: DateTime.now(),
+        retryCount: 0,
+      );
 
       // ---------------------------------------------------
-      // 1️⃣ Update LOCAL first (offline-first)
+      // 1️⃣ Revert LOCAL first (offline-first)
       // ---------------------------------------------------
-      debugPrint('💾 Updating local delivery status');
-      await _localDatasource.revertUpdateCustomerStatus(deliveryDataId, statusModel);
+      debugPrint('💾 Reverting delivery status locally');
+      await _localDatasource.revertUpdateCustomerStatus(deliveryDataId, syncModel);
 
       // ---------------------------------------------------
-      // 2️⃣ Queue REMOTE sync in background worker
+      // 2️⃣ Revert REMOTE (PocketBase) - synchronously
       // ---------------------------------------------------
-      debugPrint('🟡 Queuing remote sync for background worker');
+      debugPrint('🌐 Reverting delivery status on PocketBase');
+      await _remoteDatasource.revertUpdateCustomerStatus(deliveryDataId, syncModel);
 
-      // Mark status as pending for sync
-      statusModel.syncStatus = SyncStatus.pending.name;
-      statusModel.lastLocalUpdatedAt = DateTime.now();
-      statusModel.retryCount = 0;
-
-      await _localDatasource.deliveryStatusChoicesBox.put(statusModel);
-
-      // Enqueue in worker
-      _syncWorker.start();
-
-      debugPrint('✅ Status update queued for background sync');
+      debugPrint('✅ Status revert completed (local + remote)');
 
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
     } on ServerException catch (e) {
-      debugPrint('⚠️ Remote update failed, local update succeeded');
+      debugPrint('❌ Remote revert failed: ${e.message}');
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     }
   }

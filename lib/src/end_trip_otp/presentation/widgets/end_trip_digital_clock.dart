@@ -6,28 +6,51 @@ class EndTripDigitalClock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomDigitalClock(
-      digitAnimationStyle: Curves.bounceInOut,
-      showSecondsDigit: false,
-      areaAligment: AlignmentDirectional.center,
-      areaWidth: double.infinity,
-      areaHeight: 100,
-      is24HourTimeFormat: false,
-      hourMinuteDigitTextStyle: _getTextStyle(context, large: true),
-      secondDigitTextStyle: _getTextStyle(context, large: true),
-      amPmDigitTextStyle: _getTextStyle(context, large: false),
-      colon: Text(":", style: _getTextStyle(context, large: true)),
-    );
-  }
+    final colorScheme = Theme.of(context).colorScheme;
 
-  TextStyle _getTextStyle(BuildContext context, {required bool large}) {
-    final baseStyle = large
-        ? Theme.of(context).textTheme.headlineLarge!
-        : Theme.of(context).textTheme.headlineSmall!;
-
-    return baseStyle.copyWith(
-      color: Theme.of(context).colorScheme.onSurface,
-      fontWeight: large ? FontWeight.bold : FontWeight.normal,
+    return Column(
+      children: [
+        Text(
+          'CURRENT VERIFICATION TIME',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        CustomDigitalClock(
+          digitAnimationStyle: Curves.easeInOut,
+          showSecondsDigit: false,
+          areaAligment: AlignmentDirectional.center,
+          areaWidth: double.infinity,
+          areaHeight: 60,
+          is24HourTimeFormat: false,
+          hourMinuteDigitTextStyle: TextStyle(
+            fontSize: 48,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+          ),
+          amPmDigitTextStyle: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.primary,
+          ),
+          colon: Text(
+            ':',
+            style: TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+            ),
+          ),
+          secondDigitTextStyle: TextStyle(
+            fontSize: 48,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+          ),
+        ),
+      ],
     );
   }
 }

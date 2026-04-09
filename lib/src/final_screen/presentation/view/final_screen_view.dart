@@ -49,7 +49,7 @@ class _FinalScreenViewState extends State<FinalScreenView>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
           child: Container(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: TabBar(
               controller: _tabController,
               tabs: const [
@@ -66,7 +66,7 @@ class _FinalScreenViewState extends State<FinalScreenView>
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: Colors.black,
+              unselectedLabelColor: Theme.of(context).colorScheme.onSurface,
               indicatorColor: Theme.of(context).colorScheme.primary,
               indicator: UnderlineTabIndicator(
                 borderSide: BorderSide(

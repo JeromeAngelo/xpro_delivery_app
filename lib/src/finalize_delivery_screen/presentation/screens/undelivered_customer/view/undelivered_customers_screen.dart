@@ -11,8 +11,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelle
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/undelivered_customer_dashboard.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/undelivered_customer/widget/undelivered_customer_list_tile.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/undelivered_customer/widget/undelivered_customer_dashboard.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/undelivered_customer/widget/undelivered_customer_list_tile.dart';
 
 class UndeliveredCustomersScreen extends StatefulWidget {
   const UndeliveredCustomersScreen({super.key});
@@ -37,7 +37,7 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
   void initState() {
     super.initState();
     _initializeBlocs();
-    
+
     // Force immediate data load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocalData();
@@ -60,10 +60,11 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
   // Immediately load data from any available source - matching collection_screen pattern
   Future<void> _loadDataImmediately() async {
     debugPrint('🚀 Attempting immediate data load');
-    
+
     // First check if we already have data in the bloc
     final currentState = _cancelledInvoiceBloc.state;
-    if (currentState is CancelledInvoicesLoaded && currentState.cancelledInvoices.isNotEmpty) {
+    if (currentState is CancelledInvoicesLoaded &&
+        currentState.cancelledInvoices.isNotEmpty) {
       debugPrint('✅ Using existing data from bloc state');
       _cachedState = currentState;
       setState(() {
@@ -74,9 +75,10 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
       });
       return;
     }
-    
+
     // Check for offline data
-    if (currentState is CancelledInvoicesOffline && currentState.cancelledInvoices.isNotEmpty) {
+    if (currentState is CancelledInvoicesOffline &&
+        currentState.cancelledInvoices.isNotEmpty) {
       debugPrint('📱 Using offline data from bloc state');
       _cachedState = currentState;
       setState(() {
@@ -87,23 +89,27 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
       });
       return;
     }
-    
+
     // Get trip ID from auth bloc first
     final authState = _authBloc.state;
     if (authState is UserTripLoaded && authState.trip.id != null) {
       _currentTripId = authState.trip.id;
       debugPrint('🔍 Found trip ID in auth bloc: $_currentTripId');
-      
+
       if (!_isDataInitialized) {
         _isDataInitialized = true;
         // Load local data first for immediate display
-        _cancelledInvoiceBloc.add(LoadLocalCancelledInvoicesByTripIdEvent(_currentTripId!));
+        _cancelledInvoiceBloc.add(
+          LoadLocalCancelledInvoicesByTripIdEvent(_currentTripId!),
+        );
         // Then fetch remote data
-        _cancelledInvoiceBloc.add(LoadCancelledInvoicesByTripIdEvent(_currentTripId!));
+        _cancelledInvoiceBloc.add(
+          LoadCancelledInvoicesByTripIdEvent(_currentTripId!),
+        );
       }
       return;
     }
-    
+
     // Fallback to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final storedData = prefs.getString('user_data');
@@ -115,13 +121,17 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
       if (tripData != null && tripData['id'] != null) {
         _currentTripId = tripData['id'];
         debugPrint('🔍 Found trip ID in SharedPreferences: $_currentTripId');
-        
+
         if (!_isDataInitialized) {
           _isDataInitialized = true;
           // Load local data first for immediate display
-          _cancelledInvoiceBloc.add(LoadLocalCancelledInvoicesByTripIdEvent(_currentTripId!));
+          _cancelledInvoiceBloc.add(
+            LoadLocalCancelledInvoicesByTripIdEvent(_currentTripId!),
+          );
           // Then fetch remote data
-          _cancelledInvoiceBloc.add(LoadCancelledInvoicesByTripIdEvent(_currentTripId!));
+          _cancelledInvoiceBloc.add(
+            LoadCancelledInvoicesByTripIdEvent(_currentTripId!),
+          );
         }
       } else {
         debugPrint('⚠️ No trip ID found in SharedPreferences');
@@ -136,7 +146,7 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
   Future<void> _refreshData() async {
     debugPrint('🔄 Manual refresh triggered');
     setState(() => _isLoading = true);
-    
+
     if (_currentTripId != null) {
       debugPrint('🔄 Refreshing data for trip: $_currentTripId');
       _cancelledInvoiceBloc.add(RefreshCancelledInvoicesEvent(_currentTripId!));
@@ -145,8 +155,12 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
       final authState = _authBloc.state;
       if (authState is UserTripLoaded && authState.trip.id != null) {
         _currentTripId = authState.trip.id;
-        debugPrint('🔍 Found trip ID in auth bloc during refresh: $_currentTripId');
-        _cancelledInvoiceBloc.add(RefreshCancelledInvoicesEvent(_currentTripId!));
+        debugPrint(
+          '🔍 Found trip ID in auth bloc during refresh: $_currentTripId',
+        );
+        _cancelledInvoiceBloc.add(
+          RefreshCancelledInvoicesEvent(_currentTripId!),
+        );
       } else {
         // Try to get from SharedPreferences
         await _loadDataImmediately();
@@ -169,9 +183,9 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
             if (state is UserTripLoaded) {
               return Text(
                 'Trip #${state.trip.tripNumberId}',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      color: Theme.of(context).colorScheme.surface,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge!.copyWith(color: Colors.white),
               );
             }
             return const Text('Loading Trip...');
@@ -189,13 +203,16 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: BlocConsumer<CancelledInvoiceBloc, CancelledInvoiceState>(
-          buildWhen: (previous, current) =>
-              current is CancelledInvoicesLoaded || 
-              current is CancelledInvoicesOffline || 
-              _cachedState == null,
+          buildWhen:
+              (previous, current) =>
+                  current is CancelledInvoicesLoaded ||
+                  current is CancelledInvoicesOffline ||
+                  _cachedState == null,
           listener: (context, state) {
             if (state is CancelledInvoicesLoaded) {
-              debugPrint('✅ Cancelled invoices loaded: ${state.cancelledInvoices.length} items');
+              debugPrint(
+                '✅ Cancelled invoices loaded: ${state.cancelledInvoices.length} items',
+              );
               _cachedState = state;
               setState(() {
                 _currentCancelledInvoices = state.cancelledInvoices;
@@ -203,7 +220,9 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
                 _isLoading = false;
               });
             } else if (state is CancelledInvoicesOffline) {
-              debugPrint('📱 Cancelled invoices loaded offline: ${state.cancelledInvoices.length} items');
+              debugPrint(
+                '📱 Cancelled invoices loaded offline: ${state.cancelledInvoices.length} items',
+              );
               _cachedState = state;
               setState(() {
                 _currentCancelledInvoices = state.cancelledInvoices;
@@ -211,7 +230,9 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
                 _isLoading = false;
               });
             } else if (state is CancelledInvoiceError) {
-              debugPrint('❌ Error loading cancelled invoices: ${state.message}');
+              debugPrint(
+                '❌ Error loading cancelled invoices: ${state.message}',
+              );
               setState(() => _isLoading = false);
             } else if (state is CancelledInvoicesEmpty) {
               debugPrint('📭 No cancelled invoices found');
@@ -271,20 +292,32 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
                   if (_isOffline) ...[
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.offline_bolt, color: Colors.orange, size: 14),
+                          Icon(
+                            Icons.offline_bolt,
+                            color: Colors.orange,
+                            size: 14,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Offline',
-                            style: TextStyle(color: Colors.orange, fontSize: 10),
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 10,
+                            ),
                           ),
                         ],
                       ),
@@ -317,17 +350,15 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
           const SizedBox(height: 16),
           Text(
             'No Undelivered Customers',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             'Undelivered customers will appear here',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            style: TextStyle(color: Theme.of(context).colorScheme.outline),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -373,6 +404,6 @@ class _UndeliveredCustomersScreenState extends State<UndeliveredCustomersScreen>
     super.dispose();
   }
 
- @override
-bool get wantKeepAlive => true;
+  @override
+  bool get wantKeepAlive => true;
 }

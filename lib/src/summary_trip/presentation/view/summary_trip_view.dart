@@ -40,7 +40,7 @@ class _SummaryTripViewState extends State<SummaryTripView>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
           child: Container(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: TabBar(
               controller: _tabController,
               tabs: const [
@@ -48,10 +48,7 @@ class _SummaryTripViewState extends State<SummaryTripView>
                   icon: Icon(Icons.receipt_long_outlined),
                   text: 'Collections',
                 ),
-                Tab(
-                  icon: Icon(Icons.keyboard_return_sharp),
-                  text: 'Returns',
-                ),
+                Tab(icon: Icon(Icons.keyboard_return_sharp), text: 'Returns'),
                 Tab(
                   icon: Icon(Icons.cancel_presentation_rounded),
                   text: 'Undelivered',
@@ -60,7 +57,7 @@ class _SummaryTripViewState extends State<SummaryTripView>
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: Colors.black,
+              unselectedLabelColor: Theme.of(context).colorScheme.onSurface,
               indicatorColor: Theme.of(context).colorScheme.primary,
               indicator: UnderlineTabIndicator(
                 borderSide: BorderSide(
@@ -79,7 +76,9 @@ class _SummaryTripViewState extends State<SummaryTripView>
         controller: _tabController,
         children: const [
           SummaryCollectionScreen(),
-          Center(child: Text('Returns - Coming Soon')), // Placeholder for returns
+          Center(
+            child: Text('Returns - Coming Soon'),
+          ), // Placeholder for returns
           SummaryUndeliverableScreen(),
         ],
       ),

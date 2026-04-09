@@ -1264,91 +1264,57 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       debugPrint('   📌 DeliveryData PB ID: $deliveryDataPbId');
 
       // ---------------------------------------------------
-      // 1️⃣ RESOLVE DELIVERY DATA
+      // 1️⃣ FIND THE LATEST UPDATE DIRECTLY (skip ToMany issues)
       // ---------------------------------------------------
-      final deliveryData =
-          deliveryDataBox
-              .query(DeliveryDataModel_.pocketbaseId.equals(deliveryDataPbId))
-              .build()
-              .findFirst();
+      // Query all deliveryUpdates for this deliveryData by PB ID
+      final updatesQuery = deliveryUpdateBox
+          .query(DeliveryUpdateModel_.deliveryDataPbId.equals(deliveryDataPbId))
+          .build();
 
-      if (deliveryData == null) {
-        debugPrint('❌ DeliveryData not found locally');
+      final updates = updatesQuery.find();
+      updatesQuery.close();
+
+      if (updates.isEmpty) {
+        debugPrint('⚠️ No delivery updates found');
         return;
       }
 
-      debugPrint(
-        '✅ DeliveryData resolved → OBX ID: ${deliveryData.objectBoxId}',
-      );
-      debugPrint(
-        '📊 Current updates count: ${deliveryData.deliveryUpdates.length}',
-      );
+      debugPrint('📊 Found ${updates.length} updates locally');
 
-      // ---------------------------------------------------
-      // 2️⃣ CHECK IF THERE IS A STATUS TO REVERT
-      // ---------------------------------------------------
-      if (deliveryData.deliveryUpdates.isEmpty) {
-        debugPrint('⚠️ No delivery updates to revert');
+      // Find the latest update by time
+      DeliveryUpdateModel? latestUpdate;
+      DateTime? latestTime;
+
+      for (final update in updates) {
+        final updateTime = update.lastLocalUpdatedAt ?? update.time ?? update.created ?? DateTime(0);
+        if (latestTime == null || updateTime.isAfter(latestTime)) {
+          latestTime = updateTime;
+          latestUpdate = update;
+        }
+      }
+
+      if (latestUpdate == null) {
+        debugPrint('❌ No valid delivery update found');
         return;
       }
 
-      // ---------------------------------------------------
-      // 🔥 3️⃣ GET LAST UPDATE (LATEST)
-      // ---------------------------------------------------
-      final lastUpdate = deliveryData.deliveryUpdates.last;
-
+      final latestObxId = latestUpdate.objectBoxId;
       debugPrint(
-        '🗑️ Reverting LAST update → OBX=${lastUpdate.objectBoxId}, '
-        'title=${lastUpdate.title}',
+        '🗑️ Reverting update → OBX=$latestObxId, '
+        'title=${latestUpdate.title}, time=$latestTime',
       );
 
       // ---------------------------------------------------
-      // 🔥 4️⃣ REMOVE FROM RELATION FIRST
-      // ---------------------------------------------------
-      deliveryData.deliveryUpdates.removeLast();
-
-      // ---------------------------------------------------
-      // 🔥 5️⃣ DELETE FROM BOX
+      // 🔥 2️⃣ DELETE THE UPDATE ENTITY (ObjectBox handles relation cleanup)
       // ---------------------------------------------------
       try {
-        deliveryUpdateBox.remove(lastUpdate.objectBoxId);
-        debugPrint('🗑️ Deleted deliveryUpdate from box');
+        deliveryUpdateBox.remove(latestObxId);
+        debugPrint('🗑️ Deleted deliveryUpdate from box (OBX=$latestObxId)');
       } catch (e) {
         debugPrint('⚠️ Failed to delete update from box: $e');
       }
 
-      // ---------------------------------------------------
-      // 6️⃣ SAVE DELIVERY DATA (VERY IMPORTANT)
-      // ---------------------------------------------------
-      deliveryDataBox.put(deliveryData);
-
-      debugPrint(
-        '✅ Revert completed → remaining updates: ${deliveryData.deliveryUpdates.length}',
-      );
-
-      // ---------------------------------------------------
-      // 🔍 VERIFICATION (OPTIONAL BUT GOOD)
-      // ---------------------------------------------------
-      try {
-        final refreshed = deliveryDataBox.get(deliveryData.objectBoxId);
-
-        if (refreshed != null) {
-          debugPrint(
-            '🔍 Verification: refreshed updates count=${refreshed.deliveryUpdates.length}',
-          );
-
-          for (final rel in refreshed.deliveryUpdates) {
-            final full = deliveryUpdateBox.get(rel.objectBoxId);
-
-            debugPrint(
-              '   • remaining update OBX=${rel.objectBoxId} '
-              'title=${full?.title} time=${full?.time}',
-            );
-          }
-        }
-      } catch (e) {
-        debugPrint('⚠️ Verification failed: $e');
-      }
+      debugPrint('✅ Revert completed successfully');
     } catch (e, st) {
       debugPrint('❌ ERROR in revertUpdateCustomerStatus(): $e');
       debugPrint('STACK TRACE: $st');

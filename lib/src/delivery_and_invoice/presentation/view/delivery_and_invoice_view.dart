@@ -7,6 +7,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/view/delivery_main_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/dialog_instruction.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/invoice_screen.dart';
+
 class DeliveryAndInvoiceView extends StatefulWidget {
   final DeliveryDataEntity? selectedCustomer;
 
@@ -86,9 +87,9 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
               ),
               title: Text(
                 _deliveryNumber,
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      color: Theme.of(context).colorScheme.surface,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge!.copyWith(color: Colors.white),
               ),
               centerTitle: true,
               actions: [
@@ -103,10 +104,7 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
                 ),
               ],
             ),
-            body: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
+            body: IndexedStack(index: _selectedIndex, children: _screens),
             bottomNavigationBar: BottomNavigationBar(
               currentIndex: _selectedIndex,
               onTap: (index) => setState(() => _selectedIndex = index),

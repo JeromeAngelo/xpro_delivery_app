@@ -8,8 +8,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/collection_dashboard_screen.dart';
-import 'package:x_pro_delivery_app/src/finalize_delivery_screeen/presentation/screens/collection_screen/widgets/completed_customer_list.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/collection_screen/widgets/collection_dashboard_screen.dart';
+import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/collection_screen/widgets/completed_customer_list.dart';
+
 class CollectionScreen extends StatefulWidget {
   const CollectionScreen({super.key});
 
@@ -19,7 +20,6 @@ class CollectionScreen extends StatefulWidget {
 
 class _CollectionScreenState extends State<CollectionScreen>
     with AutomaticKeepAliveClientMixin {
-
   late final CollectionsBloc _collectionsBloc;
   late final AuthBloc _authBloc;
 
@@ -40,17 +40,13 @@ class _CollectionScreenState extends State<CollectionScreen>
     final authState = _authBloc.state;
     if (authState is UserTripLoaded && authState.trip.id != null) {
       _currentTripId = authState.trip.id;
-      _collectionsBloc.add(
-        GetCollectionsByTripIdEvent(_currentTripId!),
-      );
+      _collectionsBloc.add(GetCollectionsByTripIdEvent(_currentTripId!));
     }
   }
 
   Future<void> _refreshData() async {
     if (_currentTripId != null) {
-      _collectionsBloc.add(
-        RefreshCollectionsEvent(_currentTripId!),
-      );
+      _collectionsBloc.add(RefreshCollectionsEvent(_currentTripId!));
     }
   }
 
@@ -69,26 +65,22 @@ class _CollectionScreenState extends State<CollectionScreen>
             if (state is UserTripLoaded) {
               return Text(
                 'Trip #${state.trip.tripNumberId}',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      color: Theme.of(context).colorScheme.surface,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge!.copyWith(color: Colors.white),
               );
             }
             return const Text('Loading Trip...');
           },
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshData,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: BlocBuilder<CollectionsBloc, CollectionsState>(
           builder: (context, state) {
-
             if (state is CollectionsLoading) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -119,9 +111,7 @@ class _CollectionScreenState extends State<CollectionScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CollectionDashboardScreen(
-            collections: collections,
-          ),
+          CollectionDashboardScreen(collections: collections),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.all(5),
@@ -130,9 +120,7 @@ class _CollectionScreenState extends State<CollectionScreen>
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          CompletedCustomerList(
-            collections: collections,
-          ),
+          CompletedCustomerList(collections: collections),
         ],
       ),
     );
@@ -157,9 +145,7 @@ class _CollectionScreenState extends State<CollectionScreen>
           Text(
             'Collections will appear here once deliveries are completed',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            style: TextStyle(color: Theme.of(context).colorScheme.outline),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -183,10 +169,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             color: Theme.of(context).colorScheme.error,
           ),
           const SizedBox(height: 16),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-          ),
+          Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _refreshData,
