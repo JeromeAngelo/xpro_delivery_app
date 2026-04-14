@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
+import 'package:x_pro_delivery_app/core/utils/device_info_utils.dart';
 
 abstract class AuthRemoteDataSrc {
   const AuthRemoteDataSrc();
@@ -132,21 +133,11 @@ class AuthRemoteDataSrcImpl implements AuthRemoteDataSrc {
         debugPrint('   👑 Role: ${roleJson?['name'] ?? 'Unknown'}');
         debugPrint('   🔑 Token: ${authData.token.substring(0, 10)}...');
 
-        // 🕓 NEW STEP — record login event in "authLogs"
-        try {
-          final loginTime = DateTime.now().toUtc().toIso8601String();
-          await _pocketBaseClient
-              .collection('authLogs')
-              .create(
-                body: {
-                  'user': authData.record.id, // reference user ID
-                  'loginTime': loginTime, // ISO timestamp
-                },
-              );
-          debugPrint('🕓 Login recorded in authLogs: $loginTime');
-        } catch (e) {
-          debugPrint('⚠️ Failed to record login log: $e');
-        }
+        // 🕓 Record login event in "authLogs" with device info
+        await _recordAuthLog(
+          userId: authData.record.id,
+          loginTime: DateTime.now().toUtc().toIso8601String(),
+        );
 
         return LocalUsersModel.fromJson(userData);
       } catch (e) {
@@ -1142,4 +1133,59 @@ if (userDataRaw != null) {
 
   //   return null;
   // }
+
+  /// Records authentication log with device information to authLogs collection
+  Future<void> _recordAuthLog({
+    required String userId,
+    required String loginTime,
+  }) async {
+    try {
+      debugPrint('🔐 Recording auth log for user: $userId');
+
+      // Get device information (IP and IMEI/Device ID)
+      final deviceInfo = await DeviceInfoUtils.getDeviceAuthInfo();
+
+      debugPrint('📱 Device Info: $deviceInfo');
+
+      // Prepare auth log data
+      final authLogData = {
+        'user': userId,
+        'loginTime': loginTime,
+        'deviceId': deviceInfo['deviceId'] ?? 'unknown',
+        'ipAddress': deviceInfo['localIp'] ?? 'unknown',
+        'platform': deviceInfo['platform'] ?? 'unknown',
+        'platformVersion': deviceInfo['platformVersion'] ?? 'unknown',
+        'deviceModel': deviceInfo['deviceModel'] ?? deviceInfo['deviceSystemVersion'] ?? 'unknown',
+        'deviceBrand': deviceInfo['deviceBrand'] ?? 'unknown',
+      };
+
+      debugPrint('📝 Auth Log Data: $authLogData');
+
+      // Record to authLogs collection
+      await _pocketBaseClient.collection('authLogs').create(body: authLogData);
+
+      debugPrint('✅ Auth log recorded successfully for user: $userId');
+      debugPrint('   🕓 Login Time: $loginTime');
+      debugPrint('   📱 Device ID: ${authLogData['deviceId']}');
+      debugPrint('   🌐 IP Address: ${authLogData['ipAddress']}');
+      debugPrint('   📲 Platform: ${authLogData['platform']} ${authLogData['platformVersion']}');
+    } catch (e) {
+      // Non-critical error - don't fail the login, just log the issue
+      debugPrint('⚠️ Failed to record auth log (non-critical): $e');
+      // Optionally record a minimal log entry
+      try {
+        await _pocketBaseClient.collection('authLogs').create(
+          body: {
+            'user': userId,
+            'loginTime': loginTime,
+            'deviceId': 'unknown',
+            'ipAddress': 'unknown',
+            'error': 'Failed to capture device info: $e',
+          },
+        );
+      } catch (fallbackError) {
+        debugPrint('⚠️ Even fallback auth log failed: $fallbackError');
+      }
+    }
+  }
 }

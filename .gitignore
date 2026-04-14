@@ -12,6 +12,7 @@
 .swiftpm/
 migrate_working_dir/
 assets/sample_images/
+.claude/
 
 # IntelliJ related
 *.iml

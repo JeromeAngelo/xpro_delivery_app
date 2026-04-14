@@ -75,7 +75,7 @@ class MyApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => sl<SyncCubit>()),
+        BlocProvider(create: (_) => sl<SyncCubit>()), 
         BlocProvider(create: (_) => sl<AuthBloc>()),
         BlocProvider(create: (_) => sl<TripBloc>()),
         BlocProvider(create: (_) => sl<DeliveryTeamBloc>()),
