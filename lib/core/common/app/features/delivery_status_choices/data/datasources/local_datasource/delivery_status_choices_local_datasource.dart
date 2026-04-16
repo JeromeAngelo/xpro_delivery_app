@@ -393,15 +393,12 @@ class DeliveryStatusChoicesLocalDatasourceImpl
         case 'invoices in queue':
           allowedTitles.addAll(['unloading', 'mark as undelivered']);
           break;
-
         case 'unloading':
           allowedTitles.addAll(['mark as received']);
           break;
-
         case 'mark as received':
           allowedTitles.addAll(['end delivery']);
           break;
-
         case 'mark as undelivered':
         case 'end delivery':
           return [];
@@ -588,11 +585,11 @@ class DeliveryStatusChoicesLocalDatasourceImpl
               break;
 
             case 'unloading':
-              allowedTitles.addAll(['mark as received']);
+              allowedTitles.addAll([]);
               break;
 
             case 'mark as received':
-              allowedTitles.addAll([]);
+              allowedTitles.addAll(['end delivery']);
               break;
 
             case 'mark as undelivered':
@@ -1061,6 +1058,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       // ---------------------------------------------------
       // 5️⃣ Receipt lookup (OPTIONAL — MUST NOT BLOCK FLOW)
       // ---------------------------------------------------
+      double? receiptTotalAmount;
       try {
         final receiptQuery =
             objectBoxStore.deliveryReceiptBox
@@ -1075,7 +1073,8 @@ class DeliveryStatusChoicesLocalDatasourceImpl
         receiptQuery.close();
 
         if (receipt != null) {
-          debugPrint('🧾 Receipt found → ${receipt.pocketbaseId}');
+          receiptTotalAmount = receipt.totalAmount;
+          debugPrint('🧾 Receipt found → ${receipt.pocketbaseId}, totalAmount: $receiptTotalAmount');
         } else {
           debugPrint('⚠️ No receipt found (continuing process)');
         }
@@ -1106,13 +1105,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
         customerData: customerModel,
         invoiceData: invoiceList.isNotEmpty ? invoiceList.first : null,
         invoicesList: invoiceList,
-        totalAmount:
-            localDeliveryData.invoiceItems.isNotEmpty
-                ? localDeliveryData.invoiceItems.fold<double>(
-                  0.0,
-                  (sum, it) => sum + (it.totalAmount ?? 0.0),
-                )
-                : null,
+        totalAmount: receiptTotalAmount,
         created: now,
         updated: now,
       );
@@ -1267,9 +1260,12 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       // 1️⃣ FIND THE LATEST UPDATE DIRECTLY (skip ToMany issues)
       // ---------------------------------------------------
       // Query all deliveryUpdates for this deliveryData by PB ID
-      final updatesQuery = deliveryUpdateBox
-          .query(DeliveryUpdateModel_.deliveryDataPbId.equals(deliveryDataPbId))
-          .build();
+      final updatesQuery =
+          deliveryUpdateBox
+              .query(
+                DeliveryUpdateModel_.deliveryDataPbId.equals(deliveryDataPbId),
+              )
+              .build();
 
       final updates = updatesQuery.find();
       updatesQuery.close();
@@ -1286,7 +1282,11 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       DateTime? latestTime;
 
       for (final update in updates) {
-        final updateTime = update.lastLocalUpdatedAt ?? update.time ?? update.created ?? DateTime(0);
+        final updateTime =
+            update.lastLocalUpdatedAt ??
+            update.time ??
+            update.created ??
+            DateTime(0);
         if (latestTime == null || updateTime.isAfter(latestTime)) {
           latestTime = updateTime;
           latestUpdate = update;

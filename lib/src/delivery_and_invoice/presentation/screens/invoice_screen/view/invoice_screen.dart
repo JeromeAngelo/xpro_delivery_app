@@ -2,14 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/entity/invoice_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/utils/confirm_btn.dart';
 
-import '../../../../../../core/common/app/features/delivery_data/invoice_data/domain/entity/invoice_data_entity.dart';
-import '../utils/invoice_list.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/utils/invoice_list.dart';
 
 class InvoiceScreen extends StatefulWidget {
   final DeliveryDataEntity? selectedCustomer;
@@ -217,7 +217,6 @@ class _InvoiceScreenState extends State<InvoiceScreen>
       ],
       child: Column(
         children: [
-          
           Expanded(
             child:
                 invoices.isEmpty
@@ -254,7 +253,9 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                         final inv = invoices[index];
                         final invoiceId = (inv.id ?? '').toString().trim();
                         if (invoiceId.isEmpty) {
-                          debugPrint('⚠️ InvoiceScreen: invoice with empty id at index $index');
+                          debugPrint(
+                            '⚠️ InvoiceScreen: invoice with empty id at index $index',
+                          );
                           return const SizedBox.shrink();
                         }
                         return Padding(
@@ -263,8 +264,12 @@ class _InvoiceScreenState extends State<InvoiceScreen>
                             deliveryData: deliveryData,
                             invoiceData: inv,
                             onTapToCancel: () {
-                              debugPrint('➡️ InvoiceScreen: open cancellation for invoiceId=$invoiceId');
-                             context.push('/cancel-invoice/${deliveryData.id}/$invoiceId');
+                              debugPrint(
+                                '➡️ InvoiceScreen: open cancellation for invoiceId=$invoiceId',
+                              );
+                              context.push(
+                                '/cancel-invoice/${deliveryData.id}/$invoiceId',
+                              );
                             },
                             onTap: () {
                               final route =

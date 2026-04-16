@@ -6,7 +6,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 
-
 class CustomerDetailsDashboard extends StatefulWidget {
   final DeliveryDataEntity deliveryData;
   final void Function()? onTap;
@@ -30,7 +29,9 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     super.initState();
     // Data loading is handled by the parent screen/router
     // No need to load data again here to prevent multiple loading states
-    debugPrint('📱 CustomerDetailsDashboard: Initialized with delivery data: ${widget.deliveryData.id}');
+    debugPrint(
+      '📱 CustomerDetailsDashboard: Initialized with delivery data: ${widget.deliveryData.id}',
+    );
   }
 
   @override
@@ -38,7 +39,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     return BlocConsumer<DeliveryDataBloc, DeliveryDataState>(
       listenWhen:
           (previous, current) =>
-              current is DeliveryDataLoaded || 
+              current is DeliveryDataLoaded ||
               current is DeliveryDataError ||
               current is InvoiceSetToUnloading ||
               current is InvoiceSetToUnloaded,
@@ -60,12 +61,12 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
               (current is DeliveryDataLoading && _cachedState == null),
       builder: (context, state) {
         debugPrint('📱 Dashboard: Building with state: ${state.runtimeType}');
-        
+
         // Prioritize cached data for offline-first approach
         final effectiveState = _cachedState ?? state;
 
         // Show skeleton loading UI only when no cached data and we're actually loading
-        if (_cachedState == null && 
+        if (_cachedState == null &&
             (state is DeliveryDataLoading || state is DeliveryDataInitial)) {
           debugPrint('📱 Dashboard: Showing loading skeleton');
           return _buildLoadingDashboard(context);
@@ -73,11 +74,25 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
 
         // Use the delivery data from the effective state or fallback to widget data
         DeliveryDataEntity deliveryData = widget.deliveryData;
-        
-        if (effectiveState is DeliveryDataLoaded && 
+
+        if (effectiveState is DeliveryDataLoaded &&
             effectiveState.deliveryData.id != null) {
           deliveryData = effectiveState.deliveryData;
           debugPrint('📱 Dashboard: Using fresh loaded data');
+        } else if (effectiveState is InvoiceSetToUnloading &&
+            effectiveState.deliveryData.id != null) {
+          // Use delivery data from InvoiceSetToUnloading state as it has updated data
+          deliveryData = effectiveState.deliveryData;
+          debugPrint(
+            '📱 Dashboard: Using data from InvoiceSetToUnloading state',
+          );
+        } else if (effectiveState is InvoiceSetToUnloaded &&
+            effectiveState.deliveryData.id != null) {
+          // Use delivery data from InvoiceSetToUnloaded state as it has updated data
+          deliveryData = effectiveState.deliveryData;
+          debugPrint(
+            '📱 Dashboard: Using data from InvoiceSetToUnloaded state',
+          );
         } else {
           debugPrint('📱 Dashboard: Using widget delivery data');
         }
@@ -439,18 +454,49 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
             ? deliveryUpdates.last.title ?? "Pending"
             : "Pending";
 
-    // Calculate total amount from all invoices
+    // Calculate total amount with multiple fallbacks
     double totalAmount = 0.0;
-    if (invoices != null && invoices.length > 0) {
-      for (var invoice in invoices) {
-        totalAmount += invoice.totalAmount ?? 0.0;
+    String totalAmountDisplay = "₱0.00";
+
+    // Priority 1: Use deliveryData.totalAmount if available
+    if (deliveryData.totalAmount != null && deliveryData.totalAmount! > 0) {
+      totalAmount = deliveryData.totalAmount!;
+      debugPrint(
+        '📊 Using deliveryData.totalAmount: ₱${totalAmount.toStringAsFixed(2)}',
+      );
+    }
+    // Priority 2: Calculate from invoices
+    else if (invoices != null && invoices.length > 0) {
+      try {
+        for (var invoice in invoices) {
+          if (invoice?.totalAmount != null) {
+            totalAmount += invoice.totalAmount;
+          }
+        }
+        if (totalAmount > 0) {
+          debugPrint(
+            '📊 Calculated totalAmount from invoices: ₱${totalAmount.toStringAsFixed(2)}',
+          );
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error calculating total from invoices: $e');
       }
+    }
+
+    // Format the display amount
+    if (totalAmount > 0) {
+      totalAmountDisplay = "₱${totalAmount.toStringAsFixed(2)}";
+    } else {
+      totalAmountDisplay = "Not available";
+      debugPrint(
+        '⚠️ Total amount is 0 or null - no delivery/invoice data loaded',
+      );
     }
 
     debugPrint('📊 Building dashboard with:');
     debugPrint('   🏪 Store Name: $ownerName');
     debugPrint('   🧾 Invoices Count: ${invoices?.length ?? 0}');
-    debugPrint('   💰 Total amount from all invoices: $totalAmount');
+    debugPrint('   💰 Total Amount Display: $totalAmountDisplay');
     debugPrint('   📦 Delivery status: $latestStatus');
 
     return GridView.count(
@@ -492,7 +538,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         _buildInfoItem(
           context,
           Icons.attach_money,
-          "₱${totalAmount.toStringAsFixed(2)}",
+          totalAmountDisplay,
           "Total Amount",
         ),
         _buildInfoItem(

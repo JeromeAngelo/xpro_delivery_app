@@ -77,25 +77,11 @@ class _TransactionViewState extends State<TransactionView> {
       _showChequeNumberField = _selectedPaymentMode == 'Cheque';
     }
 
-    // Initialize amount from total of all invoices
-    final invoices = widget.deliveryData.invoices;
-    double totalAmount = 0.0;
+    // Initialize amount from deliveryData.totalAmount
+    final totalAmount = widget.deliveryData.totalAmount ?? 0.0;
+    _amountController.text = totalAmount.toStringAsFixed(2);
 
-    if (invoices.isNotEmpty) {
-      for (var invoice in invoices) {
-        totalAmount += invoice.totalAmount ?? 0.0;
-      }
-      _amountController.text = totalAmount.toStringAsFixed(2);
-
-      debugPrint('💰 Transaction amount initialized:');
-      debugPrint('   📊 Number of invoices: ${invoices.length}');
-      debugPrint(
-        '   💵 Total amount from all invoices: ₱${totalAmount.toStringAsFixed(2)}',
-      );
-    } else {
-      debugPrint('⚠️ No invoices found in delivery data');
-      _amountController.text = '0.00';
-    }
+    debugPrint('💰 Transaction amount initialized from deliveryData.totalAmount: ₱${totalAmount.toStringAsFixed(2)}');
   }
 
 
@@ -381,7 +367,7 @@ class _TransactionViewState extends State<TransactionView> {
                 child: const Center(child: CircularProgressIndicator()),
               ),
 
-            // Update the button section (lines 417-464) in the existing file:
+            // Confirm Payment Button with actual form values
             if (!isKeyboardVisible)
               Positioned(
                 bottom: 16,
@@ -391,12 +377,16 @@ class _TransactionViewState extends State<TransactionView> {
                   deliveryData: widget.deliveryData,
                   generatedPdf: widget.generatedPdf!,
                   amount: double.tryParse(_amountController.text) ?? 0.0,
-                  referenceNumber: '',
-                  modeOfPayment: ModeOfPayment.cashOnDelivery,
-                  chequeNumber: '',
-                  eWalletType: '',
-                  eWalletAccount: '',
-                  bankName: '',
+                  referenceNumber: _referenceNumberController.text.trim(),
+                  modeOfPayment: _getModeOfPaymentEnum(_selectedPaymentMode),
+                  chequeNumber: _chequeNumberController.text.trim().isEmpty
+                      ? null
+                      : _chequeNumberController.text.trim(),
+                  eWalletType: _selectedEWalletType,
+                  eWalletAccount: _eWalletAccountController.text.trim().isEmpty
+                      ? null
+                      : _eWalletAccountController.text.trim(),
+                  bankName: _selectedBankName,
                 ),
               ),
           ],
@@ -514,6 +504,22 @@ class _TransactionViewState extends State<TransactionView> {
   //     _showConfirmationModal();
   //   }
   // }
+
+  /// Helper method to convert payment mode string to enum
+  ModeOfPayment _getModeOfPaymentEnum(String? mode) {
+    switch (mode) {
+      case 'Bank Transfer':
+        return ModeOfPayment.bankTransfer;
+      case 'Cash On Delivery':
+        return ModeOfPayment.cashOnDelivery;
+      case 'Cheque':
+        return ModeOfPayment.cheque;
+      case 'E-Wallet':
+        return ModeOfPayment.eWallet;
+      default:
+        return ModeOfPayment.cashOnDelivery;
+    }
+  }
 
   @override
   void dispose() {

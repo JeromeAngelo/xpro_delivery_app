@@ -832,6 +832,40 @@ class DeliveryDataLocalDataSourceImpl implements DeliveryDataLocalDataSource {
         }
       }
 
+      // ---------------------------------------------------
+      // 6️⃣ CALCULATE TOTAL AMOUNT if not set
+      // ---------------------------------------------------
+      if (deliveryData.totalAmount == null || deliveryData.totalAmount == 0.0) {
+        try {
+          double calculatedTotal = 0.0;
+          final invoicesList = deliveryData.invoices;
+
+          if (invoicesList.isNotEmpty) {
+            for (final invoice in invoicesList) {
+              if (invoice.totalAmount != null && invoice.totalAmount! > 0) {
+                calculatedTotal += invoice.totalAmount!;
+              }
+            }
+
+            if (calculatedTotal > 0) {
+              debugPrint(
+                '💰 Calculated totalAmount from ${invoicesList.length} invoices: ₱${calculatedTotal.toStringAsFixed(2)}',
+              );
+              deliveryData.totalAmount = calculatedTotal;
+              // Persist the calculated amount
+              deliveryDataBox.put(deliveryData);
+              debugPrint(
+                '💾 Persisted calculated totalAmount to local storage',
+              );
+            }
+          } else {
+            debugPrint('⚠️ No invoices available to calculate total amount');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Failed to calculate total amount: $e (non-blocking)');
+        }
+      }
+
       debugPrint('✅ DeliveryData fully loaded with expected relations');
       return deliveryData;
     } catch (e) {

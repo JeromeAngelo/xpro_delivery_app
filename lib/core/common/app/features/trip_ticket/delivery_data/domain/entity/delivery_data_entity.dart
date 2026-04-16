@@ -31,7 +31,7 @@ class DeliveryDataEntity extends Equatable {
   late final String? deliveryNumber;
  String? totalDeliveryTime;
  InvoiceStatus? invoiceStatus;
-
+final double? totalAmount;
   // New additional fields
   final String? storeName;
   final String? ownerName;
@@ -74,6 +74,7 @@ class DeliveryDataEntity extends Equatable {
     this.paymentMode,
     this.invoiceStatus,
     this.storeName,
+    this.totalAmount,
     this.ownerName,
     this.contactNumber,
     this.barangay,
@@ -112,6 +113,7 @@ class DeliveryDataEntity extends Equatable {
     invoiceStatus,
     deliveryUpdates,
     invoiceItems,
+    totalAmount,
     isUnloaded,
     isUnloading,
     paymentMode,

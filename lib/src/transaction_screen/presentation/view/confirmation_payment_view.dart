@@ -77,9 +77,10 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
     super.initState();
     AppDebugLogger.instance.logInfo(
       '📝 Payment confirmation initialized',
-      details: 'Customer: ${widget.deliveryData.storeName}, Amount: ₱${widget.amount.toStringAsFixed(2)}',
+      details:
+          'Customer: ${widget.deliveryData.storeName}, Amount: ₱${widget.amount.toStringAsFixed(2)}',
     );
-    
+
     // Pre-populate customer name if available
     final customer = widget.deliveryData.customer.target;
     if (customer?.name != null) {
@@ -94,8 +95,6 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
   }
 
   bool _validateFields() {
-    
-
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -136,8 +135,7 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
               _buildHeader(context),
               _buildPdfViewer(),
               _buildPdfOptions(),
-              // _buildPaymentSummary(context),
-              const SizedBox(height: 15),
+              _buildPaymentSummary(context),
 
               _buildSignaturePad(context),
               const SizedBox(height: 15),
@@ -280,12 +278,50 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
     );
   }
 
+  Widget _buildPaymentSummary(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Total Amount',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Amount collected from customer',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '₱${widget.amount.toStringAsFixed(2)}',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSignaturePad(BuildContext context) {
     return Stack(
       children: [
         SizedBox(
           height: 200,
-
           child: SfSignaturePad(
             key: _signaturePadKey,
             backgroundColor: const Color.fromARGB(40, 199, 199, 199),
@@ -295,11 +331,23 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
         Positioned(
           top: 8,
           left: 8,
-          child: Text(
-            'Customer Signature',
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+          child: Row(
+            children: [
+              Text(
+                'Customer Signature',
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '(Optional)',
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
           ),
         ),
         Positioned(
@@ -473,7 +521,8 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
         if (state is DeliveryReceiptCreated) {
           AppDebugLogger.instance.logSuccess(
             '✅ Payment confirmation completed',
-            details: 'Customer: ${widget.deliveryData.storeName}, Amount: ₱${widget.amount.toStringAsFixed(2)}',
+            details:
+                'Customer: ${widget.deliveryData.storeName}, Amount: ₱${widget.amount.toStringAsFixed(2)}',
           );
 
           // Show immediate feedback
@@ -493,24 +542,26 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
 
           // 🔄 FORCE CACHE INVALIDATION: Clear cached data to force fresh load
           debugPrint('🔄 Invalidating cached delivery data to force refresh');
-          
+
           // Navigate immediately after local creation
-          debugPrint(
-            '🚀 Navigating to target screen with cache invalidation',
-          );
+          debugPrint('🚀 Navigating to target screen with cache invalidation');
           Navigator.of(context).pop(); // Close modal
 
           // Force immediate data refresh before navigation
           if (context.mounted) {
             final deliveryBloc = context.read<DeliveryDataBloc>();
-            
+
             // Invalidate cache by loading fresh data immediately
             deliveryBloc.add(GetDeliveryDataByIdEvent(widget.deliveryData.id!));
-            deliveryBloc.add(GetLocalDeliveryDataByIdEvent(widget.deliveryData.id!));
+            deliveryBloc.add(
+              GetLocalDeliveryDataByIdEvent(widget.deliveryData.id!),
+            );
           }
 
           // Navigate to delivery and invoice view with customer ID
-          debugPrint('🔄 Navigating to delivery and invoice view for customer: ${widget.deliveryData.id}');
+          debugPrint(
+            '🔄 Navigating to delivery and invoice view for customer: ${widget.deliveryData.id}',
+          );
           context.go(
             '/delivery-and-invoice/${widget.deliveryData.id}',
             extra: widget.deliveryData,
@@ -557,7 +608,7 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
 
   Future<void> _takePicture() async {
     AppDebugLogger.instance.logInfo('📷 Camera opened for delivery photo');
-    
+
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
@@ -593,7 +644,8 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
 
     AppDebugLogger.instance.logInfo(
       '💳 Payment confirmation initiated',
-      details: 'Amount: ₱${widget.amount.toStringAsFixed(2)}, Mode: ${widget.modeOfPayment.name}',
+      details:
+          'Amount: ₱${widget.amount.toStringAsFixed(2)}, Mode: ${widget.modeOfPayment.name}',
     );
 
     // Show immediate feedback that processing has started
@@ -649,7 +701,7 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
       );
       await receiptFile.writeAsBytes(widget.generatedPdf);
 
-      // Create delivery receipt
+      // Create delivery receipt with payment details
       if (mounted) {
         context.read<DeliveryReceiptBloc>().add(
           CreateDeliveryReceiptEvent(
@@ -660,6 +712,11 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
             customerImages: capturedImages,
             customerSignature: signaturePath,
             receiptFile: receiptFile.path,
+            referenceNumber: widget.referenceNumber,
+            modeOfPayment: widget.modeOfPayment.name,
+            chequeNumber: widget.chequeNumber,
+            eWalletType: widget.eWalletType,
+            bankName: widget.bankName,
           ),
         );
       }

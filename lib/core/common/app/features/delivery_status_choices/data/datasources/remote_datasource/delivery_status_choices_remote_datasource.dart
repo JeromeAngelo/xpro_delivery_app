@@ -146,12 +146,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
         case 'invoices in queue':
           allowedTitles.addAll(['unloading', 'mark as undelivered']);
           break;
-        case 'unloading':
-          allowedTitles.addAll(['mark as received']);
-          break;
-        case 'mark as received':
-          allowedTitles.addAll(['end delivery']);
-          break;
+
         case 'arrived':
           allowedTitles.addAll([
             'unloading',
@@ -159,6 +154,9 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
             'waiting for customer',
             'invoices in queue',
           ]);
+        case 'mark as received':
+          allowedTitles.addAll(['end delivery']);
+
           break;
         case 'mark as undelivered':
         case 'end delivery':
@@ -250,7 +248,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
         for (final update in existingUpdates) {
           final updateStatusId = update.data?['statusChoicePbId']?.toString();
           final updateSyncStatus = update.data?['syncStatus']?.toString() ?? '';
-         // final updateTitle = update.data?['title']?.toString() ?? '';
+          // final updateTitle = update.data?['title']?.toString() ?? '';
 
           if (updateStatusId == status.id &&
               (updateSyncStatus == SyncStatus.pending.name ||
@@ -409,11 +407,9 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
               allowedTitles.addAll(['unloading']);
               break;
             case 'unloading':
-              allowedTitles.addAll(['mark as received']);
+              allowedTitles.addAll(["mark as received"]);
               break;
-            case 'mark as received':
-              allowedTitles.addAll(['']);
-              break;
+
             case 'arrived':
               allowedTitles.addAll([
                 'unloading',
@@ -421,6 +417,9 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
                 'waiting for customer',
                 'invoices in queue',
               ]);
+              break;
+            case 'mark as received':
+              allowedTitles.addAll(['end delivery']);
               break;
             case 'mark as undelivered':
             case 'end delivery':
@@ -695,6 +694,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       // 3️⃣ Delivery Receipt (OPTIONAL — NON-BLOCKING)
       // ---------------------------------------------------
       String? deliveryReceiptId;
+      double? receiptTotalAmount;
 
       try {
         debugPrint('🔍 Looking for delivery receipt');
@@ -705,7 +705,13 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
 
         if (receiptRecords.items.isNotEmpty) {
           deliveryReceiptId = receiptRecords.items.first.id;
-          debugPrint('🧾 Delivery receipt found → $deliveryReceiptId');
+          final receiptData = receiptRecords.items.first.data;
+          receiptTotalAmount = double.tryParse(
+            receiptData['totalAmount']?.toString() ?? '',
+          );
+          debugPrint(
+            '🧾 Delivery receipt found → $deliveryReceiptId, totalAmount: $receiptTotalAmount',
+          );
         } else {
           debugPrint('⚠️ No delivery receipt found (continuing)');
         }
@@ -750,6 +756,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
               'invoiceStatus': 'completed',
               'completedAt': DateTime.now().toUtc().toIso8601String(),
               'status': 'completed',
+              'totalAmount': receiptTotalAmount?.toString() ?? '0',
             },
           );
 

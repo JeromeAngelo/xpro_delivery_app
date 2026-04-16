@@ -22,6 +22,12 @@ class CreateDeliveryReceipt
       customerImages: params.customerImages,
       customerSignature: params.customerSignature,
       receiptFile: params.receiptFile,
+      amount: params.amount,
+      referenceNumber: params.referenceNumber,
+      modeOfPayment: params.modeOfPayment,
+      chequeNumber: params.chequeNumber,
+      eWalletType: params.eWalletType,
+      bankName: params.bankName,
     );
   }
 }
@@ -34,6 +40,11 @@ class CreateDeliveryReceiptParams extends Equatable {
   final String? customerSignature;
   final String? receiptFile;
   final double? amount;
+  final String? referenceNumber;
+  final String? modeOfPayment;
+  final String? chequeNumber;
+  final String? eWalletType;
+  final String? bankName;
 
   const CreateDeliveryReceiptParams({
     required this.deliveryDataId,
@@ -43,6 +54,11 @@ class CreateDeliveryReceiptParams extends Equatable {
     this.amount,
     this.customerSignature,
     this.receiptFile,
+    this.referenceNumber,
+    this.modeOfPayment,
+    this.chequeNumber,
+    this.eWalletType,
+    this.bankName,
   });
 
   @override
@@ -53,10 +69,16 @@ class CreateDeliveryReceiptParams extends Equatable {
     customerImages,
     customerSignature,
     receiptFile,
+    amount,
+    referenceNumber,
+    modeOfPayment,
+    chequeNumber,
+    eWalletType,
+    bankName,
   ];
 
   @override
   String toString() {
-    return 'CreateDeliveryReceiptParams(deliveryDataId: $deliveryDataId, status: $status, dateTimeCompleted: $dateTimeCompleted, customerImages: ${customerImages?.length ?? 0}, customerSignature: $customerSignature, receiptFile: $receiptFile)';
+    return 'CreateDeliveryReceiptParams(deliveryDataId: $deliveryDataId, status: $status, dateTimeCompleted: $dateTimeCompleted, amount: $amount, modeOfPayment: $modeOfPayment, referenceNumber: $referenceNumber)';
   }
 }

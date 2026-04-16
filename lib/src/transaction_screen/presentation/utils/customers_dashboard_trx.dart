@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 
 class CustomersDashboardTrx extends StatelessWidget {
@@ -86,6 +85,7 @@ class CustomersDashboardTrx extends StatelessWidget {
   /// 🔷 RIGHT COLUMN
   Widget _buildRightColumn(BuildContext context) {
     final mop = (deliveryData.paymentMode ?? '').trim();
+    final totalAmount = deliveryData.totalAmount ?? 0.00;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,23 +101,11 @@ class CustomersDashboardTrx extends StatelessWidget {
           context: context,
           icon: Icons.attach_money,
           title: "Total Amount",
-          value: _calculateTotalAmount(),
+          value:
+              "₱${totalAmount.toStringAsFixed(2)}",
         ),
       ],
     );
-  }
-
-  /// 🔷 TOTAL CALCULATION (NO CHANGE)
-  String _calculateTotalAmount() {
-    double total = 0.0;
-
-    final invoices = deliveryData.invoices;
-
-    for (final inv in invoices) {
-      total += (inv.totalAmount ?? 0.0);
-    }
-
-    return '₱${NumberFormat('#,##0.00').format(total)}';
   }
 
   /// 🔷 INFO ROW (IMPROVED STYLE)

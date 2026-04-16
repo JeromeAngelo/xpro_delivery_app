@@ -9,24 +9,29 @@ abstract class DeliveryReceiptRepo {
   const DeliveryReceiptRepo();
 
   /// Get delivery receipt by trip ID from remote
-  /// 
+  ///
   /// Takes a trip ID and returns the delivery receipt entity associated with that trip
   ResultFuture<DeliveryReceiptEntity> getDeliveryReceiptByTripId(String tripId);
 
   /// Load delivery receipt by trip ID from local storage
-  /// 
+  ///
   /// Takes a trip ID and returns the delivery receipt entity from local cache
-  ResultFuture<DeliveryReceiptEntity> getLocalDeliveryReceiptByTripId(String tripId);
-  ResultFuture<DeliveryReceiptEntity> getDeliveryReceiptByDeliveryDataId(String deliveryDataId);
+  ResultFuture<DeliveryReceiptEntity> getLocalDeliveryReceiptByTripId(
+    String tripId,
+  );
+  ResultFuture<DeliveryReceiptEntity> getDeliveryReceiptByDeliveryDataId(
+    String deliveryDataId,
+  );
 
   /// Load delivery receipt by delivery data ID from local storage
-  /// 
+  ///
   /// Takes a delivery data ID and returns the delivery receipt entity from local cache
-  ResultFuture<DeliveryReceiptEntity> getLocalDeliveryReceiptByDeliveryDataId(String deliveryDataId);
-
+  ResultFuture<DeliveryReceiptEntity> getLocalDeliveryReceiptByDeliveryDataId(
+    String deliveryDataId,
+  );
 
   /// Create delivery receipt by delivery data ID
-  /// 
+  ///
   /// Takes delivery data ID and receipt data to create a new delivery receipt
   ResultFuture<DeliveryReceiptEntity> createDeliveryReceiptByDeliveryDataId({
     required String deliveryDataId,
@@ -35,12 +40,20 @@ abstract class DeliveryReceiptRepo {
     required List<String>? customerImages,
     required String? customerSignature,
     required String? receiptFile,
+    double? amount,
+    String? referenceNumber,
+    String? modeOfPayment,
+    String? chequeNumber,
+    String? eWalletType,
+    String? bankName,
   });
 
   /// Delete delivery receipt by ID
-  /// 
+  ///
   /// Takes a delivery receipt ID and deletes it
   ResultFuture<bool> deleteDeliveryReceipt(String id);
 
-    ResultFuture<Uint8List> generateDeliveryReceiptPdf(DeliveryDataEntity deliveryData);
+  ResultFuture<Uint8List> generateDeliveryReceiptPdf(
+    DeliveryDataEntity deliveryData,
+  );
 }

@@ -30,24 +30,14 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
       child: BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
-        // ✅ Only rebuild when "isUnloaded" for THIS customer can change
-        buildWhen: (prev, curr) {
-          final prevUnloaded = _extractIsUnloaded(prev);
-          final currUnloaded = _extractIsUnloaded(curr);
-
-          // if state type changes (loading -> loaded), rebuild
-          if (prev.runtimeType != curr.runtimeType) return true;
-
-          // if our computed flag changed, rebuild
-          return prevUnloaded != currUnloaded;
-        },
+        // ✅ Only rebuild when latest status title for THIS customer can change
         builder: (context, deliveryDataState) {
-          final isUnloaded = _extractIsUnloaded(deliveryDataState);
+          final canConfirm = _hasValidStatus(deliveryDataState);
 
           debugPrint('🔍 ConfirmBtn state check:');
           debugPrint('   📦 Customer ID: ${widget.customer.id}');
           debugPrint('   📋 Delivery Data State: ${deliveryDataState.runtimeType}');
-          debugPrint('   📤 Is Unloaded: $isUnloaded');
+          debugPrint('   📤 Can Confirm: $canConfirm');
 
           return BlocConsumer<DeliveryReceiptBloc, DeliveryReceiptState>(
             listener: (context, state) {
@@ -69,56 +59,15 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
               final isGeneratingPdf =
                   receiptState is DeliveryReceiptPdfGenerating;
 
-              // ✅ If unloaded is true, button must be usable again
-              // The only disable condition should be "isGeneratingPdf"
-              final canPress = isUnloaded && !isGeneratingPdf;
+              final canPress = canConfirm && !isGeneratingPdf;
 
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ✅ Show status message only while NOT unloaded
-                  if (!isUnloaded) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onPrimaryContainer,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _getStatusMessage(deliveryDataState),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall!
-                                  .copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
                   RoundedButton(
                     label: isGeneratingPdf
                         ? 'Generating PDF...'
-                        : isUnloaded
-                            ? 'Confirm Invoices (${widget.invoices.length}/${widget.invoices.length})'
-                            : 'Waiting for Unloading to Complete...',
+                        : 'Confirm Invoices (${widget.invoices.length}/${widget.invoices.length})',
                     onPressed: canPress ? () => _handleConfirmInvoices(context) : null,
                     buttonColour: canPress
                         ? Theme.of(context).colorScheme.primary
@@ -143,15 +92,15 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
     );
   }
 
-  // ✅ Robust read for isUnloaded based on current DeliveryDataBloc state
-  bool _extractIsUnloaded(DeliveryDataState state) {
+  // ✅ Check if latest delivery status title is "Unloading" or "mark as received"
+  bool _hasValidStatus(DeliveryDataState state) {
     final id = (widget.customer.id ?? '').toString().trim();
     if (id.isEmpty) {
-      debugPrint('⚠️ Customer id is empty, cannot compute isUnloaded');
+      debugPrint('⚠️ Customer id is empty, cannot check status');
       return false;
     }
 
-    debugPrint('🔍 Checking isUnloaded for deliveryDataId=$id');
+    debugPrint('🔍 Checking latest status for deliveryDataId=$id');
 
     DeliveryDataEntity? delivery;
 
@@ -187,25 +136,36 @@ class _ConfirmBtnState extends State<ConfirmBtn> {
     }
 
     if (delivery == null) {
-      debugPrint('❌ No matching delivery in state → isUnloaded=false');
+      debugPrint('❌ No matching delivery in state → isUnloading=false');
       return false;
     }
 
-    final isUnloaded = delivery.isUnloaded == true;
+    // Get the latest delivery update by time and check if its title is "Unloading"
+    final updates = delivery.deliveryUpdates;
+    if (updates.isEmpty) {
+      debugPrint('❌ No delivery updates found → isUnloading=false');
+      return false;
+    }
+
+    // Sort by time descending and get the latest
+    final sortedUpdates = updates.toList()
+      ..sort((a, b) {
+        if (a.time == null && b.time == null) return 0;
+        if (a.time == null) return 1;
+        if (b.time == null) return -1;
+        return b.time!.compareTo(a.time!);
+      });
+
+    final latestUpdate = sortedUpdates.first;
+    final latestTitle = latestUpdate.title?.toLowerCase() ?? '';
+    final isValidStatus = latestTitle == 'unloading' || latestTitle == 'mark as received';
 
     debugPrint('   📦 Delivery ID: ${delivery.id}');
-    debugPrint('   📤 isUnloaded: ${delivery.isUnloaded}');
-    debugPrint('✅ Computed isUnloaded = $isUnloaded');
+    debugPrint('   📝 Latest status title: ${latestUpdate.title}');
+    debugPrint('   🕐 Latest status time: ${latestUpdate.time}');
+    debugPrint('✅ Computed canConfirm = $isValidStatus');
 
-    return isUnloaded;
-  }
-
-  String _getStatusMessage(DeliveryDataState state) {
-    // Keep it simple + consistent with the same resolver
-    final isUnloaded = _extractIsUnloaded(state);
-    return isUnloaded
-        ? 'Delivery has been unloaded. You may now confirm invoices.'
-        : 'Waiting for unloading to complete.';
+    return isValidStatus;
   }
 
   void _handleConfirmInvoices(BuildContext context) {

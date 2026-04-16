@@ -135,6 +135,7 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
       return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
     }
   }
+
   @override
   ResultFuture<DeliveryReceiptEntity> createDeliveryReceiptByDeliveryDataId({
     required String deliveryDataId,
@@ -143,25 +144,38 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
     required List<String>? customerImages,
     required String? customerSignature,
     required String? receiptFile,
+    double? amount,
+    String? referenceNumber,
+    String? modeOfPayment,
+    String? chequeNumber,
+    String? eWalletType,
+    String? bankName,
   }) async {
     try {
-      debugPrint('💾 REPO: Creating delivery receipt locally first for delivery data: $deliveryDataId');
-      
-      // Create in local storage first for immediate feedback
-      final localDeliveryReceipt = await _localDatasource.createDeliveryReceiptByDeliveryDataId(
-        deliveryDataId: deliveryDataId,
-        status: status,
-        dateTimeCompleted: dateTimeCompleted,
-        customerImages: customerImages,
-        customerSignature: customerSignature,
-        receiptFile: receiptFile,
+      debugPrint(
+        '💾 REPO: Creating delivery receipt locally first for delivery data: $deliveryDataId',
       );
-      
-      debugPrint('✅ REPO: Successfully created delivery receipt in local storage');
-      
+
+      // Create in local storage first for immediate feedback
+      final localDeliveryReceipt = await _localDatasource
+          .createDeliveryReceiptByDeliveryDataId(
+            deliveryDataId: deliveryDataId,
+            status: status,
+            dateTimeCompleted: dateTimeCompleted,
+            customerImages: customerImages,
+            customerSignature: customerSignature,
+            receiptFile: receiptFile,
+            amount: amount,
+          
+          );
+
+      debugPrint(
+        '✅ REPO: Successfully created delivery receipt in local storage',
+      );
+
       // Return local result immediately for UI navigation
       // This allows immediate navigation while remote sync happens in background
-      
+
       // Start background sync without blocking the UI response
       _performBackgroundSync(
         deliveryDataId: deliveryDataId,
@@ -171,10 +185,15 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
         customerSignature: customerSignature,
         receiptFile: receiptFile,
         localReceipt: localDeliveryReceipt,
+        amount: amount,
+        referenceNumber: referenceNumber,
+        modeOfPayment: modeOfPayment,
+        chequeNumber: chequeNumber,
+        eWalletType: eWalletType,
+        bankName: bankName,
       );
-      
-      return Right(localDeliveryReceipt);
 
+      return Right(localDeliveryReceipt);
     } on CacheException catch (e) {
       debugPrint('❌ REPO: Local creation failed: ${e.message}');
       return Left(CacheFailure(message: e.message, statusCode: e.statusCode));
@@ -193,39 +212,50 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
     required String? customerSignature,
     required String? receiptFile,
     required DeliveryReceiptEntity localReceipt,
+    double? amount,
+    String? referenceNumber,
+    String? modeOfPayment,
+    String? chequeNumber,
+    String? eWalletType,
+    String? bankName,
   }) async {
     try {
-      debugPrint('🌐 REPO: Starting background sync to remote for delivery data: $deliveryDataId');
-      
-      // Sync with remote in background
-      final remoteDeliveryReceipt = await _remoteDatasource.createDeliveryReceiptByDeliveryDataId(
-        deliveryDataId: deliveryDataId,
-        status: status,
-        amount: localReceipt.totalAmount,
-        dateTimeCompleted: dateTimeCompleted,
-        customerImages: customerImages,
-        customerSignature: customerSignature,
-        receiptFile: receiptFile,
+      debugPrint(
+        '🌐 REPO: Starting background sync to remote for delivery data: $deliveryDataId',
       );
-      
+
+      // Sync with remote in background
+      final remoteDeliveryReceipt = await _remoteDatasource
+          .createDeliveryReceiptByDeliveryDataId(
+            deliveryDataId: deliveryDataId,
+            status: status,
+            amount: amount ?? localReceipt.totalAmount,
+            dateTimeCompleted: dateTimeCompleted,
+            customerImages: customerImages,
+            customerSignature: customerSignature,
+            receiptFile: receiptFile,
+         
+          );
+
       debugPrint('📥 REPO: Updating local storage with remote data');
-      
+
       // Update local storage with remote data (this will have the proper server ID)
       // You might need to implement an update method in local datasource
       await _localDatasource.updateDeliveryReceipt(remoteDeliveryReceipt);
-      
+
       debugPrint('✅ REPO: Successfully completed background sync to remote');
-      
     } on ServerException catch (e) {
-      debugPrint('⚠️ REPO: Background sync failed, but local data is preserved: ${e.message}');
+      debugPrint(
+        '⚠️ REPO: Background sync failed, but local data is preserved: ${e.message}',
+      );
       // Local data is still available, sync can be retried later
-      
     } catch (e) {
-      debugPrint('❌ REPO: Unexpected error during background sync: ${e.toString()}');
+      debugPrint(
+        '❌ REPO: Unexpected error during background sync: ${e.toString()}',
+      );
       // Local data is still available
     }
   }
-
 
   @override
   ResultFuture<bool> deleteDeliveryReceipt(String id) async {
@@ -326,16 +356,22 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
     }
   }
 
-   @override
-  ResultFuture<Uint8List> generateDeliveryReceiptPdf(DeliveryDataEntity deliveryData) async {
+  @override
+  ResultFuture<Uint8List> generateDeliveryReceiptPdf(
+    DeliveryDataEntity deliveryData,
+  ) async {
     try {
-      debugPrint('📄 REPO: Generating delivery receipt PDF for: ${deliveryData.id}');
-      
-      final pdfBytes = await _localDatasource.generateDeliveryReceiptPdf(deliveryData);
-      
+      debugPrint(
+        '📄 REPO: Generating delivery receipt PDF for: ${deliveryData.id}',
+      );
+
+      final pdfBytes = await _localDatasource.generateDeliveryReceiptPdf(
+        deliveryData,
+      );
+
       debugPrint('✅ REPO: Successfully generated delivery receipt PDF');
       debugPrint('📊 REPO: PDF size: ${pdfBytes.length} bytes');
-      
+
       return Right(pdfBytes);
     } on CacheException catch (e) {
       debugPrint('❌ REPO: PDF generation failed: ${e.message}');
@@ -350,5 +386,4 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
       );
     }
   }
-
 }

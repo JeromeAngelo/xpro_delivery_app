@@ -41,6 +41,7 @@ abstract class DeliveryReceiptLocalDatasource {
     required List<String>? customerImages,
     required String? customerSignature,
     required String? receiptFile,
+    required double? amount,
   });
 
   /// Update delivery receipt
@@ -193,6 +194,7 @@ Future<DeliveryReceiptModel> createDeliveryReceiptByDeliveryDataId({
   required List<String>? customerImages,
   required String? customerSignature,
   required String? receiptFile,
+  required double? amount,
 }) async {
   try {
     debugPrint('📱 LOCAL: Creating delivery receipt for deliveryDataId=$deliveryDataId');
@@ -300,6 +302,7 @@ Future<DeliveryReceiptModel> createDeliveryReceiptByDeliveryDataId({
       customerImages: customerImages,
       customerSignature: customerSignature,
       receiptFile: receiptFile,
+      totalAmount: amount,
       created: DateTime.now(),
       updated: DateTime.now(),
     );

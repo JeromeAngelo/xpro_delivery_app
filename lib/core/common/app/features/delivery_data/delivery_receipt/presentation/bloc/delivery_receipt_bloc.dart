@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/entity/delivery_receipt_entity.dart';
@@ -10,38 +9,47 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delive
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_state.dart';
 
-class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptState> {
+class DeliveryReceiptBloc
+    extends Bloc<DeliveryReceiptEvent, DeliveryReceiptState> {
   final GetDeliveryReceiptByTripId _getDeliveryReceiptByTripId;
   final GetDeliveryReceiptByDeliveryDataId _getDeliveryReceiptByDeliveryDataId;
   final CreateDeliveryReceipt _createDeliveryReceipt;
   final DeleteDeliveryReceipt _deleteDeliveryReceipt;
-  final GenerateDeliveryReceiptPdf _generateDeliveryReceiptPdf; // 
+  final GenerateDeliveryReceiptPdf _generateDeliveryReceiptPdf; //
 
   DeliveryReceiptState? _cachedState;
 
   DeliveryReceiptBloc({
     required GetDeliveryReceiptByTripId getDeliveryReceiptByTripId,
-    required GetDeliveryReceiptByDeliveryDataId getDeliveryReceiptByDeliveryDataId,
+    required GetDeliveryReceiptByDeliveryDataId
+    getDeliveryReceiptByDeliveryDataId,
     required CreateDeliveryReceipt createDeliveryReceipt,
     required DeleteDeliveryReceipt deleteDeliveryReceipt,
     required GenerateDeliveryReceiptPdf generateDeliveryReceiptPdf, // Add this
-  })  : _getDeliveryReceiptByTripId = getDeliveryReceiptByTripId,
-        _getDeliveryReceiptByDeliveryDataId = getDeliveryReceiptByDeliveryDataId,
-        _createDeliveryReceipt = createDeliveryReceipt,
-        _deleteDeliveryReceipt = deleteDeliveryReceipt,
-        _generateDeliveryReceiptPdf = generateDeliveryReceiptPdf, // Add this
-        super(const DeliveryReceiptInitial()) {
-    
+  }) : _getDeliveryReceiptByTripId = getDeliveryReceiptByTripId,
+       _getDeliveryReceiptByDeliveryDataId = getDeliveryReceiptByDeliveryDataId,
+       _createDeliveryReceipt = createDeliveryReceipt,
+       _deleteDeliveryReceipt = deleteDeliveryReceipt,
+       _generateDeliveryReceiptPdf = generateDeliveryReceiptPdf, // Add this
+       super(const DeliveryReceiptInitial()) {
     on<GetDeliveryReceiptByTripIdEvent>(_onGetDeliveryReceiptByTripId);
-    on<LoadLocalDeliveryReceiptByTripIdEvent>(_onLoadLocalDeliveryReceiptByTripId);
-    on<GetDeliveryReceiptByDeliveryDataIdEvent>(_onGetDeliveryReceiptByDeliveryDataId);
-    on<LoadLocalDeliveryReceiptByDeliveryDataIdEvent>(_onLoadLocalDeliveryReceiptByDeliveryDataId);
+    on<LoadLocalDeliveryReceiptByTripIdEvent>(
+      _onLoadLocalDeliveryReceiptByTripId,
+    );
+    on<GetDeliveryReceiptByDeliveryDataIdEvent>(
+      _onGetDeliveryReceiptByDeliveryDataId,
+    );
+    on<LoadLocalDeliveryReceiptByDeliveryDataIdEvent>(
+      _onLoadLocalDeliveryReceiptByDeliveryDataId,
+    );
     on<CreateDeliveryReceiptEvent>(_onCreateDeliveryReceipt);
     on<DeleteDeliveryReceiptEvent>(_onDeleteDeliveryReceipt);
     on<ClearAllLocalDeliveryReceiptsEvent>(_onClearAllLocalDeliveryReceipts);
     on<GetAllLocalDeliveryReceiptsEvent>(_onGetAllLocalDeliveryReceipts);
     on<CacheDeliveryReceiptEvent>(_onCacheDeliveryReceipt);
-    on<GenerateDeliveryReceiptPdfEvent>(_onGenerateDeliveryReceiptPdf); // Add this
+    on<GenerateDeliveryReceiptPdfEvent>(
+      _onGenerateDeliveryReceiptPdf,
+    ); // Add this
   }
 
   Future<void> _onGetDeliveryReceiptByTripId(
@@ -58,21 +66,28 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     }
 
     final result = await _getDeliveryReceiptByTripId(event.tripId);
-    
+
     result.fold(
       (failure) {
-        debugPrint('❌ Failed to get delivery receipt by trip ID: ${failure.message}');
-        
-        if (failure.message.contains('404') || failure.message.contains('not found')) {
-          emit(DeliveryReceiptNotFound(
-            searchId: event.tripId,
-            searchType: 'tripId',
-          ));
+        debugPrint(
+          '❌ Failed to get delivery receipt by trip ID: ${failure.message}',
+        );
+
+        if (failure.message.contains('404') ||
+            failure.message.contains('not found')) {
+          emit(
+            DeliveryReceiptNotFound(
+              searchId: event.tripId,
+              searchType: 'tripId',
+            ),
+          );
         } else {
-          emit(DeliveryReceiptError(
-            message: failure.message,
-            errorCode: failure.statusCode,
-          ));
+          emit(
+            DeliveryReceiptError(
+              message: failure.message,
+              errorCode: failure.statusCode,
+            ),
+          );
         }
       },
       (deliveryReceipt) {
@@ -91,32 +106,45 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     LoadLocalDeliveryReceiptByTripIdEvent event,
     Emitter<DeliveryReceiptState> emit,
   ) async {
-    debugPrint('📦 Loading delivery receipt by trip ID from local: ${event.tripId}');
-    
+    debugPrint(
+      '📦 Loading delivery receipt by trip ID from local: ${event.tripId}',
+    );
+
     emit(const DeliveryReceiptLoading());
 
-    final result = await _getDeliveryReceiptByTripId.loadFromLocal(event.tripId);
-    
+    final result = await _getDeliveryReceiptByTripId.loadFromLocal(
+      event.tripId,
+    );
+
     result.fold(
       (failure) {
-        debugPrint('❌ Failed to load local delivery receipt by trip ID: ${failure.message}');
-        
-        if (failure.message.contains('404') || failure.message.contains('not found')) {
-          emit(DeliveryReceiptNotFound(
-            searchId: event.tripId,
-            searchType: 'tripId',
-          ));
+        debugPrint(
+          '❌ Failed to load local delivery receipt by trip ID: ${failure.message}',
+        );
+
+        if (failure.message.contains('404') ||
+            failure.message.contains('not found')) {
+          emit(
+            DeliveryReceiptNotFound(
+              searchId: event.tripId,
+              searchType: 'tripId',
+            ),
+          );
           // Automatically try remote fetch if local fails
           add(GetDeliveryReceiptByTripIdEvent(event.tripId));
         } else {
-          emit(DeliveryReceiptError(
-            message: failure.message,
-            errorCode: failure.statusCode,
-          ));
+          emit(
+            DeliveryReceiptError(
+              message: failure.message,
+              errorCode: failure.statusCode,
+            ),
+          );
         }
       },
       (deliveryReceipt) {
-        debugPrint('✅ Successfully loaded delivery receipt from local by trip ID');
+        debugPrint(
+          '✅ Successfully loaded delivery receipt from local by trip ID',
+        );
         final newState = DeliveryReceiptLoaded(
           deliveryReceipt: deliveryReceipt,
           isFromCache: true,
@@ -133,7 +161,9 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     GetDeliveryReceiptByDeliveryDataIdEvent event,
     Emitter<DeliveryReceiptState> emit,
   ) async {
-    debugPrint('🔄 Getting delivery receipt by delivery data ID: ${event.deliveryDataId}');
+    debugPrint(
+      '🔄 Getting delivery receipt by delivery data ID: ${event.deliveryDataId}',
+    );
 
     // Emit cached state if available, then loading
     if (_cachedState != null && _cachedState is DeliveryReceiptLoaded) {
@@ -142,26 +172,37 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
       emit(const DeliveryReceiptLoading());
     }
 
-    final result = await _getDeliveryReceiptByDeliveryDataId(event.deliveryDataId);
-    
+    final result = await _getDeliveryReceiptByDeliveryDataId(
+      event.deliveryDataId,
+    );
+
     result.fold(
       (failure) {
-        debugPrint('❌ Failed to get delivery receipt by delivery data ID: ${failure.message}');
-        
-        if (failure.message.contains('404') || failure.message.contains('not found')) {
-          emit(DeliveryReceiptNotFound(
-            searchId: event.deliveryDataId,
-            searchType: 'deliveryDataId',
-          ));
+        debugPrint(
+          '❌ Failed to get delivery receipt by delivery data ID: ${failure.message}',
+        );
+
+        if (failure.message.contains('404') ||
+            failure.message.contains('not found')) {
+          emit(
+            DeliveryReceiptNotFound(
+              searchId: event.deliveryDataId,
+              searchType: 'deliveryDataId',
+            ),
+          );
         } else {
-          emit(DeliveryReceiptError(
-            message: failure.message,
-            errorCode: failure.statusCode,
-          ));
+          emit(
+            DeliveryReceiptError(
+              message: failure.message,
+              errorCode: failure.statusCode,
+            ),
+          );
         }
       },
       (deliveryReceipt) {
-        debugPrint('✅ Successfully retrieved delivery receipt by delivery data ID');
+        debugPrint(
+          '✅ Successfully retrieved delivery receipt by delivery data ID',
+        );
         final newState = DeliveryReceiptLoaded(
           deliveryReceipt: deliveryReceipt,
           isFromCache: false,
@@ -176,32 +217,45 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     LoadLocalDeliveryReceiptByDeliveryDataIdEvent event,
     Emitter<DeliveryReceiptState> emit,
   ) async {
-    debugPrint('📦 Loading delivery receipt by delivery data ID from local: ${event.deliveryDataId}');
-    
+    debugPrint(
+      '📦 Loading delivery receipt by delivery data ID from local: ${event.deliveryDataId}',
+    );
+
     emit(const DeliveryReceiptLoading());
 
-    final result = await _getDeliveryReceiptByDeliveryDataId.loadFromLocal(event.deliveryDataId);
-    
+    final result = await _getDeliveryReceiptByDeliveryDataId.loadFromLocal(
+      event.deliveryDataId,
+    );
+
     result.fold(
       (failure) {
-        debugPrint('❌ Failed to load local delivery receipt by delivery data ID: ${failure.message}');
-        
-        if (failure.message.contains('404') || failure.message.contains('not found')) {
-          emit(DeliveryReceiptNotFound(
-            searchId: event.deliveryDataId,
-            searchType: 'deliveryDataId',
-          ));
+        debugPrint(
+          '❌ Failed to load local delivery receipt by delivery data ID: ${failure.message}',
+        );
+
+        if (failure.message.contains('404') ||
+            failure.message.contains('not found')) {
+          emit(
+            DeliveryReceiptNotFound(
+              searchId: event.deliveryDataId,
+              searchType: 'deliveryDataId',
+            ),
+          );
           // Automatically try remote fetch if local fails
           add(GetDeliveryReceiptByDeliveryDataIdEvent(event.deliveryDataId));
         } else {
-          emit(DeliveryReceiptError(
-            message: failure.message,
-            errorCode: failure.statusCode,
-          ));
+          emit(
+            DeliveryReceiptError(
+              message: failure.message,
+              errorCode: failure.statusCode,
+            ),
+          );
         }
       },
       (deliveryReceipt) {
-        debugPrint('✅ Successfully loaded delivery receipt from local by delivery data ID');
+        debugPrint(
+          '✅ Successfully loaded delivery receipt from local by delivery data ID',
+        );
         final newState = DeliveryReceiptLoaded(
           deliveryReceipt: deliveryReceipt,
           isFromCache: true,
@@ -214,12 +268,14 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     );
   }
 
-    Future<void> _onCreateDeliveryReceipt(
+  Future<void> _onCreateDeliveryReceipt(
     CreateDeliveryReceiptEvent event,
     Emitter<DeliveryReceiptState> emit,
   ) async {
-    debugPrint('🔄 Creating delivery receipt for delivery data: ${event.deliveryDataId}');
-    
+    debugPrint(
+      '🔄 Creating delivery receipt for delivery data: ${event.deliveryDataId}',
+    );
+
     emit(const DeliveryReceiptLoading());
 
     final result = await _createDeliveryReceipt(
@@ -231,30 +287,43 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
         customerSignature: event.customerSignature,
         amount: event.amount,
         receiptFile: event.receiptFile,
+        referenceNumber: event.referenceNumber,
+        modeOfPayment: event.modeOfPayment,
+        chequeNumber: event.chequeNumber,
+        eWalletType: event.eWalletType,
+        bankName: event.bankName,
       ),
     );
 
     result.fold(
       (failure) {
         debugPrint('❌ Failed to create delivery receipt: ${failure.message}');
-        
+
         // Check if it's an offline operation
-        if (failure.message.contains('offline') || failure.message.contains('network')) {
-          emit(DeliveryReceiptOfflineOperation(
-            message: 'Delivery receipt created offline. Will sync when online.',
-            operationType: 'create',
-          ));
+        if (failure.message.contains('offline') ||
+            failure.message.contains('network')) {
+          emit(
+            DeliveryReceiptOfflineOperation(
+              message:
+                  'Delivery receipt created offline. Will sync when online.',
+              operationType: 'create',
+            ),
+          );
         } else {
-          emit(DeliveryReceiptError(
-            message: failure.message,
-            errorCode: failure.statusCode,
-          ));
+          emit(
+            DeliveryReceiptError(
+              message: failure.message,
+              errorCode: failure.statusCode,
+            ),
+          );
         }
       },
       (deliveryReceipt) {
-        debugPrint('✅ Successfully created delivery receipt (local save completed)');
+        debugPrint(
+          '✅ Successfully created delivery receipt (local save completed)',
+        );
         debugPrint('🚀 Emitting success state for immediate UI navigation');
-        
+
         // Emit success state immediately after local save
         // This allows the UI to navigate right away while background sync continues
         final newState = DeliveryReceiptCreated(
@@ -262,18 +331,18 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
           deliveryDataId: event.deliveryDataId,
         );
         emit(newState);
-        
+
         // Update cached state for future use
         _cachedState = DeliveryReceiptLoaded(
           deliveryReceipt: deliveryReceipt,
           isFromCache: false,
         );
-        
-        debugPrint('📱 UI can now navigate immediately while background sync continues');
+
+        debugPrint(
+          '📱 UI can now navigate immediately while background sync continues',
+        );
       },
     );
-  
-
   }
 
   Future<void> _onDeleteDeliveryReceipt(
@@ -281,7 +350,7 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     Emitter<DeliveryReceiptState> emit,
   ) async {
     debugPrint('🔄 Deleting delivery receipt: ${event.receiptId}');
-    
+
     emit(const DeliveryReceiptLoading());
 
     final result = await _deleteDeliveryReceipt(event.receiptId);
@@ -289,16 +358,18 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     result.fold(
       (failure) {
         debugPrint('❌ Failed to delete delivery receipt: ${failure.message}');
-        emit(DeliveryReceiptError(
-          message: failure.message,
-          errorCode: failure.statusCode,
-        ));
+        emit(
+          DeliveryReceiptError(
+            message: failure.message,
+            errorCode: failure.statusCode,
+          ),
+        );
       },
       (success) {
         if (success) {
           debugPrint('✅ Successfully deleted delivery receipt');
           emit(DeliveryReceiptDeleted(event.receiptId));
-          
+
           // Clear cached state if it matches the deleted receipt
           if (_cachedState is DeliveryReceiptLoaded) {
             final loadedState = _cachedState as DeliveryReceiptLoaded;
@@ -308,10 +379,12 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
           }
         } else {
           debugPrint('⚠️ Delivery receipt deletion returned false');
-          emit(const DeliveryReceiptError(
-            message: 'Failed to delete delivery receipt',
-            errorCode: '500',
-          ));
+          emit(
+            const DeliveryReceiptError(
+              message: 'Failed to delete delivery receipt',
+              errorCode: '500',
+            ),
+          );
         }
       },
     );
@@ -322,7 +395,7 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     Emitter<DeliveryReceiptState> emit,
   ) async {
     debugPrint('🗑️ Clearing all local delivery receipts');
-    
+
     emit(const DeliveryReceiptLoading());
 
     try {
@@ -333,10 +406,12 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
       _cachedState = null;
     } catch (e) {
       debugPrint('❌ Failed to clear local delivery receipts: $e');
-      emit(DeliveryReceiptError(
-        message: 'Failed to clear local delivery receipts: ${e.toString()}',
-        errorCode: '500',
-      ));
+      emit(
+        DeliveryReceiptError(
+          message: 'Failed to clear local delivery receipts: ${e.toString()}',
+          errorCode: '500',
+        ),
+      );
     }
   }
 
@@ -345,32 +420,33 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     Emitter<DeliveryReceiptState> emit,
   ) async {
     debugPrint('📦 Getting all local delivery receipts');
-    
+
     emit(const DeliveryReceiptLoading());
 
     try {
       // This would need to be implemented in the repository
       // For now, we'll emit an empty list
       debugPrint('✅ Successfully retrieved all local delivery receipts');
-      emit(const DeliveryReceiptsLoaded(
-        deliveryReceipts: [],
-        isFromCache: true,
-      ));
+      emit(
+        const DeliveryReceiptsLoaded(deliveryReceipts: [], isFromCache: true),
+      );
     } catch (e) {
       debugPrint('❌ Failed to get all local delivery receipts: $e');
-      emit(DeliveryReceiptError(
-        message: 'Failed to get all local delivery receipts: ${e.toString()}',
-        errorCode: '500',
-      ));
+      emit(
+        DeliveryReceiptError(
+          message: 'Failed to get all local delivery receipts: ${e.toString()}',
+          errorCode: '500',
+        ),
+      );
     }
   }
 
-    Future<void> _onCacheDeliveryReceipt(
+  Future<void> _onCacheDeliveryReceipt(
     CacheDeliveryReceiptEvent event,
     Emitter<DeliveryReceiptState> emit,
   ) async {
     debugPrint('📥 Caching delivery receipt: ${event.receiptId}');
-    
+
     emit(const DeliveryReceiptLoading());
 
     try {
@@ -380,39 +456,49 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
       emit(DeliveryReceiptCached(event.receiptId));
     } catch (e) {
       debugPrint('❌ Failed to cache delivery receipt: $e');
-      emit(DeliveryReceiptError(
-        message: 'Failed to cache delivery receipt: ${e.toString()}',
-        errorCode: '500',
-      ));
+      emit(
+        DeliveryReceiptError(
+          message: 'Failed to cache delivery receipt: ${e.toString()}',
+          errorCode: '500',
+        ),
+      );
     }
   }
 
-    // Add this event handler method
+  // Add this event handler method
   Future<void> _onGenerateDeliveryReceiptPdf(
     GenerateDeliveryReceiptPdfEvent event,
     Emitter<DeliveryReceiptState> emit,
   ) async {
-    debugPrint('📄 Generating delivery receipt PDF for: ${event.deliveryData.id}');
-    
+    debugPrint(
+      '📄 Generating delivery receipt PDF for: ${event.deliveryData.id}',
+    );
+
     emit(DeliveryReceiptPdfGenerating(event.deliveryData.id ?? ''));
 
     final result = await _generateDeliveryReceiptPdf(event.deliveryData);
-    
+
     result.fold(
       (failure) {
-        debugPrint('❌ Failed to generate delivery receipt PDF: ${failure.message}');
-        emit(DeliveryReceiptError(
-          message: failure.message,
-          errorCode: failure.statusCode,
-        ));
+        debugPrint(
+          '❌ Failed to generate delivery receipt PDF: ${failure.message}',
+        );
+        emit(
+          DeliveryReceiptError(
+            message: failure.message,
+            errorCode: failure.statusCode,
+          ),
+        );
       },
       (pdfBytes) {
         debugPrint('✅ Successfully generated delivery receipt PDF');
         debugPrint('📊 PDF size: ${pdfBytes.length} bytes');
-        emit(DeliveryReceiptPdfGenerated(
-          pdfBytes: pdfBytes,
-          deliveryDataId: event.deliveryData.id ?? '',
-        ));
+        emit(
+          DeliveryReceiptPdfGenerated(
+            pdfBytes: pdfBytes,
+            deliveryDataId: event.deliveryData.id ?? '',
+          ),
+        );
       },
     );
   }
@@ -448,10 +534,13 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
   /// Helper method to handle offline scenarios
   void handleOfflineOperation(String operation, String id) {
     debugPrint('📱 Handling offline operation: $operation for $id');
-    emit(DeliveryReceiptOfflineOperation(
-      message: 'Operation performed offline. Will sync when connection is restored.',
-      operationType: operation,
-    ));
+    emit(
+      DeliveryReceiptOfflineOperation(
+        message:
+            'Operation performed offline. Will sync when connection is restored.',
+        operationType: operation,
+      ),
+    );
   }
 
   /// Helper method to retry failed operations
@@ -471,9 +560,13 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
   }
 
   @override
-  void onTransition(Transition<DeliveryReceiptEvent, DeliveryReceiptState> transition) {
+  void onTransition(
+    Transition<DeliveryReceiptEvent, DeliveryReceiptState> transition,
+  ) {
     super.onTransition(transition);
-    debugPrint('🔄 DeliveryReceipt Transition: ${transition.event.runtimeType} -> ${transition.nextState.runtimeType}');
+    debugPrint(
+      '🔄 DeliveryReceipt Transition: ${transition.event.runtimeType} -> ${transition.nextState.runtimeType}',
+    );
   }
 
   @override
@@ -482,4 +575,3 @@ class DeliveryReceiptBloc extends Bloc<DeliveryReceiptEvent, DeliveryReceiptStat
     super.onError(error, stackTrace);
   }
 }
-

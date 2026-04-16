@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../../../core/common/app/features/delivery_data/invoice_data/domain/entity/invoice_data_entity.dart';
-import '../../../../../../core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
-import '../../../../../../core/common/widgets/list_tiles.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/invoice_data/domain/entity/invoice_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/common/widgets/list_tiles.dart';
 
 class InvoiceList extends StatelessWidget {
   final DeliveryDataEntity deliveryData;
@@ -24,8 +24,6 @@ class InvoiceList extends StatelessWidget {
 
       if (invoices == null) return 'Invoice';
 
-      
-
       final name = (invoices.name ?? '').trim();
       if (name.isNotEmpty) return 'Invoice #$name';
 
@@ -47,7 +45,7 @@ class InvoiceList extends StatelessWidget {
   //   } catch (_) {
   //     return '';
   //   }
-  // }  
+  // }
 
   // // ✅ Product count from DeliveryData.invoiceItems
   // int _productCount() {

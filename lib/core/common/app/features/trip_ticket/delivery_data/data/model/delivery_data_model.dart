@@ -112,6 +112,9 @@ String? updatedBy;
 @Property()
 String? deviceId;
 
+@Property()
+double? totalAmount;
+
   // --------------------------------------------------------------------------
   // BASIC FIELDS
   // --------------------------------------------------------------------------
@@ -206,6 +209,7 @@ String? deviceId;
     this.ownerName,
     this.contactNumber,
     this.barangay,
+    this.totalAmount,
     this.municipality,
     this.province,
     this.refID,
@@ -461,6 +465,7 @@ factory DeliveryDataModel.fromJson(dynamic json) {
     barangay: json['barangay'],
     municipality: json['municipality'],
     province: json['province'],
+    totalAmount: json['totalAmount'] != null ? double.tryParse(json['totalAmount'].toString()) : null,
     refID: json['refID'],
     lastLocalUpdatedAt: _parseDate(json['lastLocalUpdatedAt']),
     created: _parseDate(json['created']),
@@ -500,6 +505,7 @@ factory DeliveryDataModel.fromJson(dynamic json) {
       'invoiceItems': invoiceItems.map((e) => e.id).toList(),
       'storeName': storeName,
       'ownerName': ownerName,
+      'totalAmount': totalAmount,
       'hasPendingSync': hasPendingSync,
       'lastLocalUpdatedAt': lastLocalUpdatedAt?.toIso8601String(),
       'contactNumber': contactNumber,
@@ -535,6 +541,7 @@ factory DeliveryDataModel.fromJson(dynamic json) {
     String? totalDeliveryTime,
     ModeOfPayment? paymentSelection,
     InvoiceStatus? invoiceStatus,
+    double? totalAmount,
     String? storeName,
     String? ownerName,
     String? contactNumber,
@@ -568,6 +575,7 @@ factory DeliveryDataModel.fromJson(dynamic json) {
       storeName: storeName ?? this.storeName,
       ownerName: ownerName ?? this.ownerName,
       contactNumber: contactNumber ?? this.contactNumber,
+      totalAmount: totalAmount ?? this.totalAmount,
       barangay: barangay ?? this.barangay,
       municipality: municipality ?? this.municipality,
       province: province ?? this.province,

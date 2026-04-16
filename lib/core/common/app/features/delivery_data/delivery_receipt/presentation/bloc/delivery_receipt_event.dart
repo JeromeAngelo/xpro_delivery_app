@@ -40,7 +40,8 @@ class GetDeliveryReceiptByDeliveryDataIdEvent extends DeliveryReceiptEvent {
 }
 
 /// Event to load delivery receipt by delivery data ID from local storage
-class LoadLocalDeliveryReceiptByDeliveryDataIdEvent extends DeliveryReceiptEvent {
+class LoadLocalDeliveryReceiptByDeliveryDataIdEvent
+    extends DeliveryReceiptEvent {
   final String deliveryDataId;
 
   const LoadLocalDeliveryReceiptByDeliveryDataIdEvent(this.deliveryDataId);
@@ -55,9 +56,14 @@ class CreateDeliveryReceiptEvent extends DeliveryReceiptEvent {
   final String? status;
   final DateTime? dateTimeCompleted;
   final List<String>? customerImages;
-   final double? amount;
+  final double? amount;
   final String? customerSignature;
   final String? receiptFile;
+  final String? referenceNumber;
+  final String? modeOfPayment;
+  final String? chequeNumber;
+  final String? eWalletType;
+  final String? bankName;
 
   const CreateDeliveryReceiptEvent({
     required this.deliveryDataId,
@@ -67,6 +73,11 @@ class CreateDeliveryReceiptEvent extends DeliveryReceiptEvent {
     this.amount,
     this.customerSignature,
     this.receiptFile,
+    this.referenceNumber,
+    this.modeOfPayment,
+    this.chequeNumber,
+    this.eWalletType,
+    this.bankName,
   });
 
   @override
@@ -77,10 +88,14 @@ class CreateDeliveryReceiptEvent extends DeliveryReceiptEvent {
     customerImages,
     customerSignature,
     receiptFile,
+    amount,
+    referenceNumber,
+    modeOfPayment,
+    chequeNumber,
+    eWalletType,
+    bankName,
   ];
 }
-
-
 
 /// Event to delete delivery receipt
 class DeleteDeliveryReceiptEvent extends DeliveryReceiptEvent {

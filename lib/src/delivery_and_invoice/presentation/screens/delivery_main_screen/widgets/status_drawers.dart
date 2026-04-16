@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/presentation/bloc/delivery_update_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/customer_summary_dialog.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/pdf_generating_loading_screen.dart';
 import '../../../../../../core/common/app/features/delivery_data/delivery_update/domain/entity/delivery_update_entity.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
@@ -362,6 +366,63 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
         });
       }
       return;
+    }
+
+    if (statusTitle == 'mark as received') {
+      final deliveryDataBloc = context.read<DeliveryDataBloc>();
+      final state = deliveryDataBloc.state;
+
+      if (state is DeliveryDataLoaded) {
+        Navigator.of(context).pop();
+
+        final deliveryData = state.deliveryData;
+
+        context.read<DeliveryReceiptBloc>().add(
+          GenerateDeliveryReceiptPdfEvent(deliveryData),
+        );
+
+        context.read<DeliveryStatusChoicesBloc>().add(
+          UpdateCustomerStatusEvent(
+            deliveryDataId: widget.deliveryDataId,
+            status: status,
+          ),
+        );
+
+        context.read<DeliveryDataBloc>().add(
+          WatchLocalDeliveryDataByIdEvent(widget.deliveryDataId),
+        );
+
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => BlocListener<DeliveryReceiptBloc, DeliveryReceiptState>(
+              listener: (context, receiptState) {
+                if (receiptState is DeliveryReceiptPdfGenerated) {
+                  debugPrint('✅ PDF generated, navigating to transaction');
+                  context.push(
+                    '/transaction',
+                    extra: {
+                      'deliveryData': deliveryData,
+                      'generatedPdf': receiptState.pdfBytes,
+                    },
+                  );
+                } else if (receiptState is DeliveryReceiptError) {
+                  debugPrint('❌ PDF generation error: ${receiptState.message}');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('PDF Generation Error: ${receiptState.message}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const PdfGeneratingLoadingScreen(
+                message: 'Generating Delivery Receipt PDF...',
+              ),
+            ),
+          ),
+        );
+        return;
+      }
     }
 
     // ---------------- END DELIVERY ----------------
