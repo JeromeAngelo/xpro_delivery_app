@@ -588,14 +588,14 @@ class DeliveryStatusChoicesLocalDatasourceImpl
               allowedTitles.addAll([]);
               break;
 
-            case 'mark as received':
-              allowedTitles.addAll(['end delivery']);
-              break;
+            // case 'mark as received':
+            //   allowedTitles.addAll(['end delivery']);
+            //   break;
 
-            case 'mark as undelivered':
-            case 'end delivery':
-              result[customerId] = [];
-              continue;
+            // case 'mark as undelivered':
+            // case 'end delivery':
+            //   result[customerId] = [];
+            //   continue;
 
             default:
               debugPrint(

@@ -407,7 +407,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
               allowedTitles.addAll(['unloading']);
               break;
             case 'unloading':
-              allowedTitles.addAll(["mark as received"]);
+              allowedTitles.addAll([]);
               break;
 
             case 'arrived':
@@ -418,9 +418,9 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
                 'invoices in queue',
               ]);
               break;
-            case 'mark as received':
-              allowedTitles.addAll(['end delivery']);
-              break;
+            // case 'mark as received':
+            //   allowedTitles.addAll(['end delivery']);
+            //   break;
             case 'mark as undelivered':
             case 'end delivery':
               result[customerId] = [];

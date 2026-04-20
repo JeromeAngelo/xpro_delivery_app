@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
@@ -48,9 +49,28 @@ class QuickUpdateDialog extends StatelessWidget {
             final choicesMap = state.choicesByCustomer;
 
             if (choicesMap.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(24.0),
-                child: Center(child: Text("No statuses available")),
+              return Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/images/smartphone-sms.svg',
+                      width: 120,
+                      height: 120,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "No Status Available",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text("Go Back"),
+                    ),
+                  ],
+                ),
               );
             }
 
