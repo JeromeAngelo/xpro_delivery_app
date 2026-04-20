@@ -276,7 +276,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       // ---------------------------------------------------
       // 1️⃣ CREATE DeliveryUpdate (COPY DATA)
       // ---------------------------------------------------
-      final currentTime = DateTime.now().toIso8601String();
+      final currentTime = DateTime.now().toUtc().toIso8601String();
 
       final deliveryUpdateRecord = await _pocketBaseClient
           .collection('deliveryUpdate')
@@ -547,7 +547,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
         return;
       }
 
-      final currentTime = DateTime.now().toIso8601String();
+      final currentTime = DateTime.now().toUtc().toIso8601String();
 
       for (final customerId in customersToUpdate) {
         try {
@@ -662,7 +662,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
           .collection('deliveryStatusChoices')
           .getFirstListItem('title = "End Delivery"');
 
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now().toUtc().toIso8601String();
 
       final deliveryUpdateRecord = await _pocketBaseClient
           .collection('deliveryUpdate')
@@ -803,7 +803,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
                   body: {
                     'successfulDeliveries': newSuccess.toString(),
                     'successRate': successRate.toStringAsFixed(2),
-                    'updated': DateTime.now().toIso8601String(),
+                    'updated': DateTime.now().toUtc().toIso8601String(),
                   },
                 );
 

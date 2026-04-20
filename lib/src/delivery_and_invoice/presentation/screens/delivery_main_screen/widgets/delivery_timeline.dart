@@ -182,8 +182,10 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
-    final amPm = dateTime.hour >= 12 ? 'PM' : 'AM';
-    return '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $amPm';
+    // Convert to local time for display to ensure consistent timezone handling
+    final localDateTime = dateTime.isUtc ? dateTime.toLocal() : dateTime;
+    final hour = localDateTime.hour > 12 ? localDateTime.hour - 12 : (localDateTime.hour == 0 ? 12 : localDateTime.hour);
+    final amPm = localDateTime.hour >= 12 ? 'PM' : 'AM';
+    return '${hour.toString().padLeft(2, '0')}:${localDateTime.minute.toString().padLeft(2, '0')} $amPm';
   }
 }

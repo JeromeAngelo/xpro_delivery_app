@@ -249,20 +249,29 @@ static DateTime? _parseDate(dynamic value) {
   if (value == null) return null;
 
   try {
-    // 1️⃣ If it's already a DateTime, return as is
-    if (value is DateTime) return value;
+    // 1️⃣ If it's already a DateTime, return as is (ensure UTC)
+    if (value is DateTime) {
+      return value.isUtc ? value : value.toUtc();
+    }
 
     // 2️⃣ If numeric (seconds or milliseconds)
     if (value is int) return _timestampToDateTime(value);
 
     // 3️⃣ If string
     if (value is String && value.isNotEmpty) {
-      // Try ISO8601 first
+      // Try ISO8601 first - these are typically UTC if they have 'Z' or offset
       try {
-        return DateTime.parse(value);
+        final parsed = DateTime.parse(value);
+        // If it has UTC marker (Z or +offset), it's UTC; otherwise force to UTC
+        final str = value.trim();
+        if (str.endsWith('Z') || str.contains('+') || (str.length > 20 && str.contains('T'))) {
+          return parsed.isUtc ? parsed : parsed.toUtc();
+        }
+        // Non-UTC ISO string - force to UTC
+        return parsed.isUtc ? parsed : parsed.toUtc();
       } catch (_) {}
 
-      // Try common non-ISO formats
+      // Try common non-ISO formats - parse and force to UTC
       final possibleFormats = [
         'yyyy-MM-dd HH:mm:ss',
         'yyyy/MM/dd HH:mm:ss',
@@ -279,7 +288,8 @@ static DateTime? _parseDate(dynamic value) {
       for (final format in possibleFormats) {
         try {
           final dt = DateFormat(format).parse(value, true);
-          return dt;
+          // Force to UTC since these are typically naive local times from server
+          return dt.toUtc();
         } catch (_) {}
       }
 

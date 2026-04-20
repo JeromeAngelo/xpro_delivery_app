@@ -143,7 +143,18 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
     DateTime? parseDate(dynamic value) {
       if (value == null) return null;
       try {
-        return DateTime.parse(value.toString());
+        final str = value.toString().trim();
+        if (str.isEmpty) return null;
+
+        // If string ends with 'Z' or contains '+' or has 'T' with timezone offset,
+        // parse as UTC directly
+        if (str.endsWith('Z') || str.contains('+') || (str.contains('T') && str.length > 20)) {
+          return DateTime.parse(str);
+        }
+
+        // Otherwise, parse and force to UTC
+        final parsed = DateTime.parse(str);
+        return parsed.isUtc ? parsed : parsed.toUtc();
       } catch (_) {
         debugPrint('📅 Failed to parse date → $value');
         return null;

@@ -396,7 +396,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
       // ---------------------------------------------------
       // 1️⃣ CREATE DeliveryUpdate (COPY DATA)
       // ---------------------------------------------------
-      final currentTime = DateTime.now().toIso8601String();
+      final currentTime = DateTime.now().toUtc().toIso8601String();
 
       final deliveryUpdateRecord = await _pocketBaseClient
           .collection('deliveryUpdate')
@@ -493,7 +493,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
 
       debugPrint('✅ Retrieved status: $title');
 
-      final currentTime = DateTime.now().toIso8601String();
+      final currentTime = DateTime.now().toUtc().toIso8601String();
 
       // Iterate over all customers
       for (final customerId in customerIds) {
@@ -587,7 +587,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
           .getFirstListItem('title = "End Delivery"');
 
       // Create delivery update with "End Delivery" status
-      final currentTime = DateTime.now().toIso8601String();
+      final currentTime = DateTime.now().toUtc().toIso8601String();
       final deliveryUpdateRecord = await _pocketBaseClient
           .collection('deliveryUpdate')
           .create(
@@ -752,7 +752,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
                   body: {
                     'successfulDeliveries': newSuccessfulDeliveries.toString(),
                     'successRate': successRate.toStringAsFixed(2),
-                    'updated': DateTime.now().toIso8601String(),
+                    'updated': DateTime.now().toUtc().toIso8601String(),
                   },
                 );
 
@@ -946,7 +946,7 @@ class DeliveryUpdateDatasourceImpl implements DeliveryUpdateDatasource {
         );
 
         if (!hasPendingStatus) {
-          final currentTime = DateTime.now().toIso8601String();
+          final currentTime = DateTime.now().toUtc().toIso8601String();
           final deliveryUpdateRecord = await _pocketBaseClient
               .collection('deliveryUpdate')
               .create(
