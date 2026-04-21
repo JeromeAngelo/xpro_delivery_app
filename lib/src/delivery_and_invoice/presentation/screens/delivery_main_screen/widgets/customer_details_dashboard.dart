@@ -440,6 +440,24 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
         : 'No address available';
   }
 
+  String _formatCurrency(double amount) {
+    final formatted = amount.toStringAsFixed(2);
+    final parts = formatted.split('.');
+    final integerPart = parts[0];
+    final decimalPart = parts[1];
+
+    // Add commas to integer part
+    final buffer = StringBuffer();
+    for (int i = 0; i < integerPart.length; i++) {
+      if (i > 0 && (integerPart.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+      buffer.write(integerPart[i]);
+    }
+
+    return '₱${buffer.toString()}.$decimalPart';
+  }
+
   Widget _buildInfoGrid(
     BuildContext context,
     DeliveryDataEntity deliveryData,
@@ -485,7 +503,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
 
     // Format the display amount
     if (totalAmount > 0) {
-      totalAmountDisplay = "₱${totalAmount.toStringAsFixed(2)}";
+      totalAmountDisplay = _formatCurrency(totalAmount);
     } else {
       totalAmountDisplay = "Not available";
       debugPrint(

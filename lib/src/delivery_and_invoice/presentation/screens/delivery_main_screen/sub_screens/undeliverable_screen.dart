@@ -185,8 +185,8 @@ class _UndeliverableScreenState extends State<UndeliverableScreen> {
         return 'Customer Not Available';
       case UndeliverableReason.environmentalIssues:
         return 'Environmental Issues';
-      case UndeliverableReason.noCashAvailable:
-        return 'No Cash Available';
+      case UndeliverableReason.noPaymentAvailable:
+        return 'No Payment Available';
       case UndeliverableReason.other:
         return 'Other';
       case UndeliverableReason.wrongInvoice:

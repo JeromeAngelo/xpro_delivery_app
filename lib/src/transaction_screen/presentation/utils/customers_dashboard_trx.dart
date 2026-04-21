@@ -101,11 +101,29 @@ class CustomersDashboardTrx extends StatelessWidget {
           context: context,
           icon: Icons.attach_money,
           title: "Total Amount",
-          value:
-              "₱${totalAmount.toStringAsFixed(2)}",
+          value: _formatCurrency(totalAmount),
         ),
       ],
     );
+  }
+
+  /// 🔷 FORMAT CURRENCY WITH THOUSAND SEPARATORS
+  String _formatCurrency(double amount) {
+    final formatted = amount.toStringAsFixed(2);
+    final parts = formatted.split('.');
+    final integerPart = parts[0];
+    final decimalPart = parts[1];
+
+    // Add commas to integer part
+    final buffer = StringBuffer();
+    for (int i = 0; i < integerPart.length; i++) {
+      if (i > 0 && (integerPart.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+      buffer.write(integerPart[i]);
+    }
+
+    return '₱${buffer.toString()}.$decimalPart';
   }
 
   /// 🔷 INFO ROW (IMPROVED STYLE)

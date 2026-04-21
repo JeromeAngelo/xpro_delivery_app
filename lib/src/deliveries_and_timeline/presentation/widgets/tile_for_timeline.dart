@@ -211,15 +211,19 @@ class TileForTimeline extends StatelessWidget {
   }
 
   String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
-    final amPm = dateTime.hour >= 12 ? 'PM' : 'AM';
-    return '${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $amPm';
+    // Convert to local time for display
+    final localDateTime = dateTime.isUtc ? dateTime.toLocal() : dateTime;
+    final hour = localDateTime.hour > 12 ? localDateTime.hour - 12 : (localDateTime.hour == 0 ? 12 : localDateTime.hour);
+    final amPm = localDateTime.hour >= 12 ? 'PM' : 'AM';
+    return '${hour.toString().padLeft(2, '0')}:${localDateTime.minute.toString().padLeft(2, '0')} $amPm';
   }
 
   String _formatDate(DateTime dateTime) {
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final year = dateTime.year;
+    // Convert to local time for display
+    final localDateTime = dateTime.isUtc ? dateTime.toLocal() : dateTime;
+    final month = localDateTime.month.toString().padLeft(2, '0');
+    final day = localDateTime.day.toString().padLeft(2, '0');
+    final year = localDateTime.year;
     return '$month/$day/$year';
   }
 }

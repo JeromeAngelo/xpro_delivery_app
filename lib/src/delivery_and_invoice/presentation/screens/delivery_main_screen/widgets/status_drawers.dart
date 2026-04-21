@@ -352,7 +352,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
 
     // ---------------- UNDELIVERED ----------------
     if (statusTitle == 'mark as undelivered') {
-      Navigator.of(context).pop();
+     
 
       final state = context.read<DeliveryDataBloc>().state;
       if (state is DeliveryDataLoaded) {
