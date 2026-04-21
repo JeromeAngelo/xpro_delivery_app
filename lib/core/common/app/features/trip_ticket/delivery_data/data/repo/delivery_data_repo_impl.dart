@@ -297,6 +297,26 @@ class DeliveryDataRepoImpl implements DeliveryDataRepo {
           .calculateDeliveryTimeByDeliveryId(id);
 
       debugPrint('✅ REPO: Remote calculation successful: $remoteTime minutes');
+
+      // Refetch the delivery data to get the persisted totalDeliveryTime
+      try {
+        debugPrint(
+          '🔄 REPO: Refetching delivery data to sync persisted totalDeliveryTime',
+        );
+        final updatedData = await _remoteDataSource.getDeliveryDataById(id);
+
+        // Save to local cache so it's available offline
+        await _localDataSource.updateDeliveryData(updatedData);
+        debugPrint(
+          '💾 REPO: Updated local cache with persisted totalDeliveryTime',
+        );
+      } catch (e) {
+        debugPrint(
+          '⚠️ REPO: Failed to refetch delivery data after calculation: $e',
+        );
+        // Don't fail the calculation if refetch fails
+      }
+
       return Right(remoteTime);
     } on ServerException catch (e) {
       debugPrint('❌ REPO: Remote calculation failed: ${e.message}');

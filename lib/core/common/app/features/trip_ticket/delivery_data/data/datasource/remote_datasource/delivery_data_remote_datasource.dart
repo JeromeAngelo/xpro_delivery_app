@@ -340,7 +340,11 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
       );
 
       // Update the deliveryData record with the calculated time
-      await _updateDeliveryDataTotalTime(deliveryId, totalSeconds);
+      final formattedTime = await _updateDeliveryDataTotalTime(
+        deliveryId,
+        totalSeconds,
+      );
+      debugPrint('✅ Formatted delivery time persisted: $formattedTime');
 
       return totalMinutes;
     } catch (e) {
@@ -352,8 +356,8 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
     }
   }
 
-  /// Update delivery data with total delivery time
-  Future<void> _updateDeliveryDataTotalTime(
+  /// Update delivery data with total delivery time and return formatted time
+  Future<String> _updateDeliveryDataTotalTime(
     String deliveryId,
     int totalSeconds,
   ) async {
@@ -373,10 +377,14 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
             },
           );
 
-      debugPrint('✅ Successfully updated delivery data with total time');
+      debugPrint(
+        '✅ Successfully updated delivery data with total time: $timeText',
+      );
+      return timeText;
     } catch (e) {
       debugPrint('⚠️ Failed to update delivery data with total time: $e');
-      // Don't throw here to avoid breaking the main calculation
+      // Return formatted time even if update fails
+      return _formatDeliveryTime(totalSeconds);
     }
   }
 
@@ -769,31 +777,22 @@ class DeliveryDataRemoteDataSourceImpl implements DeliveryDataRemoteDataSource {
     }
   }
 
-  /// Format seconds into readable time format
+  /// Format seconds into readable time format (matching local datasource format)
   String _formatDeliveryTime(int totalSeconds) {
     if (totalSeconds <= 0) {
-      return '0 secs';
+      return '0m';
     }
 
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
+    final totalMinutes = (totalSeconds / 60).round();
+    final hours = totalMinutes ~/ 60;
+    final mins = totalMinutes % 60;
 
-    final parts = <String>[];
-
+    // Format: "1h 30m" (matching local datasource format)
     if (hours > 0) {
-      parts.add('$hours hr${hours > 1 ? 's' : ''}');
+      return '${hours}h ${mins}m';
+    } else {
+      return '${mins}m';
     }
-
-    if (minutes > 0) {
-      parts.add('$minutes min${minutes > 1 ? 's' : ''}');
-    }
-
-    if (seconds > 0 || parts.isEmpty) {
-      parts.add('$seconds sec${seconds > 1 ? 's' : ''}');
-    }
-
-    return parts.join(' and ');
   }
 
   String _formatTime(DateTime time) {

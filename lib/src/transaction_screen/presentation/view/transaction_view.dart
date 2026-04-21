@@ -71,33 +71,34 @@ class _TransactionViewState extends State<TransactionView> {
           .replaceAll('E Wallet', 'E-Wallet');
 
       // Set initial field visibility based on payment selection
-      _showCashField = _selectedPaymentMode == 'Cash On Delivery';
+      _showCashField = _selectedPaymentMode == 'DTC-COD';
       _showEWalletFields = _selectedPaymentMode == 'E-Wallet';
       _showBankNameField = _selectedPaymentMode == 'Bank Transfer';
-      _showChequeNumberField = _selectedPaymentMode == 'Cheque';
+      _showChequeNumberField = _selectedPaymentMode == 'DTC-CHK';
     }
 
     // Initialize amount from deliveryData.totalAmount
     final totalAmount = widget.deliveryData.totalAmount ?? 0.0;
     _amountController.text = totalAmount.toStringAsFixed(2);
 
-    debugPrint('💰 Transaction amount initialized from deliveryData.totalAmount: ₱${totalAmount.toStringAsFixed(2)}');
+    debugPrint(
+      '💰 Transaction amount initialized from deliveryData.totalAmount: ₱${totalAmount.toStringAsFixed(2)}',
+    );
   }
-
 
   void _handlePaymentModeChange(String? newValue) async {
     AppDebugLogger.instance.logInfo(
       '💳 Payment mode selected: ${newValue ?? 'None'}',
       details: 'Customer: ${widget.deliveryData.storeName}',
     );
-    
+
     setState(() {
       _isLoading = true;
       _selectedPaymentMode = newValue;
-      _showChequeNumberField = newValue == 'Cheque';
+      _showChequeNumberField = newValue == 'DTC - CHK';
       _showEWalletFields = newValue == 'E-Wallet';
       _showBankNameField = newValue == 'Bank Transfer';
-      _showCashField = newValue == 'Cash On Delivery';
+      _showCashField = newValue == 'DTC - COD';
       _selectedEWalletType = null;
       _selectedBankName = null;
     });
@@ -121,7 +122,7 @@ class _TransactionViewState extends State<TransactionView> {
       ),
       value: _selectedPaymentMode,
       items:
-          ['Bank Transfer', 'Cash On Delivery', 'Cheque', 'E-Wallet']
+          ['Bank Transfer', 'DTC - COD', 'DTC - CHK', 'E-Wallet']
               .map(
                 (value) => DropdownMenuItem(value: value, child: Text(value)),
               )
@@ -379,13 +380,15 @@ class _TransactionViewState extends State<TransactionView> {
                   amount: double.tryParse(_amountController.text) ?? 0.0,
                   referenceNumber: _referenceNumberController.text.trim(),
                   modeOfPayment: _getModeOfPaymentEnum(_selectedPaymentMode),
-                  chequeNumber: _chequeNumberController.text.trim().isEmpty
-                      ? null
-                      : _chequeNumberController.text.trim(),
+                  chequeNumber:
+                      _chequeNumberController.text.trim().isEmpty
+                          ? null
+                          : _chequeNumberController.text.trim(),
                   eWalletType: _selectedEWalletType,
-                  eWalletAccount: _eWalletAccountController.text.trim().isEmpty
-                      ? null
-                      : _eWalletAccountController.text.trim(),
+                  eWalletAccount:
+                      _eWalletAccountController.text.trim().isEmpty
+                          ? null
+                          : _eWalletAccountController.text.trim(),
                   bankName: _selectedBankName,
                 ),
               ),

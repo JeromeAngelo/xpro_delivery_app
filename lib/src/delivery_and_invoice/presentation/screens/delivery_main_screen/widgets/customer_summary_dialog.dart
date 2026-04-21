@@ -5,19 +5,47 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 
-class CustomerSummaryDialog extends StatelessWidget {
+class CustomerSummaryDialog extends StatefulWidget {
   final DeliveryDataEntity deliveryData;
 
   const CustomerSummaryDialog({super.key, required this.deliveryData});
 
   @override
+  State<CustomerSummaryDialog> createState() => _CustomerSummaryDialogState();
+}
+
+class _CustomerSummaryDialogState extends State<CustomerSummaryDialog> {
+  late DeliveryDataEntity _currentDeliveryData;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentDeliveryData = widget.deliveryData;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
+      buildWhen:
+          (previous, current) =>
+              current is DeliveryTimeCalculated ||
+              current is DeliveryDataByIdWatched ||
+              current is DeliveryDataLoaded ||
+              previous is! DeliveryTimeCalculated,
       builder: (context, state) {
+        // Update current delivery data if watch emits new data
+        if (state is DeliveryDataByIdWatched && state.deliveryData != null) {
+          _currentDeliveryData = state.deliveryData!;
+          debugPrint(
+            '📦 Dialog: Received updated delivery data with totalDeliveryTime: ${_currentDeliveryData.totalDeliveryTime}',
+          );
+        }
+
+        // Priority: Use calculated time if available, otherwise use stored time
         final latestTime =
             state is DeliveryTimeCalculated
                 ? _formatDeliveryTime(state.deliveryTimeInMinutes)
-                : deliveryData.totalDeliveryTime ?? '0 secs';
+                : (_currentDeliveryData.totalDeliveryTime ?? 'Calculating...');
 
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -40,7 +68,7 @@ class CustomerSummaryDialog extends StatelessWidget {
                     Icons.store,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: Text(deliveryData.storeName ?? 'N/A'),
+                  title: Text(_currentDeliveryData.storeName ?? 'N/A'),
                   subtitle: const Text('Store Name'),
                 ),
                 ListTile(
@@ -48,7 +76,16 @@ class CustomerSummaryDialog extends StatelessWidget {
                     Icons.timer,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: Text(latestTime),
+                  title: Text(
+                    latestTime,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color:
+                          latestTime == 'Calculating...'
+                              ? Theme.of(context).colorScheme.outline
+                              : null,
+                    ),
+                  ),
                   subtitle: const Text('Total Delivery Time'),
                 ),
                 ListTile(
@@ -56,7 +93,7 @@ class CustomerSummaryDialog extends StatelessWidget {
                     Icons.receipt_long,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  title: Text('${deliveryData.invoiceItems.length}'),
+                  title: Text('${_currentDeliveryData.invoiceItems.length}'),
                   subtitle: const Text('Total Invoice Items'),
                 ),
 
