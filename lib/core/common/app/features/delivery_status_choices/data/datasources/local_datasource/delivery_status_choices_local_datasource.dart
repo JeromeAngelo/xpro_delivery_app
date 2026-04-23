@@ -585,17 +585,15 @@ class DeliveryStatusChoicesLocalDatasourceImpl
               break;
 
             case 'unloading':
-              allowedTitles.addAll([]);
+              allowedTitles.addAll(['mark as received']);
               break;
-
-            // case 'mark as received':
-            //   allowedTitles.addAll(['end delivery']);
-            //   break;
-
-            // case 'mark as undelivered':
-            // case 'end delivery':
-            //   result[customerId] = [];
-            //   continue;
+            case 'mark as received':
+              allowedTitles.addAll(['end delivery']);
+              break;
+            case 'mark as undelivered':
+            case 'end delivery':
+              result[customerId] = [];
+              continue;
 
             default:
               debugPrint(
@@ -1074,7 +1072,9 @@ class DeliveryStatusChoicesLocalDatasourceImpl
 
         if (receipt != null) {
           receiptTotalAmount = receipt.totalAmount;
-          debugPrint('🧾 Receipt found → ${receipt.pocketbaseId}, totalAmount: $receiptTotalAmount');
+          debugPrint(
+            '🧾 Receipt found → ${receipt.pocketbaseId}, totalAmount: $receiptTotalAmount',
+          );
         } else {
           debugPrint('⚠️ No receipt found (continuing process)');
         }

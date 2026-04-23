@@ -2221,6 +2221,14 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
       }
 
       // ------------------------------------------------------------------
+      // 0.5) CALCULATE TRIP TOTAL TIME
+      // ------------------------------------------------------------------
+      final trip = tripBox.query().build().findFirst();
+      if (trip != null) {
+        await _calculateAndStoreTripTotalTime(trip);
+      }
+
+      // ------------------------------------------------------------------
       // 1) CLEAR USER TRIP ASSIGNMENT (OBJECTBOX + PREFS VIA saveUser)
       //    ✅ Only clear if user is actually assigned to THIS trip (or if tripId empty -> clear all)
       // ------------------------------------------------------------------
@@ -2338,6 +2346,37 @@ class TripLocalDatasourceImpl implements TripLocalDatasource {
     } catch (e) {
       debugPrint('❌ Error clearing data (endTrip): $e');
       throw CacheException(message: e.toString());
+    }
+  }
+
+  /// Calculate trip total time from timeAccepted to OTP verification time
+  Future<void> _calculateAndStoreTripTotalTime(TripModel trip) async {
+    try {
+      // Get verification time from EndTripOtp or Otp
+      final verifiedAt =
+          trip.endTripOtp.target?.verifiedAt ?? trip.otp.target?.verifiedAt;
+      final timeAccepted = trip.timeAccepted;
+
+      if (verifiedAt == null || timeAccepted == null) {
+        debugPrint(
+          '⚠️ Cannot calculate tripTotalTime: verifiedAt=$verifiedAt, timeAccepted=$timeAccepted',
+        );
+        return;
+      }
+
+      // Calculate duration
+      final duration = verifiedAt.difference(timeAccepted);
+      trip.tripTotalTime = duration.toString() as String?;
+
+      debugPrint(
+        '⏱️ Trip Total Time Calculated: ${trip.tripTotalTime} '
+        '(Start: $timeAccepted, End: $verifiedAt)',
+      );
+
+      // Update trip in ObjectBox
+      tripBox.put(trip);
+    } catch (e) {
+      debugPrint('❌ Error calculating trip total time: $e');
     }
   }
 }

@@ -137,94 +137,99 @@ class TripRemoteDatasurceImpl implements TripRemoteDatasurce {
   }
 
   @override
-Future<TripModel> scanTripByQR(String qrData) async {
-  try {
-    debugPrint('🔍 REMOTE: Scanning QR code data: $qrData');
+  Future<TripModel> scanTripByQR(String qrData) async {
+    try {
+      debugPrint('🔍 REMOTE: Scanning QR code data: $qrData');
 
-    final records = await _pocketBaseClient
-        .collection('tripticket')
-        .getFullList(
-          filter: 'qrCode = "$qrData"',
-          expand:
-              'customers,customers.invoices,customers.deliveryStatus,'
-              'deliveryTeam,deliveryTeam.personels,deliveryTeam.vehicle,'
-              'personels,vehicle,checklist,'
-              'returnList,completedCustomer,undeliverableCustomer,'
-              'tripUpdates,endTripChecklist,'
-              'deliveryData,deliveryData.customer,deliveryData.invoice,'
-              'deliveryData.deliveryUpdates,deliveryData.deliveryReceipt,'
-              'invoices,invoices.products,invoices.customer,'
-              'transactions,transactions.customer,transactions.invoices,'
-              'user,deliveryVehicle,'
-              'otp,endTripOtp',
+      final records = await _pocketBaseClient
+          .collection('tripticket')
+          .getFullList(
+            filter: 'qrCode = "$qrData"',
+            expand:
+                'customers,customers.invoices,customers.deliveryStatus,'
+                'deliveryTeam,deliveryTeam.personels,deliveryTeam.vehicle,'
+                'personels,vehicle,checklist,'
+                'returnList,completedCustomer,undeliverableCustomer,'
+                'tripUpdates,endTripChecklist,'
+                'deliveryData,deliveryData.customer,deliveryData.invoice,'
+                'deliveryData.deliveryUpdates,deliveryData.deliveryReceipt,'
+                'invoices,invoices.products,invoices.customer,'
+                'transactions,transactions.customer,transactions.invoices,'
+                'user,deliveryVehicle,'
+                'otp,endTripOtp',
+          );
+
+      if (records.isEmpty) {
+        throw ServerException(
+          message: 'No trip found for QR code: $qrData',
+          statusCode: '404',
         );
+      }
 
-    if (records.isEmpty) {
-      throw ServerException(
-        message: 'No trip found for QR code: $qrData',
-        statusCode: '404',
+      final record = records.first;
+
+      // DEBUG: Print RAW record data BEFORE any mapping
+      debugPrint('🔔🔔🔔 RAW POCKETBASE RECORD DEBUG 🔔🔔🔔');
+      debugPrint('📌 record.id = ${record.id}');
+      debugPrint('📌 record.id type = ${record.id.runtimeType}');
+      debugPrint('📌 record.collectionId = ${record.collectionId}');
+      debugPrint('📌 record.collectionName = ${record.collectionName}');
+      debugPrint('📌 record.data keys = ${record.data.keys.toList()}');
+      debugPrint(
+        '📌 record.data[tripNumberId] = ${record.data['tripNumberId']}',
       );
-    }
-
-    final record = records.first;
-    
-    // DEBUG: Print RAW record data BEFORE any mapping
-    debugPrint('🔔🔔🔔 RAW POCKETBASE RECORD DEBUG 🔔🔔🔔');
-    debugPrint('📌 record.id = ${record.id}');
-    debugPrint('📌 record.id type = ${record.id.runtimeType}');
-    debugPrint('📌 record.collectionId = ${record.collectionId}');
-    debugPrint('📌 record.collectionName = ${record.collectionName}');
-    debugPrint('📌 record.data keys = ${record.data.keys.toList()}');
-    debugPrint('📌 record.data[tripNumberId] = ${record.data['tripNumberId']}');
-    debugPrint('📌 record.data[tripNumberId] type = ${record.data['tripNumberId'].runtimeType}');
-    debugPrint('📌 record.data[qrCode] = ${record.data['qrCode']}');
-    debugPrint('📌 record.data[qrCode] type = ${record.data['qrCode'].runtimeType}');
-    debugPrint('📌 record.data[name] = ${record.data['name']}');
-    debugPrint('📌 record.data[id] = ${record.data['id']}');
-    debugPrint('📌 Full record.data = ${record.data}');
-    debugPrint('🔔🔔🔔 END RAW DEBUG 🔔🔔🔔');
-
-    if (record.data['isAccepted'] == true || record.data['isEndTrip'] == true) {
-      throw const ServerException(
-        message: 'Trip has already been accepted by another user',
-        statusCode: '403',
+      debugPrint(
+        '📌 record.data[tripNumberId] type = ${record.data['tripNumberId'].runtimeType}',
       );
-    }
+      debugPrint('📌 record.data[qrCode] = ${record.data['qrCode']}');
+      debugPrint(
+        '📌 record.data[qrCode] type = ${record.data['qrCode'].runtimeType}',
+      );
+      debugPrint('📌 record.data[name] = ${record.data['name']}');
+      debugPrint('📌 record.data[id] = ${record.data['id']}');
+      debugPrint('📌 Full record.data = ${record.data}');
+      debugPrint('🔔🔔🔔 END RAW DEBUG 🔔🔔🔔');
 
-    // Map record to TripModel using the helper
-    debugPrint('🔔 Mapping record to TripModel using helper...');
-    final trip = _mapRecordToTripModel(record);
+      if (record.data['isAccepted'] == true ||
+          record.data['isEndTrip'] == true) {
+        throw const ServerException(
+          message: 'Trip has already been accepted by another user',
+          statusCode: '403',
+        );
+      }
 
-    // Debug top-level fields
-    debugPrint('✅ Trip mapping completed:');
-    debugPrint('   Trip ID: ${trip.id}');
-    debugPrint('   Trip Number ID: ${trip.tripNumberId}');
-    debugPrint('   QR Code: ${trip.qrCode}');
-    debugPrint('   Delivery Data Count: ${trip.deliveryData.length}');
-    debugPrint('   Personnel Count: ${trip.personels.length}');
-    debugPrint('   Checklist Count: ${trip.checklist.length}');
-   
+      // Map record to TripModel using the helper
+      debugPrint('🔔 Mapping record to TripModel using helper...');
+      final trip = _mapRecordToTripModel(record);
 
-    // Validate critical fields
-    if (trip.id == null || trip.tripNumberId == null) {
-      debugPrint('❌ Trip data invalid: Missing ID or tripNumberId');
+      // Debug top-level fields
+      debugPrint('✅ Trip mapping completed:');
+      debugPrint('   Trip ID: ${trip.id}');
+      debugPrint('   Trip Number ID: ${trip.tripNumberId}');
+      debugPrint('   QR Code: ${trip.qrCode}');
+      debugPrint('   Delivery Data Count: ${trip.deliveryData.length}');
+      debugPrint('   Personnel Count: ${trip.personels.length}');
+      debugPrint('   Checklist Count: ${trip.checklist.length}');
+
+      // Validate critical fields
+      if (trip.id == null || trip.tripNumberId == null) {
+        debugPrint('❌ Trip data invalid: Missing ID or tripNumberId');
+        throw ServerException(
+          message: 'Trip data invalid: Missing ID or tripNumberId',
+          statusCode: '500',
+        );
+      }
+
+      return trip;
+    } catch (e, stackTrace) {
+      debugPrint('❌ REMOTE: QR scan error: ${e.toString()}');
+      debugPrint(stackTrace.toString());
       throw ServerException(
-        message: 'Trip data invalid: Missing ID or tripNumberId',
+        message: 'Failed to scan QR code: ${e.toString()}',
         statusCode: '500',
       );
     }
-
-    return trip;
-  } catch (e, stackTrace) {
-    debugPrint('❌ REMOTE: QR scan error: ${e.toString()}');
-    debugPrint(stackTrace.toString());
-    throw ServerException(
-      message: 'Failed to scan QR code: ${e.toString()}',
-      statusCode: '500',
-    );
   }
-}
-
 
   @override
   Future<TripModel> searchTripByNumber(String tripNumberId) async {
@@ -399,476 +404,520 @@ Future<TripModel> scanTripByQR(String qrData) async {
       );
     }
   }
-@override
-Future<(TripModel, String)> acceptTrip(String tripId) async {
-  try {
-    debugPrint('🔄 Starting trip acceptance flow for ID: $tripId');
 
-    // ---------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------
-    String extractTripId(String raw) {
-      final t = raw.trim();
-      if (t.startsWith('{')) {
-        final decoded = jsonDecode(t) as Map<String, dynamic>;
-        return (decoded['id'] ?? '').toString();
-      }
-      return t;
-    }
+  @override
+  Future<(TripModel, String)> acceptTrip(String tripId) async {
+    try {
+      debugPrint('🔄 Starting trip acceptance flow for ID: $tripId');
 
-    Future<List<TOut>> _poolMap<TIn, TOut>(
-      List<TIn> items,
-      int concurrency,
-      Future<TOut> Function(TIn item) task,
-    ) async {
-      final results = <TOut>[];
-      var index = 0;
-
-      final workers = List.generate(concurrency, (_) async {
-        while (true) {
-          final i = index++;
-          if (i >= items.length) break;
-          results.add(await task(items[i]));
+      // ---------------------------------------------------------
+      // Helpers
+      // ---------------------------------------------------------
+      String extractTripId(String raw) {
+        final t = raw.trim();
+        if (t.startsWith('{')) {
+          final decoded = jsonDecode(t) as Map<String, dynamic>;
+          return (decoded['id'] ?? '').toString();
         }
-      });
+        return t;
+      }
 
-      await Future.wait(workers);
-      return results;
-    }
+      Future<List<TOut>> _poolMap<TIn, TOut>(
+        List<TIn> items,
+        int concurrency,
+        Future<TOut> Function(TIn item) task,
+      ) async {
+        final results = <TOut>[];
+        var index = 0;
 
-    DateTime? parseDate(dynamic value) {
-      if (value == null) return null;
-      final strValue = value.toString().trim();
-      if (strValue.isEmpty) return null;
-
-      try {
-        return DateTime.parse(strValue);
-      } catch (_) {
-        try {
-          if (strValue.length >= 10 && RegExp(r'^\d+$').hasMatch(strValue)) {
-            var timestamp = int.parse(strValue);
-            if (strValue.length == 10) timestamp *= 1000;
-            return DateTime.fromMillisecondsSinceEpoch(timestamp);
+        final workers = List.generate(concurrency, (_) async {
+          while (true) {
+            final i = index++;
+            if (i >= items.length) break;
+            results.add(await task(items[i]));
           }
-          return DateTime.now();
+        });
+
+        await Future.wait(workers);
+        return results;
+      }
+
+      DateTime? parseDate(dynamic value) {
+        if (value == null) return null;
+        final strValue = value.toString().trim();
+        if (strValue.isEmpty) return null;
+
+        try {
+          return DateTime.parse(strValue);
         } catch (_) {
-          return null;
+          try {
+            if (strValue.length >= 10 && RegExp(r'^\d+$').hasMatch(strValue)) {
+              var timestamp = int.parse(strValue);
+              if (strValue.length == 10) timestamp *= 1000;
+              return DateTime.fromMillisecondsSinceEpoch(timestamp);
+            }
+            return DateTime.now();
+          } catch (_) {
+            return null;
+          }
         }
       }
-    }
 
-    // ---------------------------------------------------------
-    // 0) Normalize trip id
-    // ---------------------------------------------------------
-    final actualTripId = extractTripId(tripId);
-    debugPrint('🎯 Using trip ID: $actualTripId');
+      // ---------------------------------------------------------
+      // 0) Normalize trip id
+      // ---------------------------------------------------------
+      final actualTripId = extractTripId(tripId);
+      debugPrint('🎯 Using trip ID: $actualTripId');
 
-    // ---------------------------------------------------------
-    // 1) Read userId fast
-    // ---------------------------------------------------------
-    final prefs = await SharedPreferences.getInstance();
-    final storedUserData = prefs.getString('user_data');
+      // ---------------------------------------------------------
+      // 1) Read userId fast
+      // ---------------------------------------------------------
+      final prefs = await SharedPreferences.getInstance();
+      final storedUserData = prefs.getString('user_data');
 
-    if (storedUserData == null || storedUserData.trim().isEmpty) {
-      throw const ServerException(message: 'Missing user_data', statusCode: '400');
-    }
-
-    final userData = jsonDecode(storedUserData) as Map<String, dynamic>;
-    final userId = (userData['id'] ?? '').toString().trim();
-
-    if (userId.isEmpty) {
-      throw const ServerException(message: 'Invalid user ID', statusCode: '400');
-    }
-    debugPrint('👤 Using user ID: $userId');
-
-    // ---------------------------------------------------------
-    // 2) Fetch user + trip in parallel (faster)
-    // ---------------------------------------------------------
-    final fetched = await Future.wait([
-      _retry(
-        () => _pocketBaseClient.collection('users').getOne(userId),
-        label: 'GET users/$userId',
-      ),
-      _retry(
-        () => _pocketBaseClient.collection('tripticket').getOne(
-              actualTripId,
-              expand: 'personels,checklist,deliveryData,deliveryVehicle',
-            ),
-        label: 'GET tripticket/$actualTripId',
-      ),
-    ]);
-
-    final userRecord = fetched[0];
-    final tripRecord = fetched[1];
-
-    debugPrint('✅ Found user record: ${userRecord.id}');
-    debugPrint('✅ Found trip record: ${tripRecord.id}');
-
-    if (tripRecord.data['isAccepted'] == true) {
-      throw const ServerException(
-        message: 'Trip has already been accepted by another user',
-        statusCode: '403',
-      );
-    }
-
-    // ---------------------------------------------------------
-    // 3) Create checklist items (already parallel)
-    // ---------------------------------------------------------
-    final checklistItems = [
-      {
-        'trip': actualTripId,
-        'objectName': 'Invoices',
-        'isChecked': false,
-        'status': 'pending',
-        'description': 'Check the number of Invoices',
-        'created': DateTime.now().toIso8601String(),
-      },
-      {
-        'trip': actualTripId,
-        'objectName': 'Pushcarts',
-        'isChecked': false,
-        'status': 'pending',
-        'description': 'Check the number of Pushcarts',
-        'created': DateTime.now().toIso8601String(),
-      },
-      {
-        'trip': actualTripId,
-        'objectName': 'BLOWBAGETS',
-        'isChecked': false,
-        'description': 'Follow the BLOWBAGETS instructions for safety',
-        'status': 'pending',
-        'created': DateTime.now().toIso8601String(),
-      },
-    ];
-
-    debugPrint('📝 Creating new checklist items');
-    final createdItems = await Future.wait(
-      checklistItems.map((item) async {
-        final response = await _retry(
-          () => _pocketBaseClient.collection('checklist').create(body: item),
-          label: 'CREATE checklist',
+      if (storedUserData == null || storedUserData.trim().isEmpty) {
+        throw const ServerException(
+          message: 'Missing user_data',
+          statusCode: '400',
         );
-        debugPrint('✅ Remote Created checklist item: ${response.id}');
-        return response;
-      }),
-    );
-
-    final checklistIds = createdItems.map((item) => item.id).toList();
-
-    // ---------------------------------------------------------
-    // 4) Create deliveryTeam
-    // ---------------------------------------------------------
-    final deliveryVehicleId = tripRecord.expand['deliveryVehicle'] is List
-        ? (tripRecord.expand['deliveryVehicle'] as List).first.id
-        : (tripRecord.expand['deliveryVehicle'] as RecordModel?)?.id;
-
-    final personels = (tripRecord.expand['personels'] as List? ?? []).cast<RecordModel>();
-    final customers = (tripRecord.expand['deliveryData'] as List? ?? []).cast<RecordModel>();
-
-    final deliveryTeamRecord = await _retry(
-      () => _pocketBaseClient.collection('deliveryTeam').create(
-        body: {
-          'deliveryVehicle': deliveryVehicleId,
-          'personels': personels.map((p) => p.id).toList(),
-          'checklist': checklistIds,
-          'tripTicket': tripRecord.id,
-          'isAccepted': true,
-          'activeDeliveries': customers.length.toString(),
-        },
-      ),
-      label: 'CREATE deliveryTeam',
-    );
-
-    debugPrint('✅ deliveryTeam created: ${deliveryTeamRecord.id}');
-
-    // ---------------------------------------------------------
-    // 5) Update ALL personels in parallel (REMOVE delay)
-    // ---------------------------------------------------------
-    if (personels.isNotEmpty) {
-      debugPrint('🧑‍🔧 Updating personels: ${personels.length}');
-
-      await _poolMap<RecordModel, void>(
-        personels,
-        6, // safe concurrency to avoid PB resets
-        (personnel) async {
-          await _retry(
-            () => _pocketBaseClient.collection('personels').update(
-              personnel.id,
-              body: {'deliveryTeam': deliveryTeamRecord.id, 'trip': actualTripId},
-            ),
-            label: 'UPDATE personels/${personnel.id}',
-          );
-        },
-      );
-
-      debugPrint('✅ All personels updated');
-    }
-
-    // ---------------------------------------------------------
-    // 6) Fetch In Transit status once
-    // ---------------------------------------------------------
-    final inTransitStatus = await _retry(
-      () => _pocketBaseClient
-          .collection('deliveryStatusChoices')
-          .getFirstListItem('title = "In Transit"'),
-      label: 'GET deliveryStatusChoices In Transit',
-    );
-
-    // ---------------------------------------------------------
-    // 7) For each customer: create deliveryUpdate + update deliveryData (parallel)
-    // ---------------------------------------------------------
-    if (customers.isNotEmpty) {
-      debugPrint('📦 Creating delivery updates for customers: ${customers.length}');
-
-      await _poolMap<RecordModel, void>(
-        customers,
-        6, // safe concurrency
-        (customer) async {
-          final deliveryUpdateRecord = await _retry(
-            () => _pocketBaseClient.collection('deliveryUpdate').create(
-              body: {
-                'deliveryData': customer.id,
-                'status': inTransitStatus.id,
-                'title': inTransitStatus.data['title'],
-                'subtitle': inTransitStatus.data['subtitle'],
-                'created': DateTime.now().toIso8601String(),
-                'time': DateTime.now().toIso8601String(),
-                'isAssigned': true,
-              },
-            ),
-            label: 'CREATE deliveryUpdate',
-          );
-
-          await _retry(
-            () => _pocketBaseClient.collection('deliveryData').update(
-              customer.id,
-              body: {
-                'deliveryUpdates+': [deliveryUpdateRecord.id],
-                'invoiceStatus': 'truck',
-              },
-            ),
-            label: 'UPDATE deliveryData/${customer.id}',
-          );
-        },
-      );
-
-      debugPrint('✅ Delivery updates + deliveryData updates finished');
-    }
-
-    // ---------------------------------------------------------
-    // 8) Create OTP + EndTripOTP in parallel
-    // ---------------------------------------------------------
-    final otpResults = await Future.wait([
-      _retry(
-        () => _pocketBaseClient.collection('otp').create(
-          body: {
-            'otpCode': null,
-            'isVerified': false,
-            'verifiedAt': null,
-            'generatedCode': '123456',
-            'trip': tripRecord.id,
-            'intransitOdometer': null,
-            'created': DateTime.now().toIso8601String(),
-            'updated': DateTime.now().toIso8601String(),
-          },
-        ),
-        label: 'CREATE otp',
-      ),
-      _retry(
-        () => _pocketBaseClient.collection('endTripOtp').create(
-          body: {
-            'otpCode': null,
-            'isVerified': false,
-            'verifiedAt': null,
-            'generatedCode': '123456',
-            'trip': tripRecord.id,
-            'endTripOdometer': null,
-            'created': DateTime.now().toIso8601String(),
-            'updated': DateTime.now().toIso8601String(),
-            'otpType': 'endDelivery',
-          },
-        ),
-        label: 'CREATE endTripOtp',
-      ),
-    ]);
-
-    final otpRecord = otpResults[0];
-    final endTripOtpRecord = otpResults[1];
-
-    // ---------------------------------------------------------
-    // 9) Create tripUpdates + attach (keep your flow)
-    // ---------------------------------------------------------
-    final tripUpdateRecord = await _retry(
-      () => _pocketBaseClient.collection('tripUpdates').create(
-        body: {
-          'description': 'Start of trip',
-          'date': DateTime.now().toIso8601String(),
-          'trip': tripRecord.id,
-          'status': 'generalUpdate',
-          'latitude': 15.0531273,
-          'longitude': 120.7067068,
-        },
-      ),
-      label: 'CREATE tripUpdates Start of trip',
-    );
-
-    await _retry(
-      () => _pocketBaseClient.collection('tripticket').update(
-        tripRecord.id,
-        body: {'trip_update_list+': [tripUpdateRecord.id]},
-      ),
-      label: 'UPDATE tripticket attach trip_update_list',
-    );
-
-    // ---------------------------------------------------------
-    // 10) Update tripticket + update user in parallel
-    // ---------------------------------------------------------
-    await Future.wait([
-      _retry(
-        () => _pocketBaseClient.collection('tripticket').update(
-          tripRecord.id,
-          body: {
-            'isAccepted': true,
-            'user': userId,
-            'deliveryTeam': deliveryTeamRecord.id,
-            'otp': otpRecord.id,
-            'endTripOtp': endTripOtpRecord.id,
-            'timeAccepted': DateTime.now().toIso8601String(),
-            'checklist': checklistIds,
-          },
-        ),
-        label: 'UPDATE tripticket/${tripRecord.id}',
-      ),
-      _retry(
-        () => _pocketBaseClient.collection('users').update(
-          userId,
-          body: {
-            'tripNumberId': tripRecord.data['tripNumberId'],
-            'trip': tripRecord.id,
-            'hasTrip': 'true',
-          },
-        ),
-        label: 'UPDATE users/$userId',
-      ),
-    ]);
-
-    // ---------------------------------------------------------
-    // 11) Sync userData once, update prefs fast
-    // ---------------------------------------------------------
-    final syncedUser = await _retry(
-      () => syncUserData(userId),
-      label: 'syncUserData users/$userId (expand)',
-      maxAttempts: 4,
-    );
-
-    final existingPrefsUser = jsonDecode(storedUserData) as Map<String, dynamic>;
-    final updatedPrefsUserData = {
-      ...existingPrefsUser,
-      'id': userId,
-      'name': syncedUser.name ?? existingPrefsUser['name'] ?? '',
-      'email': syncedUser.email ?? existingPrefsUser['email'] ?? '',
-      'tripNumberId': syncedUser.tripNumberId ?? '',
-      'hasTrip': true,
-      'trip': {
-        'id': tripRecord.id,
-        'tripNumberId': tripRecord.data['tripNumberId'],
-      },
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-
-    await prefs.setString('user_data', jsonEncode(updatedPrefsUserData));
-
-    // ---------------------------------------------------------
-    // 12) usersTripHistory (keep)
-    // ---------------------------------------------------------
-    await _retry(
-      () => _pocketBaseClient.collection('usersTripHistory').create(
-        body: {
-          'users': userId,
-          'trips': [tripRecord.id],
-          'assignedAt': DateTime.now().toIso8601String(),
-          'isActive': true,
-        },
-      ),
-      label: 'CREATE usersTripHistory',
-    );
-
-    // ---------------------------------------------------------
-    // 13) Build mapped trip cache (keep your mapper)
-    // ---------------------------------------------------------
-    Map<String, dynamic> extractData() {
-      try {
-        final data = {
-          'id': tripRecord.id,
-          'collectionId': tripRecord.collectionId,
-          'collectionName': tripRecord.collectionName,
-          ...Map<String, dynamic>.from(tripRecord.data),
-          'isAccepted': true,
-          'deliveryTeam': _convertRecordToJson(deliveryTeamRecord),
-          'deliveryData': _mapDeliveryData(tripRecord),
-          'otp': _convertRecordToJson(otpRecord),
-          'deliveryVehicle': tripRecord.data['deliveryVehicle'],
-          'endTripOtp': _convertRecordToJson(endTripOtpRecord),
-          'trip_update_list': _mapTripUpdates(tripRecord),
-          'personels': _mapPersonels(tripRecord),
-          'checklist': _mapChecklist(tripRecord),
-          'timeAccepted': DateTime.now().toIso8601String(),
-        };
-
-        if (tripRecord.data['created'] != null) {
-          data['created'] = parseDate(tripRecord.data['created'])?.toIso8601String();
-        }
-        if (tripRecord.data['updated'] != null) {
-          data['updated'] = parseDate(tripRecord.data['updated'])?.toIso8601String();
-        }
-        if (tripRecord.data['timeEndTrip'] != null) {
-          data['timeEndTrip'] =
-              parseDate(tripRecord.data['timeEndTrip'])?.toIso8601String();
-        }
-        if (tripRecord.data['deliveryDate'] != null) {
-          data['deliveryDate'] = parseDate(tripRecord.data['deliveryDate'])?.toIso8601String();
-        }
-
-        return data;
-      } catch (e) {
-        debugPrint('⚠️ Error extracting data: $e');
-        return {
-          'id': tripRecord.id,
-          'collectionId': tripRecord.collectionId,
-          'collectionName': tripRecord.collectionName,
-          'isAccepted': true,
-          'deliveryTeam': _convertRecordToJson(deliveryTeamRecord),
-          'otp': _convertRecordToJson(otpRecord),
-          'endTripOtp': _convertRecordToJson(endTripOtpRecord),
-          'timeAccepted': DateTime.now().toIso8601String(),
-        };
       }
+
+      final userData = jsonDecode(storedUserData) as Map<String, dynamic>;
+      final userId = (userData['id'] ?? '').toString().trim();
+
+      if (userId.isEmpty) {
+        throw const ServerException(
+          message: 'Invalid user ID',
+          statusCode: '400',
+        );
+      }
+      debugPrint('👤 Using user ID: $userId');
+
+      // ---------------------------------------------------------
+      // 2) Fetch user + trip in parallel (faster)
+      // ---------------------------------------------------------
+      final fetched = await Future.wait([
+        _retry(
+          () => _pocketBaseClient.collection('users').getOne(userId),
+          label: 'GET users/$userId',
+        ),
+        _retry(
+          () => _pocketBaseClient
+              .collection('tripticket')
+              .getOne(
+                actualTripId,
+                expand: 'personels,checklist,deliveryData,deliveryVehicle',
+              ),
+          label: 'GET tripticket/$actualTripId',
+        ),
+      ]);
+
+      final userRecord = fetched[0];
+      final tripRecord = fetched[1];
+
+      debugPrint('✅ Found user record: ${userRecord.id}');
+      debugPrint('✅ Found trip record: ${tripRecord.id}');
+
+      if (tripRecord.data['isAccepted'] == true) {
+        throw const ServerException(
+          message: 'Trip has already been accepted by another user',
+          statusCode: '403',
+        );
+      }
+
+      // ---------------------------------------------------------
+      // 3) Create checklist items (already parallel)
+      // ---------------------------------------------------------
+      final checklistItems = [
+        {
+          'trip': actualTripId,
+          'objectName': 'Invoices',
+          'isChecked': false,
+          'status': 'pending',
+          'description': 'Check the number of Invoices',
+          'created': DateTime.now().toIso8601String(),
+        },
+        {
+          'trip': actualTripId,
+          'objectName': 'Pushcarts',
+          'isChecked': false,
+          'status': 'pending',
+          'description': 'Check the number of Pushcarts',
+          'created': DateTime.now().toIso8601String(),
+        },
+        {
+          'trip': actualTripId,
+          'objectName': 'BLOWBAGETS',
+          'isChecked': false,
+          'description': 'Follow the BLOWBAGETS instructions for safety',
+          'status': 'pending',
+          'created': DateTime.now().toIso8601String(),
+        },
+      ];
+
+      debugPrint('📝 Creating new checklist items');
+      final createdItems = await Future.wait(
+        checklistItems.map((item) async {
+          final response = await _retry(
+            () => _pocketBaseClient.collection('checklist').create(body: item),
+            label: 'CREATE checklist',
+          );
+          debugPrint('✅ Remote Created checklist item: ${response.id}');
+          return response;
+        }),
+      );
+
+      final checklistIds = createdItems.map((item) => item.id).toList();
+
+      // ---------------------------------------------------------
+      // 4) Create deliveryTeam
+      // ---------------------------------------------------------
+      final deliveryVehicleId =
+          tripRecord.expand['deliveryVehicle'] is List
+              ? (tripRecord.expand['deliveryVehicle'] as List).first.id
+              : (tripRecord.expand['deliveryVehicle'] as RecordModel?)?.id;
+
+      final personels =
+          (tripRecord.expand['personels'] as List? ?? []).cast<RecordModel>();
+      final customers =
+          (tripRecord.expand['deliveryData'] as List? ?? [])
+              .cast<RecordModel>();
+
+      final deliveryTeamRecord = await _retry(
+        () => _pocketBaseClient
+            .collection('deliveryTeam')
+            .create(
+              body: {
+                'deliveryVehicle': deliveryVehicleId,
+                'personels': personels.map((p) => p.id).toList(),
+                'checklist': checklistIds,
+                'tripTicket': tripRecord.id,
+                'isAccepted': true,
+                'activeDeliveries': customers.length.toString(),
+              },
+            ),
+        label: 'CREATE deliveryTeam',
+      );
+
+      debugPrint('✅ deliveryTeam created: ${deliveryTeamRecord.id}');
+
+      // ---------------------------------------------------------
+      // 5) Update ALL personels in parallel (REMOVE delay)
+      // ---------------------------------------------------------
+      if (personels.isNotEmpty) {
+        debugPrint('🧑‍🔧 Updating personels: ${personels.length}');
+
+        await _poolMap<RecordModel, void>(
+          personels,
+          6, // safe concurrency to avoid PB resets
+          (personnel) async {
+            await _retry(
+              () => _pocketBaseClient
+                  .collection('personels')
+                  .update(
+                    personnel.id,
+                    body: {
+                      'deliveryTeam': deliveryTeamRecord.id,
+                      'trip': actualTripId,
+                    },
+                  ),
+              label: 'UPDATE personels/${personnel.id}',
+            );
+          },
+        );
+
+        debugPrint('✅ All personels updated');
+      }
+
+      // ---------------------------------------------------------
+      // 6) Fetch In Transit status once
+      // ---------------------------------------------------------
+      final inTransitStatus = await _retry(
+        () => _pocketBaseClient
+            .collection('deliveryStatusChoices')
+            .getFirstListItem('title = "In Transit"'),
+        label: 'GET deliveryStatusChoices In Transit',
+      );
+
+      // ---------------------------------------------------------
+      // 7) For each customer: create deliveryUpdate + update deliveryData (parallel)
+      // ---------------------------------------------------------
+      if (customers.isNotEmpty) {
+        debugPrint(
+          '📦 Creating delivery updates for customers: ${customers.length}',
+        );
+
+        await _poolMap<RecordModel, void>(
+          customers,
+          6, // safe concurrency
+          (customer) async {
+            final deliveryUpdateRecord = await _retry(
+              () => _pocketBaseClient
+                  .collection('deliveryUpdate')
+                  .create(
+                    body: {
+                      'deliveryData': customer.id,
+                      'status': inTransitStatus.id,
+                      'title': inTransitStatus.data['title'],
+                      'subtitle': inTransitStatus.data['subtitle'],
+                      'created': DateTime.now().toIso8601String(),
+                      'time': DateTime.now().toIso8601String(),
+                      'isAssigned': true,
+                    },
+                  ),
+              label: 'CREATE deliveryUpdate',
+            );
+
+            await _retry(
+              () => _pocketBaseClient
+                  .collection('deliveryData')
+                  .update(
+                    customer.id,
+                    body: {
+                      'deliveryUpdates+': [deliveryUpdateRecord.id],
+                      'invoiceStatus': 'truck',
+                    },
+                  ),
+              label: 'UPDATE deliveryData/${customer.id}',
+            );
+          },
+        );
+
+        debugPrint('✅ Delivery updates + deliveryData updates finished');
+      }
+
+      // ---------------------------------------------------------
+      // 8) Create OTP + EndTripOTP in parallel
+      // ---------------------------------------------------------
+      final otpResults = await Future.wait([
+        _retry(
+          () => _pocketBaseClient
+              .collection('otp')
+              .create(
+                body: {
+                  'otpCode': null,
+                  'isVerified': false,
+                  'verifiedAt': null,
+                  'generatedCode': '123456',
+                  'trip': tripRecord.id,
+                  'intransitOdometer': null,
+                  'created': DateTime.now().toIso8601String(),
+                  'updated': DateTime.now().toIso8601String(),
+                },
+              ),
+          label: 'CREATE otp',
+        ),
+        _retry(
+          () => _pocketBaseClient
+              .collection('endTripOtp')
+              .create(
+                body: {
+                  'otpCode': null,
+                  'isVerified': false,
+                  'verifiedAt': null,
+                  'generatedCode': '123456',
+                  'trip': tripRecord.id,
+                  'endTripOdometer': null,
+                  'created': DateTime.now().toIso8601String(),
+                  'updated': DateTime.now().toIso8601String(),
+                  'otpType': 'endDelivery',
+                },
+              ),
+          label: 'CREATE endTripOtp',
+        ),
+      ]);
+
+      final otpRecord = otpResults[0];
+      final endTripOtpRecord = otpResults[1];
+
+      // ---------------------------------------------------------
+      // 9) Create tripUpdates + attach (keep your flow)
+      // ---------------------------------------------------------
+      final tripUpdateRecord = await _retry(
+        () => _pocketBaseClient
+            .collection('tripUpdates')
+            .create(
+              body: {
+                'description': 'Start of trip',
+                'date': DateTime.now().toIso8601String(),
+                'trip': tripRecord.id,
+                'status': 'generalUpdate',
+                'latitude': 15.0531273,
+                'longitude': 120.7067068,
+              },
+            ),
+        label: 'CREATE tripUpdates Start of trip',
+      );
+
+      await _retry(
+        () => _pocketBaseClient
+            .collection('tripticket')
+            .update(
+              tripRecord.id,
+              body: {
+                'trip_update_list+': [tripUpdateRecord.id],
+              },
+            ),
+        label: 'UPDATE tripticket attach trip_update_list',
+      );
+
+      // ---------------------------------------------------------
+      // 10) Update tripticket + update user in parallel
+      // ---------------------------------------------------------
+      await Future.wait([
+        _retry(
+          () => _pocketBaseClient
+              .collection('tripticket')
+              .update(
+                tripRecord.id,
+                body: {
+                  'isAccepted': true,
+                  'user': userId,
+                  'deliveryTeam': deliveryTeamRecord.id,
+                  'otp': otpRecord.id,
+                  'endTripOtp': endTripOtpRecord.id,
+                  'timeAccepted': DateTime.now().toIso8601String(),
+                  'checklist': checklistIds,
+                },
+              ),
+          label: 'UPDATE tripticket/${tripRecord.id}',
+        ),
+        _retry(
+          () => _pocketBaseClient
+              .collection('users')
+              .update(
+                userId,
+                body: {
+                  'tripNumberId': tripRecord.data['tripNumberId'],
+                  'trip': tripRecord.id,
+                  'hasTrip': 'true',
+                },
+              ),
+          label: 'UPDATE users/$userId',
+        ),
+      ]);
+
+      // ---------------------------------------------------------
+      // 11) Sync userData once, update prefs fast
+      // ---------------------------------------------------------
+      final syncedUser = await _retry(
+        () => syncUserData(userId),
+        label: 'syncUserData users/$userId (expand)',
+        maxAttempts: 4,
+      );
+
+      final existingPrefsUser =
+          jsonDecode(storedUserData) as Map<String, dynamic>;
+      final updatedPrefsUserData = {
+        ...existingPrefsUser,
+        'id': userId,
+        'name': syncedUser.name ?? existingPrefsUser['name'] ?? '',
+        'email': syncedUser.email ?? existingPrefsUser['email'] ?? '',
+        'tripNumberId': syncedUser.tripNumberId ?? '',
+        'hasTrip': true,
+        'trip': {
+          'id': tripRecord.id,
+          'tripNumberId': tripRecord.data['tripNumberId'],
+        },
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      await prefs.setString('user_data', jsonEncode(updatedPrefsUserData));
+
+      // ---------------------------------------------------------
+      // 12) usersTripHistory (keep)
+      // ---------------------------------------------------------
+      await _retry(
+        () => _pocketBaseClient
+            .collection('usersTripHistory')
+            .create(
+              body: {
+                'users': userId,
+                'trips': [tripRecord.id],
+                'assignedAt': DateTime.now().toIso8601String(),
+                'isActive': true,
+              },
+            ),
+        label: 'CREATE usersTripHistory',
+      );
+
+      // ---------------------------------------------------------
+      // 13) Build mapped trip cache (keep your mapper)
+      // ---------------------------------------------------------
+      Map<String, dynamic> extractData() {
+        try {
+          final data = {
+            'id': tripRecord.id,
+            'collectionId': tripRecord.collectionId,
+            'collectionName': tripRecord.collectionName,
+            ...Map<String, dynamic>.from(tripRecord.data),
+            'isAccepted': true,
+            'deliveryTeam': _convertRecordToJson(deliveryTeamRecord),
+            'deliveryData': _mapDeliveryData(tripRecord),
+            'otp': _convertRecordToJson(otpRecord),
+            'deliveryVehicle': tripRecord.data['deliveryVehicle'],
+            'endTripOtp': _convertRecordToJson(endTripOtpRecord),
+            'trip_update_list': _mapTripUpdates(tripRecord),
+            'personels': _mapPersonels(tripRecord),
+            'checklist': _mapChecklist(tripRecord),
+            'timeAccepted': DateTime.now().toIso8601String(),
+          };
+
+          if (tripRecord.data['created'] != null) {
+            data['created'] =
+                parseDate(tripRecord.data['created'])?.toIso8601String();
+          }
+          if (tripRecord.data['updated'] != null) {
+            data['updated'] =
+                parseDate(tripRecord.data['updated'])?.toIso8601String();
+          }
+          if (tripRecord.data['timeEndTrip'] != null) {
+            data['timeEndTrip'] =
+                parseDate(tripRecord.data['timeEndTrip'])?.toIso8601String();
+          }
+          if (tripRecord.data['deliveryDate'] != null) {
+            data['deliveryDate'] =
+                parseDate(tripRecord.data['deliveryDate'])?.toIso8601String();
+          }
+
+          return data;
+        } catch (e) {
+          debugPrint('⚠️ Error extracting data: $e');
+          return {
+            'id': tripRecord.id,
+            'collectionId': tripRecord.collectionId,
+            'collectionName': tripRecord.collectionName,
+            'isAccepted': true,
+            'deliveryTeam': _convertRecordToJson(deliveryTeamRecord),
+            'otp': _convertRecordToJson(otpRecord),
+            'endTripOtp': _convertRecordToJson(endTripOtpRecord),
+            'timeAccepted': DateTime.now().toIso8601String(),
+          };
+        }
+      }
+
+      final mappedData = extractData();
+      await prefs.setString('user_trip_data', jsonEncode(mappedData));
+
+      final acceptedTripModel = TripModel.fromJson(mappedData);
+
+      // ✅ final sync (keep but do once)
+      await _retry(
+        () => syncUserTripData(userId),
+        label: 'syncUserTripData',
+        maxAttempts: 4,
+      );
+
+      debugPrint('✅ Trip acceptance completed');
+      return (acceptedTripModel, tripRecord.id);
+    } catch (e) {
+      debugPrint('❌ Error in acceptTrip: $e');
+      throw ServerException(
+        message: 'Failed to accept trip: $e',
+        statusCode: '500',
+      );
     }
-
-    final mappedData = extractData();
-    await prefs.setString('user_trip_data', jsonEncode(mappedData));
-
-    final acceptedTripModel = TripModel.fromJson(mappedData);
-
-    // ✅ final sync (keep but do once)
-    await _retry(
-      () => syncUserTripData(userId),
-      label: 'syncUserTripData',
-      maxAttempts: 4,
-    );
-
-    debugPrint('✅ Trip acceptance completed');
-    return (acceptedTripModel, tripRecord.id);
-  } catch (e) {
-    debugPrint('❌ Error in acceptTrip: $e');
-    throw ServerException(
-      message: 'Failed to accept trip: $e',
-      statusCode: '500',
-    );
   }
-}
-
-
 
   Future<LocalUsersModel> syncUserData(String userId) async {
     try {
@@ -961,7 +1010,6 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
     }
   }
 
-  
   Future<TripModel> syncUserTripData(String userId) async {
     try {
       debugPrint('🔄 [SYNC] Starting user trip sync for user: $userId');
@@ -975,36 +1023,38 @@ Future<(TripModel, String)> acceptTrip(String tripId) async {
       debugPrint('🧩 USER RAW DATA: ${jsonEncode(userRecord.data)}');
       debugPrint('🧩 USER EXPAND KEYS: ${userRecord.expand.keys.toList()}');
 
-   final expandedTrip = userRecord.expand['trip'];
+      final expandedTrip = userRecord.expand['trip'];
 
-if (expandedTrip == null || expandedTrip.isEmpty) {
-  debugPrint('ℹ️ No trip assigned to user (normal). Clearing local trip cache.');
+      if (expandedTrip == null || expandedTrip.isEmpty) {
+        debugPrint(
+          'ℹ️ No trip assigned to user (normal). Clearing local trip cache.',
+        );
 
-  final prefs = await SharedPreferences.getInstance();
+        final prefs = await SharedPreferences.getInstance();
 
-  // Clear trip cache so UI doesn’t render stale trip
-  await prefs.remove('user_trip_data');
+        // Clear trip cache so UI doesn’t render stale trip
+        await prefs.remove('user_trip_data');
 
-  // Also clear trip reference inside user_data (if exists)
-  final userDataRaw = prefs.getString('user_data');
-  if (userDataRaw != null) {
-    final userData = jsonDecode(userDataRaw);
-    userData.remove('trip'); // or: userData['trip'] = null;
-    await prefs.setString('user_data', jsonEncode(userData));
-    debugPrint('💾 user_data updated → trip cleared');
-  } else {
-    debugPrint('⚠️ user_data not found, skipping trip clear');
-  }
+        // Also clear trip reference inside user_data (if exists)
+        final userDataRaw = prefs.getString('user_data');
+        if (userDataRaw != null) {
+          final userData = jsonDecode(userDataRaw);
+          userData.remove('trip'); // or: userData['trip'] = null;
+          await prefs.setString('user_data', jsonEncode(userData));
+          debugPrint('💾 user_data updated → trip cleared');
+        } else {
+          debugPrint('⚠️ user_data not found, skipping trip clear');
+        }
 
-  // Return a safe empty TripModel (prevents UI crash)
-  return TripModel(
-    id: null,
-    name: null,
-    tripNumberId: null,
-    isAccepted: false,
-    isEndTrip: false,
-  );
-}
+        // Return a safe empty TripModel (prevents UI crash)
+        return TripModel(
+          id: null,
+          name: null,
+          tripNumberId: null,
+          isAccepted: false,
+          isEndTrip: false,
+        );
+      }
 
       final tripId = expandedTrip.first.id;
       debugPrint('🆔 User’s Trip ID: $tripId');
@@ -1031,105 +1081,112 @@ if (expandedTrip == null || expandedTrip.isEmpty) {
       final tripRecord = fullTripList.first;
       debugPrint('📦 TRIP RAW DATA: ${jsonEncode(tripRecord.data)}');
       debugPrint('📦 TRIP EXPAND KEYS: ${tripRecord.expand.keys.toList()}');
-// 3️⃣ Extract DeliveryData
-final deliveryDataList = tripRecord.expand['deliveryData'] ?? [];
-debugPrint('📦 Delivery Data Count: ${deliveryDataList.length} (with invoiceItems)');
+      // 3️⃣ Extract DeliveryData
+      final deliveryDataList = tripRecord.expand['deliveryData'] ?? [];
+      debugPrint(
+        '📦 Delivery Data Count: ${deliveryDataList.length} (with invoiceItems)',
+      );
 
-for (final d in deliveryDataList) {
-  // Basic delivery info
-  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  debugPrint('➡️ DeliveryData ID: ${d.id}');
-  debugPrint('   🔑 DeliveryData expand keys: ${d.expand.keys.toList()}');
+      for (final d in deliveryDataList) {
+        // Basic delivery info
+        debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        debugPrint('➡️ DeliveryData ID: ${d.id}');
+        debugPrint('   🔑 DeliveryData expand keys: ${d.expand.keys.toList()}');
 
-  // -----------------------------
-  // Customer (expand)
-  // -----------------------------
-  final customerRec =
-      (d.expand['customer'] != null) ? (d.expand['customer'] as List).firstOrNull : null;
+        // -----------------------------
+        // Customer (expand)
+        // -----------------------------
+        final customerRec =
+            (d.expand['customer'] != null)
+                ? (d.expand['customer'] as List).firstOrNull
+                : null;
 
-  if (customerRec == null) {
-    debugPrint('   👤 customer: ❌ NULL / not expanded');
-    d.data['customer'] = null;
-  } else {
-    debugPrint(
-      '   👤 customer: ✅ id=${customerRec.id} | name=${customerRec.data['name']}',
-    );
-    d.data['customer'] = _mapExpandedRecord(customerRec);
-  }
+        if (customerRec == null) {
+          debugPrint('   👤 customer: ❌ NULL / not expanded');
+          d.data['customer'] = null;
+        } else {
+          debugPrint(
+            '   👤 customer: ✅ id=${customerRec.id} | name=${customerRec.data['name']}',
+          );
+          d.data['customer'] = _mapExpandedRecord(customerRec);
+        }
 
-  // -----------------------------
-  // Trip (expand)
-  // -----------------------------
-  final tripRec =
-      (d.expand['trip'] != null) ? (d.expand['trip'] as List).firstOrNull : null;
+        // -----------------------------
+        // Trip (expand)
+        // -----------------------------
+        final tripRec =
+            (d.expand['trip'] != null)
+                ? (d.expand['trip'] as List).firstOrNull
+                : null;
 
-  if (tripRec == null) {
-    debugPrint('   🎫 trip: ❌ NULL / not expanded');
-    d.data['trip'] = null;
-  } else {
-    debugPrint(
-      '   🎫 trip: ✅ id=${tripRec.id} | name=${tripRec.data['name']}',
-    );
-    d.data['trip'] = _mapExpandedRecord(tripRec);
-  }
+        if (tripRec == null) {
+          debugPrint('   🎫 trip: ❌ NULL / not expanded');
+          d.data['trip'] = null;
+        } else {
+          debugPrint(
+            '   🎫 trip: ✅ id=${tripRec.id} | name=${tripRec.data['name']}',
+          );
+          d.data['trip'] = _mapExpandedRecord(tripRec);
+        }
 
-  // -----------------------------
-  // Invoices (expand list)
-  // -----------------------------
-  final invoices = d.expand['invoices'] as List? ?? [];
-  debugPrint('   🧾 invoices: count=${invoices.length}');
-  for (final inv in invoices) {
-    final r = inv as RecordModel;
-    debugPrint(
-      '      • invoice id=${r.id} | name=${r.data['name']} | total=${r.data['totalAmount']}',
-    );
-  }
-  d.data['invoices'] = invoices.map(_mapExpandedRecord).toList();
+        // -----------------------------
+        // Invoices (expand list)
+        // -----------------------------
+        final invoices = d.expand['invoices'] as List? ?? [];
+        debugPrint('   🧾 invoices: count=${invoices.length}');
+        for (final inv in invoices) {
+          final r = inv as RecordModel;
+          debugPrint(
+            '      • invoice id=${r.id} | name=${r.data['name']} | total=${r.data['totalAmount']}',
+          );
+        }
+        d.data['invoices'] = invoices.map(_mapExpandedRecord).toList();
 
-  // -----------------------------
-  // DeliveryUpdates (expand list)
-  // -----------------------------
-  final updates = d.expand['deliveryUpdates'] as List? ?? [];
-  debugPrint('   🔄 deliveryUpdates: count=${updates.length}');
-  for (final up in updates) {
-    final r = up as RecordModel;
-    debugPrint(
-      '      • update id=${r.id} | title=${r.data['title']} | time=${r.data['time']}',
-    );
-  }
-  d.data['deliveryUpdates'] = updates.map(_mapExpandedRecord).toList();
+        // -----------------------------
+        // DeliveryUpdates (expand list)
+        // -----------------------------
+        final updates = d.expand['deliveryUpdates'] as List? ?? [];
+        debugPrint('   🔄 deliveryUpdates: count=${updates.length}');
+        for (final up in updates) {
+          final r = up as RecordModel;
+          debugPrint(
+            '      • update id=${r.id} | title=${r.data['title']} | time=${r.data['time']}',
+          );
+        }
+        d.data['deliveryUpdates'] = updates.map(_mapExpandedRecord).toList();
 
-  // -----------------------------
-  // InvoiceItems (expand list)
-  // -----------------------------
-  final invoiceItems = d.expand['invoiceItems'] as List? ?? [];
-  debugPrint('   📦 invoiceItems: count=${invoiceItems.length}');
-  for (final it in invoiceItems) {
-    final r = it as RecordModel;
-    debugPrint(
-      '      • item id=${r.id} | name=${r.data['name']} | qty=${r.data['quantity']} | baseQty=${r.data['totalBaseQuantity']} | uom=${r.data['uom']}',
-    );
-  }
-  d.data['invoiceItems'] = invoiceItems.map(_mapExpandedRecord).toList();
+        // -----------------------------
+        // InvoiceItems (expand list)
+        // -----------------------------
+        final invoiceItems = d.expand['invoiceItems'] as List? ?? [];
+        debugPrint('   📦 invoiceItems: count=${invoiceItems.length}');
+        for (final it in invoiceItems) {
+          final r = it as RecordModel;
+          debugPrint(
+            '      • item id=${r.id} | name=${r.data['name']} | qty=${r.data['quantity']} | baseQty=${r.data['totalBaseQuantity']} | uom=${r.data['uom']}',
+          );
+        }
+        d.data['invoiceItems'] = invoiceItems.map(_mapExpandedRecord).toList();
 
-  // -----------------------------
-  // Final mapped payload check
-  // -----------------------------
-  debugPrint(
-    '   ✅ mapped: customer=${d.data['customer'] != null}, '
-    'trip=${d.data['trip'] != null}, '
-    'invoices=${(d.data['invoices'] as List).length}, '
-    'updates=${(d.data['deliveryUpdates'] as List).length}, '
-    'invoiceItems=${(d.data['invoiceItems'] as List).length}',
-  );
-}
+        // -----------------------------
+        // Final mapped payload check
+        // -----------------------------
+        debugPrint(
+          '   ✅ mapped: customer=${d.data['customer'] != null}, '
+          'trip=${d.data['trip'] != null}, '
+          'invoices=${(d.data['invoices'] as List).length}, '
+          'updates=${(d.data['deliveryUpdates'] as List).length}, '
+          'invoiceItems=${(d.data['invoiceItems'] as List).length}',
+        );
+      }
 
-debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-
-       // 3️⃣ Extract CancelledInvoice
+      // 3️⃣ Extract CancelledInvoice
       final cancelledInvoiceList = tripRecord.expand['cancelledInvoice'] ?? [];
-      debugPrint('📦 Cancelled Invoices Data Count: ${cancelledInvoiceList.length}');
+      debugPrint(
+        '📦 Cancelled Invoices Data Count: ${cancelledInvoiceList.length}',
+      );
       for (var d in cancelledInvoiceList) {
         debugPrint('   ➡️ CancelledInvoice ID: ${d.id}');
         final customer =
@@ -1138,25 +1195,21 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
                 : null;
         d.data['customer'] =
             customer != null ? _mapExpandedRecord(customer) : null;
-             final deliveryData =
+        final deliveryData =
             (d.expand['deliveryData'] != null)
                 ? (d.expand['deliveryData'] as List).firstOrNull
                 : null;
         d.data['deliveryData'] =
             deliveryData != null ? _mapExpandedRecord(deliveryData) : null;
-             final trip =
+        final trip =
             (d.expand['trip'] != null)
                 ? (d.expand['trip'] as List).firstOrNull
                 : null;
-        d.data['trip'] =
-            trip != null ? _mapExpandedRecord(trip) : null;
+        d.data['trip'] = trip != null ? _mapExpandedRecord(trip) : null;
 
         final invoices = d.expand['invoices'] as List? ?? [];
         d.data['invoices'] = invoices.map(_mapExpandedRecord).toList();
-
-       
       }
-
 
       // 4️⃣ Extract DeliveryTeam + nested relations
       final deliveryTeamRecord = tripRecord.expand['deliveryTeam']?.firstOrNull;
@@ -1196,7 +1249,7 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
       final vehicle = tripRecord.expand['deliveryVehicle']?.firstOrNull;
       final checklistList = tripRecord.expand['checklist'] ?? [];
       final tripUpdateList = tripRecord.expand['trip_update_list'] ?? [];
-     // final cancelledInvoiceList = tripRecord.expand['cancelledInvoice'] ?? [];
+      // final cancelledInvoiceList = tripRecord.expand['cancelledInvoice'] ?? [];
       final intransitOtp = tripRecord.expand['otp'] ?? [];
       final endTripOtp = tripRecord.expand['endTripOtp'] ?? [];
 
@@ -1220,9 +1273,9 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
         'checklist': _mapExpandedRecord(checklistList),
         'deliveryData': _mapExpandedRecord(deliveryDataList),
         'cancelledInvoice': _mapExpandedRecord(cancelledInvoiceList),
-        'trip_update_list' : _mapExpandedRecord(tripUpdateList),
-        'intransitOtp' : _mapExpandedRecord(intransitOtp),
-        'endTripOtp' : _mapExpandedRecord(endTripOtp),
+        'trip_update_list': _mapExpandedRecord(tripUpdateList),
+        'intransitOtp': _mapExpandedRecord(intransitOtp),
+        'endTripOtp': _mapExpandedRecord(endTripOtp),
       };
 
       debugPrint('📦 FINAL MAPPED TRIP JSON: ${jsonEncode(mappedTrip)}');
@@ -1244,27 +1297,26 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
       debugPrint('🧑‍🔧 Personnels Count: ${trip.personels.length}');
 
       // 7.5️⃣ Update user_data with resolved trip reference
-//final prefs = await SharedPreferences.getInstance();
-final userDataRaw = prefs.getString('user_data');
+      //final prefs = await SharedPreferences.getInstance();
+      final userDataRaw = prefs.getString('user_data');
 
-if (userDataRaw != null) {
-  final userData = jsonDecode(userDataRaw);
+      if (userDataRaw != null) {
+        final userData = jsonDecode(userDataRaw);
 
-  userData['trip'] = {
-    'id': mappedTrip['id'], // PB ID
-        'name': mappedTrip['name'], // PB ID
+        userData['trip'] = {
+          'id': mappedTrip['id'], // PB ID
+          'name': mappedTrip['name'], // PB ID
 
-    'tripNumberId': mappedTrip['tripNumberId'],
-    'isAccepted': mappedTrip['isAccepted'],
-    'isEndTrip': mappedTrip['isEndTrip'],
-  };
+          'tripNumberId': mappedTrip['tripNumberId'],
+          'isAccepted': mappedTrip['isAccepted'],
+          'isEndTrip': mappedTrip['isEndTrip'],
+        };
 
-  await prefs.setString('user_data', jsonEncode(userData));
-  debugPrint('💾 user_data updated with resolved trip ID');
-} else {
-  debugPrint('⚠️ user_data not found, skipping trip reference update');
-}
-
+        await prefs.setString('user_data', jsonEncode(userData));
+        debugPrint('💾 user_data updated with resolved trip ID');
+      } else {
+        debugPrint('⚠️ user_data not found, skipping trip reference update');
+      }
 
       return trip;
     } catch (e, st) {
@@ -1325,7 +1377,6 @@ if (userDataRaw != null) {
 
     return null;
   }
-
 
   // ADDED: Helper method to safely format date fields
   String? _formatDateField(dynamic dateValue) {
@@ -1812,7 +1863,7 @@ if (userDataRaw != null) {
           .getOne(
             actualTripId,
             expand:
-              'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates',
+                'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates',
           );
 
       // Update trip status
@@ -1912,6 +1963,12 @@ if (userDataRaw != null) {
         }
       }
 
+      // ------------------------------------------------------------------
+      // Calculate trip total time before mapping
+      // ------------------------------------------------------------------
+      final tempTripForCalculation = TripModel.fromJson(tripRecord.toJson());
+      await _calculateAndStoreTripTotalTime(tempTripForCalculation);
+
       final mappedData = {
         'id': tripRecord.id,
         'collectionId': tripRecord.collectionId,
@@ -1919,6 +1976,7 @@ if (userDataRaw != null) {
         ...tripRecord.data,
         'isEndTrip': true,
         'timeEndTrip': DateTime.now().toIso8601String(),
+        'tripTotalTime': tempTripForCalculation.tripTotalTime,
         'trip_update_list': _mapTripUpdates(tripRecord),
         'personels': _mapPersonels(tripRecord),
         'checklist': _mapChecklist(tripRecord),
@@ -1929,18 +1987,17 @@ if (userDataRaw != null) {
       debugPrint('🧹 Cleared cached trip data');
 
       // ✅ STEP — Sync user again from remote (expand) then cache locally
-// ---------------------------------------------------------
-final syncedUser = await _retry(
-  () => syncUserData(userId),
-  label: 'syncUserData users/$userId (expand)',
-  maxAttempts: 4,
-);
+      // ---------------------------------------------------------
+      final syncedUser = await _retry(
+        () => syncUserData(userId),
+        label: 'syncUserData users/$userId (expand)',
+        maxAttempts: 4,
+      );
 
-debugPrint('✅ Remote user re-synced after trip assignment');
-debugPrint('   👤 name=${syncedUser.name}');
-debugPrint('   🎫 tripNumberId=${syncedUser.tripNumberId}');
-debugPrint('   🛣 trip=${syncedUser.trip.target?.id ?? 'NO TRIP'}');
-
+      debugPrint('✅ Remote user re-synced after trip assignment');
+      debugPrint('   👤 name=${syncedUser.name}');
+      debugPrint('   🎫 tripNumberId=${syncedUser.tripNumberId}');
+      debugPrint('   🛣 trip=${syncedUser.trip.target?.id ?? 'NO TRIP'}');
 
       debugPrint('✅ Trip end process completed');
       return TripModel.fromJson(mappedData);
@@ -1952,119 +2009,145 @@ debugPrint('   🛣 trip=${syncedUser.trip.target?.id ?? 'NO TRIP'}');
       );
     }
   }
-@override
-Future<TripModel> updateTripLocation(
-  String tripId,
-  double latitude,
-  double longitude, {
-  double? accuracy,
-  String? source,
-  double? totalDistance,
-}) async {
-  try {
-    debugPrint('🔄 REMOTE: Updating enhanced trip location for ID: $tripId');
-    debugPrint(
-      '📍 Coordinates: Lat: ${latitude.toStringAsFixed(6)}, Long: ${longitude.toStringAsFixed(6)}',
-    );
-    debugPrint(
-      '🎯 Accuracy: ${accuracy?.toStringAsFixed(2) ?? 'Unknown'} meters',
-    );
-    debugPrint('📡 Source: ${source ?? 'GPS_Enhanced'}');
 
-    // Extract trip ID if it's a JSON string
-    String actualTripId;
-    if (tripId.startsWith('{')) {
-      final tripData = jsonDecode(tripId);
-      actualTripId = tripData['id'];
-    } else {
-      actualTripId = tripId;
-    }
-
-    debugPrint('🎯 Using trip ID: $actualTripId');
-
-    RecordModel? tripRecord;
-
-    // Try fetching by actual PB trip ID
+  /// Calculate trip total time from timeAccepted to OTP verification time
+  Future<void> _calculateAndStoreTripTotalTime(TripModel trip) async {
     try {
-      tripRecord = await _pocketBaseClient
-          .collection('tripticket')
-          .getOne(
-            actualTripId,
-            expand:               'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates',
+      // Get verification time from EndTripOtp or Otp
+      final verifiedAt =
+          trip.endTripOtp.target?.verifiedAt ?? trip.otp.target?.verifiedAt;
+      final timeAccepted = trip.timeAccepted;
 
-          );
-    } catch (e) {
-      debugPrint('⚠️ Failed to get trip by PB ID: $e');
-      // Fallback: try finding by tripNumberId
-      debugPrint('🔍 Attempting fallback by tripNumberId...');
-      final filterRecords = await _pocketBaseClient
-          .collection('tripticket')
-          .getFullList(
-            filter: 'tripNumberId="$actualTripId"',
-          );
-
-      if (filterRecords.isEmpty) {
-        debugPrint('❌ No trip found with tripNumberId=$actualTripId');
-        throw ServerException(
-          message: 'Trip not found using tripNumberId: $actualTripId',
-          statusCode: '404',
+      if (verifiedAt == null || timeAccepted == null) {
+        debugPrint(
+          '⚠️ Cannot calculate tripTotalTime: verifiedAt=$verifiedAt, timeAccepted=$timeAccepted',
         );
+        return;
       }
 
-      tripRecord = filterRecords.first;
-      actualTripId = tripRecord.id;
-      debugPrint('✅ Fallback succeeded, using PB ID: $actualTripId');
+      // Calculate duration
+      final duration = verifiedAt.difference(timeAccepted);
+      trip.tripTotalTime = duration.toString() as String?;
+
+      debugPrint(
+        '⏱️ Trip Total Time Calculated: ${trip.tripTotalTime} '
+        '(Start: $timeAccepted, End: $verifiedAt)',
+      );
+    } catch (e) {
+      debugPrint('❌ Error calculating trip total time: $e');
     }
-
-    // Update the trip with new coordinates and accuracy info
-    final updatedRecord = await _pocketBaseClient
-        .collection('tripticket')
-        .update(
-          actualTripId,
-          body: {
-            'latitude': latitude.toString(),
-            'longitude': longitude.toString(),
-            'locationAccuracy': accuracy?.toString() ?? '0',
-            'locationSource': source ?? 'GPS_Enhanced',
-            'updated': DateTime.now().toIso8601String(),
-          },
-        );
-
-    // Use total distance passed from the LocationService
-    final distanceToRecord = totalDistance ?? 0.0;
-    debugPrint(
-      '📊 REMOTE: Using total distance for recording: ${distanceToRecord.toStringAsFixed(3)} km',
-    );
-
-    // Create enhanced record in tripCoordinatesUpdates collection
-    await _createTripCoordinateUpdate(
-      actualTripId,
-      latitude,
-      longitude,
-      accuracy: accuracy,
-      source: source,
-      totalDistance: distanceToRecord,
-    );
-
-    debugPrint('✅ Trip location updated successfully');
-
-    // Prepare TripModel from updated record
-    final mappedData = _prepareTripDataSafely(
-      tripRecord,
-      updatedRecord,
-      latitude,
-      longitude,
-    );
-    return TripModel.fromJson(mappedData);
-  } catch (e) {
-    debugPrint('❌ Error updating trip location: $e');
-    throw ServerException(
-      message: 'Failed to update trip location: ${e.toString()}',
-      statusCode: '500',
-    );
   }
-}
 
+  @override
+  Future<TripModel> updateTripLocation(
+    String tripId,
+    double latitude,
+    double longitude, {
+    double? accuracy,
+    String? source,
+    double? totalDistance,
+  }) async {
+    try {
+      debugPrint('🔄 REMOTE: Updating enhanced trip location for ID: $tripId');
+      debugPrint(
+        '📍 Coordinates: Lat: ${latitude.toStringAsFixed(6)}, Long: ${longitude.toStringAsFixed(6)}',
+      );
+      debugPrint(
+        '🎯 Accuracy: ${accuracy?.toStringAsFixed(2) ?? 'Unknown'} meters',
+      );
+      debugPrint('📡 Source: ${source ?? 'GPS_Enhanced'}');
+
+      // Extract trip ID if it's a JSON string
+      String actualTripId;
+      if (tripId.startsWith('{')) {
+        final tripData = jsonDecode(tripId);
+        actualTripId = tripData['id'];
+      } else {
+        actualTripId = tripId;
+      }
+
+      debugPrint('🎯 Using trip ID: $actualTripId');
+
+      RecordModel? tripRecord;
+
+      // Try fetching by actual PB trip ID
+      try {
+        tripRecord = await _pocketBaseClient
+            .collection('tripticket')
+            .getOne(
+              actualTripId,
+              expand:
+                  'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates',
+            );
+      } catch (e) {
+        debugPrint('⚠️ Failed to get trip by PB ID: $e');
+        // Fallback: try finding by tripNumberId
+        debugPrint('🔍 Attempting fallback by tripNumberId...');
+        final filterRecords = await _pocketBaseClient
+            .collection('tripticket')
+            .getFullList(filter: 'tripNumberId="$actualTripId"');
+
+        if (filterRecords.isEmpty) {
+          debugPrint('❌ No trip found with tripNumberId=$actualTripId');
+          throw ServerException(
+            message: 'Trip not found using tripNumberId: $actualTripId',
+            statusCode: '404',
+          );
+        }
+
+        tripRecord = filterRecords.first;
+        actualTripId = tripRecord.id;
+        debugPrint('✅ Fallback succeeded, using PB ID: $actualTripId');
+      }
+
+      // Update the trip with new coordinates and accuracy info
+      final updatedRecord = await _pocketBaseClient
+          .collection('tripticket')
+          .update(
+            actualTripId,
+            body: {
+              'latitude': latitude.toString(),
+              'longitude': longitude.toString(),
+              'locationAccuracy': accuracy?.toString() ?? '0',
+              'locationSource': source ?? 'GPS_Enhanced',
+              'updated': DateTime.now().toIso8601String(),
+            },
+          );
+
+      // Use total distance passed from the LocationService
+      final distanceToRecord = totalDistance ?? 0.0;
+      debugPrint(
+        '📊 REMOTE: Using total distance for recording: ${distanceToRecord.toStringAsFixed(3)} km',
+      );
+
+      // Create enhanced record in tripCoordinatesUpdates collection
+      await _createTripCoordinateUpdate(
+        actualTripId,
+        latitude,
+        longitude,
+        accuracy: accuracy,
+        source: source,
+        totalDistance: distanceToRecord,
+      );
+
+      debugPrint('✅ Trip location updated successfully');
+
+      // Prepare TripModel from updated record
+      final mappedData = _prepareTripDataSafely(
+        tripRecord,
+        updatedRecord,
+        latitude,
+        longitude,
+      );
+      return TripModel.fromJson(mappedData);
+    } catch (e) {
+      debugPrint('❌ Error updating trip location: $e');
+      throw ServerException(
+        message: 'Failed to update trip location: ${e.toString()}',
+        statusCode: '500',
+      );
+    }
+  }
 
   // Safe helper method to prepare trip data with proper type handling
   Map<String, dynamic> _prepareTripDataSafely(
@@ -2731,15 +2814,17 @@ Future<TripModel> updateTripLocation(
     }
   }
 
- // Helper method to map a record to a TripModel
+  // Helper method to map a record to a TripModel
   TripModel _mapRecordToTripModel(RecordModel record) {
     try {
       debugPrint('🔄 Mapping record to TripModel: ${record.id}');
-      
+
       // Debug the raw record data first
       debugPrint('📋 Raw record.id: ${record.id}');
       debugPrint('📋 Raw record.data keys: ${record.data.keys.toList()}');
-      debugPrint('📋 Raw tripNumberId from data: ${record.data['tripNumberId']}');
+      debugPrint(
+        '📋 Raw tripNumberId from data: ${record.data['tripNumberId']}',
+      );
       debugPrint('📋 Raw qrCode from data: ${record.data['qrCode']}');
       debugPrint('📋 Raw name from data: ${record.data['name']}');
 
@@ -2796,6 +2881,16 @@ Future<TripModel> updateTripLocation(
           debugPrint('✅ Parsed timeEndTrip: $timeEndTrip');
         } catch (e) {
           debugPrint('❌ Failed to parse timeEndTrip: ${e.toString()}');
+        }
+      }
+
+      DateTime? tripTotalTime;
+      if (record.data['tripTotalTime'] != null) {
+        try {
+          tripTotalTime = DateTime.parse(record.data['tripTotalTime']);
+          debugPrint('✅ Parsed tripTotalTime: $tripTotalTime');
+        } catch (e) {
+          debugPrint('❌ Failed to parse tripTotalTime: ${e.toString()}');
         }
       }
 
@@ -2879,7 +2974,9 @@ Future<TripModel> updateTripLocation(
         // First spread the base data
         ...record.data,
         // Then override with the correct values that MUST come from record properties
-        'id': record.id, // PocketBase record ID - MUST use record.id, not record.data['id']
+        'id':
+            record
+                .id, // PocketBase record ID - MUST use record.id, not record.data['id']
         'collectionId': record.collectionId,
         'collectionName': record.collectionName,
         // Safely extract string fields that might have wrong types in record.data
@@ -2907,6 +3004,7 @@ Future<TripModel> updateTripLocation(
         'timeEndTrip': timeEndTrip?.toIso8601String(),
         'deliveryDate': deliveryDate?.toIso8601String(),
         'expectedReturnDate': expectedReturnDate?.toIso8601String(),
+        'tripTotalTime': tripTotalTime?.toIso8601String(),
         // Other fields
         'longitude': record.data['longitude'],
         'latitude': record.data['latitude'],
@@ -2917,7 +3015,9 @@ Future<TripModel> updateTripLocation(
 
       // Debug the final mapped data
       debugPrint('📦 Final mappedData id: ${mappedData['id']}');
-      debugPrint('📦 Final mappedData tripNumberId: ${mappedData['tripNumberId']}');
+      debugPrint(
+        '📦 Final mappedData tripNumberId: ${mappedData['tripNumberId']}',
+      );
       debugPrint('📦 Final mappedData qrCode: ${mappedData['qrCode']}');
 
       return TripModel.fromJson(mappedData);
@@ -2982,56 +3082,61 @@ Future<TripModel> updateTripLocation(
 
     return null;
   }
-  
-Future<T> _retry<T>(
-  Future<T> Function() fn, {
-  int maxAttempts = 4,
-  Duration initialDelay = const Duration(milliseconds: 350),
-  double backoffFactor = 2.0,
-  Duration maxDelay = const Duration(seconds: 4),
-  bool Function(Object e)? shouldRetry,
-  String? label,
-}) async {
-  int attempt = 0;
-  final rng = Random();
 
-  bool defaultShouldRetry(Object e) {
-    final msg = e.toString().toLowerCase();
+  Future<T> _retry<T>(
+    Future<T> Function() fn, {
+    int maxAttempts = 4,
+    Duration initialDelay = const Duration(milliseconds: 350),
+    double backoffFactor = 2.0,
+    Duration maxDelay = const Duration(seconds: 4),
+    bool Function(Object e)? shouldRetry,
+    String? label,
+  }) async {
+    int attempt = 0;
+    final rng = Random();
 
-    // PocketBase / http client / socket / dns / timeouts typically look like these:
-    return msg.contains('socketexception') ||
-        msg.contains('network is unreachable') ||
-        msg.contains('connection failed') ||
-        msg.contains('failed host lookup') ||
-        msg.contains('errno = 101') ||
-        msg.contains('statuscode: 0') ||
-        msg.contains('timed out') ||
-        msg.contains('timeout') ||
-        msg.contains('connection reset') ||
-        msg.contains('handshakeexception');
-  }
+    bool defaultShouldRetry(Object e) {
+      final msg = e.toString().toLowerCase();
 
-  while (true) {
-    attempt++;
-    try {
-      return await fn();
-    } catch (e) {
-      final retryable = (shouldRetry ?? defaultShouldRetry)(e);
+      // PocketBase / http client / socket / dns / timeouts typically look like these:
+      return msg.contains('socketexception') ||
+          msg.contains('network is unreachable') ||
+          msg.contains('connection failed') ||
+          msg.contains('failed host lookup') ||
+          msg.contains('errno = 101') ||
+          msg.contains('statuscode: 0') ||
+          msg.contains('timed out') ||
+          msg.contains('timeout') ||
+          msg.contains('connection reset') ||
+          msg.contains('handshakeexception');
+    }
 
-      if (!retryable || attempt >= maxAttempts) {
-        debugPrint('❌${label != null ? " [$label]" : ""} Retry stopped (attempt $attempt/$maxAttempts): $e');
-        rethrow;
+    while (true) {
+      attempt++;
+      try {
+        return await fn();
+      } catch (e) {
+        final retryable = (shouldRetry ?? defaultShouldRetry)(e);
+
+        if (!retryable || attempt >= maxAttempts) {
+          debugPrint(
+            '❌${label != null ? " [$label]" : ""} Retry stopped (attempt $attempt/$maxAttempts): $e',
+          );
+          rethrow;
+        }
+
+        // exponential backoff + small jitter
+        final expMs =
+            (initialDelay.inMilliseconds * pow(backoffFactor, attempt - 1))
+                .toInt();
+        final jitterMs = rng.nextInt(150); // 0..149ms
+        final delayMs = min(expMs + jitterMs, maxDelay.inMilliseconds);
+
+        debugPrint(
+          '🔁${label != null ? " [$label]" : ""} Retry $attempt/$maxAttempts after ${delayMs}ms بسبب error: $e',
+        );
+        await Future.delayed(Duration(milliseconds: delayMs));
       }
-
-      // exponential backoff + small jitter
-      final expMs = (initialDelay.inMilliseconds * pow(backoffFactor, attempt - 1)).toInt();
-      final jitterMs = rng.nextInt(150); // 0..149ms
-      final delayMs = min(expMs + jitterMs, maxDelay.inMilliseconds);
-
-      debugPrint('🔁${label != null ? " [$label]" : ""} Retry $attempt/$maxAttempts after ${delayMs}ms بسبب error: $e');
-      await Future.delayed(Duration(milliseconds: delayMs));
     }
   }
-}
- 
 }

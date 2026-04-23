@@ -83,6 +83,10 @@ class TripModel extends TripEntity{
   @Property(type: PropertyType.date)
   DateTime? timeEndTrip;
 
+   @override
+  @Property()
+  String? tripTotalTime;
+
   @override
   @Property(type: PropertyType.date)
   DateTime? created;
@@ -183,6 +187,7 @@ TripModel({
   DateTime? created,
   DateTime? updated,
   DateTime? deliveryDate,
+  String? tripTotalTime,
   double? latitude,
   double? accuracy,
   double? tripDistance,
@@ -230,6 +235,7 @@ TripModel({
       deliveryVehicle: deliveryVehicleModel,
       user: userModel,
       otp: otpModel,
+      tripTotalTime: tripTotalTime,
       endTripOtp: endTripOtpModel,
       deliveryTeam: deliveryTeamModel,
       personels: personelsList,
@@ -252,6 +258,7 @@ TripModel({
   this.timeEndTrip = timeEndTrip;
   this.created = created;
   this.updated = updated;
+  this.tripTotalTime = tripTotalTime;
   this.deliveryDate = deliveryDate;
 
   this.latitude = latitude;
@@ -604,6 +611,7 @@ else if (expandedDeliveryData is Map<String, dynamic>) {
   timeEndTrip: safeParseDate(json['timeEndTrip']),
   created: safeParseDate(json['created']),
   updated: safeParseDate(json['updated']),
+  tripTotalTime:(json['tripTotalTime']),
   // If you have dispatchDate:
   // dispatchDate: _parseDate(json['dispatchDate']),
 
@@ -649,6 +657,7 @@ else if (expandedDeliveryData is Map<String, dynamic>) {
       'totalTripDistance': totalTripDistance,
       'timeAccepted': timeAccepted?.toIso8601String(),
       'timeEndTrip': timeEndTrip?.toIso8601String(),
+      'tripTotalTime': tripTotalTime,
       'created': created?.toIso8601String(),
       'updated': updated?.toIso8601String(),
       'deliveryDate': deliveryDate?.toIso8601String(),
@@ -689,6 +698,7 @@ else if (expandedDeliveryData is Map<String, dynamic>) {
     DateTime? created,
     DateTime? updated,
     DateTime? deliveryDate,
+    String? tripTotalTime,
     double? latitude,
     double? longitude,
     bool? isAccepted,
@@ -719,6 +729,7 @@ else if (expandedDeliveryData is Map<String, dynamic>) {
       timeAccepted: timeAccepted ?? this.timeAccepted,
       timeEndTrip: timeEndTrip ?? this.timeEndTrip,
       created: created ?? this.created,
+      tripTotalTime: tripTotalTime ?? this.tripTotalTime,
       updated: updated ?? this.updated,
       deliveryDate: deliveryDate ?? this.deliveryDate,
       latitude: latitude ?? this.latitude,

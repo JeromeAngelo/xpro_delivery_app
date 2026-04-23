@@ -45,6 +45,8 @@ class _TransactionViewState extends State<TransactionView> {
   bool _showEWalletFields = false;
   bool _showBankNameField = false;
   bool _showCashField = false;
+  bool _showStcCashField = false;
+  bool _showStcChequeField = false;
   bool _isLoading = false;
 
   @override
@@ -75,6 +77,8 @@ class _TransactionViewState extends State<TransactionView> {
       _showEWalletFields = _selectedPaymentMode == 'E-Wallet';
       _showBankNameField = _selectedPaymentMode == 'Bank Transfer';
       _showChequeNumberField = _selectedPaymentMode == 'DTC-CHK';
+      _showStcCashField = _selectedPaymentMode == 'STC-Cash';
+      _showStcChequeField = _selectedPaymentMode == 'STC-CHK';
     }
 
     // Initialize amount from deliveryData.totalAmount
@@ -99,6 +103,8 @@ class _TransactionViewState extends State<TransactionView> {
       _showEWalletFields = newValue == 'E-Wallet';
       _showBankNameField = newValue == 'Bank Transfer';
       _showCashField = newValue == 'DTC - COD';
+      _showStcCashField = newValue == 'STC-Cash';
+      _showStcChequeField = newValue == 'STC-CHK';
       _selectedEWalletType = null;
       _selectedBankName = null;
     });
@@ -122,7 +128,14 @@ class _TransactionViewState extends State<TransactionView> {
       ),
       value: _selectedPaymentMode,
       items:
-          ['Bank Transfer', 'DTC - COD', 'DTC - CHK', 'E-Wallet']
+          [
+                'Bank Transfer',
+                'DTC - COD',
+                'DTC - CHK',
+                'E-Wallet',
+                'STC-Cash',
+                'STC-CHK',
+              ]
               .map(
                 (value) => DropdownMenuItem(value: value, child: Text(value)),
               )
@@ -339,7 +352,7 @@ class _TransactionViewState extends State<TransactionView> {
                         ),
                         const SizedBox(height: 20),
                         _buildPaymentModeDropdown(),
-                        if (_showCashField) ...[
+                        if (_showCashField || _showStcCashField) ...[
                           const SizedBox(height: 12),
                           _buildAmountField(),
                         ],
@@ -347,7 +360,7 @@ class _TransactionViewState extends State<TransactionView> {
                           const SizedBox(height: 12),
                           _buildBankFields(),
                         ],
-                        if (_showChequeNumberField) ...[
+                        if (_showChequeNumberField || _showStcChequeField) ...[
                           const SizedBox(height: 12),
                           _buildChequeFields(),
                         ],
@@ -398,116 +411,6 @@ class _TransactionViewState extends State<TransactionView> {
     );
   }
 
-  // In the _showConfirmationModal method, update to handle missing PDF:
-
-  // void _showConfirmationModal() {
-  //   if (!_formKey.currentState!.validate()) {
-  //     return;
-  //   }
-
-  //   final amount = double.tryParse(_amountController.text) ?? 0.0;
-  //   final referenceNumber = _referenceNumberController.text.trim();
-  //   final modeOfPayment = _getModeOfPayment(_selectedPaymentMode);
-
-  //   // Generate PDF if not provided
-  //   if (widget.generatedPdf == null) {
-  //     // Generate PDF using the delivery receipt BLoC
-  //     context.read<DeliveryReceiptBloc>().add(
-  //       GenerateDeliveryReceiptPdfEvent(widget.deliveryData),
-  //     );
-
-  //     // Listen for PDF generation completion
-  //     _showModalAfterPdfGeneration(amount, referenceNumber, modeOfPayment);
-  //   } else {
-  //     // Use existing PDF
-  //     _showModal(amount, referenceNumber, modeOfPayment, widget.generatedPdf!);
-  //   }
-  // }
-
-  // void _showModalAfterPdfGeneration(
-  //   double amount,
-  //   String referenceNumber,
-  //   ModeOfPayment modeOfPayment,
-  // ) {
-  //   // Add a BlocListener to wait for PDF generation
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder:
-  //         (context) => BlocListener<DeliveryReceiptBloc, DeliveryReceiptState>(
-  //           listener: (context, state) {
-  //             if (state is DeliveryReceiptPdfGenerated) {
-  //               Navigator.of(context).pop(); // Close loading dialog
-  //               _showModal(
-  //                 amount,
-  //                 referenceNumber,
-  //                 modeOfPayment,
-  //                 state.pdfBytes,
-  //               );
-  //             } else if (state is DeliveryReceiptError) {
-  //               Navigator.of(context).pop(); // Close loading dialog
-  //               ScaffoldMessenger.of(context).showSnackBar(
-  //                 SnackBar(
-  //                   content: Text('PDF Generation Error: ${state.message}'),
-  //                 ),
-  //               );
-  //             }
-  //           },
-  //           child: const Center(child: CircularProgressIndicator()),
-  //         ),
-  //   );
-  // }
-
-  // void _showModal(
-  //   double amount,
-  //   String referenceNumber,
-  //   ModeOfPayment modeOfPayment,
-  //   Uint8List pdfBytes,
-  // ) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     backgroundColor: Colors.transparent,
-  //     builder:
-  //         (context) => Container(
-  //           height: MediaQuery.of(context).size.height * 0.9,
-  //           decoration: BoxDecoration(
-  //             color: Theme.of(context).colorScheme.surface,
-  //             borderRadius: const BorderRadius.vertical(
-  //               top: Radius.circular(20),
-  //             ),
-  //           ),
-  //           child: BlocProvider.value(
-  //             value: context.read<DeliveryReceiptBloc>(),
-  //             child: ConfirmationPaymentView(
-  //               deliveryData: widget.deliveryData,
-  //               generatedPdf: pdfBytes,
-  //               amount: amount,
-  //               referenceNumber: referenceNumber,
-  //               modeOfPayment: modeOfPayment,
-  //               chequeNumber:
-  //                   _chequeNumberController.text.trim().isEmpty
-  //                       ? null
-  //                       : _chequeNumberController.text.trim(),
-  //               eWalletType: _selectedEWalletType,
-  //               eWalletAccount:
-  //                   _eWalletAccountController.text.trim().isEmpty
-  //                       ? null
-  //                       : _eWalletAccountController.text.trim(),
-  //               bankName: _selectedBankName,
-  //             ),
-  //           ),
-  //         ),
-  //   );
-  // }
-
-  // Replace the existing _handleConfirmPayment method with:
-  // void _handleConfirmPayment() {
-  //   if (_validateFields()) {
-  //     _showConfirmationModal();
-  //   }
-  // }
-
   /// Helper method to convert payment mode string to enum
   ModeOfPayment _getModeOfPaymentEnum(String? mode) {
     switch (mode) {
@@ -519,6 +422,10 @@ class _TransactionViewState extends State<TransactionView> {
         return ModeOfPayment.cheque;
       case 'E-Wallet':
         return ModeOfPayment.eWallet;
+      case 'STC-Cash':
+        return ModeOfPayment.stcCash;
+      case 'STC-CHK':
+        return ModeOfPayment.stcCheque;
       default:
         return ModeOfPayment.cashOnDelivery;
     }

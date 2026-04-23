@@ -73,7 +73,7 @@ class _RevertDeliveryStatusScreenState
     sortedUpdates.sort((a, b) {
       final timeA = a.time ?? a.created ?? DateTime(0);
       final timeB = b.time ?? b.created ?? DateTime(0);
-      return timeB.compareTo(timeA);
+      return timeA.compareTo(timeB);
     });
 
     if (sortedUpdates.length < 2) {
@@ -86,7 +86,6 @@ class _RevertDeliveryStatusScreenState
         : [];
   }
 
-
   String _getLatestUpdateTimestamp(DeliveryDataEntity deliveryData) {
     if (deliveryData.deliveryUpdates.isEmpty) return 'N/A';
 
@@ -97,7 +96,7 @@ class _RevertDeliveryStatusScreenState
     sortedUpdates.sort((a, b) {
       final timeA = a.time ?? a.created ?? DateTime(0);
       final timeB = b.time ?? b.created ?? DateTime(0);
-      return timeB.compareTo(timeA);
+      return timeA.compareTo(timeB);
     });
 
     final latest = sortedUpdates.first;
@@ -123,7 +122,8 @@ class _RevertDeliveryStatusScreenState
     final theme = Theme.of(context);
     final tripName = widget.deliveryData.trip.target?.name ?? 'N/A';
     final customerName = widget.deliveryData.storeName ?? 'N/A';
-    final currentStatus = _getCurrentDeliveryStatus(widget.deliveryData);
+    final currentStatus =
+        widget.deliveryData.deliveryUpdates.last.title ?? 'N/A';
 
     final content = SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -291,33 +291,28 @@ class _RevertDeliveryStatusScreenState
                                   );
 
                               sortedUpdatesForSubtitle.sort((a, b) {
-                                final timeA = a.time ?? a.created ?? DateTime(
-                                  0,
-                                );
-                                final timeB = b.time ?? b.created ?? DateTime(
-                                  0,
-                                );
+                                final timeA =
+                                    a.time ?? a.created ?? DateTime(0);
+                                final timeB =
+                                    b.time ?? b.created ?? DateTime(0);
                                 return timeB.compareTo(timeA);
                               });
 
                               String? subtitle;
                               if (sortedUpdatesForSubtitle.length >= 2) {
-                                subtitle =
-                                    sortedUpdatesForSubtitle[1].subtitle;
+                                subtitle = sortedUpdatesForSubtitle[1].subtitle;
                               }
 
                               // Create entity directly — revert targets are NOT
                               // in statusChoices (which only has forward transitions)
-                              final statusEntity =
-                                  DeliveryStatusChoicesEntity(
-                                    title: _selectedStatus!.trim(),
-                                    subtitle: subtitle,
-                                  );
+                              final statusEntity = DeliveryStatusChoicesEntity(
+                                title: _selectedStatus!.trim(),
+                                subtitle: subtitle,
+                              );
 
                               context.read<DeliveryStatusChoicesBloc>().add(
                                 RevertUpdateCustomerStatusEvent(
-                                  deliveryDataId:
-                                      widget.deliveryData.id ?? '',
+                                  deliveryDataId: widget.deliveryData.id ?? '',
                                   status: statusEntity,
                                 ),
                               );

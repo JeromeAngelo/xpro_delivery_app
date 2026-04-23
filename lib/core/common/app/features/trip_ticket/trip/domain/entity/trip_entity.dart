@@ -58,6 +58,7 @@ class TripEntity extends Equatable {
   DateTime? created;
   DateTime? updated;
   DateTime? deliveryDate;
+  String? tripTotalTime;
   String? qrCode;
   TripEntity({
     this.id,
@@ -90,7 +91,7 @@ class TripEntity extends Equatable {
     this.accuracy,
     this.tripDistance,
     this.source,
-
+    this.tripTotalTime,
     this.qrCode,
     this.created,
     this.updated,
@@ -140,6 +141,7 @@ class TripEntity extends Equatable {
     source: '',
     mismatchedPersonnelReasonCode: null,
     allowMismatchedPersonnels: false,
+    tripTotalTime: null,
     isEndTrip: false,
     isAccepted: false,
     qrCode: '',
@@ -188,6 +190,7 @@ class TripEntity extends Equatable {
     isEndTrip,
     name,
     deliveryDate,
+    tripTotalTime,
     deliveryCollection,
     cancelledInvoices,
     qrCode,

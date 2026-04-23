@@ -77,13 +77,14 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
     sortedUpdates.sort((a, b) {
       final timeA = a.time ?? a.created ?? DateTime(0);
       final timeB = b.time ?? b.created ?? DateTime(0);
-      return timeB.compareTo(timeA);
+      return timeA.compareTo(timeB);
     });
 
     final latestTitle = sortedUpdates.first.title?.trim().toLowerCase() ?? '';
-    return latestTitle == 'in transit' ||
-        latestTitle == 'end delivery' ||
-        latestTitle == 'mark as undelivered';
+    return latestTitle == 'pending' ||
+        latestTitle == 'in transit' ||
+        latestTitle == 'mark as undelivered' ||
+        latestTitle == 'end delivery';
   }
 
   @override
@@ -213,34 +214,28 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                                               label: const Text(
                                                 "Revert Status",
                                               ),
-                                              onPressed:
-                                                  isLocked
-                                                      ? null
-                                                      : () {
-                                                        if (customerState
-                                                            is DeliveryDataLoaded) {
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop();
-                                                          Future.delayed(
-                                                            const Duration(
-                                                              milliseconds: 100,
-                                                            ),
-                                                            () {
-                                                              if (!mounted)
-                                                                return;
-                                                              context.push(
-                                                                '/revert-delivery/${widget.deliveryDataId}',
-                                                                extra: {
-                                                                  'deliveryData':
-                                                                      customerState
-                                                                          .deliveryData,
-                                                                },
-                                                              );
-                                                            },
-                                                          );
-                                                        }
-                                                      },
+                                              onPressed: () {
+                                                if (customerState
+                                                    is DeliveryDataLoaded) {
+                                                  Navigator.of(context).pop();
+                                                  Future.delayed(
+                                                    const Duration(
+                                                      milliseconds: 100,
+                                                    ),
+                                                    () {
+                                                      if (!mounted) return;
+                                                      context.push(
+                                                        '/revert-delivery/${widget.deliveryDataId}',
+                                                        extra: {
+                                                          'deliveryData':
+                                                              customerState
+                                                                  .deliveryData,
+                                                        },
+                                                      );
+                                                    },
+                                                  );
+                                                }
+                                              },
                                             );
                                           },
                                         ),

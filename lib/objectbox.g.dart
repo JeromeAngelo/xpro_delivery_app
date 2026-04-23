@@ -221,7 +221,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(251, 226941855342010991),
+        indexId: const obx_int.IdUid(287, 3207382515464675745),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -229,7 +229,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'customerId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(252, 2217276597191028084),
+        indexId: const obx_int.IdUid(288, 6555304058178313082),
         relationTarget: 'CustomerDataModel',
       ),
       obx_int.ModelProperty(
@@ -237,7 +237,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'invoiceId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(253, 6931830023568546386),
+        indexId: const obx_int.IdUid(289, 6316607363279641146),
         relationTarget: 'InvoiceDataModel',
       ),
       obx_int.ModelProperty(
@@ -245,7 +245,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(250, 6844593543201372509),
+        indexId: const obx_int.IdUid(286, 8291554288717496737),
         relationTarget: 'DeliveryDataModel',
       ),
       obx_int.ModelProperty(
@@ -425,7 +425,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(254, 8410847166398971857),
+        indexId: const obx_int.IdUid(290, 7668181672461029918),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -593,7 +593,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(256, 8936372152445005470),
+        indexId: const obx_int.IdUid(292, 2050826454267836231),
         relationTarget: 'DeliveryDataModel',
       ),
       obx_int.ModelProperty(
@@ -601,7 +601,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(257, 9170036874578828765),
+        indexId: const obx_int.IdUid(293, 7088812594423053935),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -609,7 +609,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'customerId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(255, 6644879560935720708),
+        indexId: const obx_int.IdUid(291, 8506070082168474256),
         relationTarget: 'CustomerDataModel',
       ),
       obx_int.ModelProperty(
@@ -1137,7 +1137,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(258, 7734729379093567784),
+        indexId: const obx_int.IdUid(294, 5329132559121115104),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -1899,7 +1899,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(259, 3616766658018854432),
+        indexId: const obx_int.IdUid(295, 3909044785588233046),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2002,7 +2002,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(260, 1608355176051031840),
+        indexId: const obx_int.IdUid(296, 1247460493333935810),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2513,7 +2513,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(261, 2575203337266699842),
+        indexId: const obx_int.IdUid(297, 1319944106318315350),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2681,7 +2681,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(262, 6513984586493160421),
+        indexId: const obx_int.IdUid(298, 7170653815603297703),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3107,7 +3107,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'invoiceDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(263, 1631129713498899113),
+        indexId: const obx_int.IdUid(299, 2996241136317965537),
         relationTarget: 'InvoiceDataEntity',
       ),
       obx_int.ModelProperty(
@@ -3347,7 +3347,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(264, 1758257713800700866),
+        indexId: const obx_int.IdUid(300, 775457068066987787),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3355,7 +3355,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryTeamId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(265, 2246514720494243359),
+        indexId: const obx_int.IdUid(301, 8840438541530294583),
         relationTarget: 'DeliveryTeamModel',
       ),
       obx_int.ModelProperty(
@@ -3503,7 +3503,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(266, 5697622295381843725),
+        indexId: const obx_int.IdUid(302, 8364665618179548432),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3787,7 +3787,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(42, 88472125874859222),
     name: 'TripEntity',
-    lastPropertyId: const obx_int.IdUid(26, 5122234334910541378),
+    lastPropertyId: const obx_int.IdUid(27, 4098785839179870369),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -3956,6 +3956,12 @@ final _entities = <obx_int.ModelEntity>[
         type: 9,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(27, 4098785839179870369),
+        name: 'tripTotalTime',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[
       obx_int.ModelRelation(
@@ -3999,7 +4005,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(43, 7704832219274453297),
     name: 'TripModel',
-    lastPropertyId: const obx_int.IdUid(26, 36932615904227010),
+    lastPropertyId: const obx_int.IdUid(27, 3537617153537875359),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -4168,6 +4174,12 @@ final _entities = <obx_int.ModelEntity>[
         type: 1,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(27, 3537617153537875359),
+        name: 'tripTotalTime',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[
       obx_int.ModelRelation(
@@ -4309,7 +4321,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(267, 2882978901015748652),
+        indexId: const obx_int.IdUid(303, 8787393536052492649),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -4697,7 +4709,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
     lastEntityId: const obx_int.IdUid(48, 4350876074771390893),
-    lastIndexId: const obx_int.IdUid(267, 2882978901015748652),
+    lastIndexId: const obx_int.IdUid(303, 8787393536052492649),
     lastRelationId: const obx_int.IdUid(29, 6984763155418216047),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -4900,6 +4912,42 @@ obx_int.ModelDefinition getObjectBoxModel() {
       4789249288151907005,
       2103645303692441935,
       8773046407098959947,
+      226941855342010991,
+      2217276597191028084,
+      6931830023568546386,
+      6844593543201372509,
+      8410847166398971857,
+      8936372152445005470,
+      9170036874578828765,
+      6644879560935720708,
+      7734729379093567784,
+      3616766658018854432,
+      1608355176051031840,
+      2575203337266699842,
+      6513984586493160421,
+      1631129713498899113,
+      1758257713800700866,
+      2246514720494243359,
+      5697622295381843725,
+      2882978901015748652,
+      6481388796866869273,
+      6706385473258465847,
+      5149565038191052856,
+      8721185704981395058,
+      890033389752777804,
+      7292408710352472819,
+      2928110556326237819,
+      217997654790931768,
+      3516288424716249551,
+      3463296430536698251,
+      2457174983836965211,
+      9205097091729445049,
+      7694085472751943745,
+      6794270533768379331,
+      3591623873387956911,
+      9068725585932527490,
+      8520298646199560763,
+      1506128375771471798,
     ],
     retiredPropertyUids: const [
       7578410533054026482,
@@ -9975,7 +10023,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final qrCodeOffset = object.qrCode == null
             ? null
             : fbb.writeString(object.qrCode!);
-        fbb.startTable(27);
+        final tripTotalTimeOffset = object.tripTotalTime == null
+            ? null
+            : fbb.writeString(object.tripTotalTime!);
+        fbb.startTable(28);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, collectionIdOffset);
@@ -10002,6 +10053,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(23, object.updated?.millisecondsSinceEpoch);
         fbb.addInt64(24, object.deliveryDate?.millisecondsSinceEpoch);
         fbb.addOffset(25, qrCodeOffset);
+        fbb.addOffset(26, tripTotalTimeOffset);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -10095,6 +10147,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final sourceParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 34);
+        final tripTotalTimeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 56);
         final qrCodeParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 54);
@@ -10122,6 +10177,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           accuracy: accuracyParam,
           tripDistance: tripDistanceParam,
           source: sourceParam,
+          tripTotalTime: tripTotalTimeParam,
           qrCode: qrCodeParam,
           created: createdParam,
           updated: updatedParam,
@@ -10254,7 +10310,10 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final sourceOffset = object.source == null
             ? null
             : fbb.writeString(object.source!);
-        fbb.startTable(27);
+        final tripTotalTimeOffset = object.tripTotalTime == null
+            ? null
+            : fbb.writeString(object.tripTotalTime!);
+        fbb.startTable(28);
         fbb.addInt64(0, object.objectBoxId);
         fbb.addOffset(1, pocketbaseIdOffset);
         fbb.addOffset(2, idOffset);
@@ -10281,6 +10340,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(23, object.deliveryTeam.targetId);
         fbb.addBool(24, object.allowMismatchedPersonnels);
         fbb.addBool(25, object.isEndTrip);
+        fbb.addOffset(26, tripTotalTimeOffset);
         fbb.finish(fbb.endTable());
         return object.objectBoxId;
       },
@@ -10354,6 +10414,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final deliveryDateParam = deliveryDateValue == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(deliveryDateValue);
+        final tripTotalTimeParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 56);
         final latitudeParam = const fb.Float64Reader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -10399,6 +10462,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 created: createdParam,
                 updated: updatedParam,
                 deliveryDate: deliveryDateParam,
+                tripTotalTime: tripTotalTimeParam,
                 latitude: latitudeParam,
                 accuracy: accuracyParam,
                 tripDistance: tripDistanceParam,
@@ -14060,6 +14124,11 @@ class TripEntity_ {
     _entities[41].properties[25],
   );
 
+  /// See [TripEntity.tripTotalTime].
+  static final tripTotalTime = obx.QueryStringProperty<TripEntity>(
+    _entities[41].properties[26],
+  );
+
   /// see [TripEntity.personels]
   static final personels = obx.QueryRelationToMany<TripEntity, PersonelModel>(
     _entities[41].relations[0],
@@ -14233,6 +14302,11 @@ class TripModel_ {
   /// See [TripModel.isEndTrip].
   static final isEndTrip = obx.QueryBooleanProperty<TripModel>(
     _entities[42].properties[25],
+  );
+
+  /// See [TripModel.tripTotalTime].
+  static final tripTotalTime = obx.QueryStringProperty<TripModel>(
+    _entities[42].properties[26],
   );
 
   /// see [TripModel.personels]

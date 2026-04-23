@@ -572,7 +572,7 @@ if (expandedTrip == null || expandedTrip.isEmpty) {
           .getFullList(
             filter: 'id = "$tripId"',
             expand:
-                'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates,deliveryData.trip,cancelledInvoice,deliveryData.invoiceItems',
+                'customers,deliveryTeam,deliveryTeam.personels,deliveryTeam.deliveryVehicle,deliveryTeam.checklist,personels,deliveryVehicle,checklist,deliveryData.customer,deliveryData.invoices,deliveryData.deliveryUpdates,deliveryData.trip,cancelledInvoice,deliveryData.invoiceItems,otp,endTripOtp',
             sort: '-created',
           );
 
@@ -784,6 +784,7 @@ debugPrint('━━━━━━━━━━━━━━━━━━━━━━�
         'deliveryDate': tripRecord.data['deliveryDate'],
         'latitude': tripRecord.data['latitude'] ?? 0.0,
         'longitude': tripRecord.data['longitude'] ?? 0.0,
+        'tripTotalTime': tripRecord.data['tripTotalTime'] ?? 0,
         'deliveryTeam': mappedDeliveryTeam,
         'personels': _mapExpandedRecord(personels),
         'deliveryVehicle': _mapExpandedRecord(vehicle),
