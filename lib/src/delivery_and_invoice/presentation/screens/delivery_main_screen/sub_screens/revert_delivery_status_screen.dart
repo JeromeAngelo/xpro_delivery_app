@@ -49,21 +49,21 @@ class _RevertDeliveryStatusScreenState
     super.dispose();
   }
 
-  String _getCurrentDeliveryStatus(DeliveryDataEntity deliveryData) {
-    if (deliveryData.deliveryUpdates.isEmpty) return 'N/A';
+  // String _getCurrentDeliveryStatus(DeliveryDataEntity deliveryData) {
+  //   if (deliveryData.deliveryUpdates.isEmpty) return 'N/A';
 
-    final sortedUpdates = List<DeliveryUpdateEntity>.from(
-      deliveryData.deliveryUpdates,
-    );
+  //   final sortedUpdates = List<DeliveryUpdateEntity>.from(
+  //     deliveryData.deliveryUpdates,
+  //   );
 
-    sortedUpdates.sort((a, b) {
-      final timeA = a.time ?? a.created ?? DateTime(0);
-      final timeB = b.time ?? b.created ?? DateTime(0);
-      return timeB.compareTo(timeA);
-    });
+  //   sortedUpdates.sort((a, b) {
+  //     final timeA = a.time ?? a.created ?? DateTime(0);
+  //     final timeB = b.time ?? b.created ?? DateTime(0);
+  //     return timeB.compareTo(timeA);
+  //   });
 
-    return sortedUpdates.first.title ?? 'N/A';
-  }
+  //   return sortedUpdates.first.title ?? 'N/A';
+  // }
 
   List<String> _getRevertStatuses(DeliveryDataEntity deliveryData) {
     final sortedUpdates = List<DeliveryUpdateEntity>.from(

@@ -7,6 +7,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/view/delivery_main_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/dialog_instruction.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/invoice_screen/view/invoice_screen.dart';
+import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/customer_summary_dialog.dart';
 
 class DeliveryAndInvoiceView extends StatefulWidget {
   final DeliveryDataEntity? selectedCustomer;
@@ -20,11 +21,13 @@ class DeliveryAndInvoiceView extends StatefulWidget {
 class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
   int _selectedIndex = 0;
   String _deliveryNumber = 'Loading...';
+  bool _shouldShowSummary = false;
 
   @override
   void initState() {
     super.initState();
     _loadLocalData();
+    _checkForSummaryParameter();
   }
 
   void _loadLocalData() {
@@ -36,6 +39,38 @@ class _DeliveryAndInvoiceViewState extends State<DeliveryAndInvoiceView> {
       _updateDeliveryNumber(widget.selectedCustomer!);
       debugPrint('📱 Using customer data from navigation (offline-first)');
     }
+  }
+
+  void _checkForSummaryParameter() {
+    // Check if we should show the summary dialog
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final uri = GoRouterState.of(context).uri;
+      final showSummary = uri.queryParameters['showSummary'];
+
+      if (showSummary == 'true' && widget.selectedCustomer != null) {
+        setState(() {
+          _shouldShowSummary = true;
+          _selectedIndex = 0; // Switch to Delivery Main Screen tab
+        });
+
+        // Show the summary dialog
+        _showCustomerSummaryDialog();
+      }
+    });
+  }
+
+  void _showCustomerSummaryDialog() {
+    if (widget.selectedCustomer == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) =>
+              CustomerSummaryDialog(deliveryData: widget.selectedCustomer!),
+    );
   }
 
   void _updateDeliveryNumber(DeliveryDataEntity deliveryData) {

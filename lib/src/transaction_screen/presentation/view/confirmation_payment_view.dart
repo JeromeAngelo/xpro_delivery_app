@@ -21,6 +21,8 @@ import 'package:x_pro_delivery_app/core/enums/mode_of_payment.dart';
 import 'package:x_pro_delivery_app/core/services/app_debug_logger.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/rounded_%20button.dart';
 import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/delivery_orders_pdf.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_event.dart';
 
 class ConfirmationPaymentView extends StatefulWidget {
   final DeliveryDataEntity deliveryData;
@@ -95,21 +97,22 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
   }
 
   bool _validateFields() {
+    // Customer name and images are now optional
+    // Only validate if user has entered something but it's invalid
+
     if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter your name')));
-      return false;
+      AppDebugLogger.instance.logInfo(
+        'ℹ️ No customer name provided - proceeding without it',
+      );
     }
 
     if (capturedImages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please take at least one picture')),
+      AppDebugLogger.instance.logInfo(
+        'ℹ️ No images captured - proceeding without them',
       );
-      return false;
     }
 
-    return true;
+    return true; // Always return true since fields are optional
   }
 
   void _changeOrientation(bool isLandscape) {
@@ -387,7 +390,8 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
         },
         controller: _nameController,
         decoration: InputDecoration(
-          labelText: 'Customer Name',
+          labelText: 'Customer Name (Optional)',
+          hintText: 'Enter customer name',
           labelStyle: Theme.of(context).textTheme.bodyMedium,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -410,12 +414,7 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
           filled: true,
           fillColor: const Color.fromARGB(40, 199, 199, 199),
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter customer name';
-          }
-          return null;
-        },
+        // No validator - field is optional
       ),
     );
   }
@@ -525,19 +524,12 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
                 'Customer: ${widget.deliveryData.storeName}, Amount: ₱${widget.amount.toStringAsFixed(2)}',
           );
 
-          // Show immediate feedback
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text('Payment confirmed successfully!'),
-                ],
-              ),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              duration: Duration(seconds: 2),
-            ),
+          // 🚀 Trigger end delivery after receipt is created
+          debugPrint(
+            '🔄 Triggering end delivery for ${widget.deliveryData.id}',
+          );
+          context.read<DeliveryStatusChoicesBloc>().add(
+            SetEndDeliveryEvent(deliveryData: widget.deliveryData),
           );
 
           // 🔄 FORCE CACHE INVALIDATION: Clear cached data to force fresh load
@@ -563,7 +555,7 @@ class _ConfirmationPaymentViewState extends State<ConfirmationPaymentView> {
             '🔄 Navigating to delivery and invoice view for customer: ${widget.deliveryData.id}',
           );
           context.go(
-            '/delivery-and-invoice/${widget.deliveryData.id}',
+            '/delivery-and-invoice/${widget.deliveryData.id}?showSummary=true',
             extra: widget.deliveryData,
           );
 

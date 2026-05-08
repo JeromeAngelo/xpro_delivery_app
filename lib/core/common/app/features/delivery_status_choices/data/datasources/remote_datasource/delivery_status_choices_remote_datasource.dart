@@ -159,7 +159,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
 
           break;
         case 'mark as received':
-          allowedTitles.addAll(['end delivery']);
+          allowedTitles.addAll(['']);
 
           break;
         case 'mark as undelivered':
@@ -411,7 +411,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
               allowedTitles.addAll(['unloading']);
               break;
              case 'unloading':
-          allowedTitles.addAll(['mark as received']);
+          allowedTitles.addAll(['']);
 
           break;
 
@@ -424,7 +424,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
               ]);
               break;
             case 'mark as received':
-              allowedTitles.addAll(['end delivery']);
+              allowedTitles.addAll(['']);
               break;
             case 'mark as undelivered':
             case 'end delivery':
