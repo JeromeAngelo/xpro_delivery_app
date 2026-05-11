@@ -8,7 +8,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/dat
 import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/homepage_body.dart'
     show HomepageBody;
 
-import '../../../../core/common/app/features/delivery_team/delivery_team/domain/entity/delivery_team_entity.dart';
 import '../../../../core/common/app/features/sync_data/cubit/sync_cubit.dart';
 import '../../../../core/common/app/features/sync_data/cubit/sync_state.dart';
 import '../../../../core/common/app/features/trip_ticket/trip/domain/entity/trip_entity.dart';
@@ -20,8 +19,8 @@ import '../../../../core/common/widgets/default_drawer.dart';
 import '../../../../core/services/injection_container.dart';
 import '../../../../core/services/sync_service.dart';
 import '../../../../core/utils/route_utils.dart';
-import '../refractors/get_trip_ticket_btn.dart';
 import '../refractors/homepage_dashboard.dart';
+import '../refractors/no_trip_assigned_view.dart';
 
 class HomepageView extends StatefulWidget {
   const HomepageView({super.key});
@@ -34,12 +33,10 @@ class _HomepageViewState extends State<HomepageView>
     with AutomaticKeepAliveClientMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  //late final DeliveryTeamBloc _deliveryTeamBloc;
   late final AuthBloc _authBloc;
   late final SyncService _syncService;
 
   LocalUser? _user;
-  DeliveryTeamEntity? _deliveryTeam;
 
   @override
   void initState() {
@@ -60,6 +57,42 @@ class _HomepageViewState extends State<HomepageView>
     if (tripId.isNotEmpty) return true;
 
     return false;
+  }
+
+  Widget _buildUserInfo() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'WELCOME BACK',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _user?.name ?? 'User',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _user?.trip.target?.name ?? 'No trip assigned',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _initializeBlocs() {
@@ -274,18 +307,6 @@ class _HomepageViewState extends State<HomepageView>
             }
           },
         ),
-
-        //         // DELIVERY TEAM LISTENER
-        //         BlocListener<DeliveryTeamBloc, DeliveryTeamState>(
-        //           listener: (_, state) {
-        //             if (state is DeliveryTeamLoaded) {
-        //               setState(() => _deliveryTeam = state.deliveryTeam);
-        //               debugPrint("🏠 BUILD → user = $_user");
-        // debugPrint("🏠 BUILD → deliveryTeam = $_deliveryTeam");
-
-        //             }
-        //           },
-        //         ),
       ],
       child: Scaffold(
         key: _scaffoldKey,
@@ -299,12 +320,19 @@ class _HomepageViewState extends State<HomepageView>
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    HomepageDashboard(
-                      user: _user ?? LocalUser.empty(),
-                      trip: _user?.trip.target ?? TripEntity.empty(),
-                    ),
-                    const SizedBox(height: 12),
-                    const HomepageBody(),
+                    if (_hasTripAssigned) ...[
+                      HomepageDashboard(
+                        user: _user ?? LocalUser.empty(),
+                        trip: _user?.trip.target ?? TripEntity.empty(),
+                      ),
+                      const SizedBox(height: 12),
+                      const HomepageBody(),
+                    ] else ...[
+                      // Show user info even when no trip is assigned
+                      _buildUserInfo(),
+                      const SizedBox(height: 20),
+                      const NoTripAssignedView(),
+                    ],
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -312,13 +340,6 @@ class _HomepageViewState extends State<HomepageView>
             ],
           ),
         ),
-        floatingActionButton:
-            !_hasTripAssigned
-                ? const Padding(
-                  padding: EdgeInsets.only(left: 30.0),
-                  child: GetTripTicketBtn(),
-                )
-                : null,
       ),
     );
   }

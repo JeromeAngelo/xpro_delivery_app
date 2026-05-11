@@ -4,6 +4,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/delivery_timline_tile.dart';
 import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/trip_summary_tile.dart';
+import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/no_trip_assigned_view.dart';
 
 class HomepageBody extends StatefulWidget {
   const HomepageBody({super.key});
@@ -105,38 +106,8 @@ class _HomepageBodyState extends State<HomepageBody>
             );
           }
 
-          debugPrint('📋 No trip assigned - showing empty state');
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  height: 100,
-                  width: 100,
-                  child: Image.asset('assets/images/no_ticket.png'),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'No Trip Assigned',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                if (state is AuthLoading) ...[
-                  const SizedBox(height: 8),
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Checking for trip data...',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ],
-            ),
-          );
+          debugPrint('📋 No trip assigned - showing no trip view');
+          return const NoTripAssignedView();
         },
       ),
     );

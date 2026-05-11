@@ -60,7 +60,7 @@ class _EnterCodeState extends State<EnterCode> {
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-              //  style: ButtonStyle(backgroundColor: Theme.of(context).colorScheme.primary),
+                //  style: ButtonStyle(backgroundColor: Theme.of(context).colorScheme.primary),
                 onPressed: () {
                   if (_controller.text.isNotEmpty) {
                     debugPrint(
