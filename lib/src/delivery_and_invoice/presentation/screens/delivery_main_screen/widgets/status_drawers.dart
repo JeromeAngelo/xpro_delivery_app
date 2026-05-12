@@ -13,12 +13,10 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/customer_summary_dialog.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/pdf_generating_loading_screen.dart';
-import '../../../../../../core/common/app/features/delivery_data/delivery_update/domain/entity/delivery_update_entity.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_event.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_state.dart';
-import '../../../../../../core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 
 class UpdateStatusDrawer extends StatefulWidget {
   final String deliveryDataId;
@@ -67,25 +65,6 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
     super.dispose();
   }
 
-  bool _isRevertStatusLocked(DeliveryDataEntity deliveryData) {
-    if (deliveryData.deliveryUpdates.isEmpty) return false;
-
-    final sortedUpdates = List<DeliveryUpdateEntity>.from(
-      deliveryData.deliveryUpdates,
-    );
-
-    sortedUpdates.sort((a, b) {
-      final timeA = a.time ?? a.created ?? DateTime(0);
-      final timeB = b.time ?? b.created ?? DateTime(0);
-      return timeA.compareTo(timeB);
-    });
-
-    final latestTitle = sortedUpdates.first.title?.trim().toLowerCase() ?? '';
-    return latestTitle == 'pending' ||
-        latestTitle == 'in transit' ||
-        latestTitle == 'mark as undelivered' ||
-        latestTitle == 'end delivery';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -202,12 +181,6 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                                           DeliveryDataState
                                         >(
                                           builder: (context, customerState) {
-                                            final isLocked =
-                                                customerState
-                                                    is DeliveryDataLoaded &&
-                                                _isRevertStatusLocked(
-                                                  customerState.deliveryData,
-                                                );
 
                                             return ElevatedButton.icon(
                                               icon: const Icon(Icons.repeat),
