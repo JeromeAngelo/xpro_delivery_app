@@ -26,7 +26,7 @@ class ChecklistTile extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ExpansionTile(
           maintainState: true, // ✅ important for release stability
-          tilePadding: const EdgeInsets.all(16),
+          tilePadding: const EdgeInsets.all(8),
           leading: Checkbox(
             value: isChecked,
             onChanged: (value) {

@@ -212,26 +212,32 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView>
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       children: [
-        const SizedBox(height: 16),
-        _buildSectionHeader("Checklist Items"),
+        const SizedBox(height: 8),
+        _buildSectionHeader("Checklist Items", Icons.checklist_rtl_outlined),
         _buildChecklistSection(),
-        const SizedBox(height: 24),
-        _buildSectionHeader("Delivery List"),
+        _buildSectionHeader("Delivery List", Icons.local_shipping_outlined),
         _buildDeliverySection(context),
         const SizedBox(height: 80),
       ],
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, IconData? icon) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.bold,
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8),
+      child: Row(
+        children: [
+          if (icon != null)
+            Icon(icon, color: Theme.of(context).colorScheme.primary, size: 27),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -398,10 +404,7 @@ class _ChecklistAndDeliveryViewState extends State<ChecklistAndDeliveryView>
                   : (_optimisticChecked[id] ?? serverChecked);
             });
 
-        return ConfirmButton(
-          checklists: items,
-          enabled: allChecked,
-        );
+        return ConfirmButton(checklists: items, enabled: allChecked);
       },
     );
   }

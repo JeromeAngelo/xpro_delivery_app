@@ -63,18 +63,25 @@ class DeliveryList extends StatelessWidget {
 
   Widget _buildDeliveryCard(BuildContext context, DeliveryDataEntity delivery) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+        shadowColor: Colors.black12,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildCustomerInfo(context, delivery),
-              const SizedBox(height: 16),
-              _buildDeliveryStatus(context, delivery),
+              _buildDeliveryHeader(context, delivery),
+              const SizedBox(height: 12),
+              _buildDeliveryFooter(context, delivery),
             ],
           ),
         ),
@@ -82,152 +89,189 @@ class DeliveryList extends StatelessWidget {
     );
   }
 
-  Widget _buildCustomerInfo(BuildContext context, DeliveryDataEntity delivery) {
-    // Use direct fields from DeliveryDataEntity instead of target
-    final storeName = delivery.storeName;
-    final refId = delivery.refID;
-    final municipality = delivery.municipality;
-    final invoiceData = delivery.invoice.target;
-
-    if (storeName == null && refId == null && municipality == null) {
-      // Show loading or placeholder if data is still being fetched
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildInfoRow(
-            context,
-            Icons.store,
-            isLoading
-                ? 'Loading customer data...'
-                : 'Customer data unavailable',
-            style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              color:
-                  isLoading
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.error,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (delivery.id != null)
-            Text(
-              'ID: ${delivery.id}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildInfoRow(
-          context,
-          Icons.store,
-          storeName ?? 'No Store Name',
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        _buildInfoRow(
-          context,
-          Icons.receipt_sharp,
-          _getInvoiceCountText(delivery),
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 8),
-        _buildInfoRow(context, Icons.location_on, municipality ?? "Unknown"),
-        const SizedBox(height: 8),
-        if (invoiceData != null)
-          _buildInfoRow(
-            context,
-            Icons.payments_rounded,
-            '₱${invoiceData.totalAmount?.toStringAsFixed(2) ?? "0.00"}',
-          ),
-      ],
-    );
-  }
-
-  Widget _buildDeliveryStatus(
+  Widget _buildDeliveryHeader(
     BuildContext context,
     DeliveryDataEntity delivery,
   ) {
-    String status = "Pending";
+    final storeName = delivery.storeName;
+    final municipality = delivery.municipality;
+    final province = delivery.province;
 
-    // Get status from the delivery updates
-    if (delivery.deliveryUpdates.isNotEmpty) {
-      status = delivery.deliveryUpdates.last.title ?? "Pending";
+    // Format location
+    String location = 'Unknown Location';
+    if (municipality != null && province != null) {
+      location = '$province - $municipality';
+    } else if (province != null) {
+      location = province;
+    } else if (municipality != null) {
+      location = municipality;
     }
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Status:",
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+        // Store icon with red/orange background
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.errorContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            Icons.store,
+            color: Theme.of(context).colorScheme.primary,
+            size: 26,
+          ),
         ),
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                status,
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+        const SizedBox(width: 12),
+        // Store info
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                storeName ?? 'No Store Name',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Theme.of(context).colorScheme.outline,
-              size: 16,
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                location,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  String _getInvoiceCountText(DeliveryDataEntity customer) {
-    final invoiceCount = customer.invoices.length;
-
-    if (invoiceCount == 0) {
-      return "No Invoices Available";
-    } else if (invoiceCount == 1) {
-      return "1 Invoice";
-    } else {
-      return "$invoiceCount Invoices";
-    }
-  }
-
-  Widget _buildInfoRow(
+  Widget _buildDeliveryFooter(
     BuildContext context,
-    IconData icon,
-    String text, {
-    TextStyle? style,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: style ?? Theme.of(context).textTheme.bodyMedium,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 2,
+    DeliveryDataEntity delivery,
+  ) {
+    final invoiceCount = delivery.invoices.length;
+    final municipality = delivery.municipality;
+    final province = delivery.province;
+
+    // Format location (just province for footer)
+    String location = province ?? municipality ?? 'Unknown';
+
+    // Get status
+    String status = "Pending";
+    try {
+      if (delivery.deliveryUpdates.isNotEmpty == true) {
+        final lastUpdate = delivery.deliveryUpdates.last;
+        status = lastUpdate.title ?? "Pending";
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error getting delivery status: $e');
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+
+      child: Row(
+        children: [
+          // Invoice count
+          Expanded(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 18,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    invoiceCount == 0
+                        ? 'No Invoices'
+                        : invoiceCount == 1
+                        ? '1 Invoice'
+                        : '$invoiceCount Invoices',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+          // Location
+          Expanded(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 18,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    location,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Status badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.secondaryContainer.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.pending_outlined,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  status,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
