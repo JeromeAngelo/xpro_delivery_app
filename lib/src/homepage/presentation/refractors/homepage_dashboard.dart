@@ -1,183 +1,209 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/common/app/features/trip_ticket/trip/domain/entity/trip_entity.dart';
 import '../../../../core/common/app/features/users/auth/domain/entity/users_entity.dart';
+
 class HomepageDashboard extends StatelessWidget {
   final LocalUser user;
   final TripEntity trip;
 
-  const HomepageDashboard({
-    super.key,
-    required this.user,
-    required this.trip,
-  });
+  const HomepageDashboard({super.key, required this.user, required this.trip});
 
   @override
   Widget build(BuildContext context) {
     debugPrint('📝 HomepageDashboard build called');
-    debugPrint('User Trip: ${trip.name}, DeliveryTeam: ${trip.deliveryTeam.target?.id}');
+    debugPrint(
+      'User Trip: ${trip.name}, DeliveryTeam: ${trip.deliveryTeam.target?.id}',
+    );
     debugPrint('Vehicle: ${trip.deliveryVehicle.target?.name}');
 
-    final dateFormat = DateFormat("MMM dd, yyyy");
-
-    return Card(
-      margin: const EdgeInsets.all(8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-        ),
-      ),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 20),
-            _buildDashboardContent(context, dateFormat),
-          ],
-        ),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(context),
+        const SizedBox(height: 12),
+        _buildDashboardCards(context),
+      ],
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          user.name ?? 'User Name',
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Trip Number: ${user.tripNumberId ?? 'No Trip Number'}',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        Text(
-          'Route Name: ${trip.name}',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'WELCOME BACK',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            user.name ?? 'User Name',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                'Trip: ',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              Text(
+                user.trip.target?.name ?? 'No Trip assigned',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildDashboardContent(BuildContext context, DateFormat dateFormat) {
+  Widget _buildDashboardCards(BuildContext context) {
     final team = trip.deliveryTeam.target;
     final vehicle = trip.deliveryVehicle.target;
 
-    return GridView(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 3,
-        crossAxisSpacing: 5,
-        mainAxisSpacing: 22,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // First row: Trip Number ID and Plate Number
+          Row(
+            children: [
+              Expanded(
+                child: _buildDashboardCard(
+                  context,
+                  Icons.confirmation_number_outlined,
+                  'Trip Number ID',
+                  user.tripNumberId ?? 'N/A',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDashboardCard(
+                  context,
+                  Icons.local_shipping_outlined,
+                  'Plate Number',
+                  vehicle?.name ?? 'Not Assigned',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Second row: Vehicle Make and Active Deliveries
+          Row(
+            children: [
+              Expanded(
+                child: _buildDashboardCard(
+                  context,
+                  Icons.directions_car_outlined,
+                  'Vehicle Make',
+                  vehicle?.make ?? 'Not Assigned',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDashboardCard(
+                  context,
+                  Icons.pending_actions_outlined,
+                  'Active Deliveries',
+                  '${team?.activeDeliveries ?? 0}',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Third row: Total Delivered and Undelivered
+          Row(
+            children: [
+              Expanded(
+                child: _buildDashboardCard(
+                  context,
+                  Icons.done_all_outlined,
+                  'Total Delivered',
+                  '${team?.totalDelivered ?? 0}',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDashboardCard(
+                  context,
+                  Icons.warning_amber_outlined,
+                  'Undelivered',
+                  '${team?.undeliveredCustomers ?? 0}',
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
-      children: [
-        _buildInfoItem(
-          context,
-          Icons.numbers,
-          vehicle?.name ?? 'Not Assigned',
-          'Plate Number',
-        ),
-        _buildInfoItem(
-          context,
-          Icons.local_shipping,
-          vehicle != null
-              ? '${vehicle.make ?? ''} '.trim()
-              : 'Not Assigned',
-          'Vehicle',
-        ),
-        _buildInfoItem(
-          context,
-          Icons.pending_actions,
-          '${team?.activeDeliveries ?? 0}',
-          'Active Deliveries',
-        ),
-        _buildInfoItem(
-          context,
-          Icons.done_all,
-          '${team?.totalDelivered ?? 0}',
-          'Total Delivered',
-        ),
-        _buildInfoItem(
-          context,
-          Icons.route,
-          '${team?.totalDistanceTravelled ?? 0} km',
-          'Distance Travelled',
-        ),
-        _buildInfoItem(
-          context,
-          Icons.warning_amber,
-          '${team?.undeliveredCustomers ?? 0}',
-          'Undelivered',
-        ),
-      ],
     );
   }
 
-  Widget _buildInfoItem(
+  Widget _buildDashboardCard(
     BuildContext context,
     IconData icon,
-    String title,
-    String subtitle,
+    String label,
+    String value,
   ) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.transparent),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 5),
-            child: Icon(
-              icon,
-              color: Theme.of(context).colorScheme.primary,
-              size: 20,
-            ),
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                        ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Flexible(
-                  child: Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.7),
-                        ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

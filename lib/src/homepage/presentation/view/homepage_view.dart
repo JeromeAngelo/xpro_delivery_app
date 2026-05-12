@@ -319,6 +319,7 @@ class _HomepageViewState extends State<HomepageView>
             slivers: [
               SliverToBoxAdapter(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_hasTripAssigned) ...[
                       HomepageDashboard(
@@ -326,6 +327,13 @@ class _HomepageViewState extends State<HomepageView>
                         trip: _user?.trip.target ?? TripEntity.empty(),
                       ),
                       const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          "Quick Actions",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
                       const HomepageBody(),
                     ] else ...[
                       // Show user info even when no trip is assigned
