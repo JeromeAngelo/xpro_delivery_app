@@ -12,8 +12,6 @@ import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/delivery_timeline.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/update_delivery_btn.dart';
 
-// CLEANED DeliveryMainScreen — No Cached State, No Redundant Fetching,
-// FULL OFFLINE MODE (ObjectBox as single source of truth)
 
 class DeliveryMainScreen extends StatefulWidget {
   final DeliveryDataEntity? selectedCustomer;
