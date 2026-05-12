@@ -86,6 +86,7 @@ dependencies:
   internet_connection_checker_plus: ^2.7.2
   device_info_plus: ^11.2.0
   network_info_plus: ^6.1.2
+  timelines_plus: ^2.0.0
 
 
 dev_dependencies:

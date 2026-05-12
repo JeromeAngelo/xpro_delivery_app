@@ -116,7 +116,7 @@ class CustomTimelineTileBuilder {
     required Widget Function(BuildContext, int) contentsBuilder,
     required Widget Function(BuildContext, int) indicatorBuilder,
     required Widget Function(BuildContext, int, String) connectorBuilder,
-    double nodePosition = 0.09,
+    double nodePosition = 0.04,
     ScrollPhysics? physics,
   }) {
     return Builder(

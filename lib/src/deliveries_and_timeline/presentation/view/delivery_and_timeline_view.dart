@@ -11,6 +11,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_upd
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/screens/delivery_list_screen.dart';
+import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/screens/route_view_screen.dart';
 import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/screens/update_timeline_view.dart';
 
 import '../../../../core/common/app/features/trip_ticket/trip_updates/presentation/bloc/trip_updates_event.dart';
@@ -65,7 +66,8 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
         _tripTitle = authState.trip.tripNumberId ?? 'No Trip Assigned';
       } else if (authState is UserByIdLoaded) {
         _tripId = authState.user.trip.target?.id;
-        _tripTitle = authState.user.trip.target?.tripNumberId ?? 'No Trip Assigned';
+        _tripTitle =
+            authState.user.trip.target?.tripNumberId ?? 'No Trip Assigned';
       }
     }
 
@@ -96,6 +98,7 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
           tabs: const [
             Tab(text: 'Deliveries', icon: Icon(Icons.local_shipping)),
             Tab(text: 'Updates', icon: Icon(Icons.update)),
+            Tab(text: 'Routes', icon: Icon(Icons.route)),
           ],
         ),
       ),
@@ -105,15 +108,15 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
           if (_tripId != null)
             DeliveryListScreen()
           else
-            const Center(
-              child: Text('No trip assigned'),
-            ),
+            const Center(child: Text('No trip assigned')),
           if (_tripId != null)
             UpdateTimelineView(tripId: _tripId!)
           else
-            const Center(
-              child: Text('No trip assigned'),
-            ),
+            const Center(child: Text('No trip assigned')),
+          if (_tripId != null)
+            RouteViewScreen()
+          else
+            const Center(child: Text('No trip assigned')),
         ],
       ),
     );

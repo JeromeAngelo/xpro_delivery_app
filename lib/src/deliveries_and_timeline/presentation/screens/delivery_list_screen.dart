@@ -20,6 +20,7 @@ import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widg
 
 import '../widgets/quick_action_button.dart';
 import '../widgets/quick_update_dialog.dart';
+import '../widgets/search_bar_widget.dart';
 
 class DeliveryListScreen extends StatefulWidget {
   const DeliveryListScreen({super.key});
@@ -45,6 +46,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
 
   Set<String> selectedDeliveries = {};
   bool selectionMode = false;
+  List<DeliveryDataEntity> _filteredDeliveries = [];
 
   void _enableSelectionMode() => setState(() => selectionMode = true);
   void _disableSelectionMode() => setState(() => selectionMode = false);
@@ -118,29 +120,6 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
       }
     });
 
-    // _deliveryDataSubscription = _deliveryDataBloc.stream.listen((state) {
-    //   if (!mounted) return;
-
-    //   if (state is DeliveryDataByTripLoaded) {
-    //     setState(() {
-    //       _currentDeliveries = state.deliveryData;
-    //       _isLoading = false;
-    //       _isDataInitialized = true;
-
-    //       // 🔥 Keep only valid selected IDs
-    //       final validIds =
-    //           _currentDeliveries.map((e) => e.id).whereType<String>().toSet();
-
-    //       selectedDeliveries =
-    //           selectedDeliveries.where((id) => validIds.contains(id)).toSet();
-    //     });
-    //   }
-
-    //   if (state is DeliveryDataError) {
-    //     setState(() => _isLoading = false);
-    //   }
-    // });
-
     _deliverySubscription = _deliveryUpdateBloc.stream.listen((state) {
       if (!mounted) return;
       // Keep delivery update handling if needed
@@ -161,6 +140,12 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
     //_deliveryDataBloc.add(WatchAllDeliveryDataEvent());
   }
 
+  void _updateFilteredDeliveries(List<DeliveryDataEntity> deliveries) {
+    setState(() {
+      _filteredDeliveries = deliveries;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -171,6 +156,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
             if (state is DeliveryDataByTripLoaded) {
               setState(() {
                 _currentDeliveries = state.deliveryData;
+                _filteredDeliveries = state.deliveryData;
                 _isLoading = false;
                 _isDataInitialized = true;
               });
@@ -196,7 +182,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
   Widget _buildBody() {
     if (_isLoading) return _buildLoadingState();
 
-    if (_currentDeliveries.isEmpty) return _buildEmptyDeliveryState();
+    if (_filteredDeliveries.isEmpty) return _buildEmptyDeliveryState();
 
     return _buildDeliveryList();
   }
@@ -234,12 +220,18 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
 
     return Column(
       children: [
+        // Search Bar
+        SearchBarWidget(
+          allDeliveries: _currentDeliveries,
+          onSearchResults: _updateFilteredDeliveries,
+        ),
+
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _currentDeliveries.length,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            itemCount: _filteredDeliveries.length,
             itemBuilder: (context, index) {
-              final delivery = _currentDeliveries[index];
+              final delivery = _filteredDeliveries[index];
               return DeliveryListTile(
                 delivery: delivery,
                 selectionMode: selectionMode,

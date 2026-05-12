@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:x_pro_delivery_app/core/common/widgets/custom_timeline.dart';
+import 'package:timelines_plus/timelines_plus.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
 
-
 class DeliveryTimeline extends StatefulWidget {
   final String customerId;
- 
-  const DeliveryTimeline({
-    super.key,
-    required this.customerId,
-   
-  });
+
+  const DeliveryTimeline({super.key, required this.customerId});
 
   @override
   State<DeliveryTimeline> createState() => _DeliveryTimelineState();
@@ -86,89 +81,111 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
                     maxHeight: MediaQuery.of(context).size.height * 1.1,
                     minHeight: 100,
                   ),
-                  child: CustomTimelineTileBuilder.connected(
+                  child: Timeline.tileBuilder(
                     physics: const NeverScrollableScrollPhysics(),
-                    nodePosition: 0.07,
-
-                    itemCount: statusUpdates.length,
-                    contentsBuilder: (_, index) {
-                      final status = statusUpdates[index];
-                      return Padding(
-                        padding: EdgeInsets.all(5.0),
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                    theme: TimelineThemeData(nodePosition: 0.02),
+                    builder: TimelineTileBuilder.connected(
+                      connectionDirection: ConnectionDirection.after,
+                      itemCount: statusUpdates.length,
+                      contentsBuilder: (_, index) {
+                        final status = statusUpdates[index];
+                        return Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 8,
                           ),
-                          child: ListTile(
-                            leading: Column(
-                              //    mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  StatusIcons.getStatusIcon(
-                                    status.title ?? '',
-                                  ),
-                                  color:
-                                      Theme.of(context).colorScheme.primary,
-                                ),
-                              ],
+                          child: Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            title: Text(
-                              status.title ?? '',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  status.subtitle ?? '',
-                                  style:
-                                      Theme.of(context).textTheme.bodyMedium,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  _formatDateTime(
-                                    status.time ?? DateTime.now(),
-                                  ),
-                                  style:
-                                      Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                            trailing: GestureDetector(
-                              onTap: () {
-                                if (status.id != null) {
-                                  context.push(
-                                    '/update-remark/${status.id ?? ''}',
-                                    extra: status,
-                                  );
-                                }
-                              },
-                              child: Column(
+                            child: ListTile(
+                              leading: Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [Icon(Icons.arrow_forward_ios)],
+                                children: [
+                                  Icon(
+                                    StatusIcons.getStatusIcon(
+                                      status.title ?? '',
+                                    ),
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ],
+                              ),
+                              title: Text(
+                                status.title ?? '',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    status.subtitle ?? '',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    _formatDateTime(
+                                      status.time ?? DateTime.now(),
+                                    ),
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                              trailing: GestureDetector(
+                                onTap: () {
+                                  if (status.id != null) {
+                                    context.push(
+                                      '/update-remark/${status.id ?? ''}',
+                                      extra: status,
+                                    );
+                                  }
+                                },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [Icon(Icons.arrow_forward_ios)],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    indicatorBuilder: (_, index) {
-                      return CustomDotIndicator(
-                        color:
-                            index == statusUpdates.length - 1
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.outline,
-                      );
-                    },
-                    connectorBuilder: (_, index, type) {
-                      return CustomSolidLineConnector(
-                        color:
-                            index == statusUpdates.length - 1
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.outline,
-                      );
-                    },
+                        );
+                      },
+                      indicatorBuilder: (_, index) {
+                        final isLast = index == statusUpdates.length - 1;
+                        // Use DotIndicator with child for proper connector alignment
+                        // This prevents the zigzag curve on the connector line
+                        return DotIndicator(
+                          size: 15,
+                          color:
+                              isLast
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.outline,
+                          child:
+                              isLast
+                                  ? null
+                                  : Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color:
+                                          Theme.of(context).colorScheme.outline,
+                                    ),
+                                  ),
+                        );
+                      },
+                      connectorBuilder: (_, index, type) {
+                        final isLast = index == statusUpdates.length - 1;
+                        return SolidLineConnector(
+                          color:
+                              isLast
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.outline,
+                          thickness: 2.0,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -184,7 +201,10 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
   String _formatDateTime(DateTime dateTime) {
     // Convert to local time for display to ensure consistent timezone handling
     final localDateTime = dateTime.isUtc ? dateTime.toLocal() : dateTime;
-    final hour = localDateTime.hour > 12 ? localDateTime.hour - 12 : (localDateTime.hour == 0 ? 12 : localDateTime.hour);
+    final hour =
+        localDateTime.hour > 12
+            ? localDateTime.hour - 12
+            : (localDateTime.hour == 0 ? 12 : localDateTime.hour);
     final amPm = localDateTime.hour >= 12 ? 'PM' : 'AM';
     return '${hour.toString().padLeft(2, '0')}:${localDateTime.minute.toString().padLeft(2, '0')} $amPm';
   }
