@@ -15,87 +15,56 @@ class TripTicketDashBoard extends StatelessWidget {
         }
 
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  _buildHeader(context, tripState),
-                  const SizedBox(height: 30),
-                  _buildDashboardContent(context, tripState),
-                ],
-              ),
-            ),
-          ),
+          padding: const EdgeInsets.all(8),
+          child: _buildDashboardContent(context, tripState),
         );
       },
     );
   }
 
-  Widget _buildHeader(BuildContext context, TripLoaded tripState) {
-    //  final userName = context.read<UserProvider>().user?.name;
+  Widget _buildDashboardContent(BuildContext context, TripLoaded tripState) {
     final tripNumber = tripState.trip.tripNumberId;
     final tripName = tripState.trip.name;
 
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            
-              Text(
-                tripNumber != null
-                    ? 'Trip: $tripNumber'
-                    : 'Trip Number Not Available',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color:
-                      tripNumber != null
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.error,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                tripName ?? 'Trip Name Not Available',
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color:
-                      tripName != null
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.error,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDashboardContent(BuildContext context, TripLoaded tripState) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 3,
-      crossAxisSpacing: 5,
-      mainAxisSpacing: 22,
+      childAspectRatio: 2.5,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
       children: [
+        // Trip Number
+        _buildInfoItem(
+          context,
+          Icons.confirmation_number,
+          tripNumber ?? 'N/A',
+          'Trip Number',
+          isAvailable: tripNumber != null,
+        ),
+        // Trip Name
+        _buildInfoItem(
+          context,
+          Icons.route,
+          tripName ?? 'N/A',
+          'Trip Name',
+          isAvailable: tripName != null,
+        ),
+        // Plate Number
         _buildInfoItem(
           context,
           Icons.numbers,
           tripState.trip.deliveryVehicle.target!.name ?? 'Not Assigned',
           'Plate Number',
         ),
+        // Vehicle
         _buildInfoItem(
           context,
           Icons.local_shipping,
           tripState.trip.deliveryVehicle.target!.make ?? 'Not Assigned',
           'Vehicle',
         ),
+        // Team Members
         _buildInfoItem(
           context,
           Icons.people,
@@ -105,6 +74,7 @@ class TripTicketDashBoard extends StatelessWidget {
           'Team Members',
           isError: tripState.trip.personels.isEmpty,
         ),
+        // Vehicle Type
         _buildInfoItem(
           context,
           Icons.type_specimen_outlined,
@@ -118,70 +88,73 @@ class TripTicketDashBoard extends StatelessWidget {
   Widget _buildInfoItem(
     BuildContext context,
     IconData icon,
-    String title,
-    String subtitle, {
+    String value,
+    String label, {
     bool isError = false,
+    bool isAvailable = true,
   }) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color:
-              isError
-                  ? Theme.of(context).colorScheme.error.withOpacity(0.5)
-                  : Colors.transparent,
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
         ),
+        color: Theme.of(context).colorScheme.surface,
       ),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 5),
-            child: Icon(
-              icon,
-              color:
-                  isError
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.primary,
-              size: 20,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+
+              child: Icon(
+                icon,
+                color:
+                    isError
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
             ),
-          ),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                      color:
-                          isError
-                              ? Theme.of(context).colorScheme.error
-                              : Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Flexible(
-                  child: Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.7),
+                      ).colorScheme.onSurface.withOpacity(0.6),
+                      fontWeight: FontWeight.w500,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Flexible(
+                    child: Text(
+                      value,
+                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                        color:
+                            !isAvailable
+                                ? Theme.of(context).colorScheme.error
+                                : isError
+                                ? Theme.of(context).colorScheme.error
+                                : Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
