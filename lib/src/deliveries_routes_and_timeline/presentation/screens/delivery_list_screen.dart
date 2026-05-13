@@ -15,8 +15,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/delivery_list_tile.dart';
-import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/widgets/end_trip_btn.dart';
+import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/delivery_list_tile.dart';
+import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/end_trip_btn.dart';
 
 import '../widgets/quick_action_button.dart';
 import '../widgets/quick_update_dialog.dart';

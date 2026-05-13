@@ -11,7 +11,7 @@ import 'package:x_pro_delivery_app/src/app_logs/view/app_logs_screen_view.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
 import 'package:x_pro_delivery_app/src/auth/view/auth_screen_view.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/view/checklist_and_delivery_view.dart';
-import 'package:x_pro_delivery_app/src/deliveries_and_timeline/presentation/view/delivery_and_timeline_view.dart';
+import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/view/delivery_and_timeline_view.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/sub_screens/revert_delivery_status_screen.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/add_delivery_status_dialog.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/sub_screens/undeliverable_screen.dart';
@@ -36,8 +36,8 @@ import 'package:x_pro_delivery_app/src/summary_trip/presentation/view/summary_tr
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/view/get_trip_ticket_view.dart';
 import 'package:x_pro_delivery_app/src/trip_ticket_screen/presentation/widgets/accepting_trip_loading_screen.dart';
 
-import '../../src/deliveries_and_timeline/presentation/screens/syncing_screen.dart';
-import '../../src/deliveries_and_timeline/presentation/widgets/add_trip_update_screen.dart';
+import '../../src/deliveries_routes_and_timeline/presentation/screens/syncing_screen.dart';
+import '../../src/deliveries_routes_and_timeline/presentation/widgets/add_trip_update_screen.dart';
 import '../../src/delivery_and_invoice/presentation/screens/delivery_main_screen/sub_screens/update_remarks_screen.dart';
 import '../../src/delivery_and_invoice/presentation/screens/invoice_screen/view/invoice_cancellation_screen.dart';
 import '../../src/final_screen/presentation/specific_screens/final_collection_spec_screen.dart';
