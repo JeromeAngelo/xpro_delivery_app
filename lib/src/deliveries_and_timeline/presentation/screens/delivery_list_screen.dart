@@ -61,6 +61,22 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
     });
   }
 
+  void _updateFilteredDeliveries(List<DeliveryDataEntity> deliveries) {
+    // If the filtered result is empty (null match), keep the previous list
+    if (deliveries.isEmpty) {
+      return;
+    }
+    setState(() {
+      _filteredDeliveries = deliveries;
+    });
+  }
+
+  void _onStatusFilterChanged(String? status) {
+    setState(() {
+      _filteredDeliveries = _currentDeliveries;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -140,12 +156,6 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
     //_deliveryDataBloc.add(WatchAllDeliveryDataEvent());
   }
 
-  void _updateFilteredDeliveries(List<DeliveryDataEntity> deliveries) {
-    setState(() {
-      _filteredDeliveries = deliveries;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -220,10 +230,11 @@ class _DeliveryListScreenState extends State<DeliveryListScreen>
 
     return Column(
       children: [
-        // Search Bar
+        // Search Bar with filter icon on the right side
         SearchBarWidget(
           allDeliveries: _currentDeliveries,
           onSearchResults: _updateFilteredDeliveries,
+          onStatusFilterChanged: _onStatusFilterChanged,
         ),
 
         Expanded(

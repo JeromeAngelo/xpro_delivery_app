@@ -109,17 +109,8 @@ class UpdateTimeline extends StatelessWidget {
                   theme: TimelineThemeData(nodePosition: 0.04),
                   builder: TimelineTileBuilder.connected(
                     connectionDirection: ConnectionDirection.after,
-                    itemCount: timelineItems.length + 1,
+                    itemCount: timelineItems.length,
                     contentsBuilder: (context, index) {
-                      if (index == timelineItems.length) {
-                        return TileForTimeline(
-                          deliveryData: TileForTimeline.defaultLocalTile(
-                            state.trip.id!,
-                          ),
-                          isLocalTile: true,
-                        );
-                      }
-
                       final item = timelineItems[index];
                       return item.isCustomer
                           ? TileForTimeline(
@@ -133,11 +124,6 @@ class UpdateTimeline extends StatelessWidget {
                           );
                     },
                     indicatorBuilder: (context, index) {
-                      if (index == timelineItems.length) {
-                        // Local tile at the end - simple dot
-                        return const DotIndicator(size: 12, color: Colors.grey);
-                      }
-
                       final item = timelineItems[index];
                       final isLatestItem = index == 0;
 
