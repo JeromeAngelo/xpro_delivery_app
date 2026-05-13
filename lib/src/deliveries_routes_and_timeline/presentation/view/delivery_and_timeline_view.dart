@@ -137,13 +137,13 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: Theme.of(context).colorScheme.primary,
           ),
           onPressed: () => context.go('/homepage'),
         ),
         title: Text(
           _tripTitle,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          style: TextStyle(color: Theme.of(context).colorScheme.primary),
         ),
         backgroundColor: Theme.of(context).colorScheme.surface,
         centerTitle: true,

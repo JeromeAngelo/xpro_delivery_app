@@ -89,11 +89,15 @@ class _FinalScreenViewState extends State<FinalScreenView>
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.menu),
+          icon: Icon(Icons.menu, color: Theme.of(context).colorScheme.primary),
           onPressed: () => _scaffoldKey.currentState!.openDrawer(),
         ),
-        title: const Text('Final Summary'),
+        title: Text(
+          'Final Summary',
+          style: TextStyle(color: Theme.of(context).colorScheme.primary),
+        ),
         centerTitle: true,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
