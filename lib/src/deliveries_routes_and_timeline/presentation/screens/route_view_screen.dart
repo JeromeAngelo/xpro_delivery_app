@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../widgets/route_widgets/route_map_widget.dart';
+import '../widgets/route_widgets/search_bar_widget.dart';
 
 class RouteViewScreen extends StatefulWidget {
   const RouteViewScreen({super.key});
@@ -8,14 +10,32 @@ class RouteViewScreen extends StatefulWidget {
 }
 
 class _RouteViewScreenState extends State<RouteViewScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'Route View Coming Soon!',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+    return Scaffold(
+      body: Stack(
+        children: [
+          const RouteMapWidget(),
+          SafeArea(
+            child: SearchBarWidget(
+              controller: _searchController,
+              onChanged: (value) {
+                // TODO: implement search logic
+              },
+              onSearchTap: () {
+                // TODO: implement search tap logic
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
