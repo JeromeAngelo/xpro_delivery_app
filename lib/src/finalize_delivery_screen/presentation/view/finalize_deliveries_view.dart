@@ -205,7 +205,7 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
                     ),
                     _buildSectionHeader("Checklist Items"),
                     _buildChecklistSection(),
-                    _buildSectionHeader("Summary Details"),
+                    _buildSectionHeader("Trip Statistics"),
                     const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
@@ -389,6 +389,8 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
       },
     );
   }
+
+  
 
   @override
   void dispose() {

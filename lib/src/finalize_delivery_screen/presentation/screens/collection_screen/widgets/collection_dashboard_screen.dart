@@ -5,270 +5,228 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 class CollectionDashboardScreen extends StatelessWidget {
   final List<CollectionEntity> collections;
   final bool isOffline;
+  final String? tripId;
 
   const CollectionDashboardScreen({
     super.key,
     required this.collections,
     this.isOffline = false,
+    this.tripId,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
+    final stats = _calculateStats();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Collection Summary ──
+        _buildSectionHeader(
+          context,
+          title: 'COLLECTION SUMMARY',
+          trailing: 'ID: #${collections.first.trip.target?.name ?? 'FL-0000'}',
+        ),
+        const SizedBox(height: 12),
+
+        // ── Total Collections (large card) ──
+        _buildTotalCollectionsCard(context, stats['totalAmount'] as double),
+        const SizedBox(height: 12),
+
+        // ── Two smaller stat cards ──
+        Row(
           children: [
-            _buildHeader(context),
-            const SizedBox(height: 30),
-            _buildDashboardContent(context),
+            Expanded(
+              child: _buildStatCard(
+                context,
+                label: 'Total Invoices',
+                value: (stats['totalInvoices'] as int).toString(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                context,
+                label: 'Date Completed',
+                value: stats['completionDate'] as String,
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Collection Summary',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Today\'s Collection Overview',
-                style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              )
-            ],
-          ),
-        )
+        const SizedBox(height: 28),
       ],
     );
   }
 
-  Widget _buildDashboardContent(BuildContext context) {
-    if (collections.isEmpty) {
-      return _buildEmptyState(context);
-    }
+  // ───────────────────────── Helpers ─────────────────────────
 
-    if (isOffline) {
-      return Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange.withOpacity(0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.offline_bolt, color: Colors.orange, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Offline Data',
-                  style: TextStyle(color: Colors.orange, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildCollectionStats(context),
-        ],
-      );
-    }
-
-    return _buildCollectionStats(context);
-  }
-
-  Widget _buildCollectionStats(BuildContext context) {
-    debugPrint('📊 DASHBOARD: Calculating collection statistics');
-    debugPrint('📊 Total collections received: ${collections.length}');
-
-    // Calculate total amount from all invoices in all collections
+  Map<String, dynamic> _calculateStats() {
     double totalAmount = 0.0;
     int totalInvoices = 0;
-    
+
     for (final collection in collections) {
       final invoices = collection.invoices;
-      final invoicesCount = invoices.length;
-      totalInvoices += invoicesCount;
-      
-      debugPrint('📊 Collection ${collection.id}: ${invoicesCount} invoices');
-      
-      // Calculate amount from invoices in this collection
+      totalInvoices += invoices.length;
+
       double collectionAmount = 0.0;
       for (final invoice in invoices) {
-        final invoiceAmount = invoice.totalAmount ?? 0.0;
-        collectionAmount += invoiceAmount;
-        debugPrint('   💰 Invoice ${invoice.refId ?? invoice.name}: ₱${NumberFormat('#,##0.00').format(invoiceAmount)}');
+        collectionAmount += invoice.totalAmount ?? 0.0;
       }
-      
-      // Fallback to collection totalAmount if invoices don't have amounts
       if (collectionAmount == 0.0 && collection.totalAmount != null) {
         collectionAmount = collection.totalAmount!;
-        debugPrint('   🔄 Using collection totalAmount as fallback: ₱${NumberFormat('#,##0.00').format(collectionAmount)}');
       }
-      
       totalAmount += collectionAmount;
-      debugPrint('💰 Collection ${collection.id} total: ₱${NumberFormat('#,##0.00').format(collectionAmount)}');
     }
 
-    debugPrint('💰 DASHBOARD: Total amount from all invoices: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
-
-    // Total collections count
-    final totalCollections = collections.length;
-    debugPrint('📦 DASHBOARD: Total collections count: $totalCollections');
-    debugPrint('📄 DASHBOARD: Total invoices across all collections: $totalInvoices');
-
-    // Get completion date from trip data
     String completionDate = 'Today';
-    if (collections.isNotEmpty && collections.first.trip.target?.timeAccepted != null) {
-      final tripDate = collections.first.trip.target!.timeAccepted!;
-      completionDate = DateFormat('MMM dd, yyyy').format(tripDate.toLocal());
-      debugPrint('📅 DASHBOARD: Completion date: $completionDate');
-    } else {
-      debugPrint('📅 DASHBOARD: Using default completion date: $completionDate');
+    if (collections.isNotEmpty &&
+        collections.first.trip.target?.timeAccepted != null) {
+      completionDate = DateFormat(
+        'MMM dd, yyyy',
+      ).format(collections.first.trip.target!.timeAccepted!.toLocal());
     }
 
-    // Debug summary
-    debugPrint('📊 DASHBOARD SUMMARY:');
-    debugPrint('   💰 Total Amount: ₱${NumberFormat('#,##0.00').format(totalAmount)}');
-    debugPrint('   📄 Total Invoices: $totalInvoices');
-    debugPrint('   📦 Collections: $totalCollections');
-    debugPrint('   📅 Date: $completionDate');
+    return {
+      'totalAmount': totalAmount,
+      'totalInvoices': totalInvoices,
+      'totalCollections': collections.length,
+      'completionDate': completionDate,
+    };
+  }
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 3,
-      crossAxisSpacing: 5,
-      mainAxisSpacing: 22,
+  Widget _buildSectionHeader(
+    BuildContext context, {
+    required String title,
+    required String trailing,
+    Color? trailingColor,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildInfoItem(
-          context,
-          Icons.attach_money,
-          '₱${NumberFormat('#,##0.00').format(totalAmount)}',
-          'Total Collections',
+        Text(
+          title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+            color: theme.colorScheme.onSurface.withOpacity(0.85),
+          ),
         ),
-        _buildInfoItem(
-          context,
-          Icons.receipt_long,
-          totalInvoices.toString(),
-          'Total Invoices',
-        ),
-        _buildInfoItem(
-          context,
-          Icons.collections,
-          totalCollections.toString(),
-          'Collections',
-        ),
-        _buildInfoItem(
-          context,
-          Icons.calendar_month_outlined,
-          completionDate,
-          'Date Completed',
+        Text(
+          trailing,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color:
+                trailingColor ?? theme.colorScheme.onSurface.withOpacity(0.5),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildInfoItem(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-  ) {
+  Widget _buildTotalCollectionsCard(BuildContext context, double totalAmount) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isOffline ? Colors.orange.withOpacity(0.3) : Colors.transparent,
+          color:
+              isOffline
+                  ? Colors.orange.withOpacity(0.3)
+                  : colorScheme.outline.withOpacity(0.12),
         ),
-        color: isOffline ? Colors.orange.withOpacity(0.05) : null,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 5),
-            child: Icon(
-              icon,
-              color: isOffline 
-                  ? Colors.orange 
-                  : Theme.of(context).colorScheme.primary,
-              size: 20,
+          Text(
+            'Total Collections',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                        ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '₱${NumberFormat('#,##0.00').format(totalAmount)}',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
                 ),
-                const SizedBox(height: 4),
-                Flexible(
-                  child: Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'PHP',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.collections_outlined,
-            size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+  Widget _buildStatCard(
+    BuildContext context, {
+    required String label,
+    required String value,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color:
+              isOffline
+                  ? Colors.orange.withOpacity(0.3)
+                  : colorScheme.outline.withOpacity(0.12),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(height: 16),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
-            'No Collections Found',
-            style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.6),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Collections will appear here once available',
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                ),
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
           ),
         ],
       ),

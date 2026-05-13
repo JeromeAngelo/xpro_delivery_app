@@ -107,22 +107,55 @@ class _CollectionScreenState extends State<CollectionScreen>
   Widget _buildCollectionsView(List<CollectionEntity> collections) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CollectionDashboardScreen(collections: collections),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.all(5),
-            child: Text(
-              'Completed Customers',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+          CollectionDashboardScreen(
+            collections: collections,
+            tripId: _currentTripId,
           ),
+          const SizedBox(height: 16),
+          _buildSectionHeader(
+            context,
+            title: 'COMPLETED CUSTOMERS',
+            trailing: '${collections.length} Records',
+          ),
+          const SizedBox(height: 16),
+
           CompletedCustomerList(collections: collections),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    BuildContext context, {
+    required String title,
+    required String trailing,
+    Color? trailingColor,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+            color: theme.colorScheme.onSurface.withOpacity(0.85),
+          ),
+        ),
+        Text(
+          trailing,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color:
+                trailingColor ?? theme.colorScheme.onSurface.withOpacity(0.5),
+          ),
+        ),
+      ],
     );
   }
 
