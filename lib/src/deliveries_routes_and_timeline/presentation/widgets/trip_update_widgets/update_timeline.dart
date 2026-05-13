@@ -6,8 +6,8 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delive
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/domain/entity/trip_update_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/tile_for_timeline.dart';
-import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/tile_for_trip_timeline.dart';
+import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/trip_update_widgets/tile_for_timeline.dart';
+import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/trip_update_widgets/tile_for_trip_timeline.dart';
 
 class UpdateTimeline extends StatelessWidget {
   final List<DeliveryDataEntity> deliveries;

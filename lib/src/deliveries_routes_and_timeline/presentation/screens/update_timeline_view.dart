@@ -12,7 +12,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_upd
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/presentation/bloc/trip_updates_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/update_timeline.dart';
+import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/trip_update_widgets/update_timeline.dart';
 
 class UpdateTimelineView extends StatefulWidget {
   final String tripId; // Add this parameter

@@ -15,12 +15,12 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
-import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/delivery_list_tile.dart';
-import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/end_trip_btn.dart';
+import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/delivery_list_widgets/delivery_list_tile.dart';
+import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/delivery_list_widgets/end_trip_btn.dart';
 
-import '../widgets/quick_action_button.dart';
-import '../widgets/quick_update_dialog.dart';
-import '../widgets/search_bar_widget.dart';
+import '../widgets/delivery_list_widgets/quick_action_button.dart';
+import '../widgets/delivery_list_widgets/quick_update_dialog.dart';
+import '../widgets/delivery_list_widgets/search_bar_widget.dart';
 
 class DeliveryListScreen extends StatefulWidget {
   const DeliveryListScreen({super.key});
