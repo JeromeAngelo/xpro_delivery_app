@@ -20,7 +20,7 @@ import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/view/delivery_and_invoice_view.dart';
 import 'package:x_pro_delivery_app/src/delivery_team/presentation/view/delivery_team_view.dart';
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/view/end_trip_otp_screen.dart';
-import 'package:x_pro_delivery_app/src/final_screen/presentation/view/final_screen_view.dart';
+import 'package:x_pro_delivery_app/src/end_trip_view/presentation/view/final_screen_view.dart';
 import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/collection_screen/widgets/specific_completed_customer_screen.dart';
 import 'package:x_pro_delivery_app/src/greetings/presentation/view/greeting_view.dart';
 import 'package:x_pro_delivery_app/src/homepage/presentation/view/homepage_view.dart';
@@ -40,8 +40,8 @@ import '../../src/deliveries_routes_and_timeline/presentation/screens/syncing_sc
 import '../../src/deliveries_routes_and_timeline/presentation/widgets/trip_update_widgets/add_trip_update_screen.dart';
 import '../../src/delivery_and_invoice/presentation/screens/delivery_main_screen/sub_screens/update_remarks_screen.dart';
 import '../../src/delivery_and_invoice/presentation/screens/invoice_screen/view/invoice_cancellation_screen.dart';
-import '../../src/final_screen/presentation/specific_screens/final_collection_spec_screen.dart';
-import '../../src/final_screen/presentation/specific_screens/final_undelivered_spec_screen.dart';
+import '../../src/end_trip_view/presentation/specific_screens/final_collection_spec_screen.dart';
+import '../../src/end_trip_view/presentation/specific_screens/final_undelivered_spec_screen.dart';
 import '../../src/finalize_delivery_screen/presentation/screens/undelivered_customer/widget/specific_undelivered_customer.dart';
 import '../../src/summary_trip/presentation/specific_screens/customers_undelivered_screen.dart';
 import '../../src/transaction_screen/presentation/view/transaction_view.dart';
