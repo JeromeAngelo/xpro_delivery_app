@@ -116,7 +116,7 @@ class MyApp extends StatelessWidget {
           builder:
               (context, child) => MaterialApp.router(
                 debugShowCheckedModeBanner: false,
-                title: 'X_Pro_Delivery_App',
+                title: 'Transport Management System',
                 routerConfig: router,
                 theme: FlexThemeData.light(
                   scheme: FlexScheme.deepBlue,

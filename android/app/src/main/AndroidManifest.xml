@@ -30,7 +30,7 @@
 
     <application
         android:enableOnBackInvokedCallback="true"
-        android:label="XPro Delivery"
+        android:label="Transport Management System"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

@@ -304,6 +304,8 @@ class _OnBoardingViewState extends State<OnBoardingView> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: BlocConsumer<OnboardingBloc, OnBoardingState>(
         listener: (context, state) {
@@ -316,59 +318,194 @@ class _OnBoardingViewState extends State<OnBoardingView> {
         builder: (context, state) {
           return Stack(
             children: [
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Lottie.asset(
-                  'assets/animations/onboarding_anim.json',
-                  width: 180,
-                  repeat: true,
-                ),
-                    const SizedBox(height: 30),
-                    if (state is CheckingIfUserIsFirstTimer ||
-                        state is CachingFirstTimer)
-                      const CircularProgressIndicator(),
-                    const SizedBox(height: 20),
-                    Text(
-                      'X Pro Delivery',
-                      style: Theme.of(context).textTheme.headlineMedium,
+              // Background gradient overlay
+
+              // Subtle grid pattern overlay
+              Opacity(
+                opacity: 0.03,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/grid_pattern.png'),
+                      repeat: ImageRepeat.repeat,
                     ),
-                    if (state is OnBoardingStatus && state.isFirstTimer) ...[
-                      const SizedBox(height: 30),
-                      ElevatedButton(
-                        onPressed: () {
-                          context.read<OnboardingBloc>().add(
-                            const CacheFirstTimerEvent(),
-                          );
-                        },
-                        child: const Text('Get Started'),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          // explicit user-triggered notification permission request
-                          await _requestNotificationPermission();
-                        },
-                        icon: const Icon(Icons.notifications_active),
-                        label: const Text('Enable Notifications'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ),
+
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40),
+
+                      // Lottie Animation
+                      Container(
+                        width: 280,
+                        height: 280,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              colorScheme.primary.withOpacity(0.15),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: Center(
+                          child: Lottie.asset(
+                            'assets/animations/onboarding_anim.json',
+                            width: 220,
+                            repeat: true,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      // Title
+                      Text(
+                        'Transport Management System',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Subtitle
+                      Text(
+                        'Streamline your logistics, track deliveries in real-time, and manage your fleet with ease.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Loading or Buttons
+                      if (state is CheckingIfUserIsFirstTimer ||
+                          state is CachingFirstTimer)
+                        Column(
+                          children: [
+                            SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Loading...',
+                              style: TextStyle(
+                                color: colorScheme.onPrimary.withOpacity(0.5),
+                              ),
+                            ),
+                          ],
+                        )
+                      else if (state is OnBoardingStatus &&
+                          state.isFirstTimer) ...[
+                        // Get Started Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              context.read<OnboardingBloc>().add(
+                                const CacheFirstTimerEvent(),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.surface,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            child: const Text('Get Started'),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Enable Notifications Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              await _requestNotificationPermission();
+                            },
+                            icon: const Icon(
+                              Icons.notifications_active,
+                              size: 20,
+                            ),
+                            label: const Text('Enable Notifications'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: colorScheme.onSurface,
+                              elevation: 0,
+                              side: BorderSide(
+                                color: colorScheme.primary,
+                                width: 1,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ] else
+                        const SizedBox.shrink(),
+
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Error message
               if (state is OnBoardingError)
                 Positioned(
                   bottom: 50,
                   left: 20,
                   right: 20,
-                  child: Text(
-                    state.message,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.error.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      state.message,
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
             ],

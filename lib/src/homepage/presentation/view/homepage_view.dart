@@ -361,7 +361,12 @@ class _HomepageViewState extends State<HomepageView>
         icon: const Icon(Icons.menu),
         onPressed: () => _scaffoldKey.currentState!.openDrawer(),
       ),
-      title: const Text('XPro Delivery'),
+      title: Text(
+        'Transport Management System',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: Theme.of(context).colorScheme.surface,
+        ),
+      ),
       actions: [
         PopupMenuButton<String>(
           icon: const Icon(Icons.sync),
