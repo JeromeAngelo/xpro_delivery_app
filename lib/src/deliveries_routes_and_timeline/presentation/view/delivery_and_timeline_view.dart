@@ -37,6 +37,9 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
     _initializeBlocs();
     _loadTripIdAndData();
   }
@@ -82,24 +85,94 @@ class _DeliveryAndTimelineState extends State<DeliveryAndTimeline>
     _tripUpdatesBloc.add(GetTripUpdatesEvent(tripId));
   }
 
+  Widget _buildTabItem(String label, int index, IconData icon) {
+    final isSelected = _tabController.index == index;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _tabController.animateTo(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? colorScheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color:
+                    isSelected
+                        ? Colors.white
+                        : colorScheme.onSurface.withOpacity(0.6),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color:
+                      isSelected
+                          ? Colors.white
+                          : colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.go('/homepage'),
         ),
-        title: Text(_tripTitle),
+        title: Text(
+          _tripTitle,
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Theme.of(context).colorScheme.onSurface,
-          tabs: const [
-            Tab(text: 'Deliveries', icon: Icon(Icons.local_shipping)),
-            Tab(text: 'Updates', icon: Icon(Icons.update)),
-            Tab(text: 'Routes', icon: Icon(Icons.route)),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withOpacity(0.15),
+                ),
+              ),
+              child: Row(
+                children: [
+                  _buildTabItem('Deliveries', 0, Icons.local_shipping),
+                  _buildTabItem('Updates', 1, Icons.update),
+                  _buildTabItem('Routes', 2, Icons.route),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
       body: TabBarView(

@@ -119,10 +119,10 @@ class MyApp extends StatelessWidget {
                 title: 'X_Pro_Delivery_App',
                 routerConfig: router,
                 theme: FlexThemeData.light(
-                  scheme: FlexScheme.amber,
+                  scheme: FlexScheme.deepBlue,
                   appBarStyle: FlexAppBarStyle.primary,
                 ),
-                darkTheme: FlexThemeData.dark(scheme: FlexScheme.amber),
+                darkTheme: FlexThemeData.dark(scheme: FlexScheme.deepBlue),
                 themeMode: ThemeMode.system,
                 builder:
                     (context, child) => ResponsiveBreakpoints.builder(

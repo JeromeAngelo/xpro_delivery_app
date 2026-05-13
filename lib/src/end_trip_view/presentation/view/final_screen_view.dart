@@ -28,12 +28,60 @@ class _FinalScreenViewState extends State<FinalScreenView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Widget _buildTabItem(String label, int index, IconData icon) {
+    final isSelected = _tabController.index == index;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _tabController.animateTo(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? colorScheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color:
+                    isSelected
+                        ? Colors.white
+                        : colorScheme.onSurface.withOpacity(0.6),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color:
+                      isSelected
+                          ? Colors.white
+                          : colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -47,33 +95,32 @@ class _FinalScreenViewState extends State<FinalScreenView>
         title: const Text('Final Summary'),
         centerTitle: true,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(80),
-          child: Container(
-            color: Theme.of(context).colorScheme.surface,
-            child: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(
-                  icon: Icon(Icons.receipt_long_outlined),
-                  text: 'Collections',
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withOpacity(0.15),
                 ),
-                Tab(icon: Icon(Icons.keyboard_return_sharp), text: 'Returns'),
-                Tab(
-                  icon: Icon(Icons.cancel_presentation_rounded),
-                  text: 'Undelivered',
-                ),
-              ],
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: Theme.of(context).colorScheme.onSurface,
-              indicatorColor: Theme.of(context).colorScheme.primary,
-              indicator: UnderlineTabIndicator(
-                borderSide: BorderSide(
-                  width: 3,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                insets: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              child: Row(
+                children: [
+                  _buildTabItem('Collections', 0, Icons.receipt_long_outlined),
+                  _buildTabItem('Returns', 1, Icons.keyboard_return_sharp),
+                  _buildTabItem(
+                    'Undelivered',
+                    2,
+                    Icons.cancel_presentation_rounded,
+                  ),
+                ],
               ),
             ),
           ),
