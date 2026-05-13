@@ -26,7 +26,7 @@ class _EndTripChecklistTileState extends State<EndTripChecklistTile> {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.all(16),
+          tilePadding: const EdgeInsets.all(12),
           leading: Checkbox(
             value: widget.isChecked,
             onChanged: (value) {
@@ -40,16 +40,13 @@ class _EndTripChecklistTileState extends State<EndTripChecklistTile> {
           title: Text(
             widget.checklist.objectName ?? 'No Name',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  decoration:
-                      widget.isChecked ? TextDecoration.lineThrough : null,
-                  color: widget.isChecked
-                      ? Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.5)
+              fontWeight: FontWeight.bold,
+              decoration: widget.isChecked ? TextDecoration.lineThrough : null,
+              color:
+                  widget.isChecked
+                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
                       : Theme.of(context).colorScheme.onSurface,
-                ),
+            ),
           ),
 
           // Expandable description
@@ -57,13 +54,12 @@ class _EndTripChecklistTileState extends State<EndTripChecklistTile> {
             if (widget.checklist.description != null &&
                 widget.checklist.description!.isNotEmpty)
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 20, right: 16, bottom: 16),
+                padding: const EdgeInsets.only(left: 20, right: 16, bottom: 16),
                 child: Text(
                   widget.checklist.description!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                 ),
               ),
           ],

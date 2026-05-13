@@ -212,9 +212,9 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
                         child: Column(
                           children: [
                             ViewCollections(),
-                            SizedBox(height: 8),
+                            SizedBox(height: 4),
                             ViewReturns(),
-                            SizedBox(height: 8),
+                            SizedBox(height: 4),
 
                             ViewUndeliveredCustomers(),
                           ],
@@ -319,10 +319,7 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
                 '📋 CHECKLIST: Building item ${index + 1}: ${item.id}',
               );
               return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 4.0,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: EndTripChecklistTile(
                   key: ValueKey(item.id),
                   checklist: item,
@@ -389,8 +386,6 @@ class _FinalizeDeliveriesViewState extends State<FinalizeDeliveriesView> {
       },
     );
   }
-
-  
 
   @override
   void dispose() {
