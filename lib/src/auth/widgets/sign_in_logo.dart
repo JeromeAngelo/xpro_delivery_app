@@ -14,11 +14,7 @@ class SignInLogo extends StatelessWidget {
         color: const Color(0xFF1565C0),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Icon(
-        Icons.local_shipping,
-        size: size * 0.5,
-        color: Colors.white,
-      ),
+      child: Icon(Icons.local_shipping, size: size * 0.5, color: Colors.white),
     );
   }
 }
