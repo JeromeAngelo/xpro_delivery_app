@@ -279,6 +279,7 @@ class CollectionRemoteDataSourceImpl implements CollectionRemoteDataSource {
       deliveryDataModel: deliveryDataModel,
       tripData: tripModel,
       customerData: customerModel,
+      mop: record.data['mop']?.toString(),
       invoiceData: invoiceModel,
       invoicesList: invoicesList,
       created: parseDate(record.created),

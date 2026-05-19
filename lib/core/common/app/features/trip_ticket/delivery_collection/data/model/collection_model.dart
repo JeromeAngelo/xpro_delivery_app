@@ -48,6 +48,8 @@ class CollectionModel extends CollectionEntity {
   @Property()
   String? invoiceId;
 
+@Property()
+  String? mop;
   // --------------------------------------------------------------------------
   // SYNC / OFFLINE METADATA
   // --------------------------------------------------------------------------
@@ -112,6 +114,7 @@ class CollectionModel extends CollectionEntity {
     this.created,
     this.updated,
     this.lastLocalUpdatedAt,
+    this.mop,
     CustomerDataModel? customerData,
     DeliveryDataModel? deliveryDataModel,
     TripModel? tripData,
@@ -325,6 +328,7 @@ class CollectionModel extends CollectionEntity {
       tripData: tripModel,
       customerData: customerModel,
       invoiceData: invoiceModel,
+      mop: json['mop']?.toString(),
       invoicesList: invoicesList,
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
@@ -344,6 +348,7 @@ class CollectionModel extends CollectionEntity {
       'invoices': invoices.map((invoice) => invoice.id).toList(),
       'created': created?.toIso8601String(),
       'updated': updated?.toIso8601String(),
+      'mop': mop,
     };
   }
 
@@ -356,6 +361,7 @@ class CollectionModel extends CollectionEntity {
     CustomerDataModel? customer,
     InvoiceDataModel? invoice,
     List<InvoiceDataModel>? invoices,
+    String? mop,
     double? totalAmount,
     DateTime? created,
     DateTime? updated,
@@ -366,6 +372,7 @@ class CollectionModel extends CollectionEntity {
       collectionName: collectionName ?? this.collectionName,
       totalAmount: totalAmount ?? this.totalAmount,
       created: created ?? this.created,
+      mop: mop ?? this.mop,
       updated: updated ?? this.updated,
       objectBoxId: objectBoxId,
     );

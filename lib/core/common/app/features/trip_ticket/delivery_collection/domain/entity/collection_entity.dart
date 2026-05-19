@@ -11,7 +11,7 @@ class CollectionEntity extends Equatable {
   int dbId = 0;
 
   final String? id;
- String? collectionId;
+  String? collectionId;
   String? collectionName;
 
   // Relations
@@ -26,6 +26,7 @@ class CollectionEntity extends Equatable {
   // Standard fields
   final DateTime? created;
   final DateTime? updated;
+  final String? mop;
 
   CollectionEntity({
     this.dbId = 0,
@@ -39,6 +40,7 @@ class CollectionEntity extends Equatable {
     List<InvoiceDataModel>? invoicesList,
     this.totalAmount,
     this.created,
+    this.mop,
     this.updated,
   }) {
     if (deliveryDataModel != null) deliveryData.target = deliveryDataModel;
@@ -61,5 +63,6 @@ class CollectionEntity extends Equatable {
     totalAmount,
     created,
     updated,
+    mop,
   ];
 }

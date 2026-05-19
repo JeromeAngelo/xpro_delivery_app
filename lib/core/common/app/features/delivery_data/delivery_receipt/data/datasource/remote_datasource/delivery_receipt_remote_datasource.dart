@@ -29,6 +29,7 @@ abstract class DeliveryReceiptRemoteDatasource {
     required String? customerSignature,
     required String? receiptFile,
     required double? amount,
+    required String? mop,
   });
 
   /// Delete delivery receipt by ID
@@ -145,6 +146,7 @@ class DeliveryReceiptRemoteDatasourceImpl
     required String? customerSignature,
     required String? receiptFile,
     required double? amount,
+    required String? mop,
   }) async {
     try {
       debugPrint(
@@ -229,7 +231,9 @@ class DeliveryReceiptRemoteDatasourceImpl
             final imagePath = customerImages[i];
             final imageFile = File(imagePath);
             if (await imageFile.exists()) {
-              final compressedImageBytes = await _compressImageToSmallSize(imagePath);
+              final compressedImageBytes = await _compressImageToSmallSize(
+                imagePath,
+              );
               if (compressedImageBytes != null) {
                 files.add(
                   MultipartFile.fromBytes(
@@ -262,6 +266,7 @@ class DeliveryReceiptRemoteDatasourceImpl
         'status': status ?? 'completed',
         'dateTimeCompleted': _formatDateTime(dateTimeCompleted),
         'totalAmount': amount ?? 0.0, // ADDED: Include amount in body
+        'mop': mop,
         if (tripId != null) 'trip': tripId,
         if (invoiceItems.isNotEmpty) 'invoiceItems': invoiceItems,
       };
@@ -285,9 +290,7 @@ class DeliveryReceiptRemoteDatasourceImpl
 
       debugPrint('✅ Created delivery receipt: ${record.id}');
 
-      // Update delivery data with "Mark as Received" status (run in parallel)
-      _updateDeliveryDataWithReceivedStatus(actualDeliveryDataId);
-
+    
       // Get the created record with expanded relations for better data
       final createdRecord = await _pocketBaseClient
           .collection('deliveryReceipt')
@@ -450,14 +453,15 @@ class DeliveryReceiptRemoteDatasourceImpl
     }
   }
 
-
   /// Convert signature image to PDF
   Future<Uint8List> _convertSignatureToPdf(String signaturePath) async {
     try {
       debugPrint('📄 Converting signature to PDF: $signaturePath');
 
       // Read and compress the signature image first
-      final compressedImageBytes = await _compressImageToSmallSize(signaturePath);
+      final compressedImageBytes = await _compressImageToSmallSize(
+        signaturePath,
+      );
       if (compressedImageBytes == null) {
         throw Exception('Failed to process signature image');
       }
@@ -538,64 +542,6 @@ class DeliveryReceiptRemoteDatasourceImpl
     }
   }
 
-  /// Update delivery data with "Mark as Received" status (runs asynchronously)
-  void _updateDeliveryDataWithReceivedStatus(String deliveryDataId) {
-    // Run this asynchronously to not block the main creation
-    Future.microtask(() async {
-      try {
-        debugPrint(
-          '🔄 Updating delivery data with "Mark as Received" status: $deliveryDataId',
-        );
-
-        // Get the "Mark as Received" status from deliveryStatusChoices
-        final receivedStatus = await _pocketBaseClient
-            .collection('deliveryStatusChoices')
-            .getFirstListItem('title = "Mark as Received"');
-
-        debugPrint('✅ Found "Mark as Received" status: ${receivedStatus.id}');
-
-        // Create delivery update record
-        final deliveryUpdateRecord = await _pocketBaseClient
-            .collection('deliveryUpdate')
-            .create(
-              body: {
-                'deliveryData': deliveryDataId,
-                'title': receivedStatus.data['title'],
-                'subtitle':
-                    receivedStatus.data['subtitle'] ??
-                    'Package has been received by customer',
-                'time': DateTime.now().toIso8601String(),
-                'created': DateTime.now().toIso8601String(),
-                'updated': DateTime.now().toIso8601String(),
-                'isAssigned': true,
-                'assignedTo': null,
-                'customer': null,
-                'remarks':
-                    'Delivery receipt created - package marked as received',
-                'image': null,
-              },
-            );
-
-        debugPrint(
-          '✅ Created delivery update record: ${deliveryUpdateRecord.id}',
-        );
-
-        // Update the delivery data with the new delivery update
-        await _pocketBaseClient
-            .collection('deliveryData')
-            .update(
-              deliveryDataId,
-              body: {
-                'deliveryUpdates+': [deliveryUpdateRecord.id],
-              },
-            );
-
-        debugPrint('✅ Updated delivery data with "Mark as Received" status');
-      } catch (e) {
-        debugPrint('❌ Error updating delivery data with received status: $e');
-      }
-    });
-  }
 
   @override
   Future<bool> deleteDeliveryReceipt(String id) async {
@@ -617,6 +563,21 @@ class DeliveryReceiptRemoteDatasourceImpl
 
   /// Helper method to map delivery receipt data from PocketBase record
   Map<String, dynamic> _mapDeliveryReceiptData(RecordModel record) {
+    // Safely extract expanded relations, handling List cases
+    dynamic tripExpand = record.expand['trip'];
+    dynamic deliveryDataExpand = record.expand['deliveryData'];
+
+    // PocketBase may return expanded relations as Lists for certain relation types
+    // Take the first item if it's a list
+    if (tripExpand is List && tripExpand.isNotEmpty) {
+      debugPrint('📋 Trip expand returned as List, taking first item');
+      tripExpand = tripExpand.first;
+    }
+    if (deliveryDataExpand is List && deliveryDataExpand.isNotEmpty) {
+      debugPrint('📋 DeliveryData expand returned as List, taking first item');
+      deliveryDataExpand = deliveryDataExpand.first;
+    }
+
     return {
       'id': record.id,
       'collectionId': record.collectionId,
@@ -626,14 +587,15 @@ class DeliveryReceiptRemoteDatasourceImpl
       'customerImages': record.data['customerImages'],
       'customerSignature': record.data['customerSignature'],
       'receiptFile': record.data['receiptFile'],
+      'mop': record.data['mop'],
       'totalAmount': record.data['totalAmount'],
       'trip': record.data['trip'],
       'deliveryData': record.data['deliveryData'],
       'created': record.created,
       'updated': record.updated,
       'expand': {
-        'trip': _mapExpandedData(record.expand['trip']),
-        'deliveryData': _mapExpandedData(record.expand['deliveryData']),
+        'trip': _mapExpandedData(tripExpand),
+        'deliveryData': _mapExpandedData(deliveryDataExpand),
       },
     };
   }
@@ -654,10 +616,28 @@ class DeliveryReceiptRemoteDatasourceImpl
     }
 
     if (data is List) {
-      return data.map((item) => _mapExpandedData(item)).toList();
+      // PocketBase sometimes returns expanded relations as a list
+      // Take the first item if available, otherwise return null
+      if (data.isEmpty) return null;
+      final first = data.first;
+      if (first is RecordModel) {
+        return {
+          'id': first.id,
+          'collectionId': first.collectionId,
+          'collectionName': first.collectionName,
+          ...Map<String, dynamic>.from(first.data),
+          'created': first.created,
+          'updated': first.updated,
+        };
+      }
+      return _mapExpandedData(first);
     }
 
-    return data;
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    return null;
   }
 
   /// Safe DateTime formatting to avoid errors

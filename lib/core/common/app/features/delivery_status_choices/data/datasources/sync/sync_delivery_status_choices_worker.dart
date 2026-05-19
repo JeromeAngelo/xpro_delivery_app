@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../../../../../../objectbox.g.dart';
+import '../../../../delivery_data/delivery_update/data/models/delivery_update_model.dart';
 import '../local_datasource/delivery_status_choices_local_datasource.dart';
 import '../remote_datasource/delivery_status_choices_remote_datasource.dart';
 import '../../model/delivery_status_choices_model.dart';
@@ -59,7 +60,36 @@ class DeliveryStatusSyncWorker {
         '🔄 Syncing ${pendingUpdates.length} pending DeliveryUpdate entries',
       );
 
+      // ---------------------------------------------------
+      // 🆕 DEDUPLICATION: Only sync ONE update per (deliveryDataPbId + statusChoicePbId)
+      // This prevents multiple "unloading" updates from being synced to PocketBase
+      // ---------------------------------------------------
+      final seen = <String>{};
+      final uniqueUpdates = <DeliveryUpdateModel>[];
+
       for (final update in pendingUpdates) {
+        final key = '${update.deliveryDataPbId}_${update.statusChoicePbId}';
+        if (seen.contains(key)) {
+          debugPrint(
+            '🚫 SYNC DEDUP: Skipping duplicate "${update.title}" for delivery ${update.deliveryDataPbId}',
+          );
+          // Mark the duplicate as failed so it won't be retried
+          update.syncStatus = SyncStatus.failed.name;
+          update.lastSyncError = 'Duplicate status — already syncing another';
+          _local.deliveryUpdateBox.put(update);
+          continue;
+        }
+        seen.add(key);
+        uniqueUpdates.add(update);
+      }
+
+      if (uniqueUpdates.length < pendingUpdates.length) {
+        debugPrint(
+          '🧹 DEDUP: ${pendingUpdates.length} pending → ${uniqueUpdates.length} unique (removed ${pendingUpdates.length - uniqueUpdates.length} duplicates)',
+        );
+      }
+
+      for (final update in uniqueUpdates) {
         try {
           // mark local update as syncing
           update.syncStatus = SyncStatus.syncing.name;

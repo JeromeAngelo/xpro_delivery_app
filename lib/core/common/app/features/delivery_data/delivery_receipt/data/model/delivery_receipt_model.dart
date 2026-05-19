@@ -5,6 +5,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/domain/entity/delivery_receipt_entity.dart';
 import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import 'package:x_pro_delivery_app/core/enums/sync_status_enums.dart';
+
 @Entity()
 class DeliveryReceiptModel extends DeliveryReceiptEntity {
   @Id(assignable: true)
@@ -25,6 +26,10 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
   @override
   @Property()
   String? collectionName;
+
+  @override
+  @Property()
+  String? mop;
 
   // ---------------------------------------------------
   // ✅ ObjectBox RELATIONS (SOURCE OF TRUTH)
@@ -108,6 +113,7 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
     super.customerImages,
     super.customerSignature,
     super.totalAmount,
+    super.mop,
     super.receiptFile,
     super.created,
     super.updated,
@@ -160,30 +166,60 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
 
     if (expanded?['trip'] != null) {
       final t = expanded!['trip'];
-      tripModel =
-          t is RecordModel
-              ? TripModel.fromJson({
-                'id': t.id,
-                'collectionId': t.collectionId,
-                'collectionName': t.collectionName,
-                ...t.data,
-                'expand': t.expand,
-              })
-              : TripModel.fromJson(t as DataMap);
+      if (t is RecordModel) {
+        tripModel = TripModel.fromJson({
+          'id': t.id,
+          'collectionId': t.collectionId,
+          'collectionName': t.collectionName,
+          ...t.data,
+          'expand': t.expand,
+        });
+      } else if (t is Map<String, dynamic>) {
+        tripModel = TripModel.fromJson(t);
+      } else if (t is List && t.isNotEmpty) {
+        // PocketBase sometimes returns expanded relations as a list
+        final first = t.first;
+        if (first is RecordModel) {
+          tripModel = TripModel.fromJson({
+            'id': first.id,
+            'collectionId': first.collectionId,
+            'collectionName': first.collectionName,
+            ...first.data,
+            'expand': first.expand,
+          });
+        } else if (first is Map<String, dynamic>) {
+          tripModel = TripModel.fromJson(first);
+        }
+      }
     }
 
     if (expanded?['deliveryData'] != null) {
       final d = expanded!['deliveryData'];
-      deliveryDataModel =
-          d is RecordModel
-              ? DeliveryDataModel.fromJson({
-                'id': d.id,
-                'collectionId': d.collectionId,
-                'collectionName': d.collectionName,
-                ...d.data,
-                'expand': d.expand,
-              })
-              : DeliveryDataModel.fromJson(d as DataMap);
+      if (d is RecordModel) {
+        deliveryDataModel = DeliveryDataModel.fromJson({
+          'id': d.id,
+          'collectionId': d.collectionId,
+          'collectionName': d.collectionName,
+          ...d.data,
+          'expand': d.expand,
+        });
+      } else if (d is Map<String, dynamic>) {
+        deliveryDataModel = DeliveryDataModel.fromJson(d);
+      } else if (d is List && d.isNotEmpty) {
+        // PocketBase sometimes returns expanded relations as a list
+        final first = d.first;
+        if (first is RecordModel) {
+          deliveryDataModel = DeliveryDataModel.fromJson({
+            'id': first.id,
+            'collectionId': first.collectionId,
+            'collectionName': first.collectionName,
+            ...first.data,
+            'expand': first.expand,
+          });
+        } else if (first is Map<String, dynamic>) {
+          deliveryDataModel = DeliveryDataModel.fromJson(first);
+        }
+      }
     }
 
     return DeliveryReceiptModel(
@@ -194,6 +230,7 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       dateTimeCompleted: parseDate(json['dateTimeCompleted']),
       customerImages: parseCustomerImages(json['customerImages']),
       customerSignature: json['customerSignature']?.toString(),
+      mop: json['mop']?.toString(),
       receiptFile: json['receiptFile']?.toString(),
       totalAmount:
           json['totalAmount'] != null
@@ -217,6 +254,7 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       'customerImages': customerImages, // Will be serialized as JSON array
       'customerSignature': customerSignature,
       'receiptFile': receiptFile,
+      'mop': mop,
       'trip': trip.target?.id,
       'deliveryData': deliveryData.target?.id,
       'created': created?.toIso8601String(),
@@ -235,6 +273,7 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
     DateTime? dateTimeCompleted,
     List<String>? customerImages,
     String? customerSignature,
+    String? mop,
     String? receiptFile,
     DateTime? created,
     DateTime? updated,
@@ -249,6 +288,7 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       customerImages: customerImages ?? this.customerImages,
       customerSignature: customerSignature ?? this.customerSignature,
       receiptFile: receiptFile ?? this.receiptFile,
+      mop: mop ?? this.mop,
       created: created ?? this.created,
       updated: updated ?? this.updated,
       objectBoxId: objectBoxId,
@@ -293,6 +333,6 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
 
   @override
   String toString() {
-    return 'DeliveryReceiptModel(id: $id, trip: ${trip.target?.id}, deliveryData: ${deliveryData.target?.id}, status: $status, dateTimeCompleted: $dateTimeCompleted, customerImages: ${customerImages?.length ?? 0}, customerSignature: $customerSignature, receiptFile: $receiptFile)';
+    return 'DeliveryReceiptModel(id: $id, trip: ${trip.target?.id}, deliveryData: ${deliveryData.target?.id}, status: $status, mop: $mop, dateTimeCompleted: $dateTimeCompleted, customerImages: ${customerImages?.length ?? 0}, customerSignature: $customerSignature, receiptFile: $receiptFile)';
   }
 }

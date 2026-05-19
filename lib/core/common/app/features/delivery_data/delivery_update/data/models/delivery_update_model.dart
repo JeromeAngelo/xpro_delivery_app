@@ -91,6 +91,9 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
   @Property()
   String? customer;
 
+  @Property()
+  String? lastSyncError;
+
   // ---------------------------------------------------
   // SYNC CONTROL (🚨 REQUIRED)
   // ---------------------------------------------------
@@ -125,6 +128,7 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
     this.assignedTo,
     this.remarks,
     this.image,
+    this.lastSyncError,
     this.customer,
     this.syncStatus = 'pending',
     this.retryCount = 0,
@@ -185,6 +189,7 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       time: parseDate(json['time']),
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
+      lastSyncError: json['lastSyncError']?.toString(),
       lastLocalUpdatedAt:
           parseDate(json['lastLocalUpdatedAt']) ?? parseDate(json['updated']),
       isAssigned: parseBool(json['isAssigned']),
@@ -216,6 +221,7 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       'image': image,
       'customer': customer,
       'deliveryData': deliveryData.target?.id,
+      'lastSyncError': lastSyncError,
     };
   }
 
@@ -235,6 +241,7 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       isAssigned: false,
       assignedTo: null,
       remarks: '',
+      lastSyncError: '',
       image: null,
       customer: customerId,
     );
@@ -278,6 +285,7 @@ class DeliveryUpdateModel extends DeliveryUpdateEntity {
       assignedTo: assignedTo ?? this.assignedTo,
       remarks: remarks ?? this.remarks,
       image: image ?? this.image,
+      lastSyncError: lastSyncError ?? this.lastSyncError,
       customer: customer ?? this.customer,
       objectBoxId: objectBoxId,
        syncStatus: syncStatus ?? this.syncStatus,

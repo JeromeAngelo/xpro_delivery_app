@@ -6,29 +6,21 @@ import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delive
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/presentation/bloc/delivery_receipt_state.dart';
 import 'package:x_pro_delivery_app/core/enums/mode_of_payment.dart';
 import 'package:x_pro_delivery_app/core/services/app_debug_logger.dart';
-import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/confirm_payment_btn.dart';
-import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/customers_dashboard_trx.dart';
-
-// Update the constructor to make generatedPdf optional:
+import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/transaction_view_widgets/confirm_payment_btn.dart';
+import 'package:x_pro_delivery_app/src/transaction_screen/presentation/utils/transaction_view_widgets/transaction_form.dart';
 
 class TransactionView extends StatefulWidget {
   final DeliveryDataEntity deliveryData;
-  final Uint8List? generatedPdf; // Make this optional
+  final Uint8List? generatedPdf;
 
   const TransactionView({
     super.key,
     required this.deliveryData,
-    this.generatedPdf, // Remove required
+    this.generatedPdf,
   });
 
   @override
   State<TransactionView> createState() => _TransactionViewState();
-}
-
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
-  }
 }
 
 class _TransactionViewState extends State<TransactionView> {
@@ -57,37 +49,46 @@ class _TransactionViewState extends State<TransactionView> {
       details: 'Delivery ID: ${widget.deliveryData.id}',
     );
     _initializeFields();
-    // _loadExistingReceipt();
   }
 
   void _initializeFields() {
-    // Initialize payment mode from delivery data
     if (widget.deliveryData.paymentSelection != null) {
-      _selectedPaymentMode = widget.deliveryData.paymentSelection
-          .toString()
-          .split('.')
-          .last
-          .split(RegExp(r'(?=[A-Z])'))
-          .map((word) => StringExtension(word).capitalize())
-          .join(' ')
-          .replaceAll('E Wallet', 'E-Wallet');
-
-      // Set initial field visibility based on payment selection
-      _showCashField = _selectedPaymentMode == 'DTC-COD';
-      _showEWalletFields = _selectedPaymentMode == 'E-Wallet';
-      _showBankNameField = _selectedPaymentMode == 'Bank Transfer';
-      _showChequeNumberField = _selectedPaymentMode == 'DTC-CHK';
-      _showStcCashField = _selectedPaymentMode == 'STC-Cash';
-      _showStcChequeField = _selectedPaymentMode == 'STC-CHK';
+      _selectedPaymentMode = _formatPaymentMode(
+        widget.deliveryData.paymentSelection.toString(),
+      );
+      _updateFieldVisibility(_selectedPaymentMode);
     }
 
-    // Initialize amount from deliveryData.totalAmount
     final totalAmount = widget.deliveryData.totalAmount ?? 0.0;
     _amountController.text = totalAmount.toStringAsFixed(2);
 
     debugPrint(
       '💰 Transaction amount initialized from deliveryData.totalAmount: ₱${totalAmount.toStringAsFixed(2)}',
     );
+  }
+
+  String _formatPaymentMode(String paymentSelection) {
+    return paymentSelection
+        .split('.')
+        .last
+        .split(RegExp(r'(?=[A-Z])'))
+        .map(
+          (word) =>
+              word.isNotEmpty
+                  ? '${word[0].toUpperCase()}${word.substring(1)}'
+                  : '',
+        )
+        .join(' ')
+        .replaceAll('E Wallet', 'E-Wallet');
+  }
+
+  void _updateFieldVisibility(String? paymentMode) {
+    _showCashField = paymentMode == 'DTC - COD';
+    _showEWalletFields = paymentMode == 'E-Wallet';
+    _showBankNameField = paymentMode == 'Bank Transfer';
+    _showChequeNumberField = paymentMode == 'DTC - CHK';
+    _showStcCashField = paymentMode == 'STC-Cash';
+    _showStcChequeField = paymentMode == 'STC-CHK';
   }
 
   void _handlePaymentModeChange(String? newValue) async {
@@ -99,12 +100,7 @@ class _TransactionViewState extends State<TransactionView> {
     setState(() {
       _isLoading = true;
       _selectedPaymentMode = newValue;
-      _showChequeNumberField = newValue == 'DTC - CHK';
-      _showEWalletFields = newValue == 'E-Wallet';
-      _showBankNameField = newValue == 'Bank Transfer';
-      _showCashField = newValue == 'DTC - COD';
-      _showStcCashField = newValue == 'STC-Cash';
-      _showStcChequeField = newValue == 'STC-CHK';
+      _updateFieldVisibility(newValue);
       _selectedEWalletType = null;
       _selectedBankName = null;
     });
@@ -116,202 +112,23 @@ class _TransactionViewState extends State<TransactionView> {
     });
   }
 
-  Widget _buildPaymentModeDropdown() {
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        labelStyle: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.bold,
-        ),
-        labelText: 'Mode of Payment',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      value: _selectedPaymentMode,
-      items:
-          [
-                'Bank Transfer',
-                'DTC - COD',
-                'DTC - CHK',
-                'E-Wallet',
-                'STC-Cash',
-                'STC-CHK',
-              ]
-              .map(
-                (value) => DropdownMenuItem(value: value, child: Text(value)),
-              )
-              .toList(),
-      onChanged: _handlePaymentModeChange,
-      validator: (value) => value == null ? 'Required' : null,
-    );
-  }
-
-  Widget _buildAmountField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Enter total amount collected',
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 5),
-        TextFormField(
-          onTap: () {
-            _amountController.selection = TextSelection(
-              baseOffset: 0,
-              extentOffset: _amountController.text.length,
-            );
-          },
-          controller: _amountController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            label: const Text('₱'),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReferenceNumberField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Enter Reference Number',
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 5),
-        TextFormField(
-          controller: _referenceNumberController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBankFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            labelText: 'Bank Name',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          value: _selectedBankName,
-          items:
-              ['BDO', 'Metrobank', 'Security Bank']
-                  .map(
-                    (value) =>
-                        DropdownMenuItem(value: value, child: Text(value)),
-                  )
-                  .toList(),
-          onChanged: (value) => setState(() => _selectedBankName = value),
-          validator: (value) => value == null ? 'Required' : null,
-        ),
-        const SizedBox(height: 12),
-        _buildAmountField(),
-        const SizedBox(height: 12),
-        _buildReferenceNumberField(),
-      ],
-    );
-  }
-
-  Widget _buildChequeFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Enter Cheque Number',
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 5),
-        TextFormField(
-          controller: _chequeNumberController,
-          decoration: InputDecoration(
-            label: const Text('Cheque Number'),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
-        ),
-        const SizedBox(height: 12),
-        _buildAmountField(),
-        const SizedBox(height: 12),
-        _buildReferenceNumberField(),
-      ],
-    );
-  }
-
-  Widget _buildEWalletFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            labelText: 'E-Wallet Type',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          value: _selectedEWalletType,
-          items:
-              ['GCash', 'Maya']
-                  .map(
-                    (value) =>
-                        DropdownMenuItem(value: value, child: Text(value)),
-                  )
-                  .toList(),
-          onChanged:
-              (value) => setState(() {
-                _selectedEWalletType = value;
-              }),
-          validator: (value) => value == null ? 'Required' : null,
-        ),
-        const SizedBox(height: 12),
-        if (_selectedEWalletType == 'GCash') ...[
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Image.asset(
-                'assets/images/g-cash-payment.jpg',
-                fit: BoxFit.fill,
-              ),
-            ),
-          ),
-        ],
-        if (_selectedEWalletType == 'Maya') ...[
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(child: Image.asset('assets/images/paymaya-qr.png')),
-          ),
-        ],
-        const SizedBox(height: 12),
-        _buildAmountField(),
-        const SizedBox(height: 12),
-        _buildReferenceNumberField(),
-      ],
-    );
+  ModeOfPayment _getModeOfPaymentEnum(String? mode) {
+    switch (mode) {
+      case 'Bank Transfer':
+        return ModeOfPayment.bankTransfer;
+      case 'DTC - COD':
+        return ModeOfPayment.cashOnDelivery;
+      case 'DTC - CHK':
+        return ModeOfPayment.dtcCheque;
+      case 'E-Wallet':
+        return ModeOfPayment.eWallet;
+      case 'STC-Cash':
+        return ModeOfPayment.stcCash;
+      case 'STC-CHK':
+        return ModeOfPayment.stcCheque;
+      default:
+        return ModeOfPayment.cashOnDelivery;
+    }
   }
 
   @override
@@ -332,56 +149,38 @@ class _TransactionViewState extends State<TransactionView> {
           ).showSnackBar(SnackBar(content: Text(state.message)));
         } else if (state is DeliveryReceiptLoaded) {
           debugPrint('✅ Existing delivery receipt loaded');
-          // You can pre-populate fields if needed
         }
       },
       child: Scaffold(
         appBar: AppBar(title: const Text('Transaction'), centerTitle: true),
         body: Stack(
           children: [
-            Form(
-              key: _formKey,
-              child: CustomScrollView(
-                slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.all(16),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        CustomersDashboardTrx(
-                          deliveryData: widget.deliveryData,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildPaymentModeDropdown(),
-                        if (_showCashField || _showStcCashField) ...[
-                          const SizedBox(height: 12),
-                          _buildAmountField(),
-                        ],
-                        if (_showBankNameField) ...[
-                          const SizedBox(height: 12),
-                          _buildBankFields(),
-                        ],
-                        if (_showChequeNumberField || _showStcChequeField) ...[
-                          const SizedBox(height: 12),
-                          _buildChequeFields(),
-                        ],
-                        if (_showEWalletFields) ...[
-                          const SizedBox(height: 12),
-                          _buildEWalletFields(),
-                        ],
-                        const SizedBox(height: 80),
-                      ]),
-                    ),
-                  ),
-                ],
-              ),
+            TransactionForm(
+              formKey: _formKey,
+              deliveryData: widget.deliveryData,
+              selectedPaymentMode: _selectedPaymentMode,
+              onPaymentModeChanged: _handlePaymentModeChange,
+              showCashField: _showCashField,
+              showStcCashField: _showStcCashField,
+              showBankNameField: _showBankNameField,
+              showChequeNumberField: _showChequeNumberField,
+              showStcChequeField: _showStcChequeField,
+              showEWalletFields: _showEWalletFields,
+              selectedBankName: _selectedBankName,
+              onBankNameChanged:
+                  (value) => setState(() => _selectedBankName = value),
+              selectedEWalletType: _selectedEWalletType,
+              onEWalletTypeChanged:
+                  (value) => setState(() => _selectedEWalletType = value),
+              amountController: _amountController,
+              chequeNumberController: _chequeNumberController,
+              referenceNumberController: _referenceNumberController,
             ),
             if (_isLoading)
               Container(
                 color: Colors.black54,
                 child: const Center(child: CircularProgressIndicator()),
               ),
-
-            // Confirm Payment Button with actual form values
             if (!isKeyboardVisible)
               Positioned(
                 bottom: 16,
@@ -403,32 +202,13 @@ class _TransactionViewState extends State<TransactionView> {
                           ? null
                           : _eWalletAccountController.text.trim(),
                   bankName: _selectedBankName,
+                  formKey: _formKey,
                 ),
               ),
           ],
         ),
       ),
     );
-  }
-
-  /// Helper method to convert payment mode string to enum
-  ModeOfPayment _getModeOfPaymentEnum(String? mode) {
-    switch (mode) {
-      case 'Bank Transfer':
-        return ModeOfPayment.bankTransfer;
-      case 'Cash On Delivery':
-        return ModeOfPayment.cashOnDelivery;
-      case 'Cheque':
-        return ModeOfPayment.cheque;
-      case 'E-Wallet':
-        return ModeOfPayment.eWallet;
-      case 'STC-Cash':
-        return ModeOfPayment.stcCash;
-      case 'STC-CHK':
-        return ModeOfPayment.stcCheque;
-      default:
-        return ModeOfPayment.cashOnDelivery;
-    }
   }
 
   @override

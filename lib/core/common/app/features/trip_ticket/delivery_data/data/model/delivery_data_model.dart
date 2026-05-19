@@ -447,7 +447,7 @@ factory DeliveryDataModel.fromJson(dynamic json) {
       case 'cashondelivery':
         return ModeOfPayment.cashOnDelivery;
       case 'cheque':
-        return ModeOfPayment.cheque;
+        return ModeOfPayment.dtcCheque;
       case 'ewallet':
         return ModeOfPayment.eWallet;
       default:

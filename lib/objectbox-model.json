@@ -141,7 +141,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "287:3207382515464675745",
+          "indexId": "305:4234428885073647143",
           "relationTarget": "TripModel"
         },
         {
@@ -149,7 +149,7 @@
           "name": "customerId",
           "type": 11,
           "flags": 520,
-          "indexId": "288:6555304058178313082",
+          "indexId": "306:8355804921162978384",
           "relationTarget": "CustomerDataModel"
         },
         {
@@ -157,7 +157,7 @@
           "name": "invoiceId",
           "type": 11,
           "flags": 520,
-          "indexId": "289:6316607363279641146",
+          "indexId": "307:6219595128677659817",
           "relationTarget": "InvoiceDataModel"
         },
         {
@@ -165,7 +165,7 @@
           "name": "deliveryDataId",
           "type": 11,
           "flags": 520,
-          "indexId": "286:8291554288717496737",
+          "indexId": "304:5573735374683785873",
           "relationTarget": "DeliveryDataModel"
         },
         {
@@ -320,7 +320,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "290:7668181672461029918",
+          "indexId": "308:22695155553579925",
           "relationTarget": "TripModel"
         },
         {
@@ -353,7 +353,7 @@
     },
     {
       "id": "5:7491627631105862324",
-      "lastPropertyId": "11:9058232319187212870",
+      "lastPropertyId": "12:4455040581408818241",
       "name": "CollectionEntity",
       "properties": [
         {
@@ -423,6 +423,11 @@
           "id": "11:9058232319187212870",
           "name": "updated",
           "type": 10
+        },
+        {
+          "id": "12:4455040581408818241",
+          "name": "mop",
+          "type": 9
         }
       ],
       "relations": [
@@ -435,7 +440,7 @@
     },
     {
       "id": "6:4563950948000762030",
-      "lastPropertyId": "22:8976860514323564459",
+      "lastPropertyId": "23:2364763552183903307",
       "name": "CollectionModel",
       "properties": [
         {
@@ -469,7 +474,7 @@
           "name": "deliveryDataId",
           "type": 11,
           "flags": 520,
-          "indexId": "292:2050826454267836231",
+          "indexId": "310:409478711282476430",
           "relationTarget": "DeliveryDataModel"
         },
         {
@@ -477,7 +482,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "293:7088812594423053935",
+          "indexId": "311:8335452452291158298",
           "relationTarget": "TripModel"
         },
         {
@@ -485,7 +490,7 @@
           "name": "customerId",
           "type": 11,
           "flags": 520,
-          "indexId": "291:8506070082168474256",
+          "indexId": "309:7919943091909073216",
           "relationTarget": "CustomerDataModel"
         },
         {
@@ -560,6 +565,11 @@
           "flags": 520,
           "indexId": "18:821561599902455830",
           "relationTarget": "DeliveryReceiptModel"
+        },
+        {
+          "id": "23:2364763552183903307",
+          "name": "mop",
+          "type": 9
         }
       ],
       "relations": [
@@ -938,7 +948,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "294:5329132559121115104",
+          "indexId": "312:2563131309669984151",
           "relationTarget": "TripModel"
         },
         {
@@ -1108,7 +1118,7 @@
     },
     {
       "id": "11:5227308974183210635",
-      "lastPropertyId": "14:1212393611631571294",
+      "lastPropertyId": "15:8934721911634497456",
       "name": "DeliveryReceiptEntity",
       "properties": [
         {
@@ -1187,6 +1197,11 @@
           "id": "14:1212393611631571294",
           "name": "updated",
           "type": 10
+        },
+        {
+          "id": "15:8934721911634497456",
+          "name": "mop",
+          "type": 9
         }
       ],
       "relations": []
@@ -1290,7 +1305,7 @@
     },
     {
       "id": "14:8047721167219302010",
-      "lastPropertyId": "25:1311167762935750285",
+      "lastPropertyId": "26:3570911888826538173",
       "name": "DeliveryReceiptModel",
       "properties": [
         {
@@ -1424,6 +1439,11 @@
           "id": "25:1311167762935750285",
           "name": "customerImages",
           "type": 30
+        },
+        {
+          "id": "26:3570911888826538173",
+          "name": "mop",
+          "type": 9
         }
       ],
       "relations": []
@@ -1592,7 +1612,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "295:3909044785588233046",
+          "indexId": "313:3652014861789784513",
           "relationTarget": "TripModel"
         },
         {
@@ -1683,7 +1703,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "296:1247460493333935810",
+          "indexId": "314:1410451558681406107",
           "relationTarget": "TripModel"
         },
         {
@@ -1817,7 +1837,7 @@
     },
     {
       "id": "20:6122538976404362051",
-      "lastPropertyId": "20:2873904303904716546",
+      "lastPropertyId": "21:8043201151634050303",
       "name": "DeliveryUpdateModel",
       "properties": [
         {
@@ -1923,6 +1943,11 @@
           "flags": 520,
           "indexId": "35:6349205111350515862",
           "relationTarget": "DeliveryDataModel"
+        },
+        {
+          "id": "21:8043201151634050303",
+          "name": "lastSyncError",
+          "type": 9
         }
       ],
       "relations": []
@@ -2120,7 +2145,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "297:1319944106318315350",
+          "indexId": "315:7932595461741312706",
           "relationTarget": "TripModel"
         },
         {
@@ -2264,7 +2289,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "298:7170653815603297703",
+          "indexId": "316:1032406120539860625",
           "relationTarget": "TripModel"
         },
         {
@@ -2627,7 +2652,7 @@
           "name": "invoiceDataId",
           "type": 11,
           "flags": 520,
-          "indexId": "299:2996241136317965537",
+          "indexId": "317:1106405571157407416",
           "relationTarget": "InvoiceDataEntity"
         },
         {
@@ -2835,7 +2860,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "300:775457068066987787",
+          "indexId": "318:7246971442540038156",
           "relationTarget": "TripModel"
         },
         {
@@ -2843,7 +2868,7 @@
           "name": "deliveryTeamId",
           "type": 11,
           "flags": 520,
-          "indexId": "301:8840438541530294583",
+          "indexId": "319:4015222914079100086",
           "relationTarget": "DeliveryTeamModel"
         },
         {
@@ -2971,7 +2996,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "302:8364665618179548432",
+          "indexId": "320:2471078981105592498",
           "relationTarget": "TripModel"
         },
         {
@@ -3694,7 +3719,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "303:8787393536052492649",
+          "indexId": "321:2676686318594290333",
           "relationTarget": "TripModel"
         },
         {
@@ -3990,7 +4015,7 @@
     }
   ],
   "lastEntityId": "48:4350876074771390893",
-  "lastIndexId": "303:8787393536052492649",
+  "lastIndexId": "321:2676686318594290333",
   "lastRelationId": "29:6984763155418216047",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
@@ -4230,7 +4255,25 @@
     3591623873387956911,
     9068725585932527490,
     8520298646199560763,
-    1506128375771471798
+    1506128375771471798,
+    3207382515464675745,
+    6555304058178313082,
+    6316607363279641146,
+    8291554288717496737,
+    7668181672461029918,
+    2050826454267836231,
+    7088812594423053935,
+    8506070082168474256,
+    5329132559121115104,
+    3909044785588233046,
+    1247460493333935810,
+    1319944106318315350,
+    7170653815603297703,
+    2996241136317965537,
+    775457068066987787,
+    8840438541530294583,
+    8364665618179548432,
+    8787393536052492649
   ],
   "retiredPropertyUids": [
     7578410533054026482,

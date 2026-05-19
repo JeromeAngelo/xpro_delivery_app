@@ -166,7 +166,7 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
             customerSignature: customerSignature,
             receiptFile: receiptFile,
             amount: amount,
-          
+           mop: modeOfPayment,
           );
 
       debugPrint(
@@ -234,7 +234,7 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
             customerImages: customerImages,
             customerSignature: customerSignature,
             receiptFile: receiptFile,
-         
+            mop: modeOfPayment, 
           );
 
       debugPrint('📥 REPO: Updating local storage with remote data');

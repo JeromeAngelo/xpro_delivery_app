@@ -17,6 +17,7 @@ class DeliveryReceiptEntity extends Equatable {
   final ToOne<DeliveryDataModel> deliveryData = ToOne<DeliveryDataModel>();
 
   final String? status;
+  final String? mop;
   final DateTime? dateTimeCompleted;
   final double? totalAmount;
 
@@ -38,6 +39,7 @@ class DeliveryReceiptEntity extends Equatable {
     DeliveryDataModel? deliveryDataModel,
     this.totalAmount,
     this.status,
+    this.mop,
     this.dateTimeCompleted,
     this.customerImages,
     this.customerSignature,
@@ -58,6 +60,7 @@ class DeliveryReceiptEntity extends Equatable {
     deliveryData.target?.id,
     status,
     totalAmount,
+    mop,
     dateTimeCompleted,
     customerImages,
     customerSignature,
@@ -68,6 +71,6 @@ class DeliveryReceiptEntity extends Equatable {
 
   @override
   String toString() {
-    return 'DeliveryReceiptEntity(id: $id, trip: ${trip.target?.id}, deliveryData: ${deliveryData.target?.id}, status: $status, customerImages: ${customerImages?.length ?? 0}, customerSignature: $customerSignature, receiptFile: $receiptFile)';
+    return 'DeliveryReceiptEntity(id: $id, trip: ${trip.target?.id}, deliveryData: ${deliveryData.target?.id}, status: $status, mop: $mop, customerImages: ${customerImages?.length ?? 0}, customerSignature: $customerSignature, receiptFile: $receiptFile)';
   }
 }
