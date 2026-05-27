@@ -109,11 +109,10 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     BuildContext context,
     DeliveryDataEntity deliveryData,
   ) {
-    // Use direct fields from DeliveryDataEntity instead of target
+    // Use direct fields from DeliveryDataEntity
     final storeName = deliveryData.storeName;
     final ownerName = deliveryData.ownerName;
     final contactNumber = deliveryData.contactNumber;
-    final invoices = deliveryData.invoices;
 
     // ADDED: Show shimmer loading when customer data is null
     if (storeName == null && ownerName == null && contactNumber == null) {
@@ -144,13 +143,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
           children: [
             _buildHeader(context, storeName),
             const SizedBox(height: 30),
-            _buildInfoGrid(
-              context,
-              deliveryData,
-              ownerName,
-              contactNumber,
-              invoices,
-            ),
+            _buildInfoGrid(context, deliveryData),
           ],
         ),
       ),
@@ -458,13 +451,7 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
     return '₱${buffer.toString()}.$decimalPart';
   }
 
-  Widget _buildInfoGrid(
-    BuildContext context,
-    DeliveryDataEntity deliveryData,
-    String? ownerName,
-    String? contactNumber,
-    dynamic invoices,
-  ) {
+  Widget _buildInfoGrid(BuildContext context, DeliveryDataEntity deliveryData) {
     // Get delivery status from delivery updates
     final deliveryUpdates = deliveryData.deliveryUpdates.toList();
     final latestStatus =
@@ -472,48 +459,26 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
             ? deliveryUpdates.last.title ?? "Pending"
             : "Pending";
 
-    // Calculate total amount with multiple fallbacks
-    double totalAmount = 0.0;
-    String totalAmountDisplay = "₱0.00";
+    // Use totalAmount directly from DeliveryDataEntity
+    final totalAmount = deliveryData.totalAmount;
+    final String totalAmountDisplay =
+        (totalAmount != null && totalAmount > 0)
+            ? _formatCurrency(totalAmount)
+            : "Not available";
 
-    // Priority 1: Use deliveryData.totalAmount if available
-    if (deliveryData.totalAmount != null && deliveryData.totalAmount! > 0) {
-      totalAmount = deliveryData.totalAmount!;
-      debugPrint(
-        '📊 Using deliveryData.totalAmount: ₱${totalAmount.toStringAsFixed(2)}',
-      );
-    }
-    // Priority 2: Calculate from invoices
-    else if (invoices != null && invoices.length > 0) {
-      try {
-        for (var invoice in invoices) {
-          if (invoice?.totalAmount != null) {
-            totalAmount += invoice.totalAmount;
-          }
-        }
-        if (totalAmount > 0) {
-          debugPrint(
-            '📊 Calculated totalAmount from invoices: ₱${totalAmount.toStringAsFixed(2)}',
-          );
-        }
-      } catch (e) {
-        debugPrint('⚠️ Error calculating total from invoices: $e');
-      }
-    }
+    debugPrint(
+      '📊 Using deliveryData.totalAmount: ${totalAmount != null ? "₱${totalAmount.toStringAsFixed(2)}" : "null"}',
+    );
 
-    // Format the display amount
-    if (totalAmount > 0) {
-      totalAmountDisplay = _formatCurrency(totalAmount);
-    } else {
-      totalAmountDisplay = "Not available";
-      debugPrint(
-        '⚠️ Total amount is 0 or null - no delivery/invoice data loaded',
-      );
-    }
+    // Get typed values from delivery data entity
+    final ownerName = deliveryData.ownerName;
+    final contactNumber = deliveryData.contactNumber;
+    final invoices = deliveryData.invoices.toList();
+    final invoicesCount = invoices.length;
 
     debugPrint('📊 Building dashboard with:');
-    debugPrint('   🏪 Store Name: $ownerName');
-    debugPrint('   🧾 Invoices Count: ${invoices?.length ?? 0}');
+    debugPrint('   🏪 Store Name: ${deliveryData.storeName}');
+    debugPrint('   🧾 Invoices Count: $invoicesCount');
     debugPrint('   💰 Total Amount Display: $totalAmountDisplay');
     debugPrint('   📦 Delivery status: $latestStatus');
 
@@ -539,11 +504,10 @@ class _CustomerDetailsDashboardState extends State<CustomerDetailsDashboard> {
           "Delivery Status",
         ),
 
-        // _buildContactNumbers(context, contactNumbers),
         _buildInfoItem(
           context,
           Icons.receipt_long,
-          "${invoices?.length ?? 0} ${(invoices?.length ?? 0) == 1 ? 'Invoice' : 'Invoices'}",
+          "$invoicesCount ${invoicesCount == 1 ? 'Invoice' : 'Invoices'}",
           "Invoices Count",
         ),
         _buildInfoItem(

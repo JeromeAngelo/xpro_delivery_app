@@ -227,6 +227,10 @@ class _ConfirmPaymentBtnState extends State<ConfirmPaymentBtn> {
             SetEndDeliveryEvent(deliveryData: widget.deliveryData),
           );
 
+          context.read<DeliveryDataBloc>().add(
+            SetInvoiceIntoCompletedEvent(widget.deliveryData.id!),
+          );
+
           debugPrint('🔄 Invalidating cached delivery data to force refresh');
           debugPrint('🚀 Navigating to target screen with cache invalidation');
 

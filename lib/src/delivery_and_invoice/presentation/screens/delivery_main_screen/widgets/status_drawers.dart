@@ -11,7 +11,6 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
-import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/customer_summary_dialog.dart';
 import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens/delivery_main_screen/widgets/pdf_generating_loading_screen.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/domain/entity/delivery_status_choices_entity.dart';
 import '../../../../../../core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
@@ -65,6 +64,25 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
     super.dispose();
   }
 
+  // bool _isRevertStatusLocked(DeliveryDataEntity deliveryData) {
+  //   if (deliveryData.deliveryUpdates.isEmpty) return false;
+
+  //   final sortedUpdates = List<DeliveryUpdateEntity>.from(
+  //     deliveryData.deliveryUpdates,
+  //   );
+
+  //   sortedUpdates.sort((a, b) {
+  //     final timeA = a.time ?? a.created ?? DateTime(0);
+  //     final timeB = b.time ?? b.created ?? DateTime(0);
+  //     return timeA.compareTo(timeB);
+  //   });
+
+  //   final latestTitle = sortedUpdates.first.title?.trim().toLowerCase() ?? '';
+  //   return latestTitle == 'pending' ||
+  //       latestTitle == 'in transit' ||
+  //       latestTitle == 'mark as undelivered' ||
+  //       latestTitle == 'end delivery';
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +199,6 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                                           DeliveryDataState
                                         >(
                                           builder: (context, customerState) {
-
                                             return ElevatedButton.icon(
                                               icon: const Icon(Icons.repeat),
                                               label: const Text(
@@ -347,11 +364,8 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
           GenerateDeliveryReceiptPdfEvent(deliveryData),
         );
 
-        context.read<DeliveryStatusChoicesBloc>().add(
-          UpdateCustomerStatusEvent(
-            deliveryDataId: widget.deliveryDataId,
-            status: status,
-          ),
+        context.read<DeliveryDataBloc>().add(
+          SetInvoiceIntoUnloadedEvent(widget.deliveryDataId),
         );
 
         context.read<DeliveryDataBloc>().add(
@@ -361,10 +375,15 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder:
-                (_) => BlocListener<DeliveryReceiptBloc, DeliveryReceiptState>(
+                (_) => BlocConsumer<DeliveryReceiptBloc, DeliveryReceiptState>(
+                  listenWhen:
+                      (previous, current) =>
+                          current is DeliveryReceiptPdfGenerated ||
+                          current is DeliveryReceiptError,
                   listener: (context, receiptState) {
                     if (receiptState is DeliveryReceiptPdfGenerated) {
                       debugPrint('✅ PDF generated, navigating to transaction');
+                      Navigator.of(context).pop(); // Close loading screen
                       context.push(
                         '/transaction',
                         extra: {
@@ -376,6 +395,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                       debugPrint(
                         '❌ PDF generation error: ${receiptState.message}',
                       );
+                      Navigator.of(context).pop(); // Close loading screen
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -386,9 +406,30 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
                       );
                     }
                   },
-                  child: const PdfGeneratingLoadingScreen(
-                    message: 'Generating Delivery Receipt PDF...',
-                  ),
+                  buildWhen:
+                      (previous, current) =>
+                          current is DeliveryReceiptPdfGenerating ||
+                          current is DeliveryReceiptPdfGenerated ||
+                          current is DeliveryReceiptError ||
+                          current is DeliveryReceiptInitial ||
+                          current is DeliveryReceiptLoading,
+                  builder: (context, receiptState) {
+                    if (receiptState is DeliveryReceiptPdfGenerated) {
+                      // PDF already generated — listener will handle navigation
+                      return const PdfGeneratingLoadingScreen(
+                        message: 'Preparing Delivery Receipt...',
+                      );
+                    } else if (receiptState is DeliveryReceiptError) {
+                      // Error — listener will handle snackbar
+                      return PdfGeneratingLoadingScreen(
+                        message: 'Error: ${receiptState.message}',
+                      );
+                    }
+                    // Generating or loading state
+                    return const PdfGeneratingLoadingScreen(
+                      message: 'Generating Delivery Receipt PDF...',
+                    );
+                  },
                 ),
           ),
         );
@@ -404,13 +445,7 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
       if (state is DeliveryDataLoaded) {
         Navigator.of(context).pop();
 
-        deliveryDataBloc.add(CalculateDeliveryTimeEvent(widget.deliveryDataId));
-        context.read<DeliveryStatusChoicesBloc>().add(
-          SetEndDeliveryEvent(deliveryData: state.deliveryData),
-        );
-        context.read<DeliveryDataBloc>().add(
-          WatchLocalDeliveryDataByIdEvent(widget.deliveryDataId),
-        );
+        final deliveryData = state.deliveryData;
 
         deliveryDataBloc.add(
           SetInvoiceIntoCompletedEvent(state.deliveryData.id ?? ''),
@@ -419,25 +454,69 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
           WatchLocalDeliveryDataByIdEvent(widget.deliveryDataId),
         );
 
-        // Show dialog after a brief delay to allow state to update
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder:
-                  (_) => BlocProvider.value(
-                    value: deliveryDataBloc,
-                    child: CustomerSummaryDialog(
-                      deliveryData: state.deliveryData,
-                    ),
-                  ),
-            );
-          }
-        });
-        // ---------------- DEFAULT STATUS UPDATE ----------------
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder:
+                (_) => BlocConsumer<DeliveryReceiptBloc, DeliveryReceiptState>(
+                  listenWhen:
+                      (previous, current) =>
+                          current is DeliveryReceiptPdfGenerated ||
+                          current is DeliveryReceiptError,
+                  listener: (context, receiptState) {
+                    if (receiptState is DeliveryReceiptPdfGenerated) {
+                      debugPrint('✅ PDF generated, navigating to transaction');
+                      Navigator.of(context).pop(); // Close loading screen
+                      context.push(
+                        '/transaction',
+                        extra: {
+                          'deliveryData': deliveryData,
+                          'generatedPdf': receiptState.pdfBytes,
+                        },
+                      );
+                    } else if (receiptState is DeliveryReceiptError) {
+                      debugPrint(
+                        '❌ PDF generation error: ${receiptState.message}',
+                      );
+                      Navigator.of(context).pop(); // Close loading screen
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'PDF Generation Error: ${receiptState.message}',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  buildWhen:
+                      (previous, current) =>
+                          current is DeliveryReceiptPdfGenerating ||
+                          current is DeliveryReceiptPdfGenerated ||
+                          current is DeliveryReceiptError ||
+                          current is DeliveryReceiptInitial ||
+                          current is DeliveryReceiptLoading,
+                  builder: (context, receiptState) {
+                    if (receiptState is DeliveryReceiptPdfGenerated) {
+                      // PDF already generated — listener will handle navigation
+                      return const PdfGeneratingLoadingScreen(
+                        message: 'Preparing Delivery Receipt...',
+                      );
+                    } else if (receiptState is DeliveryReceiptError) {
+                      // Error — listener will handle snackbar
+                      return PdfGeneratingLoadingScreen(
+                        message: 'Error: ${receiptState.message}',
+                      );
+                    }
+                    // Generating or loading state
+                    return const PdfGeneratingLoadingScreen(
+                      message: 'Generating Delivery Receipt PDF...',
+                    );
+                  },
+                ),
+          ),
+        );
+        return;
       }
-      return;
     }
 
     // ---------------- DEFAULT STATUS UPDATE ----------------

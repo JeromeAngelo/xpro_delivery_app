@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
+import 'package:x_pro_delivery_app/core/enums/mode_of_payment.dart';
 
 class CustomersDashboardTrx extends StatelessWidget {
   final DeliveryDataEntity deliveryData;
@@ -84,8 +85,22 @@ class CustomersDashboardTrx extends StatelessWidget {
 
   /// 🔷 RIGHT COLUMN
   Widget _buildRightColumn(BuildContext context) {
-    final mop = (deliveryData.paymentMode ?? '').trim();
-    final totalAmount = deliveryData.totalAmount ?? 0.00;
+    // Use paymentSelection enum for display, fallback to paymentMode string
+    final paymentSelection = deliveryData.paymentSelection;
+    final String mopDisplay;
+    if (paymentSelection != null) {
+      mopDisplay = _formatModeOfPayment(paymentSelection);
+    } else {
+      final paymentMode = (deliveryData.paymentMode ?? '').trim();
+      mopDisplay = paymentMode.isEmpty ? 'N/A' : paymentMode;
+    }
+
+    // Use totalAmount directly from entity
+    final totalAmount = deliveryData.totalAmount;
+    final String totalAmountDisplay =
+        (totalAmount != null && totalAmount > 0)
+            ? _formatCurrency(totalAmount)
+            : 'N/A';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,16 +110,34 @@ class CustomersDashboardTrx extends StatelessWidget {
           context: context,
           icon: Icons.payment,
           title: "Mode of Payment",
-          value: mop.isEmpty ? 'N/A' : mop,
+          value: mopDisplay,
         ),
         _buildInfoRow(
           context: context,
           icon: Icons.attach_money,
           title: "Total Amount",
-          value: _formatCurrency(totalAmount),
+          value: totalAmountDisplay,
         ),
       ],
     );
+  }
+
+  /// 🔷 FORMAT MODE OF PAYMENT FROM ENUM
+  String _formatModeOfPayment(ModeOfPayment mode) {
+    switch (mode) {
+      case ModeOfPayment.bankTransfer:
+        return 'Bank Transfer';
+      case ModeOfPayment.cashOnDelivery:
+        return 'DTC - COD';
+      case ModeOfPayment.dtcCheque:
+        return 'DTC - CHK';
+      case ModeOfPayment.eWallet:
+        return 'E-Wallet';
+      case ModeOfPayment.stcCash:
+        return 'STC-Cash';
+      case ModeOfPayment.stcCheque:
+        return 'STC-CHK';
+    }
   }
 
   /// 🔷 FORMAT CURRENCY WITH THOUSAND SEPARATORS

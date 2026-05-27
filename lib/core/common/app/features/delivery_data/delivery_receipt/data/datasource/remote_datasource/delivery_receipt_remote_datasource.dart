@@ -290,7 +290,6 @@ class DeliveryReceiptRemoteDatasourceImpl
 
       debugPrint('✅ Created delivery receipt: ${record.id}');
 
-    
       // Get the created record with expanded relations for better data
       final createdRecord = await _pocketBaseClient
           .collection('deliveryReceipt')
@@ -301,7 +300,196 @@ class DeliveryReceiptRemoteDatasourceImpl
           );
 
       final mappedData = _mapDeliveryReceiptData(createdRecord);
-      return DeliveryReceiptModel.fromJson(mappedData);
+      final createdReceipt = DeliveryReceiptModel.fromJson(mappedData);
+
+      // -------------------------------------------------------------
+      // 🆕 Create "Mark as Received" delivery update
+      // -------------------------------------------------------------
+      try {
+        debugPrint(
+          '📝 Creating "Mark as Received" delivery update for: $actualDeliveryDataId',
+        );
+
+        final now = DateTime.now().toUtc().toIso8601String();
+
+        // Create the delivery update record in PocketBase
+        final deliveryUpdateRecord = await _pocketBaseClient
+            .collection('deliveryUpdate')
+            .create(
+              body: {
+                'deliveryData': actualDeliveryDataId,
+                'title': 'Mark as Received',
+                'subtitle': 'Received Delivery',
+                'time': now,
+                'created': now,
+                'isAssigned': true,
+              },
+            );
+
+        debugPrint('✅ Delivery update created → ${deliveryUpdateRecord.id}');
+
+        // Link the delivery update to the deliveryData collection
+        await _pocketBaseClient
+            .collection('deliveryData')
+            .update(
+              actualDeliveryDataId,
+              body: {
+                'deliveryUpdates+': [deliveryUpdateRecord.id],
+              },
+            );
+
+        debugPrint(
+          '✅ Delivery update linked to deliveryData: $actualDeliveryDataId',
+        );
+      } catch (e) {
+        debugPrint(
+          '⚠️ Failed to create "Mark as Received" delivery update (non-blocking): $e',
+        );
+        // Non-blocking: receipt was still created successfully
+      }
+
+      // -------------------------------------------------------------
+      // 🆕 Create Delivery Collection in PocketBase
+      // -------------------------------------------------------------
+      try {
+        debugPrint(
+          '📦 Creating delivery collection for: $actualDeliveryDataId',
+        );
+
+        // Resolve customer and invoice IDs from delivery data
+        String? customerId;
+        List<String> invoiceIds = [];
+
+        try {
+          // Expand both 'invoice' (single) and 'invoices' (multi) relations
+          final deliveryDataRecord = await _pocketBaseClient
+              .collection('deliveryData')
+              .getOne(actualDeliveryDataId, expand: 'customer,invoices');
+
+          // Resolve customer ID
+          customerId = deliveryDataRecord.data['customer']?.toString();
+          debugPrint('👤 Customer ID resolved: $customerId');
+
+          // Debug: log raw data for invoices
+          debugPrint(
+            '🧾 Raw invoices data type: ${deliveryDataRecord.data['invoices']?.runtimeType}',
+          );
+          debugPrint(
+            '🧾 Raw invoices value: ${deliveryDataRecord.data['invoices']}',
+          );
+
+          // Resolve invoices from 'invoices' (multi-relation) field
+          // Note: PocketBase stores multi-relation fields as comma-separated strings
+          final invoicesData = deliveryDataRecord.data['invoices'];
+          if (invoicesData != null) {
+            if (invoicesData is List) {
+              invoiceIds = invoicesData.map((item) => item.toString()).toList();
+              debugPrint(
+                '🧾 Resolved ${invoiceIds.length} invoices from "invoices" field (List)',
+              );
+            } else if (invoicesData is String) {
+              // PocketBase multi-relation fields are comma-separated ID strings
+              invoiceIds =
+                  invoicesData
+                      .split(',')
+                      .map((s) => s.trim())
+                      .where((s) => s.isNotEmpty)
+                      .toList();
+              debugPrint(
+                '🧾 Resolved ${invoiceIds.length} invoices from "invoices" field (comma-separated String)',
+              );
+            }
+          }
+
+          // Also check expanded invoices for RecordModel list
+          if (invoiceIds.isEmpty) {
+            final dynamic expandedInvoices =
+                deliveryDataRecord.expand['invoices'];
+            if (expandedInvoices != null) {
+              if (expandedInvoices is List) {
+                invoiceIds =
+                    expandedInvoices.map((e) {
+                      if (e is RecordModel) return e.id;
+                      return e.toString();
+                    }).toList();
+                debugPrint(
+                  '🧾 Resolved ${invoiceIds.length} invoices from expanded "invoices"',
+                );
+              } else if (expandedInvoices is RecordModel) {
+                invoiceIds = [(expandedInvoices).id];
+                debugPrint(
+                  '🧾 Resolved 1 invoice from expanded "invoices" (single RecordModel)',
+                );
+              }
+            }
+          }
+
+          debugPrint('🧾 Final invoice IDs for collection: $invoiceIds');
+        } catch (e) {
+          debugPrint(
+            '⚠️ Failed to resolve customer/invoice from deliveryData (non-blocking): $e',
+          );
+        }
+
+        // Build collection body
+        final collectionBody = <String, dynamic>{
+          'deliveryData': actualDeliveryDataId,
+          'deliveryReceipt': record.id,
+          'invoiceStatus': 'completed',
+          'completedAt': DateTime.now().toUtc().toIso8601String(),
+          'status': 'completed',
+          'totalAmount': (amount ?? 0.0).toString(),
+          'mop': mop,
+        };
+
+        // Add trip if available
+        if (tripId != null) {
+          collectionBody['trip'] = tripId;
+        }
+
+        // Add optional fields only if they have values
+        if (customerId != null && customerId.isNotEmpty) {
+          collectionBody['customer'] = customerId;
+        }
+        if (invoiceIds.isNotEmpty) {
+          collectionBody['invoices'] = invoiceIds;
+        }
+
+        final deliveryCollectionRecord = await _pocketBaseClient
+            .collection('deliveryCollection')
+            .create(body: collectionBody);
+
+        debugPrint(
+          '✅ Delivery collection created → ${deliveryCollectionRecord.id}',
+        );
+
+        // Link the collection to the trip ticket
+        if (tripId != null) {
+          try {
+            await _pocketBaseClient
+                .collection('tripticket')
+                .update(
+                  tripId,
+                  body: {
+                    'deliveryCollection+': [deliveryCollectionRecord.id],
+                    'updated': DateTime.now().toUtc().toIso8601String(),
+                  },
+                );
+            debugPrint('✅ Collection linked to trip ticket: $tripId');
+          } catch (e) {
+            debugPrint(
+              '⚠️ Failed to link collection to trip ticket (non-blocking): $e',
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint(
+          '⚠️ Failed to create delivery collection (non-blocking): $e',
+        );
+        // Non-blocking: receipt was still created successfully
+      }
+
+      return createdReceipt;
     } catch (e) {
       debugPrint('❌ Error creating delivery receipt: $e');
       throw ServerException(
@@ -541,7 +729,6 @@ class DeliveryReceiptRemoteDatasourceImpl
       rethrow;
     }
   }
-
 
   @override
   Future<bool> deleteDeliveryReceipt(String id) async {

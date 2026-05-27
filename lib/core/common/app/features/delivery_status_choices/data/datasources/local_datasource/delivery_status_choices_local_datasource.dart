@@ -8,7 +8,6 @@ import '../../../../../../../errors/exceptions.dart';
 import '../../../../../../../services/objectbox.dart';
 import '../../../../delivery_data/delivery_update/data/models/delivery_update_model.dart';
 import '../../../../delivery_team/delivery_team/data/models/delivery_team_model.dart';
-import '../../../../trip_ticket/delivery_collection/data/model/collection_model.dart';
 import '../../../../trip_ticket/delivery_data/data/model/delivery_data_model.dart';
 import '../../../../trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import '../../../../trip_ticket/trip/data/models/trip_models.dart';
@@ -91,8 +90,10 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       }
 
       // ---------------------------------------------------
-      // 🆕 0️⃣-A DEDUPLICATION: Check for existing pending/syncing updates
+      // 🆕 0️⃣-A DEDUPLICATION: Block if ANY update with this status exists
       // ---------------------------------------------------
+      // Prevents duplicate "unloading", "arrived", etc. regardless of sync state.
+      // Only allows a new update if the status title is DIFFERENT from all existing ones.
       try {
         final duplicateQuery =
             deliveryUpdateBox
@@ -105,23 +106,18 @@ class DeliveryStatusChoicesLocalDatasourceImpl
         final existingUpdates = duplicateQuery.find();
         duplicateQuery.close();
 
-        // Check if an update with the SAME status is already pending or syncing
+        // Block if ANY update with the SAME statusChoicePbId already exists
         for (final existing in existingUpdates) {
-          if (existing.statusChoicePbId == statusChoice.id &&
-              (existing.syncStatus == SyncStatus.pending.name ||
-                  existing.syncStatus == SyncStatus.syncing.name)) {
+          if (existing.statusChoicePbId == statusChoice.id) {
             debugPrint(
-              '⚠️ DUPLICATE DETECTED: Status "${statusChoice.title}" is already pending/syncing for delivery $deliveryDataPbId',
+              '🚫 DEDUP: Status "${statusChoice.title}" already exists for delivery $deliveryDataPbId (sync=${existing.syncStatus})',
             );
-            debugPrint('   📋 Existing update OBX ID: ${existing.objectBoxId}');
-            debugPrint('   🔄 Sync status: ${existing.syncStatus}');
-            debugPrint(
-              '   ✅ Skipping duplicate update request to prevent duplicate uploads',
-            );
-            return; // ✅ Exit early - prevent duplicate
+            debugPrint('   📋 Existing OBX ID: ${existing.objectBoxId}');
+            debugPrint('   ✅ Skipping to prevent duplicate in PocketBase');
+            return; // ✅ Exit early - prevent ANY duplicate
           }
         }
-        debugPrint('✅ No duplicate pending updates found - proceeding');
+        debugPrint('✅ No duplicate found — proceeding with status update');
       } catch (e) {
         debugPrint('⚠️ Duplicate check failed (non-blocking): $e');
         // Continue anyway if check fails
@@ -146,6 +142,8 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       // ---------------------------------------------------
       // 2️⃣ CREATE NEW DeliveryUpdate (COPY DATA)
       // ---------------------------------------------------
+      final now = DateTime.now();
+      final adjustedTime = now.add(const Duration(seconds: 30));
       final newUpdate = DeliveryStatusChoicesModel(
         id: statusChoice.id,
         title: statusChoice.title,
@@ -153,7 +151,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
         deliveryDataId: deliveryDataPbId, // ✅ IMPORTANT: set deliveryDataId
         syncStatus: SyncStatus.pending.name, // mark pending for sync
         retryCount: 0,
-        lastLocalUpdatedAt: DateTime.now(),
+        lastLocalUpdatedAt: adjustedTime,
       );
 
       // ---------------------------------------------------
@@ -162,7 +160,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       final deliveryUpdate = DeliveryUpdateModel(
         title: newUpdate.title,
         subtitle: newUpdate.subtitle,
-        time: DateTime.now(),
+        time: adjustedTime,
         isAssigned: true,
         id: '', // ⏳ will be set after remote sync
       );
@@ -175,7 +173,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       deliveryUpdate.retryCount = 0;
       deliveryUpdate.customer = deliveryData.pocketbaseId;
       // Mark local last-updated timestamp so UI can prefer this update
-      deliveryUpdate.lastLocalUpdatedAt = DateTime.now();
+      deliveryUpdate.lastLocalUpdatedAt = adjustedTime;
 
       // Add to the parent relation and persist
       deliveryData.deliveryUpdates.add(deliveryUpdate);
@@ -397,7 +395,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
           allowedTitles.addAll(['mark as received']);
           break;
         case 'mark as received':
-          allowedTitles.addAll(['']);
+          allowedTitles.addAll(['end delivery']);
           break;
         case 'mark as undelivered':
         case 'end delivery':
@@ -693,41 +691,26 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       }
 
       // ---------------------------------------------------
-      // 🆕 DEDUPLICATION: Filter out customers with existing status (any state)
-      // Also prevents duplicates in PocketBase
+      // 🆕 DEDUPLICATION: Block if ANY update with this status exists
+      // Prevents duplicate "unloading", "arrived", etc. regardless of sync state.
       // ---------------------------------------------------
       final customersToUpdate = <String>[];
       final skippedCustomers = <String>[];
-      int skippedByStatus = 0;
-      int skippedByPending = 0;
+      int skippedByDuplicate = 0;
 
       for (final customerId in customerIds) {
         final existingUpdates = updatesByDelivery[customerId] ?? [];
 
-        // ✅ Block if any record exists with this status (prevents PB duplicates)
+        // ✅ Block if ANY record exists with this status (prevents PB duplicates)
         final hasDuplicate = existingUpdates.any(
           (u) => u.statusChoicePbId == statusChoice.id,
         );
 
         if (hasDuplicate) {
-          // ⚡ Check if it's already synced (vs just pending/syncing)
-          final isSynced = existingUpdates.any(
-            (u) =>
-                u.statusChoicePbId == statusChoice.id &&
-                u.syncStatus == SyncStatus.synced.name,
+          skippedByDuplicate++;
+          debugPrint(
+            '🚫 [DEDUP] Blocking $customerId — Status "${statusChoice.title}" already exists (any sync state)',
           );
-
-          if (isSynced) {
-            skippedByStatus++;
-            debugPrint(
-              '❌ [DEDUP] Blocking $customerId - Status "${statusChoice.title}" already synced to PocketBase',
-            );
-          } else {
-            skippedByPending++;
-            debugPrint(
-              '⚠️ [DEDUP] Skipping $customerId - Status "${statusChoice.title}" already pending/syncing',
-            );
-          }
           skippedCustomers.add(customerId);
         } else {
           customersToUpdate.add(customerId);
@@ -735,7 +718,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       }
 
       debugPrint(
-        'LOCAL 📊 Batch summary: ${customersToUpdate.length} to process | $skippedByStatus already synced | $skippedByPending pending/syncing',
+        'LOCAL 📊 Batch summary: ${customersToUpdate.length} to process | $skippedByDuplicate duplicates blocked',
       );
 
       // ✨ BATCH PROCESS: Update only new customers
@@ -758,7 +741,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       stopwatch.stop();
 
       debugPrint(
-        '✅ Bulk completed in ${stopwatch.elapsedMilliseconds}ms: $processedCount queued, $failedCount failed, ${skippedCustomers.length} skipped (prevented $skippedByStatus PB duplicates)',
+        '✅ Bulk completed in ${stopwatch.elapsedMilliseconds}ms: $processedCount queued, $failedCount failed, ${skippedCustomers.length} duplicates blocked',
       );
     } catch (e, st) {
       debugPrint('LOCAL ❌ Bulk enqueue failed: $e\n$st');
@@ -1031,11 +1014,16 @@ class DeliveryStatusChoicesLocalDatasourceImpl
           );
 
       // 4️⃣ Create DeliveryUpdate (End Delivery)
+      // NOTE: Collection creation has been moved to createDeliveryReceipt
+      // in the delivery receipt datasources. It is no longer created here.
       final now = DateTime.now();
+
+      // 5️⃣ Create DeliveryUpdate (End Delivery)
+      final adjustedTime = now.add(const Duration(minutes: 1));
       final deliveryUpdate = DeliveryUpdateModel(
         title: endStatusResolved.title ?? 'End Delivery',
         subtitle: endStatusResolved.subtitle ?? 'Delivery Completed',
-        time: now,
+        time: adjustedTime,
         created: now,
         updated: now,
         isAssigned: true,
@@ -1054,67 +1042,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       debugPrint('✅ LOCAL: DeliveryUpdate created → ${deliveryUpdate.title}');
 
       // ---------------------------------------------------
-      // 5️⃣ Receipt lookup (OPTIONAL — MUST NOT BLOCK FLOW)
-      // ---------------------------------------------------
-      double? receiptTotalAmount;
-      try {
-        final receiptQuery =
-            objectBoxStore.deliveryReceiptBox
-                .query(
-                  DeliveryReceiptModel_.deliveryData.equals(
-                    localDeliveryData.objectBoxId, // ✅ OBX ID only
-                  ),
-                )
-                .build();
-
-        final receipt = receiptQuery.findFirst();
-        receiptQuery.close();
-
-        if (receipt != null) {
-          receiptTotalAmount = receipt.totalAmount;
-          debugPrint(
-            '🧾 Receipt found → ${receipt.pocketbaseId}, totalAmount: $receiptTotalAmount',
-          );
-        } else {
-          debugPrint('⚠️ No receipt found (continuing process)');
-        }
-      } catch (e, st) {
-        // ❗ NEVER BLOCK DELIVERY COMPLETION
-        debugPrint('⚠️ Receipt lookup failed, ignored → $e\n$st');
-      }
-
-      // 6️⃣ Resolve customer + invoices (optional)
-      final customerModel = localDeliveryData.customer.target;
-      final invoiceList = localDeliveryData.invoices.toList();
-
-      if (customerModel == null)
-        debugPrint(
-          '⚠️ LOCAL: Customer missing for deliveryData: $deliveryDataId',
-        );
-      if (invoiceList.isEmpty)
-        debugPrint(
-          '⚠️ LOCAL: No invoices linked to deliveryData: $deliveryDataId',
-        );
-
-      // 7️⃣ Create CollectionModel
-      final collection = CollectionModel(
-        id: '${deliveryDataId}_collection_${now.millisecondsSinceEpoch}',
-        collectionName: 'deliveryCollection',
-        deliveryDataModel: localDeliveryData,
-        tripData: tripModel,
-        customerData: customerModel,
-        invoiceData: invoiceList.isNotEmpty ? invoiceList.first : null,
-        invoicesList: invoiceList,
-        totalAmount: receiptTotalAmount,
-        created: now,
-        updated: now,
-      );
-
-      objectBoxStore.deliveryCollectonBox.put(collection);
-      debugPrint('✅ LOCAL: Collection created → ${collection.id}');
-
-      // ---------------------------------------------------
-      // 8️⃣ Update User Performance (BEST-EFFORT / NON-BLOCKING)
+      // 6️⃣ Update User Performance (BEST-EFFORT / NON-BLOCKING)
       // ---------------------------------------------------
       try {
         final user = tripModel?.user.target;
@@ -1173,7 +1101,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
       }
 
       // ---------------------------------------------------
-      // 9️⃣ Update Delivery Team stats (USING TRIP-FIRST LOGIC)
+      // 7️⃣ Update Delivery Team stats (USING TRIP-FIRST LOGIC)
       // ---------------------------------------------------
       try {
         if (tripId == null || tripId.isEmpty) {
@@ -1232,7 +1160,7 @@ class DeliveryStatusChoicesLocalDatasourceImpl
         debugPrint('⚠️ LOCAL: DeliveryTeam update failed (ignored) → $e\n$st');
       }
 
-      // 🔟 Update DeliveryData invoice status
+      // 8️⃣ Update DeliveryData invoice status
       localDeliveryData
         ..invoiceStatus = InvoiceStatus.delivered
         ..updated = now;

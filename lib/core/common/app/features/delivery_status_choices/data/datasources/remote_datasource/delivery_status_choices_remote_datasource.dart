@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_status_choices/data/model/delivery_status_choices_model.dart';
-import 'package:x_pro_delivery_app/core/enums/sync_status_enums.dart';
 
 import '../../../../../../../errors/exceptions.dart';
 import '../../../../trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
@@ -159,7 +158,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
 
           break;
         case 'mark as received':
-          allowedTitles.addAll(['']);
+          allowedTitles.addAll(['end delivery']);
 
           break;
         case 'mark as undelivered':
@@ -238,8 +237,10 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       }
 
       // ---------------------------------------------------
-      // 🆕 0️⃣-A IDEMPOTENCY CHECK: Prevent duplicate remote creation
+      // 🆕 0️⃣-A IDEMPOTENCY CHECK: Prevent ANY duplicate remote creation
       // ---------------------------------------------------
+      // Block if this exact status already exists in PocketBase, regardless of sync state.
+      // This prevents multiple "unloading" updates for the same delivery data.
       try {
         final deliveryRecord = await _pocketBaseClient
             .collection('deliveryData')
@@ -248,20 +249,17 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
         final existingUpdates =
             deliveryRecord.expand['deliveryUpdates'] as List? ?? [];
 
-        // Check if this exact status already exists and is not failed
+        // Check if this exact status already exists (ANY state: pending, syncing, or synced)
         for (final update in existingUpdates) {
           final updateStatusId = update.data?['statusChoicePbId']?.toString();
-          final updateSyncStatus = update.data?['syncStatus']?.toString() ?? '';
-          // final updateTitle = update.data?['title']?.toString() ?? '';
+          final updateTitle = update.data?['title']?.toString() ?? '';
 
-          if (updateStatusId == status.id &&
-              (updateSyncStatus == SyncStatus.pending.name ||
-                  updateSyncStatus == SyncStatus.syncing.name)) {
+          if (updateStatusId == status.id) {
             debugPrint(
-              '⚠️ IDEMPOTENCY: Status "${status.title}" already exists in remote (not failed)',
+              '🚫 IDEMPOTENCY: Status "${status.title}" already exists in remote for delivery $deliveryDataId',
             );
             debugPrint('   📋 Existing update ID: ${update.id}');
-            debugPrint('   🔄 Sync status: $updateSyncStatus');
+            debugPrint('   📋 Existing title: $updateTitle');
             debugPrint(
               '   ✅ Returning existing ID instead of creating duplicate',
             );
@@ -269,9 +267,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
           }
         }
 
-        debugPrint(
-          '✅ Idempotency check passed - no pending/syncing duplicate found',
-        );
+        debugPrint('✅ Idempotency check passed - no duplicate status found');
       } catch (e) {
         debugPrint('⚠️ Idempotency check failed (will attempt creation): $e');
         // Continue with creation if idempotency check fails
@@ -410,10 +406,10 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
             case 'invoices in queue':
               allowedTitles.addAll(['unloading']);
               break;
-             case 'unloading':
-          allowedTitles.addAll(['']);
+            case 'unloading':
+              allowedTitles.addAll(['']);
 
-          break;
+              break;
 
             case 'arrived':
               allowedTitles.addAll([
@@ -505,7 +501,8 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       }
 
       // ---------------------------------------------------
-      // 🆕 BULK DEDUPLICATION: Filter out customers with existing pending status
+      // 🆕 BULK DEDUPLICATION: Block if ANY update with this status exists
+      // Prevents duplicate "unloading" etc. regardless of sync state
       // ---------------------------------------------------
       final customersToUpdate = <String>[];
       final skippedCustomers = <String>[];
@@ -519,14 +516,10 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
           final existingUpdates =
               deliveryRecord.expand['deliveryUpdates'] as List? ?? [];
 
-          // Check if this status is already pending/syncing
+          // Block if this status already exists (ANY state: pending, syncing, or synced)
           final hasDuplicate = existingUpdates.any((update) {
             final updateStatusId = update.data?['statusChoicePbId']?.toString();
-            final updateSyncStatus =
-                update.data?['syncStatus']?.toString() ?? '';
-            return updateStatusId == status.id &&
-                (updateSyncStatus == SyncStatus.pending.name ||
-                    updateSyncStatus == SyncStatus.syncing.name);
+            return updateStatusId == status.id;
           });
 
           if (hasDuplicate) {
@@ -548,7 +541,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       );
 
       if (customersToUpdate.isEmpty) {
-        debugPrint('✅ All customers have duplicate pending updates - skipping');
+        debugPrint('✅ All customers already have this status - skipping');
         return;
       }
 
@@ -667,8 +660,10 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
           .collection('deliveryStatusChoices')
           .getFirstListItem('title = "End Delivery"');
 
-      final now = DateTime.now().toUtc().toIso8601String();
 
+
+      final now = DateTime.now().add(const Duration(minutes: 1))..toUtc().toIso8601String();
+      
       final deliveryUpdateRecord = await _pocketBaseClient
           .collection('deliveryUpdate')
           .create(
@@ -695,82 +690,11 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
             },
           );
 
-      // ---------------------------------------------------
-      // 3️⃣ Delivery Receipt (OPTIONAL — NON-BLOCKING)
-      // ---------------------------------------------------
-      String? deliveryReceiptId;
-      double? receiptTotalAmount;
-
-      try {
-        debugPrint('🔍 Looking for delivery receipt');
-
-        final receiptRecords = await _pocketBaseClient
-            .collection('deliveryReceipt')
-            .getList(filter: 'deliveryData = "$deliveryDataId"');
-
-        if (receiptRecords.items.isNotEmpty) {
-          deliveryReceiptId = receiptRecords.items.first.id;
-          final receiptData = receiptRecords.items.first.data;
-          receiptTotalAmount = double.tryParse(
-            receiptData['totalAmount']?.toString() ?? '',
-          );
-          debugPrint(
-            '🧾 Delivery receipt found → $deliveryReceiptId, totalAmount: $receiptTotalAmount',
-          );
-        } else {
-          debugPrint('⚠️ No delivery receipt found (continuing)');
-        }
-      } catch (e) {
-        debugPrint('⚠️ Delivery receipt lookup failed (ignored): $e');
-      }
+      // NOTE: Collection creation has been moved to createDeliveryReceipt
+      // in the delivery receipt datasources. It is no longer created here.
 
       // ---------------------------------------------------
-      // 4️⃣ Resolve Customer & Invoices (REQUIRED)
-      // ---------------------------------------------------
-      final customerId = deliveryData.customer.target?.id;
-      final invoiceIds =
-          deliveryData.invoices.map((invoice) => invoice.id).toList();
-
-      if (customerId == null || customerId.isEmpty) {
-        throw const ServerException(
-          message: 'Customer ID not found in delivery data',
-          statusCode: '404',
-        );
-      }
-
-      if (invoiceIds.isEmpty) {
-        throw const ServerException(
-          message: 'No invoices found in delivery data',
-          statusCode: '404',
-        );
-      }
-
-      // ---------------------------------------------------
-      // 5️⃣ Create Delivery Collection (REQUIRED)
-      // ---------------------------------------------------
-      final deliveryCollectionRecord = await _pocketBaseClient
-          .collection('deliveryCollection')
-          .create(
-            body: {
-              'deliveryData': deliveryDataId,
-              'trip': tripId,
-              'deliveryReceipt': deliveryReceiptId, // ✅ can be null
-              'customer': customerId,
-              'invoice': invoiceIds.first,
-              'invoices': invoiceIds,
-              'invoiceStatus': 'completed',
-              'completedAt': DateTime.now().toUtc().toIso8601String(),
-              'status': 'completed',
-              'totalAmount': receiptTotalAmount?.toString() ?? '0',
-            },
-          );
-
-      debugPrint(
-        '✅ Delivery collection created → ${deliveryCollectionRecord.id}',
-      );
-
-      // ---------------------------------------------------
-      // 6️⃣ Update User Performance (OPTIONAL — NON-BLOCKING)
+      // 3️⃣ Update User Performance (OPTIONAL — NON-BLOCKING)
       // ---------------------------------------------------
       try {
         debugPrint('📊 Updating user performance');
@@ -822,7 +746,7 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
       }
 
       // ---------------------------------------------------
-      // 7️⃣ Update Delivery Team (REQUIRED)
+      // 4️⃣ Update Delivery Team (REQUIRED)
       // ---------------------------------------------------
       final teamRecords = await _pocketBaseClient
           .collection('deliveryTeam')
@@ -854,16 +778,13 @@ class DeliveryStatusChoicesRemoteDataSourceImpl
           );
 
       // ---------------------------------------------------
-      // 8️⃣ Update Trip Ticket (REQUIRED)
+      // 5️⃣ Update Trip Ticket (REQUIRED)
       // ---------------------------------------------------
       await _pocketBaseClient
           .collection('tripticket')
           .update(
             tripId,
-            body: {
-              'deliveryCollection+': [deliveryCollectionRecord.id],
-              'updated': DateTime.now().toUtc().toIso8601String(),
-            },
+            body: {'updated': DateTime.now().toUtc().toIso8601String()},
           );
 
       debugPrint('🎉 DELIVERY COMPLETED SUCCESSFULLY');

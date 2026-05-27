@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/domain/entity/delivery_data_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_receipt/data/model/delivery_receipt_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/data/model/collection_model.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/data/models/trip_models.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 import 'package:x_pro_delivery_app/objectbox.g.dart';
 import 'package:pdf/pdf.dart';
@@ -350,7 +352,152 @@ class DeliveryReceiptLocalDatasourceImpl
       );
       debugPrint('   💳 mop=${deliveryReceipt.mop}');
 
-      return deliveryReceiptBox.get(savedObxId)!;
+      final savedReceipt = deliveryReceiptBox.get(savedObxId)!;
+
+      // -------------------------------------------------------------
+      // 🆕 Create "Mark as Received" delivery update locally
+      // -------------------------------------------------------------
+      try {
+        debugPrint(
+          '📝 LOCAL: Creating "Mark as Received" delivery update for: $actualDeliveryDataId',
+        );
+
+        final now = DateTime.now().add(
+          const Duration(seconds: 45),
+        ); // Add delay to ensure it appears after the receipt in UI
+
+        // Create a DeliveryUpdateModel for "Mark as Received"
+        final deliveryUpdate = DeliveryUpdateModel(
+          id: 'local_update_${DateTime.now().millisecondsSinceEpoch}',
+          collectionId: 'local',
+          collectionName: 'deliveryUpdate',
+          title: 'Mark as Received',
+          subtitle: 'Received Delivery',
+          time: now,
+          created: now,
+          updated: now,
+          lastLocalUpdatedAt: now,
+          isAssigned: true,
+          deliveryDataPbId: deliveryPbId,
+          syncStatus: 'pending',
+          retryCount: 0,
+          customer: delivery.customer.target?.id,
+        );
+
+        // Link the delivery update to the delivery data
+        deliveryUpdate.deliveryData.target = delivery;
+
+        // Save the delivery update to ObjectBox
+        final updateObxId = deliveryUpdateBox.put(deliveryUpdate);
+        debugPrint(
+          '✅ LOCAL: Delivery update saved → obx=$updateObxId, title="${deliveryUpdate.title}"',
+        );
+
+        // Add the update to the delivery data's deliveryUpdates relation
+        delivery.deliveryUpdates.add(deliveryUpdate);
+        deliveryDataBox.put(delivery);
+
+        debugPrint(
+          '✅ LOCAL: Delivery update linked to DeliveryData → ${delivery.id}',
+        );
+      } catch (e, st) {
+        debugPrint(
+          '⚠️ LOCAL: Failed to create "Mark as Received" delivery update (non-blocking): $e',
+        );
+        debugPrint('STACK TRACE: $st');
+        // Non-blocking: receipt was still created successfully
+      }
+
+      // -------------------------------------------------------------
+      // 🆕 Create Delivery Collection locally
+      // -------------------------------------------------------------
+      try {
+        debugPrint(
+          '📦 LOCAL: Creating delivery collection for: $actualDeliveryDataId',
+        );
+
+        // Resolve Trip (optional)
+        TripModel? tripModel;
+        try {
+          final tripTarget = delivery.trip.target;
+          if (tripTarget != null) {
+            final tripQuery =
+                objectBoxStore.tripBox
+                    .query(TripModel_.id.equals(tripTarget.id!))
+                    .build();
+            tripModel = tripQuery.findFirst();
+            tripQuery.close();
+            debugPrint(
+              tripModel != null
+                  ? '🚛 LOCAL: Trip resolved → OBX ID: ${tripModel.objectBoxId}'
+                  : '⚠️ LOCAL: Trip not found locally for ID: ${tripTarget.id}',
+            );
+          }
+        } catch (e) {
+          debugPrint('⚠️ LOCAL: Trip resolution failed (non-blocking): $e');
+        }
+
+        // Resolve customer and invoices (optional)
+        final customerModel = delivery.customer.target;
+        final invoiceList = delivery.invoices.toList();
+
+        // Resolve totalAmount and mop from receipt or deliveryData
+        double? collectionTotalAmount = amount;
+        String? collectionMop = mop;
+
+        if (collectionTotalAmount == null || collectionTotalAmount == 0) {
+          final deliveryDataTotal = delivery.totalAmount;
+          if (deliveryDataTotal != null && deliveryDataTotal > 0) {
+            collectionTotalAmount = deliveryDataTotal;
+            debugPrint(
+              '🧾 LOCAL: Using deliveryData.totalAmount as fallback: $collectionTotalAmount',
+            );
+          }
+        }
+        if (collectionMop == null || collectionMop.isEmpty) {
+          final deliveryDataPaymentMode = delivery.paymentMode;
+          if (deliveryDataPaymentMode != null &&
+              deliveryDataPaymentMode.isNotEmpty) {
+            collectionMop = deliveryDataPaymentMode;
+            debugPrint(
+              '💳 LOCAL: Using deliveryData.paymentMode as fallback: $collectionMop',
+            );
+          }
+        }
+
+        final now = DateTime.now();
+        final collection = CollectionModel(
+          id: '${actualDeliveryDataId}_collection_${now.millisecondsSinceEpoch}',
+          collectionName: 'deliveryCollection',
+          deliveryDataModel: delivery,
+          tripData: tripModel,
+          customerData: customerModel,
+          invoiceData: invoiceList.isNotEmpty ? invoiceList.first : null,
+          invoicesList: invoiceList,
+          totalAmount: collectionTotalAmount,
+          mop: collectionMop,
+          created: now,
+          updated: now,
+        );
+
+        // Link the delivery receipt to the collection
+        collection.deliveryReceipt.target = savedReceipt;
+
+        objectBoxStore.deliveryCollectonBox.put(collection);
+        debugPrint('✅ LOCAL: Delivery collection created → ${collection.id}');
+        debugPrint(
+          '   📦 Collection: totalAmount=$collectionTotalAmount, mop=$collectionMop',
+        );
+        debugPrint('   🧾 Receipt linked: ${savedReceipt.pocketbaseId}');
+      } catch (e, st) {
+        debugPrint(
+          '⚠️ LOCAL: Failed to create delivery collection (non-blocking): $e',
+        );
+        debugPrint('STACK TRACE: $st');
+        // Non-blocking: receipt was still created successfully
+      }
+
+      return savedReceipt;
     } catch (e, st) {
       debugPrint('❌ LOCAL: createDeliveryReceiptByDeliveryDataId ERROR: $e');
       debugPrint('STACK TRACE: $st');
