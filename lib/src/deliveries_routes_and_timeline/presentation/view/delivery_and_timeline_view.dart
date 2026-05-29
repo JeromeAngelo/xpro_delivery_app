@@ -8,13 +8,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/presentation/bloc/trip_updates_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/screens/delivery_list_screen.dart';
 import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/screens/route_view_screen.dart';
 import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/screens/update_timeline_view.dart';
 
 import '../../../../core/common/app/features/trip_ticket/trip_updates/presentation/bloc/trip_updates_event.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 
 class DeliveryAndTimeline extends StatefulWidget {
   const DeliveryAndTimeline({super.key});

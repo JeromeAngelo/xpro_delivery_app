@@ -32,13 +32,13 @@ import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
 import 'package:x_pro_delivery_app/core/services/objectbox.dart';
 import 'package:x_pro_delivery_app/core/services/router.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
 import 'package:x_pro_delivery_app/src/on_boarding/presentation/bloc/onboarding_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/network_status_indicator.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/sync_status_indicator.dart';
 import 'core/common/app/features/delivery_status_choices/presentation/bloc/delivery_status_choices_bloc.dart';
 import 'core/common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
 import 'core/common/app/features/sync_data/cubit/sync_cubit.dart';
+import 'core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
 import 'core/services/foreground_location_service.dart';
 import 'core/services/offline_sync_service.dart';
 

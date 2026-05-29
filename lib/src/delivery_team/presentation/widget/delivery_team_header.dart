@@ -7,9 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/check_connectivity_provider.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_team/delivery_team/presentation/bloc/delivery_team_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
+
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 class DeliveryTeamProfileHeader extends StatefulWidget {
   const DeliveryTeamProfileHeader({super.key});
 

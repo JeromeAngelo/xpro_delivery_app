@@ -5,10 +5,11 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_collection/presentation/bloc/collections_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
+
 import 'package:x_pro_delivery_app/src/finalize_delivery_screen/presentation/screens/collection_screen/widgets/collection_dashboard_screen.dart';
 
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 import '../widget/summary_completed_customer_list.dart';
 class SummaryCollectionScreen extends StatefulWidget {
   const SummaryCollectionScreen({super.key});

@@ -12,8 +12,9 @@ import 'package:x_pro_delivery_app/src/delivery_and_invoice/presentation/screens
 import '../../../../../../core/common/app/features/delivery_data/invoice_items/domain/entity/invoice_items_entity.dart';
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
-import '../../../../../../core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import '../../../../../../core/common/app/features/users/auth/bloc/auth_state.dart';
+import '../../../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
+
 
 
 class ProductListScreen extends StatefulWidget {

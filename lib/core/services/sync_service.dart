@@ -19,9 +19,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 
 import 'package:x_pro_delivery_app/core/services/injection_container.dart';
 import 'package:x_pro_delivery_app/core/services/objectbox.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 
 import '../common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_bloc.dart';
 import '../common/app/features/trip_ticket/cancelled_invoices/presentation/bloc/cancelled_invoice_event.dart';

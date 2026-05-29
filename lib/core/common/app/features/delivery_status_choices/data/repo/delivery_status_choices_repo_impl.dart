@@ -9,8 +9,8 @@ import 'package:x_pro_delivery_app/core/utils/typedefs.dart';
 import '../../../../../../errors/exceptions.dart';
 import '../../../../../../errors/failures.dart';
 import '../../domain/repo/delivery_status_choices_repo.dart';
-import '../datasources/local_datasource/delivery_status_choices_local_datasource.dart';
-import '../datasources/remote_datasource/delivery_status_choices_remote_datasource.dart';
+import '../datasources/local_datasource/delivery_status_choices_local_datasource/delivery_status_choices_local_datasource.dart';
+import '../datasources/remote_datasource/delivery_status_choices_remote_datasource/delivery_status_choices_remote_datasource.dart';
 import '../datasources/sync/sync_delivery_status_choices_worker.dart';
 import '../model/delivery_status_choices_model.dart';
 

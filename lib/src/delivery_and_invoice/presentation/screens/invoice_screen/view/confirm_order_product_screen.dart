@@ -13,8 +13,9 @@ import '../../../../../../core/common/app/features/trip_ticket/delivery_data/dom
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart' show DeliveryDataBloc;
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import '../../../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
-import '../../../../../../core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import '../../../../../../core/common/app/features/users/auth/bloc/auth_state.dart';
+import '../../../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart' show AuthBloc;
+import '../../../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
+
 class ConfirmOrderProductScreen extends StatefulWidget {
   final String invoiceId;
   final String invoiceNumber;

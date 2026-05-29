@@ -13,11 +13,11 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
 
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/delivery_list_widgets/delivery_list_tile.dart';
 import 'package:x_pro_delivery_app/src/deliveries_routes_and_timeline/presentation/widgets/delivery_list_widgets/end_trip_btn.dart';
 
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 import '../widgets/delivery_list_widgets/quick_action_button.dart';
 import '../widgets/delivery_list_widgets/quick_update_dialog.dart';
 import '../widgets/delivery_list_widgets/search_bar_widget.dart';

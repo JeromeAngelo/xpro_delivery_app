@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
 import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
 
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/utils/core_utils.dart';
 class ConfirmationDialog extends StatelessWidget {
   final VoidCallback onConfirm;

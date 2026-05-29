@@ -16,9 +16,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/dat
     as _i3;
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/domain/entity/trip_entity.dart'
     as _i14;
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/local_datasource/auth_local_data_source.dart'
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/local_datasource/auth_local_datasource/auth_local_data_source.dart'
     as _i10;
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/remote_data_source/auth_remote_data_src.dart'
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/remote_data_source/auth_remote_datasource/auth_remote_data_src.dart'
     as _i9;
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart'
     as _i2;

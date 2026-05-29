@@ -1,6 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/local_datasource/auth_local_datasource/auth_local_data_source.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/datasources/remote_data_source/auth_remote_datasource/auth_remote_data_src.dart';
 
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/sign_in.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/get_user_by_id.dart';
@@ -9,10 +11,10 @@ import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/us
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/get_user_trip.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/sync_user_data.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/domain/usecases/sync_trip_data.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/repo/auth_repo_impl.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/core/errors/failures.dart';
 import 'package:x_pro_delivery_app/core/errors/exceptions.dart';
 
@@ -322,8 +324,8 @@ void main() {
 
     setUp(() {
       authRepoImpl = AuthRepoImpl(
-        mockRemoteDataSrc,
-        mockLocalDataSrc,
+        mockRemoteDataSrc as AuthRemoteDataSrc,
+        mockLocalDataSrc as AuthLocalDataSrc,
         mockOfflineSyncService,
       );
     });

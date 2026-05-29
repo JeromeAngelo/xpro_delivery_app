@@ -13,9 +13,7 @@ import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/pre
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_state.dart';
 
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_confirm_button.dart';
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_digital_clock.dart';
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_odo_input.dart';
@@ -23,6 +21,8 @@ import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_tri
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_otp_input.dart';
 import 'package:x_pro_delivery_app/src/end_trip_otp/presentation/widgets/end_trip_otp_instructions.dart';
 
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
 import '../../../start_trip_otp_screen/presentation/widgets/trip_details_dialog.dart';
 
 class EndTripOtpScreen extends StatefulWidget {

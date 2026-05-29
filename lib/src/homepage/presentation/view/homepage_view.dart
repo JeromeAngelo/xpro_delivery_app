@@ -11,10 +11,11 @@ import 'package:x_pro_delivery_app/src/homepage/presentation/refractors/homepage
 import '../../../../core/common/app/features/sync_data/cubit/sync_cubit.dart';
 import '../../../../core/common/app/features/sync_data/cubit/sync_state.dart';
 import '../../../../core/common/app/features/trip_ticket/trip/domain/entity/trip_entity.dart';
-import '../../../../core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import '../../../../core/common/app/features/users/auth/bloc/auth_event.dart';
-import '../../../../core/common/app/features/users/auth/bloc/auth_state.dart';
+
 import '../../../../core/common/app/features/users/auth/domain/entity/users_entity.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 import '../../../../core/common/widgets/default_drawer.dart';
 import '../../../../core/services/injection_container.dart';
 import '../../../../core/services/sync_service.dart';

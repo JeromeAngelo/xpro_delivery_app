@@ -25,7 +25,6 @@ class DeliveryDataModel extends DeliveryDataEntity {
   @Property()
   String? id;
 
-
   @Property()
   String pocketbaseId = '';
 
@@ -40,13 +39,11 @@ class DeliveryDataModel extends DeliveryDataEntity {
   @Property()
   bool? get hasTrip => _hasTrip;
 
-
   set hasTrip(bool? value) {
     _hasTrip = value ?? false;
   }
 
-
- // ---- Boolean fields rewritten TripModel-style ----
+  // ---- Boolean fields rewritten TripModel-style ----
   @Property()
   bool _isUnloaded = false;
 
@@ -54,13 +51,11 @@ class DeliveryDataModel extends DeliveryDataEntity {
   @Property()
   bool? get isUnloaded => _isUnloaded;
 
-
   set isUnloaded(bool? value) {
     _isUnloaded = value ?? false;
   }
 
-
- // ---- Boolean fields rewritten TripModel-style ----
+  // ---- Boolean fields rewritten TripModel-style ----
   @Property()
   bool _isUnloading = false;
 
@@ -68,11 +63,11 @@ class DeliveryDataModel extends DeliveryDataEntity {
   @Property()
   bool? get isUnloading => _isUnloading;
 
-
   set isUnloading(bool? value) {
     _isUnloading = value ?? false;
   }
-   // ---- Boolean fields rewritten TripModel-style ----
+
+  // ---- Boolean fields rewritten TripModel-style ----
   @Property()
   bool _hasPendingSync = false;
 
@@ -83,37 +78,39 @@ class DeliveryDataModel extends DeliveryDataEntity {
   set hasPendingSync(bool? value) {
     _hasPendingSync = value ?? false;
   }
+
   // Sync state
-@Property()
-String syncStatus = SyncStatus.synced.name;
+  @Property()
+  String syncStatus = SyncStatus.synced.name;
 
-// Retry handling
-@Property()
-int retryCount = 0;
+  // Retry handling
+  @Property()
+  int retryCount = 0;
 
-@Property()
-DateTime? lastSyncAttemptAt;
+  @Property()
+  DateTime? lastSyncAttemptAt;
 
-@Property()
-DateTime? nextRetryAt;
+  @Property()
+  DateTime? nextRetryAt;
 
-// Error tracking
-@Property()
-String? lastSyncError;
+  // Error tracking
+  @Property()
+  String? lastSyncError;
 
-// Conflict resolution
-@Property()
-int version = 0;
+  // Conflict resolution
+  @Property()
+  int version = 0;
 
-// Optional audit
-@Property()
-String? updatedBy;
+  // Optional audit
+  @Property()
+  String? updatedBy;
 
-@Property()
-String? deviceId;
+  @Property()
+  String? deviceId;
 
-@Property()
-double? totalAmount;
+  @Property()
+  @override
+  double? totalAmount;
 
   // --------------------------------------------------------------------------
   // BASIC FIELDS
@@ -171,7 +168,6 @@ double? totalAmount;
   @Property()
   DateTime? created;
 
-
   @override
   @Property()
   DateTime? lastLocalUpdatedAt;
@@ -216,7 +212,7 @@ double? totalAmount;
     this.lastLocalUpdatedAt,
     this.created,
     this.updated,
-   String? tripId,
+    String? tripId,
     CustomerDataModel? customerData,
     InvoiceDataModel? invoiceData,
     List<InvoiceDataModel>? invoicesList,
@@ -236,259 +232,282 @@ double? totalAmount;
     if (invoiceData != null) invoice.target = invoiceData;
     if (invoicesList != null) invoices.addAll(invoicesList);
     if (tripData != null) trip.target = tripData;
-    if (deliveryUpdatesList != null) deliveryUpdates.addAll(deliveryUpdatesList);
+    if (deliveryUpdatesList != null)
+      deliveryUpdates.addAll(deliveryUpdatesList);
     if (invoiceItemsList != null) invoiceItems.addAll(invoiceItemsList);
   }
 
-  
-// -----------------------------
+  // -----------------------------
   // JSON parsing helpers
   // -----------------------------
-/// Safely parse any date field into DateTime
-static DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
+  /// Safely parse any date field into DateTime
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
 
-  try {
-    // 1️⃣ If it's already a DateTime, return as is (ensure UTC)
-    if (value is DateTime) {
-      return value.isUtc ? value : value.toUtc();
-    }
-
-    // 2️⃣ If numeric (seconds or milliseconds)
-    if (value is int) return _timestampToDateTime(value);
-
-    // 3️⃣ If string
-    if (value is String && value.isNotEmpty) {
-      // Try ISO8601 first - these are typically UTC if they have 'Z' or offset
-      try {
-        final parsed = DateTime.parse(value);
-        // If it has UTC marker (Z or +offset), it's UTC; otherwise force to UTC
-        final str = value.trim();
-        if (str.endsWith('Z') || str.contains('+') || (str.length > 20 && str.contains('T'))) {
-          return parsed.isUtc ? parsed : parsed.toUtc();
-        }
-        // Non-UTC ISO string - force to UTC
-        return parsed.isUtc ? parsed : parsed.toUtc();
-      } catch (_) {}
-
-      // Try common non-ISO formats - parse and force to UTC
-      final possibleFormats = [
-        'yyyy-MM-dd HH:mm:ss',
-        'yyyy/MM/dd HH:mm:ss',
-        'yyyy-MM-dd',
-        'yyyy/MM/dd',
-        'MM/dd/yyyy',
-        'MM-dd-yyyy',
-        'dd/MM/yyyy',
-        'dd-MM-yyyy',
-        'dd MMM yyyy',
-        'MMM dd, yyyy',
-      ];
-
-      for (final format in possibleFormats) {
-        try {
-          final dt = DateFormat(format).parse(value, true);
-          // Force to UTC since these are typically naive local times from server
-          return dt.toUtc();
-        } catch (_) {}
+    try {
+      // 1️⃣ If it's already a DateTime, return as is (ensure UTC)
+      if (value is DateTime) {
+        return value.isUtc ? value : value.toUtc();
       }
 
-      // Try numeric string as timestamp
-      final numeric = int.tryParse(value);
-      if (numeric != null) return _timestampToDateTime(numeric);
-    }
+      // 2️⃣ If numeric (seconds or milliseconds)
+      if (value is int) return _timestampToDateTime(value);
 
-    // fallback
-    debugPrint('⚠️ [_parseDate] Could not parse date: $value');
-    return null;
-  } catch (e) {
-    debugPrint('⚠️ [_parseDate] Error parsing date: $value → $e');
-    return null;
-  }
-}
+      // 3️⃣ If string
+      if (value is String && value.isNotEmpty) {
+        // Try ISO8601 first - these are typically UTC if they have 'Z' or offset
+        try {
+          final parsed = DateTime.parse(value);
+          // If it has UTC marker (Z or +offset), it's UTC; otherwise force to UTC
+          final str = value.trim();
+          if (str.endsWith('Z') ||
+              str.contains('+') ||
+              (str.length > 20 && str.contains('T'))) {
+            return parsed.isUtc ? parsed : parsed.toUtc();
+          }
+          // Non-UTC ISO string - force to UTC
+          return parsed.isUtc ? parsed : parsed.toUtc();
+        } catch (_) {}
 
-/// Convert numeric timestamp (s or ms) to DateTime
-static DateTime _timestampToDateTime(int ts) {
-  try {
-    // Detect if timestamp is in milliseconds or seconds
-    final isMilliseconds = ts > 1000000000000; // ~2001-09-09
-    return isMilliseconds
-        ? DateTime.fromMillisecondsSinceEpoch(ts, isUtc: true)
-        : DateTime.fromMillisecondsSinceEpoch(ts * 1000, isUtc: true);
-  } catch (e) {
-    debugPrint('⚠️ [_timestampToDateTime] Invalid timestamp: $ts → $e');
-    return DateTime.now().toUtc();
-  }
-}
+        // Try common non-ISO formats - parse and force to UTC
+        final possibleFormats = [
+          'yyyy-MM-dd HH:mm:ss',
+          'yyyy/MM/dd HH:mm:ss',
+          'yyyy-MM-dd',
+          'yyyy/MM/dd',
+          'MM/dd/yyyy',
+          'MM-dd-yyyy',
+          'dd/MM/yyyy',
+          'dd-MM-yyyy',
+          'dd MMM yyyy',
+          'MMM dd, yyyy',
+        ];
 
-/// --- From JSON ---
-factory DeliveryDataModel.fromJson(dynamic json) {
-  debugPrint('🔄 MODEL: Creating DeliveryDataModel from JSON');
+        for (final format in possibleFormats) {
+          try {
+            final dt = DateFormat(format).parse(value, true);
+            // Force to UTC since these are typically naive local times from server
+            return dt.toUtc();
+          } catch (_) {}
+        }
 
-  if (json is String) {
-    debugPrint("🆔 Only ID provided: $json");
-    return DeliveryDataModel(id: json);
-  }
+        // Try numeric string as timestamp
+        final numeric = int.tryParse(value);
+        if (numeric != null) return _timestampToDateTime(numeric);
+      }
 
-  final expandedData = json['expand'] as Map<String, dynamic>?;
-
-  // -----------------------------
-  // Customer
-  // -----------------------------
-  CustomerDataModel? customerModel;
-  final customerData = expandedData?['customer'] ?? json['customer'];
-  if (customerData != null) {
-    if (customerData is Map<String, dynamic>) {
-      debugPrint("👤 Using MAP to build customer");
-      customerModel = CustomerDataModel.fromJson(customerData);
-    } else if (customerData is CustomerDataModel) {
-      debugPrint("👤 Using DIRECT MODEL for customer");
-      customerModel = customerData;
-    } else if (customerData is String && customerData.isNotEmpty) {
-      debugPrint("👤 Only ID provided for customer: $customerData");
-      customerModel = CustomerDataModel(id: customerData);
-    } else {
-      debugPrint("❌ Unsupported customer data type: ${customerData.runtimeType}");
+      // fallback
+      debugPrint('⚠️ [_parseDate] Could not parse date: $value');
+      return null;
+    } catch (e) {
+      debugPrint('⚠️ [_parseDate] Error parsing date: $value → $e');
+      return null;
     }
   }
 
-  // -----------------------------
-  // Invoice (single)
-  // -----------------------------
-  InvoiceDataModel? invoiceModel;
-  final invoiceData = expandedData?['invoice'] ?? json['invoice'];
-  if (invoiceData != null) {
-    if (invoiceData is Map<String, dynamic>) {
-      invoiceModel = InvoiceDataModel.fromJson(invoiceData);
-    } else if (invoiceData is InvoiceDataModel) {
-      invoiceModel = invoiceData;
-    } else if (invoiceData is String && invoiceData.isNotEmpty) {
-      invoiceModel = InvoiceDataModel(id: invoiceData);
-    } else {
-      debugPrint("❌ Unsupported invoice data type: ${invoiceData.runtimeType}");
+  /// Convert numeric timestamp (s or ms) to DateTime
+  static DateTime _timestampToDateTime(int ts) {
+    try {
+      // Detect if timestamp is in milliseconds or seconds
+      final isMilliseconds = ts > 1000000000000; // ~2001-09-09
+      return isMilliseconds
+          ? DateTime.fromMillisecondsSinceEpoch(ts, isUtc: true)
+          : DateTime.fromMillisecondsSinceEpoch(ts * 1000, isUtc: true);
+    } catch (e) {
+      debugPrint('⚠️ [_timestampToDateTime] Invalid timestamp: $ts → $e');
+      return DateTime.now().toUtc();
     }
   }
 
-  // -----------------------------
-  // Invoices list
-  // -----------------------------
-  List<InvoiceDataModel> invoicesList = [];
-  final invoicesData = expandedData?['invoices'] ?? json['invoices'];
-  if (invoicesData != null) {
-    if (invoicesData is List) {
-      invoicesList = invoicesData
-          .map((e) => e is Map<String, dynamic>
-              ? InvoiceDataModel.fromJson(e)
-              : e is InvoiceDataModel
-                  ? e
-                  : InvoiceDataModel(id: e.toString()))
-          .toList();
-    }
-  }
+  /// --- From JSON ---
+  factory DeliveryDataModel.fromJson(dynamic json) {
+    debugPrint('🔄 MODEL: Creating DeliveryDataModel from JSON');
 
-  // -----------------------------
-  // Trip
-  // -----------------------------
-  TripModel? tripModel;
-  final tripData = expandedData?['trip'] ?? json['trip'];
-  if (tripData != null) {
-    if (tripData is Map<String, dynamic>) {
-      tripModel = TripModel.fromJson(tripData);
-    } else if (tripData is TripModel) {
-      tripModel = tripData;
-    } else if (tripData is String && tripData.isNotEmpty) {
-      tripModel = TripModel(id: tripData);
-    } else {
-      debugPrint("❌ Unsupported trip data type: ${tripData.runtimeType}");
+    if (json is String) {
+      debugPrint("🆔 Only ID provided: $json");
+      return DeliveryDataModel(id: json);
     }
-  }
 
-  // -----------------------------
-  // Delivery Updates
-  // -----------------------------
-  List<DeliveryUpdateModel> deliveryUpdatesList = [];
-  final updatesData = expandedData?['deliveryUpdates'] ?? json['deliveryUpdates'];
-  if (updatesData != null) {
-    if (updatesData is List) {
-      deliveryUpdatesList = updatesData
-          .map((e) => e is Map<String, dynamic>
-              ? DeliveryUpdateModel.fromJson(e)
-              : e is DeliveryUpdateModel
-                  ? e
-                  : DeliveryUpdateModel(id: e.toString()))
-          .toList();
+    final expandedData = json['expand'] as Map<String, dynamic>?;
+
+    // -----------------------------
+    // Customer
+    // -----------------------------
+    CustomerDataModel? customerModel;
+    final customerData = expandedData?['customer'] ?? json['customer'];
+    if (customerData != null) {
+      if (customerData is Map<String, dynamic>) {
+        debugPrint("👤 Using MAP to build customer");
+        customerModel = CustomerDataModel.fromJson(customerData);
+      } else if (customerData is CustomerDataModel) {
+        debugPrint("👤 Using DIRECT MODEL for customer");
+        customerModel = customerData;
+      } else if (customerData is String && customerData.isNotEmpty) {
+        debugPrint("👤 Only ID provided for customer: $customerData");
+        customerModel = CustomerDataModel(id: customerData);
+      } else {
+        debugPrint(
+          "❌ Unsupported customer data type: ${customerData.runtimeType}",
+        );
+      }
     }
-  }
 
-  // -----------------------------
-  // Invoice Items
-  // -----------------------------
-  List<InvoiceItemsModel> invoiceItemsList = [];
-  final invoiceItemsData = expandedData?['invoiceItems'] ?? json['invoiceItems'];
-  if (invoiceItemsData != null) {
-    if (invoiceItemsData is List) {
-      invoiceItemsList = invoiceItemsData
-          .map((e) => e is Map<String, dynamic>
-              ? InvoiceItemsModel.fromJson(e)
-              : e is InvoiceItemsModel
-                  ? e
-                  : InvoiceItemsModel(id: e.toString()))
-          .toList();
+    // -----------------------------
+    // Invoice (single)
+    // -----------------------------
+    InvoiceDataModel? invoiceModel;
+    final invoiceData = expandedData?['invoice'] ?? json['invoice'];
+    if (invoiceData != null) {
+      if (invoiceData is Map<String, dynamic>) {
+        invoiceModel = InvoiceDataModel.fromJson(invoiceData);
+      } else if (invoiceData is InvoiceDataModel) {
+        invoiceModel = invoiceData;
+      } else if (invoiceData is String && invoiceData.isNotEmpty) {
+        invoiceModel = InvoiceDataModel(id: invoiceData);
+      } else {
+        debugPrint(
+          "❌ Unsupported invoice data type: ${invoiceData.runtimeType}",
+        );
+      }
     }
-  }
 
-  // -----------------------------
-  // Main fields
-  // -----------------------------
-  ModeOfPayment? parsePayment(dynamic value) {
-    switch (value?.toString().toLowerCase()) {
-      case 'banktransfer':
-        return ModeOfPayment.bankTransfer;
-      case 'cashondelivery':
-        return ModeOfPayment.cashOnDelivery;
-      case 'cheque':
-        return ModeOfPayment.dtcCheque;
-      case 'ewallet':
-        return ModeOfPayment.eWallet;
-      default:
-        return null;
+    // -----------------------------
+    // Invoices list
+    // -----------------------------
+    List<InvoiceDataModel> invoicesList = [];
+    final invoicesData = expandedData?['invoices'] ?? json['invoices'];
+    if (invoicesData != null) {
+      if (invoicesData is List) {
+        invoicesList =
+            invoicesData
+                .map(
+                  (e) =>
+                      e is Map<String, dynamic>
+                          ? InvoiceDataModel.fromJson(e)
+                          : e is InvoiceDataModel
+                          ? e
+                          : InvoiceDataModel(id: e.toString()),
+                )
+                .toList();
+      }
     }
-  }
 
-  return DeliveryDataModel(
-    id: json['id']?.toString(),
-    paymentMode: json['paymentMode'],
-    deliveryNumber: json['deliveryNumber'],
-    hasTrip: json['hasTrip'] ?? false,
-    hasPendingSync: json['hasPendingSync'] ?? false,
-    totalDeliveryTime: json['totalDeliveryTime'],
-    paymentSelection: parsePayment(json['paymentSelection']),
-    invoiceStatus: InvoiceStatus.values.firstWhere(
-      (e) => e.name == (json['invoiceStatus'] ?? 'none'),
-      orElse: () => InvoiceStatus.none,
-    ),
-    isUnloaded: json['isUnloaded'] ?? false,
-    isUnloading: json['isUnloading'] ?? false,
-    storeName: json['storeName'],
-    ownerName: json['ownerName'] ?? json['customer']?['name']?.toString(),
-    contactNumber: json['contactNumber'],
-    barangay: json['barangay'],
-    municipality: json['municipality'],
-    province: json['province'],
-    totalAmount: json['totalAmount'] != null ? double.tryParse(json['totalAmount'].toString()) : null,
-    refID: json['refID'],
-    lastLocalUpdatedAt: _parseDate(json['lastLocalUpdatedAt']),
-    created: _parseDate(json['created']),
-    updated: _parseDate(json['updated']),
-    tripId: json['trip']?.toString(),
-    customerData: customerModel,
-    invoiceData: invoiceModel,
-    invoicesList: invoicesList,
-    tripData: tripModel,
-    deliveryUpdatesList: deliveryUpdatesList,
-    invoiceItemsList: invoiceItemsList,
-  );
-}
+    // -----------------------------
+    // Trip
+    // -----------------------------
+    TripModel? tripModel;
+    final tripData = expandedData?['trip'] ?? json['trip'];
+    if (tripData != null) {
+      if (tripData is Map<String, dynamic>) {
+        tripModel = TripModel.fromJson(tripData);
+      } else if (tripData is TripModel) {
+        tripModel = tripData;
+      } else if (tripData is String && tripData.isNotEmpty) {
+        tripModel = TripModel(id: tripData);
+      } else {
+        debugPrint("❌ Unsupported trip data type: ${tripData.runtimeType}");
+      }
+    }
+
+    // -----------------------------
+    // Delivery Updates
+    // -----------------------------
+    List<DeliveryUpdateModel> deliveryUpdatesList = [];
+    final updatesData =
+        expandedData?['deliveryUpdates'] ?? json['deliveryUpdates'];
+    if (updatesData != null) {
+      if (updatesData is List) {
+        deliveryUpdatesList =
+            updatesData
+                .map(
+                  (e) =>
+                      e is Map<String, dynamic>
+                          ? DeliveryUpdateModel.fromJson(e)
+                          : e is DeliveryUpdateModel
+                          ? e
+                          : DeliveryUpdateModel(id: e.toString()),
+                )
+                .toList();
+      }
+    }
+
+    // -----------------------------
+    // Invoice Items
+    // -----------------------------
+    List<InvoiceItemsModel> invoiceItemsList = [];
+    final invoiceItemsData =
+        expandedData?['invoiceItems'] ?? json['invoiceItems'];
+    if (invoiceItemsData != null) {
+      if (invoiceItemsData is List) {
+        invoiceItemsList =
+            invoiceItemsData
+                .map(
+                  (e) =>
+                      e is Map<String, dynamic>
+                          ? InvoiceItemsModel.fromJson(e)
+                          : e is InvoiceItemsModel
+                          ? e
+                          : InvoiceItemsModel(id: e.toString()),
+                )
+                .toList();
+      }
+    }
+
+    // -----------------------------
+    // Main fields
+    // -----------------------------
+    ModeOfPayment? parsePayment(dynamic value) {
+      switch (value?.toString().toLowerCase()) {
+        case 'banktransfer':
+          return ModeOfPayment.bankTransfer;
+        case 'cashondelivery':
+          return ModeOfPayment.cashOnDelivery;
+        case 'dtcCheque':
+          return ModeOfPayment.dtcCheque;
+        case 'ewallet':
+          return ModeOfPayment.eWallet;
+        default:
+          return null;
+      }
+    }
+
+    return DeliveryDataModel(
+      id: json['id']?.toString(),
+      paymentMode: json['paymentMode'],
+      deliveryNumber: json['deliveryNumber'],
+      hasTrip: json['hasTrip'] ?? false,
+      hasPendingSync: json['hasPendingSync'] ?? false,
+      totalDeliveryTime: json['totalDeliveryTime'],
+      paymentSelection: parsePayment(json['paymentSelection']),
+      invoiceStatus: InvoiceStatus.values.firstWhere(
+        (e) => e.name == (json['invoiceStatus'] ?? 'none'),
+        orElse: () => InvoiceStatus.none,
+      ),
+      isUnloaded: json['isUnloaded'] ?? false,
+      isUnloading: json['isUnloading'] ?? false,
+      storeName: json['storeName'],
+      ownerName: json['ownerName'] ?? json['customer']?['name']?.toString(),
+      contactNumber: json['contactNumber'],
+      barangay: json['barangay'],
+      municipality: json['municipality'],
+      province: json['province'],
+      totalAmount:
+          json['totalAmount'] != null
+              ? double.tryParse(json['totalAmount'].toString())
+              : null,
+      refID: json['refID'],
+      lastLocalUpdatedAt: _parseDate(json['lastLocalUpdatedAt']),
+      created: _parseDate(json['created']),
+      updated: _parseDate(json['updated']),
+      tripId: json['trip']?.toString(),
+      customerData: customerModel,
+      invoiceData: invoiceModel,
+      invoicesList: invoicesList,
+      tripData: tripModel,
+      deliveryUpdatesList: deliveryUpdatesList,
+      invoiceItemsList: invoiceItemsList,
+    );
+  }
 
   // --------------------------------------------------------------------------
   // TO JSON
@@ -565,12 +584,12 @@ factory DeliveryDataModel.fromJson(dynamic json) {
   }) {
     final model = DeliveryDataModel(
       id: id ?? this.id,
-      
+
       customerData: customerData ?? this.customer.target,
       invoiceData: invoiceData ?? this.invoice.target,
       invoicesList: invoicesList ?? this.invoices.toList(),
       tripData: tripData ?? this.trip.target,
-      deliveryUpdatesList: deliveryUpdatesList ,
+      deliveryUpdatesList: deliveryUpdatesList,
       invoiceItemsList: invoiceItemsList ?? this.invoiceItems.toList(),
       paymentMode: paymentMode ?? this.paymentMode,
       deliveryNumber: deliveryNumber ?? this.deliveryNumber,

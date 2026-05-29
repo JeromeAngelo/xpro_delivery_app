@@ -14,7 +14,7 @@ class DeliveryDataEntity extends Equatable {
   @Id()
   int dbId = 0;
 
- String? id;
+  String? id;
   final String? collectionId;
   final String? collectionName;
 
@@ -27,11 +27,11 @@ class DeliveryDataEntity extends Equatable {
       ToMany<DeliveryUpdateModel>();
   final ToMany<InvoiceItemsModel> invoiceItems = ToMany<InvoiceItemsModel>();
 
-  final String? paymentMode;
+  String? paymentMode;
   late final String? deliveryNumber;
- String? totalDeliveryTime;
- InvoiceStatus? invoiceStatus;
-final double? totalAmount;
+  String? totalDeliveryTime;
+  InvoiceStatus? invoiceStatus;
+  double? totalAmount;
   // New additional fields
   final String? storeName;
   final String? ownerName;

@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../local_datasource/trip_update_local_datasource.dart';
-import '../remote_datasource/trip_update_remote_datasource.dart';
+import '../local_datasource/trip_updates_local_datasource/trip_update_local_datasource.dart';
+import '../remote_datasource/trip_update_remote_datasource/trip_update_remote_datasource.dart';
 
 class TripUpdateSyncWorker {
   final TripUpdateLocalDatasourceImpl _local;

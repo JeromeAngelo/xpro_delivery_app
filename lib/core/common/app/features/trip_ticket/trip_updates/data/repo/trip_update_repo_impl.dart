@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/data/datasources/local_datasource/trip_update_local_datasource.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/data/datasources/remote_datasource/trip_update_remote_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/data/datasources/local_datasource/trip_updates_local_datasource/trip_update_local_datasource.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/data/datasources/remote_datasource/trip_update_remote_datasource/trip_update_remote_datasource.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/domain/entity/trip_update_entity.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_updates/domain/repo/trip_update_repo.dart';
 import 'package:x_pro_delivery_app/core/enums/trip_update_status.dart';

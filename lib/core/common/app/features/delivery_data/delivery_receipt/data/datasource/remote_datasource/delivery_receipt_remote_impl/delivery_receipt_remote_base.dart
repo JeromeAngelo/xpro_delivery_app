@@ -1,0 +1,342 @@
+import 'dart:io';
+import 'dart:typed_data' show Uint8List;
+import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pocketbase/pocketbase.dart' show PocketBase, RecordModel;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+
+abstract class DeliveryReceiptRemoteBase {
+  final PocketBase pocketBaseClient;
+
+  const DeliveryReceiptRemoteBase({required this.pocketBaseClient});
+
+  // ================================================================
+  // HELPER METHODS (formerly private, now public for mixin access)
+  // ================================================================
+
+  /// Get trip ID from delivery data
+  Future<String?> getTripIdFromDeliveryData(String deliveryDataId) async {
+    try {
+      debugPrint('🔍 Getting trip ID for delivery data: $deliveryDataId');
+
+      final deliveryDataRecord = await pocketBaseClient
+          .collection('deliveryData')
+          .getOne(deliveryDataId, expand: 'trip');
+
+      final tripId = deliveryDataRecord.data['trip'];
+      debugPrint('🚛 Found trip ID: $tripId');
+
+      return tripId;
+    } catch (e) {
+      debugPrint('⚠️ Error getting trip ID: $e');
+      return null;
+    }
+  }
+
+  /// Get invoice items from delivery data
+  Future<List<String>> getInvoiceItemsFromDeliveryData(
+    String deliveryDataId,
+  ) async {
+    try {
+      debugPrint('🔍 Getting invoice items for delivery data: $deliveryDataId');
+
+      final deliveryDataRecord = await pocketBaseClient
+          .collection('deliveryData')
+          .getOne(deliveryDataId, expand: 'invoiceItems');
+
+      final invoiceItems = deliveryDataRecord.data['invoiceItems'] as List?;
+      final invoiceItemIds =
+          invoiceItems?.map((item) => item.toString()).toList() ?? [];
+
+      debugPrint('📦 Found ${invoiceItemIds.length} invoice items');
+
+      return invoiceItemIds;
+    } catch (e) {
+      debugPrint('⚠️ Error getting invoice items: $e');
+      return [];
+    }
+  }
+
+  /// Compress image file to very small size for delivery status
+  Future<Uint8List?> compressImageToSmallSize(String imagePath) async {
+    try {
+      debugPrint(
+        '🗜️ Compressing delivery status image to very small size: $imagePath',
+      );
+
+      // First compression pass - aggressive settings for very small file size
+      final firstPassBytes = await FlutterImageCompress.compressWithFile(
+        imagePath,
+        quality: 50, // Lower quality for smaller size
+        minWidth: 600, // Smaller max width
+        minHeight: 400, // Smaller max height
+        format: CompressFormat.jpeg,
+      );
+
+      if (firstPassBytes == null) {
+        debugPrint('❌ First compression pass failed');
+        return null;
+      }
+
+      // Check if we need a second pass for even smaller size
+      const maxSizeBytes = 500 * 1024; // 500KB max
+      if (firstPassBytes.length > maxSizeBytes) {
+        debugPrint(
+          '🔄 File still too large (${firstPassBytes.length} bytes), applying second compression pass...',
+        );
+
+        // Create temporary file for second pass
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = File(
+          '${tempDir.path}/temp_delivery_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+        await tempFile.writeAsBytes(firstPassBytes);
+
+        // Second compression pass - even more aggressive
+        final secondPassBytes = await FlutterImageCompress.compressWithFile(
+          tempFile.path,
+          quality: 30, // Very low quality
+          minWidth: 400, // Even smaller dimensions
+          minHeight: 300,
+          format: CompressFormat.jpeg,
+        );
+
+        // Clean up temp file
+        try {
+          await tempFile.delete();
+        } catch (e) {
+          debugPrint('⚠️ Failed to delete temp file: $e');
+        }
+
+        if (secondPassBytes != null) {
+          final originalSize = await File(imagePath).length();
+          debugPrint(
+            '📊 Delivery status image compressed (2 passes): $originalSize bytes -> ${secondPassBytes.length} bytes',
+          );
+          debugPrint(
+            '📉 Compression ratio: ${((originalSize - secondPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
+          );
+          return secondPassBytes;
+        } else {
+          debugPrint(
+            '⚠️ Second compression pass failed, using first pass result',
+          );
+          final originalSize = await File(imagePath).length();
+          debugPrint(
+            '📊 Delivery status image compressed (1 pass): $originalSize bytes -> ${firstPassBytes.length} bytes',
+          );
+          debugPrint(
+            '📉 Compression ratio: ${((originalSize - firstPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
+          );
+          return firstPassBytes;
+        }
+      } else {
+        final originalSize = await File(imagePath).length();
+        debugPrint(
+          '📊 Delivery status image compressed: $originalSize bytes -> ${firstPassBytes.length} bytes',
+        );
+        debugPrint(
+          '📉 Compression ratio: ${((originalSize - firstPassBytes.length) / originalSize * 100).toStringAsFixed(1)}%',
+        );
+        return firstPassBytes;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Delivery status image compression failed: $e');
+      // Fallback to original file
+      try {
+        final originalBytes = await File(imagePath).readAsBytes();
+        debugPrint(
+          '📄 Using original image file: ${originalBytes.length} bytes',
+        );
+        return originalBytes;
+      } catch (fallbackError) {
+        debugPrint('❌ Failed to read original image file: $fallbackError');
+        return null;
+      }
+    }
+  }
+
+  /// Convert signature image to PDF
+  Future<Uint8List> convertSignatureToPdf(String signaturePath) async {
+    try {
+      debugPrint('📄 Converting signature to PDF: $signaturePath');
+
+      // Read and compress the signature image first
+      final compressedImageBytes = await compressImageToSmallSize(
+        signaturePath,
+      );
+      if (compressedImageBytes == null) {
+        throw Exception('Failed to process signature image');
+      }
+
+      // Create PDF document
+      final pdf = pw.Document();
+
+      // Create image from compressed bytes
+      final image = pw.MemoryImage(compressedImageBytes);
+
+      // Add page with signature
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(20),
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Customer Signature',
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey),
+                  ),
+                  child: pw.Center(
+                    child: pw.Image(image, fit: pw.BoxFit.contain),
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Text(
+                  'Date: ${DateTime.now().toString().split(' ')[0]}',
+                  style: const pw.TextStyle(fontSize: 12),
+                ),
+                pw.Text(
+                  'Time: ${DateTime.now().toString().split(' ')[1].substring(0, 8)}',
+                  style: const pw.TextStyle(fontSize: 12),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      final pdfBytes = await pdf.save();
+      debugPrint('✅ Signature converted to PDF: ${pdfBytes.length} bytes');
+
+      return pdfBytes;
+    } catch (e) {
+      debugPrint('❌ Signature to PDF conversion failed: $e');
+      // Fallback to compressed image
+      return await compressImageToSmallSize(signaturePath) ?? Uint8List(0);
+    }
+  }
+
+  /// Compress PDF file
+  Future<Uint8List> compressPdf(String pdfPath) async {
+    try {
+      debugPrint('🗜️ Processing PDF file: $pdfPath');
+
+      final pdfBytes = await File(pdfPath).readAsBytes();
+      debugPrint('📊 PDF size: ${pdfBytes.length} bytes');
+
+      // For now, just return the original PDF bytes
+      // You can add PDF compression library here if needed
+      return pdfBytes;
+    } catch (e) {
+      debugPrint('⚠️ PDF processing failed: $e');
+      rethrow;
+    }
+  }
+
+  /// Helper method to map delivery receipt data from PocketBase record
+  Map<String, dynamic> mapDeliveryReceiptData(RecordModel record) {
+    // Safely extract expanded relations, handling List cases
+    dynamic tripExpand = record.expand['trip'];
+    dynamic deliveryDataExpand = record.expand['deliveryData'];
+
+    // PocketBase may return expanded relations as Lists for certain relation types
+    // Take the first item if it's a list
+    if (tripExpand is List && tripExpand.isNotEmpty) {
+      debugPrint('📋 Trip expand returned as List, taking first item');
+      tripExpand = tripExpand.first;
+    }
+    if (deliveryDataExpand is List && deliveryDataExpand.isNotEmpty) {
+      debugPrint('📋 DeliveryData expand returned as List, taking first item');
+      deliveryDataExpand = deliveryDataExpand.first;
+    }
+
+    return {
+      'id': record.id,
+      'collectionId': record.collectionId,
+      'collectionName': record.collectionName,
+      'status': record.data['status'],
+      'dateTimeCompleted': record.data['dateTimeCompleted'],
+      'customerImages': record.data['customerImages'],
+      'customerSignature': record.data['customerSignature'],
+      'receiptFile': record.data['receiptFile'],
+      'mop': record.data['mop'],
+      'totalAmount': record.data['totalAmount'],
+      'trip': record.data['trip'],
+      'deliveryData': record.data['deliveryData'],
+      'created': record.created,
+      'updated': record.updated,
+      'expand': {
+        'trip': mapExpandedData(tripExpand),
+        'deliveryData': mapExpandedData(deliveryDataExpand),
+      },
+    };
+  }
+
+  /// Helper method to map expanded data
+  dynamic mapExpandedData(dynamic data) {
+    if (data == null) return null;
+
+    if (data is RecordModel) {
+      return {
+        'id': data.id,
+        'collectionId': data.collectionId,
+        'collectionName': data.collectionName,
+        ...Map<String, dynamic>.from(data.data),
+        'created': data.created,
+        'updated': data.updated,
+      };
+    }
+
+    if (data is List) {
+      // PocketBase sometimes returns expanded relations as a list
+      // Take the first item if available, otherwise return null
+      if (data.isEmpty) return null;
+      final first = data.first;
+      if (first is RecordModel) {
+        return {
+          'id': first.id,
+          'collectionId': first.collectionId,
+          'collectionName': first.collectionName,
+          ...Map<String, dynamic>.from(first.data),
+          'created': first.created,
+          'updated': first.updated,
+        };
+      }
+      return mapExpandedData(first);
+    }
+
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    return null;
+  }
+
+  /// Safe DateTime formatting to avoid errors
+  String? formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) return null;
+
+    try {
+      // Format to ISO 8601 string which is safe for PocketBase
+      return dateTime.toUtc().toIso8601String();
+    } catch (e) {
+      debugPrint('⚠️ Error formatting DateTime: $e');
+      // Fallback to current time if formatting fails
+      return DateTime.now().toUtc().toIso8601String();
+    }
+  }
+}

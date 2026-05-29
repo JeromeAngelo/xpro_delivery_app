@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../../../../objectbox.g.dart';
 import '../../../../../../../../enums/sync_status_enums.dart' show SyncStatus;
-import '../local_datasource/cancelled_invoice_local_datasource.dart';
-import '../remote_datasource/cancelled_invoice_remote_datasource.dart';
+import '../local_datasource/cancelled_invoice_local_datasource/cancelled_invoice_local_datasource.dart';
+import '../remote_datasource/cancelled_invoice_remote_datasource/cancelled_invoice_remote_datasource.dart';
 class CancelledInvoiceSyncWorker {
   final CancelledInvoiceLocalDataSourceImpl _local;
   final CancelledInvoiceRemoteDataSourceImpl _remote;

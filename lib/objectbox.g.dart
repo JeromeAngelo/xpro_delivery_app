@@ -221,7 +221,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(305, 4234428885073647143),
+        indexId: const obx_int.IdUid(323, 193230584070295327),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -229,7 +229,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'customerId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(306, 8355804921162978384),
+        indexId: const obx_int.IdUid(324, 1981396639359671712),
         relationTarget: 'CustomerDataModel',
       ),
       obx_int.ModelProperty(
@@ -237,7 +237,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'invoiceId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(307, 6219595128677659817),
+        indexId: const obx_int.IdUid(325, 6137557720490430341),
         relationTarget: 'InvoiceDataModel',
       ),
       obx_int.ModelProperty(
@@ -245,7 +245,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(304, 5573735374683785873),
+        indexId: const obx_int.IdUid(322, 3433008554249628085),
         relationTarget: 'DeliveryDataModel',
       ),
       obx_int.ModelProperty(
@@ -425,7 +425,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(308, 22695155553579925),
+        indexId: const obx_int.IdUid(326, 6768233663970939313),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -599,7 +599,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(310, 409478711282476430),
+        indexId: const obx_int.IdUid(328, 5050446620021687618),
         relationTarget: 'DeliveryDataModel',
       ),
       obx_int.ModelProperty(
@@ -607,7 +607,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(311, 8335452452291158298),
+        indexId: const obx_int.IdUid(329, 2582356536301461245),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -615,7 +615,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'customerId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(309, 7919943091909073216),
+        indexId: const obx_int.IdUid(327, 5962653835672871699),
         relationTarget: 'CustomerDataModel',
       ),
       obx_int.ModelProperty(
@@ -1149,7 +1149,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(312, 2563131309669984151),
+        indexId: const obx_int.IdUid(330, 3284899365426694478),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -1923,7 +1923,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(313, 3652014861789784513),
+        indexId: const obx_int.IdUid(331, 7430109823749203377),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2026,7 +2026,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(314, 1410451558681406107),
+        indexId: const obx_int.IdUid(332, 9154849671127840934),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2543,7 +2543,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(315, 7932595461741312706),
+        indexId: const obx_int.IdUid(333, 5678363481020279787),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2711,7 +2711,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(316, 1032406120539860625),
+        indexId: const obx_int.IdUid(334, 1675675154937004981),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3137,7 +3137,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'invoiceDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(317, 1106405571157407416),
+        indexId: const obx_int.IdUid(335, 8643794117786580824),
         relationTarget: 'InvoiceDataEntity',
       ),
       obx_int.ModelProperty(
@@ -3377,7 +3377,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(318, 7246971442540038156),
+        indexId: const obx_int.IdUid(336, 734285089254545498),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3385,7 +3385,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryTeamId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(319, 4015222914079100086),
+        indexId: const obx_int.IdUid(337, 4522878522191055629),
         relationTarget: 'DeliveryTeamModel',
       ),
       obx_int.ModelProperty(
@@ -3533,7 +3533,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(320, 2471078981105592498),
+        indexId: const obx_int.IdUid(338, 5527862352615454186),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -4351,7 +4351,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(321, 2676686318594290333),
+        indexId: const obx_int.IdUid(339, 286886169323562236),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -4739,7 +4739,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
     lastEntityId: const obx_int.IdUid(48, 4350876074771390893),
-    lastIndexId: const obx_int.IdUid(321, 2676686318594290333),
+    lastIndexId: const obx_int.IdUid(339, 286886169323562236),
     lastRelationId: const obx_int.IdUid(29, 6984763155418216047),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -4996,6 +4996,24 @@ obx_int.ModelDefinition getObjectBoxModel() {
       8840438541530294583,
       8364665618179548432,
       8787393536052492649,
+      4234428885073647143,
+      8355804921162978384,
+      6219595128677659817,
+      5573735374683785873,
+      22695155553579925,
+      409478711282476430,
+      8335452452291158298,
+      7919943091909073216,
+      2563131309669984151,
+      3652014861789784513,
+      1410451558681406107,
+      7932595461741312706,
+      1032406120539860625,
+      1106405571157407416,
+      7246971442540038156,
+      4015222914079100086,
+      2471078981105592498,
+      2676686318594290333,
     ],
     retiredPropertyUids: const [
       7578410533054026482,

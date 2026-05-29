@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../../../../../objectbox.g.dart';
 import '../../../../delivery_data/delivery_update/data/models/delivery_update_model.dart';
-import '../local_datasource/delivery_status_choices_local_datasource.dart';
-import '../remote_datasource/delivery_status_choices_remote_datasource.dart';
+import '../local_datasource/delivery_status_choices_local_datasource/delivery_status_choices_local_datasource.dart';
+import '../remote_datasource/delivery_status_choices_remote_datasource/delivery_status_choices_remote_datasource.dart';
 import '../../model/delivery_status_choices_model.dart';
 import 'package:x_pro_delivery_app/core/enums/sync_status_enums.dart';
 

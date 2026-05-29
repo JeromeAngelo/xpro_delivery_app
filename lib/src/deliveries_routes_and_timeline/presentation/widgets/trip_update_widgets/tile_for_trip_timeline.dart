@@ -4,8 +4,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip_upd
 import 'package:x_pro_delivery_app/core/enums/trip_update_status.dart';
 
 import 'package:x_pro_delivery_app/core/common/widgets/trip_update_icons.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
+
+import '../../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 
 class TileForTripTimeline extends StatelessWidget {
   final TripUpdateEntity update;

@@ -8,9 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 import 'package:x_pro_delivery_app/core/utils/route_utils.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/digital_clock.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/odometer_input.dart';
 import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widgets/otp_info_card.dart';
@@ -22,6 +19,9 @@ import 'package:x_pro_delivery_app/src/start_trip_otp_screen/presentation/widget
 import '../../../../core/common/app/features/otp/intransit_otp/presentation/bloc/otp_bloc.dart';
 import '../../../../core/common/app/features/otp/intransit_otp/presentation/bloc/otp_event.dart';
 import '../../../../core/common/app/features/otp/intransit_otp/presentation/bloc/otp_state.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 
 class FirstOtpScreenView extends StatefulWidget {
   const FirstOtpScreenView({super.key});

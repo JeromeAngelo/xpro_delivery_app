@@ -7,9 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/presentation/bloc/checklist_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/presentation/bloc/checklist_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/checklists/intransit_checklist/presentation/bloc/checklist_state.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/widgets/checklist_tile.dart';
 import 'package:x_pro_delivery_app/src/checklist_and_delivery_list/presentation/widgets/delivery_list.dart';
 
@@ -17,6 +14,9 @@ import '../../../../core/common/app/features/checklists/intransit_checklist/doma
 import '../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_bloc.dart';
 import '../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_event.dart';
 import '../../../../core/common/app/features/trip_ticket/delivery_data/presentation/bloc/delivery_data_state.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 import '../../../../core/utils/route_utils.dart';
 import '../widgets/confirm_button.dart';
 

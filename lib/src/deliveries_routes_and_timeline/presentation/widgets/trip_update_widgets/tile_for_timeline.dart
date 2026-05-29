@@ -5,8 +5,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/delivery
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/data/models/delivery_update_model.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/delivery_data/delivery_update/domain/entity/delivery_update_entity.dart';
 import 'package:x_pro_delivery_app/core/common/widgets/status_icons.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
+
+import '../../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 
 class TileForTimeline extends StatelessWidget {
   final DeliveryDataEntity deliveryData;

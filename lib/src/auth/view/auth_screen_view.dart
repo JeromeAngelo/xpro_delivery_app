@@ -5,11 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x_pro_delivery_app/core/common/app/provider/user_provider.dart';
 import 'package:x_pro_delivery_app/core/utils/core_utils.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/users/auth/data/models/auth_models.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
 import 'package:x_pro_delivery_app/src/auth/widgets/sign_in_form.dart';
 import 'package:x_pro_delivery_app/src/auth/widgets/sign_in_logo.dart';
+
+import '../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
+import '../../../core/common/app/features/users/auth/presentation/bloc/auth_event.dart';
+import '../../../core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
 
 class AuthScreenView extends StatefulWidget {
   const AuthScreenView({super.key});

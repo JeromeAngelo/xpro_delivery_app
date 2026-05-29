@@ -4,8 +4,9 @@ import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/pre
 import 'package:x_pro_delivery_app/core/common/app/features/trip_ticket/trip/presentation/bloc/trip_event.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_bloc.dart';
 import 'package:x_pro_delivery_app/core/common/app/features/otp/end_trip_otp/presentation/bloc/end_trip_otp_event.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_bloc.dart';
-import 'package:x_pro_delivery_app/core/common/app/features/users/auth/bloc/auth_state.dart';
+import 'package:x_pro_delivery_app/core/common/app/features/users/auth/presentation/bloc/auth_state.dart';
+
+import '../../../../core/common/app/features/users/auth/presentation/bloc/auth_bloc.dart';
 
 class EndTripConfirmButton extends StatelessWidget {
   final String enteredOtp;
