@@ -19,6 +19,11 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptLocalBase {
     required String? receiptFile,
     required double? amount,
     required String? mop,
+    String? chequeNumber,
+    String? transactionNumber,
+    String? bankName,
+    String? refNumber,
+    String? bankAccountNumber,
   }) async {
     try {
       debugPrint(
@@ -81,6 +86,15 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptLocalBase {
       debugPrint(
         '✅ LOCAL: DeliveryData found → obx=${delivery.objectBoxId} pb=$deliveryPbId',
       );
+
+      // Auto-generate transactionNumber if not provided
+      // Format: {deliveryNumberNumericPart}-{yyyymmddHHmmss}
+      // e.g., DEL-35093 → 35093-20260529143022
+      final effectiveTransactionNumber =
+          (transactionNumber != null && transactionNumber.isNotEmpty)
+              ? transactionNumber
+              : _generateTransactionNumber(delivery.deliveryNumber);
+      debugPrint('🔢 LOCAL: Transaction number: $effectiveTransactionNumber');
 
       // -------------------------------------------------------------
       // 3️⃣ Create Delivery Collection FIRST
@@ -150,6 +164,11 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptLocalBase {
           invoicesList: invoiceList,
           totalAmount: collectionTotalAmount,
           mop: collectionMop,
+          transactionNumber: effectiveTransactionNumber,
+          chequeRefNumber: chequeNumber,
+          bankName: bankName,
+          refNumber: refNumber,
+          bankAccountNumber: bankAccountNumber,
           created: now,
           updated: now,
         );
@@ -167,8 +186,6 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptLocalBase {
         // Non-blocking: continue with receipt creation
       }
 
-     
-
       // -------------------------------------------------------------
       // 5️⃣ Prepare a local DeliveryReceiptModel
       // -------------------------------------------------------------
@@ -185,6 +202,11 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptLocalBase {
         receiptFile: receiptFile,
         totalAmount: amount,
         mop: mop,
+        chequeRefNumber: chequeNumber,
+        transactionNumber: effectiveTransactionNumber,
+        bankName: bankName,
+        refNumber: refNumber,
+        bankAccountNumber: bankAccountNumber,
         created: DateTime.now(),
         updated: DateTime.now(),
       );
@@ -316,5 +338,37 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptLocalBase {
       debugPrint('STACK TRACE: $st');
       throw CacheException(message: e.toString());
     }
+  }
+
+  /// Generates a transaction number from deliveryNumber + current date/time.
+  /// Format: {numericPart}-{yyyymmddHHmmss}
+  /// e.g., DEL-35093 → 35093-20260529143022
+  String _generateTransactionNumber(String? deliveryNumber) {
+    // Extract numeric part from deliveryNumber (e.g., "DEL-35093" → "35093")
+    String? numericPart;
+    if (deliveryNumber != null && deliveryNumber.isNotEmpty) {
+      final match = RegExp(r'\d+').firstMatch(deliveryNumber);
+      if (match != null) {
+        numericPart = match.group(0);
+      }
+    }
+
+    // Build date/time suffix: yyyymmddHHmmss
+    final now = DateTime.now();
+    final dateTimeSuffix =
+        '${now.year.toString().padLeft(4, '0')}'
+        '${now.month.toString().padLeft(2, '0')}'
+        '${now.day.toString().padLeft(2, '0')}'
+        '${now.hour.toString().padLeft(2, '0')}'
+        '${now.minute.toString().padLeft(2, '0')}'
+        '${now.second.toString().padLeft(2, '0')}';
+
+    final txn =
+        numericPart != null ? '$numericPart-$dateTimeSuffix' : dateTimeSuffix;
+
+    debugPrint(
+      '🔢 LOCAL: Generated transaction number: $txn (from deliveryNumber: $deliveryNumber)',
+    );
+    return txn;
   }
 }

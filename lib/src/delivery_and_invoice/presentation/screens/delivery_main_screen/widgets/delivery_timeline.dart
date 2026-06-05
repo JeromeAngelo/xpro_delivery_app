@@ -66,6 +66,18 @@ class _DeliveryTimelineState extends State<DeliveryTimeline> {
           final statusUpdates =
               effectiveState.deliveryData.deliveryUpdates.toList();
 
+          // Sort so "End Delivery" always appears at the bottom of the timeline
+          statusUpdates.sort((a, b) {
+            final aIsEndDelivery =
+                (a.title?.trim().toLowerCase() ?? '') == 'end delivery';
+            final bIsEndDelivery =
+                (b.title?.trim().toLowerCase() ?? '') == 'end delivery';
+            if (aIsEndDelivery && !bIsEndDelivery) return 1;
+            if (!aIsEndDelivery && bIsEndDelivery) return -1;
+            // Preserve original order for non-"End Delivery" items
+            return 0;
+          });
+
           if (statusUpdates.isEmpty) {
             return const SizedBox();
           }

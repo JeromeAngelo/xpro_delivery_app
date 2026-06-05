@@ -47,6 +47,11 @@ abstract class DeliveryReceiptLocalDatasource {
     required String? receiptFile,
     required double? amount,
     required String? mop,
+    String? chequeNumber,
+    String? transactionNumber,
+    String? bankName,
+    String? refNumber,
+    String? bankAccountNumber,
   });
 
   /// Update delivery receipt

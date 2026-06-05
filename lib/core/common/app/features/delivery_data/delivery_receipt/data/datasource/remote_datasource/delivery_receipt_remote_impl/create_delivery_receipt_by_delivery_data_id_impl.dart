@@ -17,6 +17,11 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
     required String? receiptFile,
     required double? amount,
     required String? mop,
+    String? chequeNumber,
+    String? transactionNumber,
+    String? bankName,
+    String? refNumber,
+    String? bankAccountNumber,
   }) async {
     try {
       debugPrint(
@@ -40,6 +45,26 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
       final invoiceItems = await getInvoiceItemsFromDeliveryData(
         actualDeliveryDataId,
       );
+
+      // Resolve deliveryData to extract deliveryNumber for transactionNumber
+      String? deliveryNumber;
+      try {
+        final deliveryDataRecord = await pocketBaseClient
+            .collection('deliveryData')
+            .getOne(actualDeliveryDataId);
+        deliveryNumber = deliveryDataRecord.data['deliveryNumber']?.toString();
+      } catch (e) {
+        debugPrint('⚠️ Failed to resolve deliveryNumber (non-blocking): $e');
+      }
+
+      // Auto-generate transactionNumber if not provided
+      // Format: {deliveryNumberNumericPart}-{yyyymmddHHmmss}
+      // e.g., DEL-35093 → 35093-20260529143022
+      final effectiveTransactionNumber =
+          (transactionNumber != null && transactionNumber.isNotEmpty)
+              ? transactionNumber
+              : _generateTransactionNumber(deliveryNumber);
+      debugPrint('🔢 Transaction number: $effectiveTransactionNumber');
 
       // -------------------------------------------------------------
       // 1️⃣ Create Delivery Collection FIRST
@@ -132,6 +157,7 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
           'status': 'completed',
           'totalAmount': (amount ?? 0.0).toString(),
           'mop': mop,
+          'transactionNumber': effectiveTransactionNumber,
           'created': DateTime.now().toUtc().toIso8601String(),
           'updated': DateTime.now().toUtc().toIso8601String(),
         };
@@ -147,6 +173,18 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
         }
         if (invoiceIds.isNotEmpty) {
           collectionBody['invoices'] = invoiceIds;
+        }
+        if (chequeNumber != null && chequeNumber.isNotEmpty) {
+          collectionBody['chequeNumber'] = chequeNumber;
+        }
+        if (bankName != null && bankName.isNotEmpty) {
+          collectionBody['bankName'] = bankName;
+        }
+        if (refNumber != null && refNumber.isNotEmpty) {
+          collectionBody['refNumber'] = refNumber;
+        }
+        if (bankAccountNumber != null && bankAccountNumber.isNotEmpty) {
+          collectionBody['bankAccountNumber'] = bankAccountNumber;
         }
 
         final deliveryCollectionRecord = await pocketBaseClient
@@ -182,7 +220,6 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
         );
         // Non-blocking: continue with receipt creation
       }
-
 
       // -------------------------------------------------------------
       // 3️⃣ Create Delivery Receipt
@@ -283,8 +320,15 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
         'dateTimeCompleted': formatDateTime(dateTimeCompleted),
         'totalAmount': amount ?? 0.0, // ADDED: Include amount in body
         'mop': mop,
+        'transactionNumber': effectiveTransactionNumber,
         if (tripId != null) 'trip': tripId,
         if (invoiceItems.isNotEmpty) 'invoiceItems': invoiceItems,
+        if (chequeNumber != null && chequeNumber.isNotEmpty)
+          'chequeNumber': chequeNumber,
+        if (bankName != null && bankName.isNotEmpty) 'bankName': bankName,
+        if (refNumber != null && refNumber.isNotEmpty) 'refNumber': refNumber,
+        if (bankAccountNumber != null && bankAccountNumber.isNotEmpty)
+          'bankAccountNumber': bankAccountNumber,
       };
 
       debugPrint('📦 Creating delivery receipt with ${files.length} files');
@@ -346,8 +390,7 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
           '📝 Creating "Mark as Received" delivery update for: $actualDeliveryDataId',
         );
 
-        final now =
-            DateTime.now().toUtc().toIso8601String();
+        final now = DateTime.now().toUtc().toIso8601String();
 
         // Create the delivery update record in PocketBase
         final deliveryUpdateRecord = await pocketBaseClient
@@ -374,8 +417,6 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
                 'deliveryUpdates+': [deliveryUpdateRecord.id],
               },
             );
-            
-    
       } catch (e) {
         debugPrint(
           '⚠️ Failed to create "Mark as Received" delivery update (non-blocking): $e',
@@ -391,5 +432,37 @@ mixin CreateDeliveryReceiptByDeliveryDataIdImpl on DeliveryReceiptRemoteBase {
         statusCode: '500',
       );
     }
+  }
+
+  /// Generates a transaction number from deliveryNumber + current date/time.
+  /// Format: {numericPart}-{yyyymmddHHmmss}
+  /// e.g., DEL-35093 → 35093-20260529143022
+  String _generateTransactionNumber(String? deliveryNumber) {
+    // Extract numeric part from deliveryNumber (e.g., "DEL-35093" → "35093")
+    String? numericPart;
+    if (deliveryNumber != null && deliveryNumber.isNotEmpty) {
+      final match = RegExp(r'\d+').firstMatch(deliveryNumber);
+      if (match != null) {
+        numericPart = match.group(0);
+      }
+    }
+
+    // Build date/time suffix: yyyymmddHHmmss
+    final now = DateTime.now();
+    final dateTimeSuffix =
+        '${now.year.toString().padLeft(4, '0')}'
+        '${now.month.toString().padLeft(2, '0')}'
+        '${now.day.toString().padLeft(2, '0')}'
+        '${now.hour.toString().padLeft(2, '0')}'
+        '${now.minute.toString().padLeft(2, '0')}'
+        '${now.second.toString().padLeft(2, '0')}';
+
+    final txn =
+        numericPart != null ? '$numericPart-$dateTimeSuffix' : dateTimeSuffix;
+
+    debugPrint(
+      '🔢 Generated transaction number: $txn (from deliveryNumber: $deliveryNumber)',
+    );
+    return txn;
   }
 }

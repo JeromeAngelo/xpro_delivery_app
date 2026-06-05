@@ -22,7 +22,11 @@ class CollectionEntity extends Equatable {
   final ToMany<InvoiceDataModel> invoices = ToMany<InvoiceDataModel>();
 
   final double? totalAmount;
-
+  final String? transactionNumber;
+  final String? chequeRefNumber;
+  final String? bankName;
+  final String? refNumber;
+  final String? bankAccountNumber;
   // Standard fields
   final DateTime? created;
   final DateTime? updated;
@@ -39,6 +43,11 @@ class CollectionEntity extends Equatable {
     InvoiceDataModel? invoiceData,
     List<InvoiceDataModel>? invoicesList,
     this.totalAmount,
+    this.transactionNumber,
+    this.chequeRefNumber,
+    this.bankName,
+    this.refNumber,
+    this.bankAccountNumber,
     this.created,
     this.mop,
     this.updated,
@@ -60,6 +69,11 @@ class CollectionEntity extends Equatable {
     customer.target?.id,
     invoice.target?.id,
     invoices,
+    bankAccountNumber,
+    refNumber,
+    bankName,
+    chequeRefNumber,
+    transactionNumber,
     totalAmount,
     created,
     updated,

@@ -64,6 +64,9 @@ class CreateDeliveryReceiptEvent extends DeliveryReceiptEvent {
   final String? chequeNumber;
   final String? eWalletType;
   final String? bankName;
+  final String? transactionNumber;
+  final String? refNumber;
+  final String? bankAccountNumber;
 
   const CreateDeliveryReceiptEvent({
     required this.deliveryDataId,
@@ -78,6 +81,9 @@ class CreateDeliveryReceiptEvent extends DeliveryReceiptEvent {
     this.chequeNumber,
     this.eWalletType,
     this.bankName,
+    this.transactionNumber,
+    this.refNumber,
+    this.bankAccountNumber,
   });
 
   @override
@@ -94,6 +100,9 @@ class CreateDeliveryReceiptEvent extends DeliveryReceiptEvent {
     chequeNumber,
     eWalletType,
     bankName,
+    transactionNumber,
+    refNumber,
+    bankAccountNumber,
   ];
 }
 

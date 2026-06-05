@@ -221,7 +221,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(323, 193230584070295327),
+        indexId: const obx_int.IdUid(341, 1227535756730403341),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -229,7 +229,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'customerId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(324, 1981396639359671712),
+        indexId: const obx_int.IdUid(342, 4050367519520957419),
         relationTarget: 'CustomerDataModel',
       ),
       obx_int.ModelProperty(
@@ -237,7 +237,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'invoiceId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(325, 6137557720490430341),
+        indexId: const obx_int.IdUid(343, 1947442164573210879),
         relationTarget: 'InvoiceDataModel',
       ),
       obx_int.ModelProperty(
@@ -245,7 +245,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(322, 3433008554249628085),
+        indexId: const obx_int.IdUid(340, 1552752193287542325),
         relationTarget: 'DeliveryDataModel',
       ),
       obx_int.ModelProperty(
@@ -425,7 +425,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(326, 6768233663970939313),
+        indexId: const obx_int.IdUid(344, 8781328955955227624),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -465,7 +465,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(5, 7491627631105862324),
     name: 'CollectionEntity',
-    lastPropertyId: const obx_int.IdUid(12, 4455040581408818241),
+    lastPropertyId: const obx_int.IdUid(17, 3301649895071674129),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -548,6 +548,36 @@ final _entities = <obx_int.ModelEntity>[
         type: 9,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(13, 654434538109903439),
+        name: 'transactionNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(14, 8071820462629622130),
+        name: 'chequeRefNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(15, 7936804161479464211),
+        name: 'bankName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 6102893055302515425),
+        name: 'refNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 3301649895071674129),
+        name: 'bankAccountNumber',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[
       obx_int.ModelRelation(
@@ -561,7 +591,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(6, 4563950948000762030),
     name: 'CollectionModel',
-    lastPropertyId: const obx_int.IdUid(23, 2364763552183903307),
+    lastPropertyId: const obx_int.IdUid(28, 5642854722360793336),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -599,7 +629,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(328, 5050446620021687618),
+        indexId: const obx_int.IdUid(346, 2646005620211936375),
         relationTarget: 'DeliveryDataModel',
       ),
       obx_int.ModelProperty(
@@ -607,7 +637,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(329, 2582356536301461245),
+        indexId: const obx_int.IdUid(347, 4900208349705386003),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -615,7 +645,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'customerId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(327, 5962653835672871699),
+        indexId: const obx_int.IdUid(345, 3564745801497400117),
         relationTarget: 'CustomerDataModel',
       ),
       obx_int.ModelProperty(
@@ -707,6 +737,36 @@ final _entities = <obx_int.ModelEntity>[
       obx_int.ModelProperty(
         id: const obx_int.IdUid(23, 2364763552183903307),
         name: 'mop',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(24, 1339937822608688608),
+        name: 'chequeRefNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(25, 5946919820329309914),
+        name: 'transactionNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(26, 15327385828859125),
+        name: 'bankName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(27, 2126208514006327153),
+        name: 'refNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(28, 5642854722360793336),
+        name: 'bankAccountNumber',
         type: 9,
         flags: 0,
       ),
@@ -1149,7 +1209,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(330, 3284899365426694478),
+        indexId: const obx_int.IdUid(348, 4033211198125037379),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -1347,7 +1407,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(11, 5227308974183210635),
     name: 'DeliveryReceiptEntity',
-    lastPropertyId: const obx_int.IdUid(15, 8934721911634497456),
+    lastPropertyId: const obx_int.IdUid(20, 6900225390016091735),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -1441,6 +1501,36 @@ final _entities = <obx_int.ModelEntity>[
       obx_int.ModelProperty(
         id: const obx_int.IdUid(15, 8934721911634497456),
         name: 'mop',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(16, 3247221931496788059),
+        name: 'transactionNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(17, 3242018478383932105),
+        name: 'chequeRefNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(18, 6315303156383744550),
+        name: 'bankName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(19, 7130942666044157851),
+        name: 'refNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(20, 6900225390016091735),
+        name: 'bankAccountNumber',
         type: 9,
         flags: 0,
       ),
@@ -1563,7 +1653,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(14, 8047721167219302010),
     name: 'DeliveryReceiptModel',
-    lastPropertyId: const obx_int.IdUid(26, 3570911888826538173),
+    lastPropertyId: const obx_int.IdUid(31, 7608258262543345765),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -1723,6 +1813,36 @@ final _entities = <obx_int.ModelEntity>[
       obx_int.ModelProperty(
         id: const obx_int.IdUid(26, 3570911888826538173),
         name: 'mop',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(27, 3924277281906503618),
+        name: 'chequeRefNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(28, 3757396052298635631),
+        name: 'transactionNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(29, 5089168332928632427),
+        name: 'bankName',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(30, 4594628882969699134),
+        name: 'refNumber',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(31, 7608258262543345765),
+        name: 'bankAccountNumber',
         type: 9,
         flags: 0,
       ),
@@ -1923,7 +2043,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(331, 7430109823749203377),
+        indexId: const obx_int.IdUid(349, 7043772892667912410),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2026,7 +2146,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(332, 9154849671127840934),
+        indexId: const obx_int.IdUid(350, 2500592284355789045),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2543,7 +2663,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(333, 5678363481020279787),
+        indexId: const obx_int.IdUid(351, 8678051506604069523),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -2711,7 +2831,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(334, 1675675154937004981),
+        indexId: const obx_int.IdUid(352, 409132037838845485),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3137,7 +3257,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'invoiceDataId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(335, 8643794117786580824),
+        indexId: const obx_int.IdUid(353, 6857461555492224941),
         relationTarget: 'InvoiceDataEntity',
       ),
       obx_int.ModelProperty(
@@ -3377,7 +3497,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(336, 734285089254545498),
+        indexId: const obx_int.IdUid(354, 2682484851385625014),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -3385,7 +3505,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'deliveryTeamId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(337, 4522878522191055629),
+        indexId: const obx_int.IdUid(355, 8151479284019093933),
         relationTarget: 'DeliveryTeamModel',
       ),
       obx_int.ModelProperty(
@@ -3533,7 +3653,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(338, 5527862352615454186),
+        indexId: const obx_int.IdUid(356, 3512635175955106621),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -4351,7 +4471,7 @@ final _entities = <obx_int.ModelEntity>[
         name: 'tripId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(339, 286886169323562236),
+        indexId: const obx_int.IdUid(357, 8681249522495842854),
         relationTarget: 'TripModel',
       ),
       obx_int.ModelProperty(
@@ -4739,7 +4859,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
     lastEntityId: const obx_int.IdUid(48, 4350876074771390893),
-    lastIndexId: const obx_int.IdUid(339, 286886169323562236),
+    lastIndexId: const obx_int.IdUid(357, 8681249522495842854),
     lastRelationId: const obx_int.IdUid(29, 6984763155418216047),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -5014,6 +5134,24 @@ obx_int.ModelDefinition getObjectBoxModel() {
       4015222914079100086,
       2471078981105592498,
       2676686318594290333,
+      193230584070295327,
+      1981396639359671712,
+      6137557720490430341,
+      3433008554249628085,
+      6768233663970939313,
+      5050446620021687618,
+      2582356536301461245,
+      5962653835672871699,
+      3284899365426694478,
+      7430109823749203377,
+      9154849671127840934,
+      5678363481020279787,
+      1675675154937004981,
+      8643794117786580824,
+      734285089254545498,
+      4522878522191055629,
+      5527862352615454186,
+      286886169323562236,
     ],
     retiredPropertyUids: const [
       7578410533054026482,
@@ -5583,7 +5721,22 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final mopOffset = object.mop == null
             ? null
             : fbb.writeString(object.mop!);
-        fbb.startTable(13);
+        final transactionNumberOffset = object.transactionNumber == null
+            ? null
+            : fbb.writeString(object.transactionNumber!);
+        final chequeRefNumberOffset = object.chequeRefNumber == null
+            ? null
+            : fbb.writeString(object.chequeRefNumber!);
+        final bankNameOffset = object.bankName == null
+            ? null
+            : fbb.writeString(object.bankName!);
+        final refNumberOffset = object.refNumber == null
+            ? null
+            : fbb.writeString(object.refNumber!);
+        final bankAccountNumberOffset = object.bankAccountNumber == null
+            ? null
+            : fbb.writeString(object.bankAccountNumber!);
+        fbb.startTable(18);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, collectionIdOffset);
@@ -5596,6 +5749,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(9, object.created?.millisecondsSinceEpoch);
         fbb.addInt64(10, object.updated?.millisecondsSinceEpoch);
         fbb.addOffset(11, mopOffset);
+        fbb.addOffset(12, transactionNumberOffset);
+        fbb.addOffset(13, chequeRefNumberOffset);
+        fbb.addOffset(14, bankNameOffset);
+        fbb.addOffset(15, refNumberOffset);
+        fbb.addOffset(16, bankAccountNumberOffset);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -5632,6 +5790,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           20,
         );
+        final transactionNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 28);
+        final chequeRefNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 30);
+        final bankNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 32);
+        final refNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 34);
+        final bankAccountNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 36);
         final createdParam = createdValue == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(createdValue);
@@ -5647,6 +5820,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           collectionId: collectionIdParam,
           collectionName: collectionNameParam,
           totalAmount: totalAmountParam,
+          transactionNumber: transactionNumberParam,
+          chequeRefNumber: chequeRefNumberParam,
+          bankName: bankNameParam,
+          refNumber: refNumberParam,
+          bankAccountNumber: bankAccountNumberParam,
           created: createdParam,
           mop: mopParam,
           updated: updatedParam,
@@ -5728,7 +5906,22 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final mopOffset = object.mop == null
             ? null
             : fbb.writeString(object.mop!);
-        fbb.startTable(24);
+        final chequeRefNumberOffset = object.chequeRefNumber == null
+            ? null
+            : fbb.writeString(object.chequeRefNumber!);
+        final transactionNumberOffset = object.transactionNumber == null
+            ? null
+            : fbb.writeString(object.transactionNumber!);
+        final bankNameOffset = object.bankName == null
+            ? null
+            : fbb.writeString(object.bankName!);
+        final refNumberOffset = object.refNumber == null
+            ? null
+            : fbb.writeString(object.refNumber!);
+        final bankAccountNumberOffset = object.bankAccountNumber == null
+            ? null
+            : fbb.writeString(object.bankAccountNumber!);
+        fbb.startTable(29);
         fbb.addInt64(0, object.objectBoxId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, pocketbaseIdOffset);
@@ -5752,6 +5945,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(20, deviceIdOffset);
         fbb.addInt64(21, object.deliveryReceipt.targetId);
         fbb.addOffset(22, mopOffset);
+        fbb.addOffset(23, chequeRefNumberOffset);
+        fbb.addOffset(24, transactionNumberOffset);
+        fbb.addOffset(25, bankNameOffset);
+        fbb.addOffset(26, refNumberOffset);
+        fbb.addOffset(27, bankAccountNumberOffset);
         fbb.finish(fbb.endTable());
         return object.objectBoxId;
       },
@@ -5806,6 +6004,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final mopParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 48);
+        final transactionNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 52);
+        final chequeRefNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 50);
+        final bankNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 54);
+        final refNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 56);
+        final bankAccountNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 58);
         final objectBoxIdParam = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
@@ -5822,6 +6035,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 updated: updatedParam,
                 lastLocalUpdatedAt: lastLocalUpdatedAtParam,
                 mop: mopParam,
+                transactionNumber: transactionNumberParam,
+                chequeRefNumber: chequeRefNumberParam,
+                bankName: bankNameParam,
+                refNumber: refNumberParam,
+                bankAccountNumber: bankAccountNumberParam,
                 objectBoxId: objectBoxIdParam,
               )
               ..pocketbaseId = const fb.StringReader(
@@ -6774,7 +6992,22 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final mopOffset = object.mop == null
             ? null
             : fbb.writeString(object.mop!);
-        fbb.startTable(16);
+        final transactionNumberOffset = object.transactionNumber == null
+            ? null
+            : fbb.writeString(object.transactionNumber!);
+        final chequeRefNumberOffset = object.chequeRefNumber == null
+            ? null
+            : fbb.writeString(object.chequeRefNumber!);
+        final bankNameOffset = object.bankName == null
+            ? null
+            : fbb.writeString(object.bankName!);
+        final refNumberOffset = object.refNumber == null
+            ? null
+            : fbb.writeString(object.refNumber!);
+        final bankAccountNumberOffset = object.bankAccountNumber == null
+            ? null
+            : fbb.writeString(object.bankAccountNumber!);
+        fbb.startTable(21);
         fbb.addInt64(0, object.dbId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, collectionIdOffset);
@@ -6790,6 +7023,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(12, object.created?.millisecondsSinceEpoch);
         fbb.addInt64(13, object.updated?.millisecondsSinceEpoch);
         fbb.addOffset(14, mopOffset);
+        fbb.addOffset(15, transactionNumberOffset);
+        fbb.addOffset(16, chequeRefNumberOffset);
+        fbb.addOffset(17, bankNameOffset);
+        fbb.addOffset(18, refNumberOffset);
+        fbb.addOffset(19, bankAccountNumberOffset);
         fbb.finish(fbb.endTable());
         return object.dbId;
       },
@@ -6837,6 +7075,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final mopParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 32);
+        final transactionNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 34);
+        final chequeRefNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 36);
+        final bankNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 38);
+        final refNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 40);
+        final bankAccountNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 42);
         final dateTimeCompletedParam = dateTimeCompletedValue == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(dateTimeCompletedValue);
@@ -6864,6 +7117,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
           totalAmount: totalAmountParam,
           status: statusParam,
           mop: mopParam,
+          transactionNumber: transactionNumberParam,
+          chequeRefNumber: chequeRefNumberParam,
+          bankName: bankNameParam,
+          refNumber: refNumberParam,
+          bankAccountNumber: bankAccountNumberParam,
           dateTimeCompleted: dateTimeCompletedParam,
           customerImages: customerImagesParam,
           customerSignature: customerSignatureParam,
@@ -7108,7 +7366,22 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final mopOffset = object.mop == null
             ? null
             : fbb.writeString(object.mop!);
-        fbb.startTable(27);
+        final chequeRefNumberOffset = object.chequeRefNumber == null
+            ? null
+            : fbb.writeString(object.chequeRefNumber!);
+        final transactionNumberOffset = object.transactionNumber == null
+            ? null
+            : fbb.writeString(object.transactionNumber!);
+        final bankNameOffset = object.bankName == null
+            ? null
+            : fbb.writeString(object.bankName!);
+        final refNumberOffset = object.refNumber == null
+            ? null
+            : fbb.writeString(object.refNumber!);
+        final bankAccountNumberOffset = object.bankAccountNumber == null
+            ? null
+            : fbb.writeString(object.bankAccountNumber!);
+        fbb.startTable(32);
         fbb.addInt64(0, object.objectBoxId);
         fbb.addOffset(1, idOffset);
         fbb.addOffset(2, pocketbaseIdOffset);
@@ -7135,6 +7408,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(23, deviceIdOffset);
         fbb.addOffset(24, customerImagesOffset);
         fbb.addOffset(25, mopOffset);
+        fbb.addOffset(26, chequeRefNumberOffset);
+        fbb.addOffset(27, transactionNumberOffset);
+        fbb.addOffset(28, bankNameOffset);
+        fbb.addOffset(29, refNumberOffset);
+        fbb.addOffset(30, bankAccountNumberOffset);
         fbb.finish(fbb.endTable());
         return object.objectBoxId;
       },
@@ -7195,6 +7473,21 @@ obx_int.ModelDefinition getObjectBoxModel() {
           rootOffset,
           20,
         );
+        final chequeRefNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 56);
+        final transactionNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 58);
+        final bankNameParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 60);
+        final refNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 62);
+        final bankAccountNumberParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 64);
         final mopParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGetNullable(buffer, rootOffset, 54);
@@ -7223,6 +7516,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
                 customerImages: customerImagesParam,
                 customerSignature: customerSignatureParam,
                 totalAmount: totalAmountParam,
+                chequeRefNumber: chequeRefNumberParam,
+                transactionNumber: transactionNumberParam,
+                bankName: bankNameParam,
+                refNumber: refNumberParam,
+                bankAccountNumber: bankAccountNumberParam,
                 mop: mopParam,
                 receiptFile: receiptFileParam,
                 created: createdParam,
@@ -11599,6 +11897,31 @@ class CollectionEntity_ {
     _entities[4].properties[11],
   );
 
+  /// See [CollectionEntity.transactionNumber].
+  static final transactionNumber = obx.QueryStringProperty<CollectionEntity>(
+    _entities[4].properties[12],
+  );
+
+  /// See [CollectionEntity.chequeRefNumber].
+  static final chequeRefNumber = obx.QueryStringProperty<CollectionEntity>(
+    _entities[4].properties[13],
+  );
+
+  /// See [CollectionEntity.bankName].
+  static final bankName = obx.QueryStringProperty<CollectionEntity>(
+    _entities[4].properties[14],
+  );
+
+  /// See [CollectionEntity.refNumber].
+  static final refNumber = obx.QueryStringProperty<CollectionEntity>(
+    _entities[4].properties[15],
+  );
+
+  /// See [CollectionEntity.bankAccountNumber].
+  static final bankAccountNumber = obx.QueryStringProperty<CollectionEntity>(
+    _entities[4].properties[16],
+  );
+
   /// see [CollectionEntity.invoices]
   static final invoices =
       obx.QueryRelationToMany<CollectionEntity, InvoiceDataModel>(
@@ -11724,6 +12047,31 @@ class CollectionModel_ {
   /// See [CollectionModel.mop].
   static final mop = obx.QueryStringProperty<CollectionModel>(
     _entities[5].properties[22],
+  );
+
+  /// See [CollectionModel.chequeRefNumber].
+  static final chequeRefNumber = obx.QueryStringProperty<CollectionModel>(
+    _entities[5].properties[23],
+  );
+
+  /// See [CollectionModel.transactionNumber].
+  static final transactionNumber = obx.QueryStringProperty<CollectionModel>(
+    _entities[5].properties[24],
+  );
+
+  /// See [CollectionModel.bankName].
+  static final bankName = obx.QueryStringProperty<CollectionModel>(
+    _entities[5].properties[25],
+  );
+
+  /// See [CollectionModel.refNumber].
+  static final refNumber = obx.QueryStringProperty<CollectionModel>(
+    _entities[5].properties[26],
+  );
+
+  /// See [CollectionModel.bankAccountNumber].
+  static final bankAccountNumber = obx.QueryStringProperty<CollectionModel>(
+    _entities[5].properties[27],
   );
 
   /// see [CollectionModel.invoices]
@@ -12314,6 +12662,33 @@ class DeliveryReceiptEntity_ {
   static final mop = obx.QueryStringProperty<DeliveryReceiptEntity>(
     _entities[10].properties[14],
   );
+
+  /// See [DeliveryReceiptEntity.transactionNumber].
+  static final transactionNumber =
+      obx.QueryStringProperty<DeliveryReceiptEntity>(
+        _entities[10].properties[15],
+      );
+
+  /// See [DeliveryReceiptEntity.chequeRefNumber].
+  static final chequeRefNumber = obx.QueryStringProperty<DeliveryReceiptEntity>(
+    _entities[10].properties[16],
+  );
+
+  /// See [DeliveryReceiptEntity.bankName].
+  static final bankName = obx.QueryStringProperty<DeliveryReceiptEntity>(
+    _entities[10].properties[17],
+  );
+
+  /// See [DeliveryReceiptEntity.refNumber].
+  static final refNumber = obx.QueryStringProperty<DeliveryReceiptEntity>(
+    _entities[10].properties[18],
+  );
+
+  /// See [DeliveryReceiptEntity.bankAccountNumber].
+  static final bankAccountNumber =
+      obx.QueryStringProperty<DeliveryReceiptEntity>(
+        _entities[10].properties[19],
+      );
 }
 
 /// [DeliveryReceiptItemsEntity] entity fields to define ObjectBox queries.
@@ -12542,6 +12917,33 @@ class DeliveryReceiptModel_ {
   static final mop = obx.QueryStringProperty<DeliveryReceiptModel>(
     _entities[13].properties[25],
   );
+
+  /// See [DeliveryReceiptModel.chequeRefNumber].
+  static final chequeRefNumber = obx.QueryStringProperty<DeliveryReceiptModel>(
+    _entities[13].properties[26],
+  );
+
+  /// See [DeliveryReceiptModel.transactionNumber].
+  static final transactionNumber =
+      obx.QueryStringProperty<DeliveryReceiptModel>(
+        _entities[13].properties[27],
+      );
+
+  /// See [DeliveryReceiptModel.bankName].
+  static final bankName = obx.QueryStringProperty<DeliveryReceiptModel>(
+    _entities[13].properties[28],
+  );
+
+  /// See [DeliveryReceiptModel.refNumber].
+  static final refNumber = obx.QueryStringProperty<DeliveryReceiptModel>(
+    _entities[13].properties[29],
+  );
+
+  /// See [DeliveryReceiptModel.bankAccountNumber].
+  static final bankAccountNumber =
+      obx.QueryStringProperty<DeliveryReceiptModel>(
+        _entities[13].properties[30],
+      );
 }
 
 /// [DeliveryStatusChoicesEntity] entity fields to define ObjectBox queries.

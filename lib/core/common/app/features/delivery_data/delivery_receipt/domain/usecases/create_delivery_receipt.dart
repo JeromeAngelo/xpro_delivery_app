@@ -28,6 +28,9 @@ class CreateDeliveryReceipt
       chequeNumber: params.chequeNumber,
       eWalletType: params.eWalletType,
       bankName: params.bankName,
+      transactionNumber: params.transactionNumber,
+      refNumber: params.refNumber,
+      bankAccountNumber: params.bankAccountNumber,
     );
   }
 }
@@ -45,6 +48,9 @@ class CreateDeliveryReceiptParams extends Equatable {
   final String? chequeNumber;
   final String? eWalletType;
   final String? bankName;
+  final String? transactionNumber;
+  final String? refNumber;
+  final String? bankAccountNumber;
 
   const CreateDeliveryReceiptParams({
     required this.deliveryDataId,
@@ -59,6 +65,9 @@ class CreateDeliveryReceiptParams extends Equatable {
     this.chequeNumber,
     this.eWalletType,
     this.bankName,
+    this.transactionNumber,
+    this.refNumber,
+    this.bankAccountNumber,
   });
 
   @override
@@ -75,10 +84,13 @@ class CreateDeliveryReceiptParams extends Equatable {
     chequeNumber,
     eWalletType,
     bankName,
+    transactionNumber,
+    refNumber,
+    bankAccountNumber,
   ];
 
   @override
   String toString() {
-    return 'CreateDeliveryReceiptParams(deliveryDataId: $deliveryDataId, status: $status, dateTimeCompleted: $dateTimeCompleted, amount: $amount, modeOfPayment: $modeOfPayment, referenceNumber: $referenceNumber)';
+    return 'CreateDeliveryReceiptParams(deliveryDataId: $deliveryDataId, status: $status, dateTimeCompleted: $dateTimeCompleted, amount: $amount, modeOfPayment: $modeOfPayment, referenceNumber: $referenceNumber, transactionNumber: $transactionNumber, refNumber: $refNumber, bankAccountNumber: $bankAccountNumber)';
   }
 }

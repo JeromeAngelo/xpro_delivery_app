@@ -292,6 +292,9 @@ class DeliveryReceiptBloc
         chequeNumber: event.chequeNumber,
         eWalletType: event.eWalletType,
         bankName: event.bankName,
+        transactionNumber: event.transactionNumber,
+        refNumber: event.refNumber,
+        bankAccountNumber: event.bankAccountNumber,
       ),
     );
 

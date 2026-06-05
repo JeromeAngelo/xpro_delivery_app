@@ -447,75 +447,14 @@ class _UpdateStatusDrawerState extends State<UpdateStatusDrawer> {
 
         final deliveryData = state.deliveryData;
 
-        deliveryDataBloc.add(
-          SetInvoiceIntoCompletedEvent(state.deliveryData.id ?? ''),
+        context.read<DeliveryStatusChoicesBloc>().add(
+          SetEndDeliveryEvent(deliveryData: deliveryData),
         );
         context.read<DeliveryDataBloc>().add(
           WatchLocalDeliveryDataByIdEvent(widget.deliveryDataId),
         );
 
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder:
-                (_) => BlocConsumer<DeliveryReceiptBloc, DeliveryReceiptState>(
-                  listenWhen:
-                      (previous, current) =>
-                          current is DeliveryReceiptPdfGenerated ||
-                          current is DeliveryReceiptError,
-                  listener: (context, receiptState) {
-                    if (receiptState is DeliveryReceiptPdfGenerated) {
-                      debugPrint('✅ PDF generated, navigating to transaction');
-                      Navigator.of(context).pop(); // Close loading screen
-                      context.push(
-                        '/transaction',
-                        extra: {
-                          'deliveryData': deliveryData,
-                          'generatedPdf': receiptState.pdfBytes,
-                        },
-                      );
-                    } else if (receiptState is DeliveryReceiptError) {
-                      debugPrint(
-                        '❌ PDF generation error: ${receiptState.message}',
-                      );
-                      Navigator.of(context).pop(); // Close loading screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'PDF Generation Error: ${receiptState.message}',
-                          ),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  buildWhen:
-                      (previous, current) =>
-                          current is DeliveryReceiptPdfGenerating ||
-                          current is DeliveryReceiptPdfGenerated ||
-                          current is DeliveryReceiptError ||
-                          current is DeliveryReceiptInitial ||
-                          current is DeliveryReceiptLoading,
-                  builder: (context, receiptState) {
-                    if (receiptState is DeliveryReceiptPdfGenerated) {
-                      // PDF already generated — listener will handle navigation
-                      return const PdfGeneratingLoadingScreen(
-                        message: 'Preparing Delivery Receipt...',
-                      );
-                    } else if (receiptState is DeliveryReceiptError) {
-                      // Error — listener will handle snackbar
-                      return PdfGeneratingLoadingScreen(
-                        message: 'Error: ${receiptState.message}',
-                      );
-                    }
-                    // Generating or loading state
-                    return const PdfGeneratingLoadingScreen(
-                      message: 'Generating Delivery Receipt PDF...',
-                    );
-                  },
-                ),
-          ),
-        );
-        return;
+               return;
       }
     }
 

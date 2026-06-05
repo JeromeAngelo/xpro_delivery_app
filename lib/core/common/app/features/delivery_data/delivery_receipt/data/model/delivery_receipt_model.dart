@@ -61,6 +61,21 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
   @Property()
   String? receiptFile;
 
+   @Property()
+  String? chequeRefNumber;
+
+    @Property()
+  String? transactionNumber;
+
+    @Property()
+  String? bankName;
+
+    @Property()
+  String? refNumber;
+
+    @Property()
+  String? bankAccountNumber;
+
   // ---------------------------------------------------
   // Sync & audit fields
   // ---------------------------------------------------
@@ -113,6 +128,12 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
     super.customerImages,
     super.customerSignature,
     super.totalAmount,
+    super.chequeRefNumber,
+    super.transactionNumber,
+    super.bankName,
+    super.refNumber,
+    super.bankAccountNumber,
+
     super.mop,
     super.receiptFile,
     super.created,
@@ -229,6 +250,11 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       status: json['status']?.toString(),
       dateTimeCompleted: parseDate(json['dateTimeCompleted']),
       customerImages: parseCustomerImages(json['customerImages']),
+      chequeRefNumber: json['chequeRefNumber']?.toString(),
+      transactionNumber: json['transactionNumber']?.toString(),
+      bankName: json['bankName']?.toString(),
+      refNumber: json['refNumber']?.toString(),
+      bankAccountNumber: json['bankAccountNumber']?.toString(),
       customerSignature: json['customerSignature']?.toString(),
       mop: json['mop']?.toString(),
       receiptFile: json['receiptFile']?.toString(),
@@ -254,6 +280,11 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       'customerImages': customerImages, // Will be serialized as JSON array
       'customerSignature': customerSignature,
       'receiptFile': receiptFile,
+      'chequeRefNumber': chequeRefNumber,
+      'transactionNumber': transactionNumber,
+      'bankName': bankName,
+      'refNumber': refNumber,
+      'bankAccountNumber': bankAccountNumber,
       'mop': mop,
       'trip': trip.target?.id,
       'deliveryData': deliveryData.target?.id,
@@ -273,6 +304,11 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
     DateTime? dateTimeCompleted,
     List<String>? customerImages,
     String? customerSignature,
+    String? chequeRefNumber,
+    String? transactionNumber,
+    String? bankName,
+    String? refNumber,
+    String? bankAccountNumber,
     String? mop,
     String? receiptFile,
     DateTime? created,
@@ -286,6 +322,11 @@ class DeliveryReceiptModel extends DeliveryReceiptEntity {
       dateTimeCompleted: dateTimeCompleted ?? this.dateTimeCompleted,
       totalAmount: totalAmount ?? this.totalAmount,
       customerImages: customerImages ?? this.customerImages,
+      chequeRefNumber: chequeRefNumber ?? this.chequeRefNumber,
+      transactionNumber: transactionNumber ?? this.transactionNumber,
+      bankName: bankName ?? this.bankName,
+      refNumber: refNumber ?? this.refNumber,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
       customerSignature: customerSignature ?? this.customerSignature,
       receiptFile: receiptFile ?? this.receiptFile,
       mop: mop ?? this.mop,

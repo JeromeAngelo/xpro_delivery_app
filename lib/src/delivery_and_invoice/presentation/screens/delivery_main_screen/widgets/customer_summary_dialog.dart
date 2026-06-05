@@ -23,6 +23,64 @@ class _CustomerSummaryDialogState extends State<CustomerSummaryDialog> {
     _currentDeliveryData = widget.deliveryData;
   }
 
+  bool _isPriorityStatus(String? title) {
+    return title == 'End Delivery' || title == 'Mark as Undelivered';
+  }
+
+  String _getDeliveryStatus(DeliveryDataEntity delivery) {
+    final deliveryUpdates = delivery.deliveryUpdates.toList();
+    if (deliveryUpdates.isEmpty) return 'Pending';
+
+    // Check for priority statuses first ("End Delivery" or "Mark as Undelivered")
+    for (final update in deliveryUpdates) {
+      try {
+        final dyn = update as dynamic;
+        final title = dyn.title as String?;
+        if (_isPriorityStatus(title)) {
+          return title ?? 'Pending';
+        }
+      } catch (_) {
+        try {
+          final title = update.title;
+          if (_isPriorityStatus(title)) {
+            return title ?? 'Pending';
+          }
+        } catch (_) {}
+      }
+    }
+
+    // If no priority status found, return the latest update
+    DateTime? _tsFor(dynamic u) {
+      try {
+        final dyn = u as dynamic;
+        return dyn.lastLocalUpdatedAt ?? dyn.updated ?? dyn.time;
+      } catch (_) {
+        try {
+          return (u as dynamic).updated ?? (u as dynamic).time;
+        } catch (_) {
+          return null;
+        }
+      }
+    }
+
+    deliveryUpdates.sort((a, b) {
+      final at = _tsFor(a);
+      final bt = _tsFor(b);
+      if (at == null && bt == null) return 0;
+      if (at == null) return -1;
+      if (bt == null) return 1;
+      return at.compareTo(bt);
+    });
+
+    final latest = deliveryUpdates.last;
+    try {
+      final dyn = latest as dynamic;
+      return dyn.title ?? 'Pending';
+    } catch (_) {
+      return (latest.title != null) ? latest.title! : 'Pending';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DeliveryDataBloc, DeliveryDataState>(
@@ -95,6 +153,20 @@ class _CustomerSummaryDialogState extends State<CustomerSummaryDialog> {
                   ),
                   title: Text('${_currentDeliveryData.invoiceItems.length}'),
                   subtitle: const Text('Total Invoice Items'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.local_shipping,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Text(
+                    _getDeliveryStatus(_currentDeliveryData),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  subtitle: const Text('Delivery Status'),
                 ),
 
                 const SizedBox(height: 16),

@@ -83,6 +83,21 @@ class CollectionModel extends CollectionEntity {
   @Property()
   String? lastSyncError;
 
+    @Property()
+  String? chequeRefNumber;
+
+    @Property()
+  String? transactionNumber;
+
+    @Property()
+  String? bankName;
+
+    @Property()
+  String? refNumber;
+
+    @Property()
+  String? bankAccountNumber;
+
   @Property()
   int version = 0;
 
@@ -115,6 +130,11 @@ class CollectionModel extends CollectionEntity {
     this.updated,
     this.lastLocalUpdatedAt,
     this.mop,
+    this.transactionNumber,
+    this.chequeRefNumber,
+    this.bankName,
+    this.refNumber,
+    this.bankAccountNumber,
     CustomerDataModel? customerData,
     DeliveryDataModel? deliveryDataModel,
     TripModel? tripData,
@@ -329,6 +349,11 @@ class CollectionModel extends CollectionEntity {
       customerData: customerModel,
       invoiceData: invoiceModel,
       mop: json['mop']?.toString(),
+      chequeRefNumber: json['chequeRefNumber']?.toString(),
+      transactionNumber: json['transactionNumber']?.toString(),
+      bankName: json['bankName']?.toString(),
+      refNumber: json['refNumber']?.toString(),
+      bankAccountNumber: json['bankAccountNumber']?.toString(),
       invoicesList: invoicesList,
       created: parseDate(json['created']),
       updated: parseDate(json['updated']),
@@ -345,6 +370,11 @@ class CollectionModel extends CollectionEntity {
       'trip': trip.target?.id,
       'customer': customer.target?.id,
       'invoice': invoice.target?.id,
+      'chequeRefNumber': chequeRefNumber,
+      'transactionNumber': transactionNumber,
+      'bankName': bankName,
+      'refNumber': refNumber,
+      'bankAccountNumber': bankAccountNumber,
       'invoices': invoices.map((invoice) => invoice.id).toList(),
       'created': created?.toIso8601String(),
       'updated': updated?.toIso8601String(),
@@ -362,6 +392,11 @@ class CollectionModel extends CollectionEntity {
     InvoiceDataModel? invoice,
     List<InvoiceDataModel>? invoices,
     String? mop,
+    String? chequeRefNumber,
+    String? transactionNumber,
+    String? bankName,
+    String? refNumber,
+    String? bankAccountNumber,
     double? totalAmount,
     DateTime? created,
     DateTime? updated,
@@ -371,6 +406,16 @@ class CollectionModel extends CollectionEntity {
       collectionId: collectionId ?? this.collectionId,
       collectionName: collectionName ?? this.collectionName,
       totalAmount: totalAmount ?? this.totalAmount,
+      transactionNumber: transactionNumber ?? this.transactionNumber,
+      chequeRefNumber: chequeRefNumber ?? this.chequeRefNumber,
+      bankName: bankName ?? this.bankName,
+      refNumber: refNumber ?? this.refNumber,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
+      tripData: trip ?? this.trip.target,
+      customerData: customer ?? this.customer.target,
+      invoiceData: invoice ?? this.invoice.target,
+      deliveryDataModel: deliveryData ?? this.deliveryData.target,
+      invoicesList: invoices ?? this.invoices,
       created: created ?? this.created,
       mop: mop ?? this.mop,
       updated: updated ?? this.updated,

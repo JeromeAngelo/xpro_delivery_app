@@ -24,6 +24,11 @@ abstract class DeliveryReceiptRemoteDatasource {
     required String? receiptFile,
     required double? amount,
     required String? mop,
+    String? chequeNumber,
+    String? transactionNumber,
+    String? bankName,
+    String? refNumber,
+    String? bankAccountNumber,
   });
 
   /// Delete delivery receipt by ID

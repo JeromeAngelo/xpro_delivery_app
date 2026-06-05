@@ -141,7 +141,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "323:193230584070295327",
+          "indexId": "341:1227535756730403341",
           "relationTarget": "TripModel"
         },
         {
@@ -149,7 +149,7 @@
           "name": "customerId",
           "type": 11,
           "flags": 520,
-          "indexId": "324:1981396639359671712",
+          "indexId": "342:4050367519520957419",
           "relationTarget": "CustomerDataModel"
         },
         {
@@ -157,7 +157,7 @@
           "name": "invoiceId",
           "type": 11,
           "flags": 520,
-          "indexId": "325:6137557720490430341",
+          "indexId": "343:1947442164573210879",
           "relationTarget": "InvoiceDataModel"
         },
         {
@@ -165,7 +165,7 @@
           "name": "deliveryDataId",
           "type": 11,
           "flags": 520,
-          "indexId": "322:3433008554249628085",
+          "indexId": "340:1552752193287542325",
           "relationTarget": "DeliveryDataModel"
         },
         {
@@ -320,7 +320,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "326:6768233663970939313",
+          "indexId": "344:8781328955955227624",
           "relationTarget": "TripModel"
         },
         {
@@ -353,7 +353,7 @@
     },
     {
       "id": "5:7491627631105862324",
-      "lastPropertyId": "12:4455040581408818241",
+      "lastPropertyId": "17:3301649895071674129",
       "name": "CollectionEntity",
       "properties": [
         {
@@ -428,6 +428,31 @@
           "id": "12:4455040581408818241",
           "name": "mop",
           "type": 9
+        },
+        {
+          "id": "13:654434538109903439",
+          "name": "transactionNumber",
+          "type": 9
+        },
+        {
+          "id": "14:8071820462629622130",
+          "name": "chequeRefNumber",
+          "type": 9
+        },
+        {
+          "id": "15:7936804161479464211",
+          "name": "bankName",
+          "type": 9
+        },
+        {
+          "id": "16:6102893055302515425",
+          "name": "refNumber",
+          "type": 9
+        },
+        {
+          "id": "17:3301649895071674129",
+          "name": "bankAccountNumber",
+          "type": 9
         }
       ],
       "relations": [
@@ -440,7 +465,7 @@
     },
     {
       "id": "6:4563950948000762030",
-      "lastPropertyId": "23:2364763552183903307",
+      "lastPropertyId": "28:5642854722360793336",
       "name": "CollectionModel",
       "properties": [
         {
@@ -474,7 +499,7 @@
           "name": "deliveryDataId",
           "type": 11,
           "flags": 520,
-          "indexId": "328:5050446620021687618",
+          "indexId": "346:2646005620211936375",
           "relationTarget": "DeliveryDataModel"
         },
         {
@@ -482,7 +507,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "329:2582356536301461245",
+          "indexId": "347:4900208349705386003",
           "relationTarget": "TripModel"
         },
         {
@@ -490,7 +515,7 @@
           "name": "customerId",
           "type": 11,
           "flags": 520,
-          "indexId": "327:5962653835672871699",
+          "indexId": "345:3564745801497400117",
           "relationTarget": "CustomerDataModel"
         },
         {
@@ -569,6 +594,31 @@
         {
           "id": "23:2364763552183903307",
           "name": "mop",
+          "type": 9
+        },
+        {
+          "id": "24:1339937822608688608",
+          "name": "chequeRefNumber",
+          "type": 9
+        },
+        {
+          "id": "25:5946919820329309914",
+          "name": "transactionNumber",
+          "type": 9
+        },
+        {
+          "id": "26:15327385828859125",
+          "name": "bankName",
+          "type": 9
+        },
+        {
+          "id": "27:2126208514006327153",
+          "name": "refNumber",
+          "type": 9
+        },
+        {
+          "id": "28:5642854722360793336",
+          "name": "bankAccountNumber",
           "type": 9
         }
       ],
@@ -948,7 +998,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "330:3284899365426694478",
+          "indexId": "348:4033211198125037379",
           "relationTarget": "TripModel"
         },
         {
@@ -1118,7 +1168,7 @@
     },
     {
       "id": "11:5227308974183210635",
-      "lastPropertyId": "15:8934721911634497456",
+      "lastPropertyId": "20:6900225390016091735",
       "name": "DeliveryReceiptEntity",
       "properties": [
         {
@@ -1201,6 +1251,31 @@
         {
           "id": "15:8934721911634497456",
           "name": "mop",
+          "type": 9
+        },
+        {
+          "id": "16:3247221931496788059",
+          "name": "transactionNumber",
+          "type": 9
+        },
+        {
+          "id": "17:3242018478383932105",
+          "name": "chequeRefNumber",
+          "type": 9
+        },
+        {
+          "id": "18:6315303156383744550",
+          "name": "bankName",
+          "type": 9
+        },
+        {
+          "id": "19:7130942666044157851",
+          "name": "refNumber",
+          "type": 9
+        },
+        {
+          "id": "20:6900225390016091735",
+          "name": "bankAccountNumber",
           "type": 9
         }
       ],
@@ -1305,7 +1380,7 @@
     },
     {
       "id": "14:8047721167219302010",
-      "lastPropertyId": "26:3570911888826538173",
+      "lastPropertyId": "31:7608258262543345765",
       "name": "DeliveryReceiptModel",
       "properties": [
         {
@@ -1443,6 +1518,31 @@
         {
           "id": "26:3570911888826538173",
           "name": "mop",
+          "type": 9
+        },
+        {
+          "id": "27:3924277281906503618",
+          "name": "chequeRefNumber",
+          "type": 9
+        },
+        {
+          "id": "28:3757396052298635631",
+          "name": "transactionNumber",
+          "type": 9
+        },
+        {
+          "id": "29:5089168332928632427",
+          "name": "bankName",
+          "type": 9
+        },
+        {
+          "id": "30:4594628882969699134",
+          "name": "refNumber",
+          "type": 9
+        },
+        {
+          "id": "31:7608258262543345765",
+          "name": "bankAccountNumber",
           "type": 9
         }
       ],
@@ -1612,7 +1712,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "331:7430109823749203377",
+          "indexId": "349:7043772892667912410",
           "relationTarget": "TripModel"
         },
         {
@@ -1703,7 +1803,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "332:9154849671127840934",
+          "indexId": "350:2500592284355789045",
           "relationTarget": "TripModel"
         },
         {
@@ -2145,7 +2245,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "333:5678363481020279787",
+          "indexId": "351:8678051506604069523",
           "relationTarget": "TripModel"
         },
         {
@@ -2289,7 +2389,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "334:1675675154937004981",
+          "indexId": "352:409132037838845485",
           "relationTarget": "TripModel"
         },
         {
@@ -2652,7 +2752,7 @@
           "name": "invoiceDataId",
           "type": 11,
           "flags": 520,
-          "indexId": "335:8643794117786580824",
+          "indexId": "353:6857461555492224941",
           "relationTarget": "InvoiceDataEntity"
         },
         {
@@ -2860,7 +2960,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "336:734285089254545498",
+          "indexId": "354:2682484851385625014",
           "relationTarget": "TripModel"
         },
         {
@@ -2868,7 +2968,7 @@
           "name": "deliveryTeamId",
           "type": 11,
           "flags": 520,
-          "indexId": "337:4522878522191055629",
+          "indexId": "355:8151479284019093933",
           "relationTarget": "DeliveryTeamModel"
         },
         {
@@ -2996,7 +3096,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "338:5527862352615454186",
+          "indexId": "356:3512635175955106621",
           "relationTarget": "TripModel"
         },
         {
@@ -3719,7 +3819,7 @@
           "name": "tripId",
           "type": 11,
           "flags": 520,
-          "indexId": "339:286886169323562236",
+          "indexId": "357:8681249522495842854",
           "relationTarget": "TripModel"
         },
         {
@@ -4015,7 +4115,7 @@
     }
   ],
   "lastEntityId": "48:4350876074771390893",
-  "lastIndexId": "339:286886169323562236",
+  "lastIndexId": "357:8681249522495842854",
   "lastRelationId": "29:6984763155418216047",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
@@ -4291,7 +4391,25 @@
     7246971442540038156,
     4015222914079100086,
     2471078981105592498,
-    2676686318594290333
+    2676686318594290333,
+    193230584070295327,
+    1981396639359671712,
+    6137557720490430341,
+    3433008554249628085,
+    6768233663970939313,
+    5050446620021687618,
+    2582356536301461245,
+    5962653835672871699,
+    3284899365426694478,
+    7430109823749203377,
+    9154849671127840934,
+    5678363481020279787,
+    1675675154937004981,
+    8643794117786580824,
+    734285089254545498,
+    4522878522191055629,
+    5527862352615454186,
+    286886169323562236
   ],
   "retiredPropertyUids": [
     7578410533054026482,

@@ -46,6 +46,9 @@ abstract class DeliveryReceiptRepo {
     String? chequeNumber,
     String? eWalletType,
     String? bankName,
+    String? transactionNumber,
+    String? refNumber,
+    String? bankAccountNumber,
   });
 
   /// Delete delivery receipt by ID

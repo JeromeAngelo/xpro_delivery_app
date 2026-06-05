@@ -20,6 +20,12 @@ class DeliveryReceiptEntity extends Equatable {
   final String? mop;
   final DateTime? dateTimeCompleted;
   final double? totalAmount;
+  
+  final String? transactionNumber;
+  final String? chequeRefNumber;
+  final String? bankName;
+  final String? refNumber;
+  final String? bankAccountNumber;
 
   // New file fields
   final List<String>? customerImages; // List of image file paths/URLs
@@ -40,6 +46,11 @@ class DeliveryReceiptEntity extends Equatable {
     this.totalAmount,
     this.status,
     this.mop,
+    this.transactionNumber,
+    this.chequeRefNumber,
+    this.bankName,
+    this.refNumber,
+    this.bankAccountNumber,
     this.dateTimeCompleted,
     this.customerImages,
     this.customerSignature,
@@ -59,6 +70,11 @@ class DeliveryReceiptEntity extends Equatable {
     trip.target?.id,
     deliveryData.target?.id,
     status,
+    transactionNumber,
+    chequeRefNumber,
+    bankName,
+    refNumber,
+    bankAccountNumber,
     totalAmount,
     mop,
     dateTimeCompleted,

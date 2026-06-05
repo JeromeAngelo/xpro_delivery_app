@@ -150,6 +150,9 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
     String? chequeNumber,
     String? eWalletType,
     String? bankName,
+    String? transactionNumber,
+    String? refNumber,
+    String? bankAccountNumber,
   }) async {
     try {
       debugPrint(
@@ -166,7 +169,12 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
             customerSignature: customerSignature,
             receiptFile: receiptFile,
             amount: amount,
-           mop: modeOfPayment,
+            mop: modeOfPayment,
+            chequeNumber: chequeNumber,
+            transactionNumber: transactionNumber,
+            bankName: bankName,
+            refNumber: refNumber,
+            bankAccountNumber: bankAccountNumber,
           );
 
       debugPrint(
@@ -191,6 +199,9 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
         chequeNumber: chequeNumber,
         eWalletType: eWalletType,
         bankName: bankName,
+        transactionNumber: transactionNumber,
+        refNumber: refNumber,
+        bankAccountNumber: bankAccountNumber,
       );
 
       return Right(localDeliveryReceipt);
@@ -218,6 +229,9 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
     String? chequeNumber,
     String? eWalletType,
     String? bankName,
+    String? transactionNumber,
+    String? refNumber,
+    String? bankAccountNumber,
   }) async {
     try {
       debugPrint(
@@ -234,7 +248,12 @@ class DeliveryReceiptRepoImpl implements DeliveryReceiptRepo {
             customerImages: customerImages,
             customerSignature: customerSignature,
             receiptFile: receiptFile,
-            mop: modeOfPayment, 
+            mop: modeOfPayment,
+            chequeNumber: chequeNumber,
+            transactionNumber: transactionNumber,
+            bankName: bankName,
+            refNumber: refNumber,
+            bankAccountNumber: bankAccountNumber,
           );
 
       debugPrint('📥 REPO: Updating local storage with remote data');
